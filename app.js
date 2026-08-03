@@ -5517,33 +5517,50 @@ function renderCotizacionesKPIs() {
     return;
   }
 
-  const iconMap = {
-    'estándar': '📋',
-    'estandar': '📋',
-    'promoción': '🏷️',
-    'promocion': '🏷️',
-    'especial': '⭐',
-    'cyber': '⚡'
-  };
-
   container.innerHTML = tiposList.map(t => {
-    const icon = iconMap[t.name.toLowerCase()] || '📁';
+    const conversionPct = t.totalCount > 0 ? (t.aceptadasCount / t.totalCount) * 100 : 0;
     return `
-      <div class="cotiz-tipo-card-v2">
+      <div class="ux-tipo-card">
         <div>
-          <div class="cotiz-card-tag">${icon} TIPO: ${t.name.toUpperCase()}</div>
-          <div class="cotiz-card-title">${formatNum(t.totalCount)} solicitudes registradas</div>
-          <div class="cotiz-card-amount">$${formatNum(t.totalMonto)}</div>
+          <div class="ux-card-top-row">
+            <span class="ux-card-tag-pill">TIPO: ${t.name.toUpperCase()}</span>
+            <span class="ux-card-count-badge">${formatNum(t.totalCount)} cotizaciones</span>
+          </div>
+
+          <div class="ux-card-val-group">
+            <span class="ux-card-amount-num">$${formatNum(t.totalMonto)}</span>
+            <span class="ux-card-conversion-rate">${conversionPct.toFixed(1)}% Conversión</span>
+          </div>
+
+          <div class="ux-progress-track">
+            <div class="ux-progress-fill" style="width: ${Math.min(100, Math.max(0, conversionPct))}%;"></div>
+          </div>
         </div>
 
-        <div class="cotiz-card-footer-stats">
-          <span style="color:#60a5fa; font-weight:700;">📊 ${formatNum(t.totalCount)} Cots</span>
-          <span>•</span>
-          <span style="color:#34d399; font-weight:700;">🟢 ${formatNum(t.aceptadasCount)} Aceptadas</span>
-          <span>•</span>
-          <span style="color:#fbbf24; font-weight:700;">🟡 ${formatNum(t.pendientesCount)} Pendientes</span>
-          <span>•</span>
-          <span style="color:#f87171; font-weight:700;">🔴 ${formatNum(t.perdidasCount)} Perdidas</span>
+        <div class="ux-stat-grid">
+          <div class="ux-stat-col">
+            <span class="ux-stat-lbl" style="color:#60a5fa;">TOTAL</span>
+            <span class="ux-stat-val" style="color:#f8fafc;">${formatNum(t.totalCount)}</span>
+            <span class="ux-stat-submonto">$${formatNum(t.totalMonto)}</span>
+          </div>
+
+          <div class="ux-stat-col">
+            <span class="ux-stat-lbl" style="color:#34d399;">ACEPTADAS</span>
+            <span class="ux-stat-val" style="color:#34d399;">${formatNum(t.aceptadasCount)}</span>
+            <span class="ux-stat-submonto">$${formatNum(t.aceptadasMonto)}</span>
+          </div>
+
+          <div class="ux-stat-col">
+            <span class="ux-stat-lbl" style="color:#fbbf24;">PENDIENTES</span>
+            <span class="ux-stat-val" style="color:#fbbf24;">${formatNum(t.pendientesCount)}</span>
+            <span class="ux-stat-submonto">$${formatNum(t.pendientesMonto)}</span>
+          </div>
+
+          <div class="ux-stat-col">
+            <span class="ux-stat-lbl" style="color:#f87171;">PERDIDAS</span>
+            <span class="ux-stat-val" style="color:#f87171;">${formatNum(t.perdidasCount)}</span>
+            <span class="ux-stat-submonto">$${formatNum(t.perdidasMonto)}</span>
+          </div>
         </div>
       </div>
     `;
