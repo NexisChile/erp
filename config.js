@@ -20,6 +20,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbyMDMYwtWnKRDQ-iixHPKhz
 
 const SPREADSHEET_ID = "16bU5xUuPDvI6xIpuBabK9j_EiUFgcgMTq1T0S2LeVgQ";
 const SPREADSHEET_GID = "999482111";
+const SPREADSHEET_COTIZACIONES_GID = "2001859242";
 
 
 

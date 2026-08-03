@@ -1087,93 +1087,172 @@
           </div>
         </div>
 
-        <!-- VISTA: COTIZACIONES -->
+        <!-- VISTA: COTIZACIONES (DASHBOARD MAYORISTAS) -->
         <div class="view" id="view-cotizaciones">
-          <!-- CABECERA Y ACCIONES DE COTIZACIÓN -->
+          <!-- CABECERA DE MEDICIÓN DE COTIZACIONES -->
           <div class="ax-card" style="margin-bottom: 1.25rem; padding: 1.25rem 1.5rem;">
             <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
               <div>
                 <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
-                  <span class="ax-nav__badge ax-nav__badge--cotiz">MÓDULO DE COTIZACIONES</span>
+                  <span class="ax-nav__badge ax-nav__badge--cotiz">DASHBOARD MAYORISTAS & COTIZACIONES</span>
                 </div>
-                <h2 style="font-size: 1.4rem; font-weight: 800; color: #fff; margin: 0;">Gestión & Emisión de Cotizaciones</h2>
-                <p style="font-size: 0.85rem; color: #94a3b8; margin: 0.2rem 0 0 0;">Crea, gestiona y exporta cotizaciones profesionales en PDF para tus clientes.</p>
+                <h2 style="font-size: 1.4rem; font-weight: 800; color: #fff; margin: 0;">Medición & Análisis de Cotizaciones</h2>
+                <p style="font-size: 0.85rem; color: #94a3b8; margin: 0.2rem 0 0 0;">Monitoreo en tiempo real de cotizaciones solicitadas, conversión a ventas (NV/FA) y efectividad comercial.</p>
               </div>
               <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
                 <button type="button" class="btn-primary" onclick="openCotizacionModal()" style="display: flex; align-items: center; gap: 0.5rem;">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
-                  <span>+ Nueva Cotización</span>
+                  <span>+ Emitir Cotización</span>
                 </button>
               </div>
             </div>
 
-            <!-- FILTROS RÁPIDOS Y BÚSQUEDA DE COTIZACIONES -->
+            <!-- FILTROS GLOBALES DEL DASHBOARD DE COTIZACIONES -->
             <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid rgba(255, 255, 255, 0.08);">
-              <div class="cotiz-status-filters" id="cotizStatusFilters" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                <button type="button" class="preset-btn active" data-cotiz-status="all">Todas</button>
-                <button type="button" class="preset-btn" data-cotiz-status="Pendiente">🟡 Pendientes</button>
-                <button type="button" class="preset-btn" data-cotiz-status="Aprobada">🟢 Aprobadas</button>
-                <button type="button" class="preset-btn" data-cotiz-status="Vencida">🔴 Vencidas / Rechazadas</button>
+              <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; flex: 1;">
+                <div class="filter-group" style="min-width: 140px;">
+                  <label for="fltCotizDesde">Desde</label>
+                  <input type="date" id="fltCotizDesde" class="filter-input" />
+                </div>
+                <div class="filter-group" style="min-width: 140px;">
+                  <label for="fltCotizHasta">Hasta</label>
+                  <input type="date" id="fltCotizHasta" class="filter-input" />
+                </div>
+                <div class="filter-group" style="min-width: 160px;">
+                  <label for="fltCotizResponsable">Responsable</label>
+                  <select id="fltCotizResponsable" class="filter-select"><option value="">Todos</option></select>
+                </div>
+                <div class="filter-group" style="min-width: 160px;">
+                  <label for="fltCotizEstado">Estado</label>
+                  <select id="fltCotizEstado" class="filter-select"><option value="">Todos</option></select>
+                </div>
+                <div class="filter-group" style="min-width: 160px;">
+                  <label for="fltCotizTipo">Tipo Solicitud</label>
+                  <select id="fltCotizTipo" class="filter-select"><option value="">Todos</option></select>
+                </div>
               </div>
-              <div style="position: relative; min-width: 260px;">
-                <input type="text" id="cotizSearchBox" class="filter-input" placeholder="Buscar por Folio, Cliente o RUT..." style="width: 100%; padding-left: 2.2rem;" />
+              <div style="position: relative; min-width: 260px; margin-top: 0.85rem;">
+                <input type="text" id="cotizSearchBox" class="filter-input" placeholder="Buscar por Nº Cot, Cliente, RUT, SKU..." style="width: 100%; padding-left: 2.2rem;" />
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: #94a3b8;"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
               </div>
             </div>
           </div>
 
-          <!-- KPIS DE COTIZACIONES -->
+          <!-- KPIS DE MEDICIÓN DE COTIZACIONES -->
           <div class="kpi-grid" style="margin-bottom: 1.25rem;">
             <div class="ax-card kpi-card">
-              <span class="kpi-title">TOTAL COTIZADO ($)</span>
+              <span class="kpi-title">MONTO TOTAL COTIZADO ($)</span>
               <div class="kpi-value" id="kpiCotizTotal">$0</div>
-              <span class="kpi-subtitle" id="kpiCotizCount">0 Cotizaciones en total</span>
+              <span class="kpi-subtitle" id="kpiCotizCount">0 Solicitudes registradas</span>
             </div>
             <div class="ax-card kpi-card">
-              <span class="kpi-title">COTIZACIONES APROBADAS</span>
+              <span class="kpi-title">COTIZACIONES FACTURADAS / GANADAS</span>
               <div class="kpi-value" style="color: #34d399;" id="kpiCotizApproved">$0</div>
-              <span class="kpi-subtitle" id="kpiCotizApprovedCount">0 Aprobadas</span>
+              <span class="kpi-subtitle" id="kpiCotizApprovedCount">0 Convertidas a Venta</span>
             </div>
             <div class="ax-card kpi-card">
-              <span class="kpi-title">PENDIENTES DE CIERRE</span>
+              <span class="kpi-title">COTIZACIONES PENDIENTES</span>
               <div class="kpi-value" style="color: #fbbf24;" id="kpiCotizPending">$0</div>
-              <span class="kpi-subtitle" id="kpiCotizPendingCount">0 Pendientes</span>
+              <span class="kpi-subtitle" id="kpiCotizPendingCount">0 En negociación</span>
             </div>
             <div class="ax-card kpi-card">
-              <span class="kpi-title">TASA DE CONVERSIÓN</span>
+              <span class="kpi-title">TASA DE CONVERSIÓN EN VENTA</span>
               <div class="kpi-value" style="color: #60a5fa;" id="kpiCotizRate">0%</div>
-              <span class="kpi-subtitle">Cotizaciones → Ventas</span>
+              <span class="kpi-subtitle" id="kpiCotizAvgDays">Promedio: 0 días cierre</span>
             </div>
           </div>
 
-          <!-- TABLA DE COTIZACIONES -->
+          <!-- GRÁFICOS BI DE COTIZACIONES -->
+          <div class="charts-grid" style="margin-bottom: 1.25rem;">
+            <div class="ax-card chart-card">
+              <div class="chart-card-header">
+                <div>
+                  <span class="chart-tag">TENDENCIA TEMPORAL</span>
+                  <h3 class="chart-main-title">Evolución Mensual de Cotizaciones ($)</h3>
+                </div>
+              </div>
+              <div class="chart-container">
+                <canvas id="chartCotizEvolucion"></canvas>
+              </div>
+            </div>
+
+            <div class="ax-card chart-card">
+              <div class="chart-card-header">
+                <div>
+                  <span class="chart-tag">DISTRIBUCIÓN DE ESTADO</span>
+                  <h3 class="chart-main-title">Distribución por Estado de Cotización</h3>
+                </div>
+              </div>
+              <div class="chart-container">
+                <canvas id="chartCotizEstado"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <div class="charts-grid" style="margin-bottom: 1.25rem;">
+            <div class="ax-card chart-card">
+              <div class="chart-card-header">
+                <div>
+                  <span class="chart-tag">PERFORMANCE EQUIPO</span>
+                  <h3 class="chart-main-title">Top Responsables por Monto Cotizado</h3>
+                </div>
+              </div>
+              <div class="chart-container">
+                <canvas id="chartCotizResponsables"></canvas>
+              </div>
+            </div>
+
+            <div class="ax-card chart-card">
+              <div class="chart-card-header">
+                <div>
+                  <span class="chart-tag">PRODUCTOS MÁS COTIZADOS</span>
+                  <h3 class="chart-main-title">Top 10 SKUs en Solicitudes de Cotización</h3>
+                </div>
+              </div>
+              <div class="compras-breakdown-list" id="cotizTopProductsList">
+                <!-- Dinámico -->
+              </div>
+            </div>
+          </div>
+
+          <!-- TABLA DE REGISTROS DE COTIZACIONES -->
           <div class="ax-card chart-card">
             <div class="chart-card-header">
               <div>
-                <span class="chart-tag">REGISTROS</span>
-                <h3 class="chart-main-title">Listado de Cotizaciones Emitidas</h3>
+                <span class="chart-tag">REGISTROS DETALLADOS (GOOGLE SHEETS)</span>
+                <h3 class="chart-main-title">Listado Completo de Cotizaciones (Pestaña Mayoristas)</h3>
               </div>
             </div>
             <div class="table-container">
               <table class="data-table">
                 <thead>
                   <tr>
-                    <th>Nº COTIZACIÓN</th>
-                    <th>FECHA</th>
-                    <th>VENCIMIENTO</th>
+                    <th>TIPO</th>
+                    <th>Nº COT</th>
+                    <th>FECHA SOLICITUD</th>
                     <th>CLIENTE</th>
                     <th>RUT</th>
-                    <th>ITEMS</th>
-                    <th>NETO ($)</th>
+                    <th>SKU</th>
+                    <th>PRODUCTO</th>
+                    <th>CANT</th>
                     <th>TOTAL ($)</th>
+                    <th>RESPONSABLE</th>
+                    <th>NV / FA</th>
                     <th>ESTADO</th>
-                    <th style="text-align: right;">ACCIONES</th>
                   </tr>
                 </thead>
                 <tbody id="cotizTableBody">
                   <!-- Filas dinámicas -->
                 </tbody>
               </table>
+            </div>
+
+            <div class="pagination" style="margin-top: 1rem;">
+              <span id="cotizPageInfo">Página 1 de 1</span>
+              <div class="pagination-controls">
+                <button type="button" class="btn-secondary btn-sm" id="btnCotizPrevPage">Anterior</button>
+                <button type="button" class="btn-secondary btn-sm" id="btnCotizNextPage">Siguiente</button>
+              </div>
             </div>
           </div>
         </div>
@@ -1424,7 +1503,7 @@
   </div>
 
   <!-- Scripts -->
-  <script src="config.js?v=20260802_v49"></script>
-  <script src="app.js?v=20260802_v49"></script>
+  <script src="config.js?v=20260802_v50"></script>
+  <script src="app.js?v=20260802_v50"></script>
 </body>
 </html>

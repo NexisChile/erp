@@ -4931,7 +4931,7 @@ function switchView(viewName) {
   if (viewName === 'compras') {
     renderComprasView();
   } else if (viewName === 'cotizaciones') {
-    renderCotizaciones();
+    renderCotizacionesView();
   } else if (viewName === 'tablero') {
     renderMonthlyTargetProgress();
     renderMiniKPIs();
@@ -5234,71 +5234,240 @@ if (document.readyState === 'loading') {
 }
 
 // ==========================================================================
-// MÓDULO DE COTIZACIONES (GESTOR & EMISIÓN INTERACTIVA + EXPORTACIÓN PDF)
+// DASHBOARD MAYORISTAS & MEDICIÓN DE COTIZACIONES (GOOGLE SHEETS LIVE)
 // ==========================================================================
 
-let cotizacionesList = JSON.parse(localStorage.getItem('glomax_cotizaciones')) || [
-  {
-    folio: 'COT-2026-001',
-    fecha: '2026-08-01',
-    vencimiento: '2026-08-15',
-    cliente: 'CLÍNICA SANTA MARÍA SpA',
-    rut: '76.890.123-K',
-    email: 'adquisiciones@santamaria.cl',
-    estado: 'Aprobada',
-    items: [
-      { codigo: 'HEM6124', descripcion: 'MONITOR DE PRESION ARTERIAL OMRON 6124', cant: 10, preuni: 45000, subtotal: 450000 },
-      { codigo: 'COXM02', descripcion: 'CONCENTRADOR DE OXIGENO GLOMED 5L', cant: 2, preuni: 350000, subtotal: 700000 }
-    ],
-    neto: 1150000,
-    iva: 218500,
-    total: 1368500
-  },
-  {
-    folio: 'COT-2026-002',
-    fecha: '2026-08-02',
-    vencimiento: '2026-08-20',
-    cliente: 'HOSPITAL DEL SALVADOR',
-    rut: '61.608.000-4',
-    email: 'compras@hospitalsalvador.cl',
-    estado: 'Pendiente',
-    items: [
-      { codigo: 'NEBP020', descripcion: 'NEBULIZADOR PISTON COMPRESOR ULTRASONICO', cant: 15, preuni: 28000, subtotal: 420000 }
-    ],
-    neto: 420000,
-    iva: 79800,
-    total: 499800
-  }
-];
+let cotizacionesRows = [];
+let cotizacionesFiltered = [];
+let cotizCurrentPage = 1;
+const COTIZ_PAGE_SIZE = 25;
 
-let currentCotizFilterStatus = 'all';
+let chartCotizEvolInstance = null;
+let chartCotizEstadoInstance = null;
+let chartCotizRespInstance = null;
 
-function saveCotizacionesToStorage() {
+async function fetchCotizacionesData() {
+  if (typeof SPREADSHEET_ID === 'undefined' || !SPREADSHEET_ID) return null;
+  const gid = typeof SPREADSHEET_COTIZACIONES_GID !== 'undefined' ? SPREADSHEET_COTIZACIONES_GID : '2001859242';
+
   try {
-    localStorage.setItem('glomax_cotizaciones', JSON.stringify(cotizacionesList));
-  } catch (e) { console.warn('LocalStorage error', e); }
+    const jsonpData = await new Promise((resolve, reject) => {
+      const cbName = 'cotiz_cb_' + Date.now() + '_' + Math.floor(Math.random() * 1000000);
+      const timer = setTimeout(() => { cleanup(); reject(new Error('Cotizaciones JSONP timeout')); }, 45000);
+      function cleanup() {
+        clearTimeout(timer);
+        delete window[cbName];
+        const s = document.getElementById(cbName);
+        if (s) s.remove();
+      }
+      window[cbName] = function(json) {
+        cleanup();
+        try {
+          if (!json || !json.table) return resolve(null);
+          const cols = (json.table.cols || []).map(c => c ? (c.label || c.id || '') : '');
+          const rowsData = (json.table.rows || []).map((row, i) => {
+            const obj = {};
+            if (row && row.c) {
+              cols.forEach((colName, j) => {
+                if (colName && row.c[j] !== undefined && row.c[j] !== null) {
+                  let val = row.c[j].v !== null && row.c[j].v !== undefined ? row.c[j].v : '';
+                  if (typeof val === 'string' && val.startsWith('Date(')) {
+                    const match = val.match(/Date\((\d+),(\d+),(\d+)(?:,(\d+),(\d+),(\d+))?\)/);
+                    if (match) val = new Date(Number(match[1]), Number(match[2]), Number(match[3]));
+                  } else if (row.c[j].f !== undefined && (val === '' || val === null)) {
+                    val = row.c[j].f;
+                  }
+                  obj[colName] = val;
+                }
+              });
+            }
+            obj['_row'] = i + 2;
+            return normalizeCotizacionRow(obj);
+          });
+          const filtered = rowsData.filter(n => n && (n.COTIZACION || n.CLIENTE || n.TOTAL || n.SKU || n.PRODUCTO));
+          resolve(filtered.length > 0 ? filtered : null);
+        } catch (err) { reject(err); }
+      };
+      const script = document.createElement('script');
+      script.id = cbName;
+      script.src = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=responseHandler:${cbName}&gid=${gid}&headers=2&_=${Date.now()}`;
+      script.onerror = () => { cleanup(); reject(new Error('Cotizaciones JSONP script error')); };
+      document.head.appendChild(script);
+    });
+    if (jsonpData && jsonpData.length > 0) return jsonpData;
+  } catch (e) {
+    console.warn('Cotizaciones JSONP error:', e);
+  }
+
+  // Fallback CSV Directo
+  try {
+    const csvUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=${gid}&_=${Date.now()}`;
+    const res = await fetch(csvUrl, { signal: AbortSignal.timeout(60000) });
+    if (!res.ok) return null;
+    const csvText = await res.text();
+    const rawRows = parseCSV(csvText);
+    if (rawRows.length < 3) return null;
+    const headers = rawRows[1].map(h => String(h || '').trim());
+
+    const data = [];
+    for (let i = 2; i < rawRows.length; i++) {
+      const r = rawRows[i];
+      if (!r || r.length === 0) continue;
+      const obj = {};
+      headers.forEach((h, j) => {
+        if (h && j < r.length) obj[h] = r[j];
+      });
+      obj['_row'] = i + 1;
+      const norm = normalizeCotizacionRow(obj);
+      if (norm && (norm.COTIZACION || norm.CLIENTE || norm.TOTAL || norm.SKU || norm.PRODUCTO)) {
+        data.push(norm);
+      }
+    }
+    return data.length > 0 ? data : null;
+  } catch (err) {
+    console.warn('Cotizaciones CSV error:', err);
+  }
+
+  return null;
 }
 
-function renderCotizaciones() {
-  const tbody = document.getElementById('cotizTableBody');
-  const searchVal = (document.getElementById('cotizSearchBox')?.value || '').trim().toLowerCase();
+function normalizeCotizacionRow(obj) {
+  if (!obj) return null;
 
-  let filteredCotiz = cotizacionesList.filter(c => {
-    if (currentCotizFilterStatus !== 'all' && c.estado !== currentCotizFilterStatus) return false;
-    if (searchVal) {
-      const haystack = `${c.folio} ${c.cliente} ${c.rut} ${c.email}`.toLowerCase();
-      if (!haystack.includes(searchVal)) return false;
+  const tipo = String(obj['Tipo Solicitud'] || '').trim();
+  const rut = String(obj['Rut'] || '').trim();
+  const cliente = String(obj['Cliente'] || '').trim();
+  const cotizacion = String(obj['(#) Cot'] || obj['Cotizacion'] || '').trim();
+  const sku = String(obj['SKU'] || obj['Codigo'] || '').trim();
+  const producto = String(obj['Producto'] || obj['Descripcion'] || '').trim();
+  const cantidad = parseNumberClean(obj['Cantidad'] || 0);
+  const precio = parseNumberClean(obj['Precio'] || 0);
+  const total = parseNumberClean(obj['Total'] || (cantidad * precio));
+  const fechaSolRaw = obj['Fecha Solicitud'] || obj['FECHA'] || '';
+  const responsable = String(obj['Responsable'] || obj['Vendedor'] || '').trim();
+  const estado = String(obj['Estado'] || 'Pendiente').trim();
+  const nv = String(obj['NV'] || '').trim();
+  const fa = String(obj['FA'] || '').trim();
+  const estadoNV = String(obj['Estado NV'] || '').trim();
+  const dias = parseNumberClean(obj['Días'] || obj['Dias'] || 0);
+  const fechaFactRaw = obj['Fecha Factura'] || '';
+  const mesT = String(obj['Mes T'] || obj['MES'] || '').trim();
+  const ano = String(obj['Año'] || obj['AÑO'] || '').trim();
+
+  const dSol = parseRowDate(fechaSolRaw);
+  const dFact = parseRowDate(fechaFactRaw);
+
+  return {
+    TIPO: tipo,
+    RUT: rut,
+    CLIENTE: cliente,
+    COTIZACION: cotizacion,
+    SKU: sku,
+    PRODUCTO: producto,
+    CANTIDAD: cantidad,
+    PRECIO: precio,
+    TOTAL: total,
+    FECHA_SOLICITUD: dSol || fechaSolRaw,
+    RESPONSABLE: responsable,
+    ESTADO: estado,
+    NV: nv,
+    FA: fa,
+    ESTADO_NV: estadoNV,
+    DIAS: dias,
+    FECHA_FACTURA: dFact || fechaFactRaw,
+    MES_T: mesT,
+    ANO: ano,
+    _timeSol: dSol ? dSol.getTime() : 0,
+    _timeFact: dFact ? dFact.getTime() : 0,
+    _searchHaystack: `${cotizacion} ${cliente} ${rut} ${sku} ${producto} ${responsable} ${estado} ${nv} ${fa}`.toLowerCase()
+  };
+}
+
+async function renderCotizacionesView() {
+  if (!cotizacionesRows || cotizacionesRows.length === 0) {
+    const loaded = await fetchCotizacionesData();
+    if (loaded && loaded.length > 0) {
+      cotizacionesRows = loaded;
     }
+  }
+
+  populateCotizFilterOptions();
+  applyCotizacionesFilters();
+}
+
+function populateCotizFilterOptions() {
+  const source = cotizacionesRows || [];
+  
+  const getUniques = (fn) => [...new Set(source.map(fn).filter(Boolean))].sort((a, b) => String(a).localeCompare(String(b)));
+
+  const respSel = document.getElementById('fltCotizResponsable');
+  if (respSel && respSel.options.length <= 1) {
+    const uniques = getUniques(r => r.RESPONSABLE);
+    respSel.innerHTML = `<option value="">Todos los Responsables</option>` + uniques.map(u => `<option value="${u}">${u}</option>`).join('');
+  }
+
+  const estSel = document.getElementById('fltCotizEstado');
+  if (estSel && estSel.options.length <= 1) {
+    const uniques = getUniques(r => r.ESTADO);
+    estSel.innerHTML = `<option value="">Todos los Estados</option>` + uniques.map(u => `<option value="${u}">${u}</option>`).join('');
+  }
+
+  const tipoSel = document.getElementById('fltCotizTipo');
+  if (tipoSel && tipoSel.options.length <= 1) {
+    const uniques = getUniques(r => r.TIPO);
+    tipoSel.innerHTML = `<option value="">Todos los Tipos</option>` + uniques.map(u => `<option value="${u}">${u}</option>`).join('');
+  }
+}
+
+function applyCotizacionesFilters() {
+  const dDesde = document.getElementById('fltCotizDesde')?.value ? parseRowDate(document.getElementById('fltCotizDesde').value) : null;
+  const tDesde = dDesde ? dDesde.setHours(0, 0, 0, 0) : 0;
+
+  const dHasta = document.getElementById('fltCotizHasta')?.value ? parseRowDate(document.getElementById('fltCotizHasta').value) : null;
+  const tHasta = dHasta ? dHasta.setHours(23, 59, 59, 999) : 0;
+
+  const selResp = document.getElementById('fltCotizResponsable')?.value.toLowerCase() || '';
+  const selEst = document.getElementById('fltCotizEstado')?.value.toLowerCase() || '';
+  const selTipo = document.getElementById('fltCotizTipo')?.value.toLowerCase() || '';
+  const searchVal = document.getElementById('cotizSearchBox')?.value.trim().toLowerCase() || '';
+
+  cotizacionesFiltered = (cotizacionesRows || []).filter(r => {
+    if (!r) return false;
+    if (tDesde > 0 && (r._timeSol < tDesde || !r._timeSol)) return false;
+    if (tHasta > 0 && (r._timeSol > tHasta || !r._timeSol)) return false;
+    if (selResp && r.RESPONSABLE.toLowerCase() !== selResp) return false;
+    if (selEst && r.ESTADO.toLowerCase() !== selEst) return false;
+    if (selTipo && r.TIPO.toLowerCase() !== selTipo) return false;
+    if (searchVal && !r._searchHaystack.includes(searchVal)) return false;
     return true;
   });
 
-  const totalCotizado = cotizacionesList.reduce((sum, c) => sum + (c.total || 0), 0);
-  const aprobadas = cotizacionesList.filter(c => c.estado === 'Aprobada');
-  const pendientes = cotizacionesList.filter(c => c.estado === 'Pendiente');
-  
-  const totalAprobado = aprobadas.reduce((sum, c) => sum + (c.total || 0), 0);
-  const totalPendiente = pendientes.reduce((sum, c) => sum + (c.total || 0), 0);
-  const conversionRate = cotizacionesList.length > 0 ? (aprobadas.length / cotizacionesList.length) * 100 : 0;
+  renderCotizacionesKPIs();
+  renderCotizacionesCharts();
+  renderCotizacionesTable();
+}
+
+function renderCotizacionesKPIs() {
+  const source = cotizacionesFiltered;
+
+  const totalCotizado = source.reduce((sum, r) => sum + (r.TOTAL || 0), 0);
+  const totalCount = source.length;
+
+  const aprobadas = source.filter(r => {
+    const est = (r.ESTADO || '').toLowerCase();
+    return est.includes('aceptada') || est.includes('aprobada') || est.includes('facturada') || Boolean(r.NV) || Boolean(r.FA);
+  });
+  const totalAprobado = aprobadas.reduce((sum, r) => sum + (r.TOTAL || 0), 0);
+
+  const pendientes = source.filter(r => {
+    const est = (r.ESTADO || '').toLowerCase();
+    return est.includes('enviada') || est.includes('preparación') || est.includes('pendiente');
+  });
+  const totalPendiente = pendientes.reduce((sum, r) => sum + (r.TOTAL || 0), 0);
+
+  const conversionRate = totalCount > 0 ? (aprobadas.length / totalCount) * 100 : 0;
+  const validDays = source.map(r => r.DIAS).filter(d => d > 0);
+  const avgDays = validDays.length > 0 ? validDays.reduce((a, b) => a + b, 0) / validDays.length : 0;
 
   const kpiTot = document.getElementById('kpiCotizTotal');
   const kpiCount = document.getElementById('kpiCotizCount');
@@ -5307,294 +5476,264 @@ function renderCotizaciones() {
   const kpiPend = document.getElementById('kpiCotizPending');
   const kpiPendCount = document.getElementById('kpiCotizPendingCount');
   const kpiRate = document.getElementById('kpiCotizRate');
+  const kpiAvgDays = document.getElementById('kpiCotizAvgDays');
 
   if (kpiTot) kpiTot.textContent = `$${formatNum(totalCotizado)}`;
-  if (kpiCount) kpiCount.textContent = `${cotizacionesList.length} Cotizaciones en total`;
+  if (kpiCount) kpiCount.textContent = `${formatNum(totalCount)} Solicitudes registradas`;
   if (kpiAppr) kpiAppr.textContent = `$${formatNum(totalAprobado)}`;
-  if (kpiApprCount) kpiApprCount.textContent = `${aprobadas.length} Aprobadas`;
+  if (kpiApprCount) kpiApprCount.textContent = `${formatNum(aprobadas.length)} Convertidas a Venta`;
   if (kpiPend) kpiPend.textContent = `$${formatNum(totalPendiente)}`;
-  if (kpiPendCount) kpiPendCount.textContent = `${pendientes.length} Pendientes`;
+  if (kpiPendCount) kpiPendCount.textContent = `${formatNum(pendientes.length)} En negociación`;
   if (kpiRate) kpiRate.textContent = `${conversionRate.toFixed(1)}%`;
+  if (kpiAvgDays) kpiAvgDays.textContent = `Promedio: ${Math.round(avgDays)} días cierre`;
+}
 
+function renderCotizacionesCharts() {
+  if (typeof Chart === 'undefined') return;
+
+  const source = cotizacionesFiltered;
+
+  // 1. Evolución Mensual
+  const monthMap = new Map();
+  source.forEach(r => {
+    const key = r.MES_T ? `${r.MES_T} ${r.ANO || ''}`.trim() : 'Sin Fecha';
+    monthMap.set(key, (monthMap.get(key) || 0) + (r.TOTAL || 0));
+  });
+
+  const monthLabels = Array.from(monthMap.keys()).slice(-12);
+  const monthValues = monthLabels.map(k => monthMap.get(k));
+
+  const ctxEvol = document.getElementById('chartCotizEvolucion');
+  if (ctxEvol) {
+    if (chartCotizEvolInstance) chartCotizEvolInstance.destroy();
+    chartCotizEvolInstance = new Chart(ctxEvol, {
+      type: 'bar',
+      data: {
+        labels: monthLabels,
+        datasets: [{
+          label: 'Monto Cotizado ($)',
+          data: monthValues,
+          backgroundColor: 'rgba(59, 130, 246, 0.7)',
+          borderColor: '#3b82f6',
+          borderWidth: 1,
+          borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { ticks: { color: '#94a3b8', callback: v => '$' + (v / 1000000).toFixed(1) + 'M' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+          x: { ticks: { color: '#94a3b8' }, grid: { display: false } }
+        }
+      }
+    });
+  }
+
+  // 2. Distribución por Estado
+  const estMap = new Map();
+  source.forEach(r => {
+    const key = r.ESTADO || 'Sin Estado';
+    estMap.set(key, (estMap.get(key) || 0) + 1);
+  });
+
+  const estLabels = Array.from(estMap.keys());
+  const estValues = estLabels.map(k => estMap.get(k));
+
+  const ctxEst = document.getElementById('chartCotizEstado');
+  if (ctxEst) {
+    if (chartCotizEstadoInstance) chartCotizEstadoInstance.destroy();
+    chartCotizEstadoInstance = new Chart(ctxEst, {
+      type: 'doughnut',
+      data: {
+        labels: estLabels,
+        datasets: [{
+          data: estValues,
+          backgroundColor: ['#10b981', '#3b82f6', '#fbbf24', '#f87171', '#8b5cf6', '#ec4899'],
+          borderWidth: 2,
+          borderColor: '#0f172a'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'right', labels: { color: '#cbd5e1', font: { size: 11 } } } }
+      }
+    });
+  }
+
+  // 3. Top Responsables
+  const respMap = new Map();
+  source.forEach(r => {
+    const key = r.RESPONSABLE || 'General';
+    respMap.set(key, (respMap.get(key) || 0) + (r.TOTAL || 0));
+  });
+
+  const topResp = Array.from(respMap.entries()).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  const respLabels = topResp.map(t => t[0]);
+  const respValues = topResp.map(t => t[1]);
+
+  const ctxResp = document.getElementById('chartCotizResponsables');
+  if (ctxResp) {
+    if (chartCotizRespInstance) chartCotizRespInstance.destroy();
+    chartCotizRespInstance = new Chart(ctxResp, {
+      type: 'bar',
+      data: {
+        labels: respLabels,
+        datasets: [{
+          label: 'Total Cotizado ($)',
+          data: respValues,
+          backgroundColor: 'rgba(16, 185, 129, 0.7)',
+          borderColor: '#10b981',
+          borderWidth: 1,
+          borderRadius: 6
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: '#94a3b8', callback: v => '$' + (v / 1000000).toFixed(1) + 'M' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+          y: { ticks: { color: '#94a3b8' }, grid: { display: false } }
+        }
+      }
+    });
+  }
+
+  // 4. Top 10 Productos
+  const prodMap = new Map();
+  source.forEach(r => {
+    if (!r.SKU && !r.PRODUCTO) return;
+    const key = r.SKU ? r.SKU : r.PRODUCTO;
+    if (!prodMap.has(key)) {
+      prodMap.set(key, { sku: r.SKU, producto: r.PRODUCTO || r.SKU, total: 0, cant: 0 });
+    }
+    const item = prodMap.get(key);
+    item.total += (r.TOTAL || 0);
+    item.cant += (r.CANTIDAD || 0);
+  });
+
+  const topProds = Array.from(prodMap.values()).sort((a, b) => b.total - a.total).slice(0, 10);
+  const maxProdTotal = topProds.length > 0 ? topProds[0].total : 1;
+  const prodListEl = document.getElementById('cotizTopProductsList');
+
+  if (prodListEl) {
+    if (topProds.length === 0) {
+      prodListEl.innerHTML = `<p style="text-align:center; padding: 2rem; color: #94a3b8;">Sin registros de productos</p>`;
+    } else {
+      prodListEl.innerHTML = topProds.map((p, idx) => {
+        const pct = maxProdTotal > 0 ? (p.total / maxProdTotal) * 100 : 0;
+        const rankClass = idx === 0 ? 'rank-gold' : idx === 1 ? 'rank-silver' : idx === 2 ? 'rank-bronze' : '';
+        return `
+          <div class="compras-breakdown-item">
+            <div class="compras-breakdown-header">
+              <div class="compras-item-left">
+                <span class="rank-badge ${rankClass}">#${idx + 1}</span>
+                <span class="sku-badge-pill">${p.sku || 'SKU'}</span>
+                <span class="product-name-title" title="${p.producto}">${p.producto}</span>
+              </div>
+              <div class="compras-item-right">
+                <span class="product-cost-val">$${formatNum(p.total)}</span>
+              </div>
+            </div>
+            <div class="compras-breakdown-bar">
+              <div class="compras-breakdown-fill" style="width: ${Math.max(pct, 3)}%; background: linear-gradient(90deg, #10b981, #059669);"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+}
+
+function renderCotizacionesTable() {
+  const tbody = document.getElementById('cotizTableBody');
+  const pageInfo = document.getElementById('cotizPageInfo');
   if (!tbody) return;
 
-  if (filteredCotiz.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 2rem; color: #94a3b8;">No hay cotizaciones registradas con el filtro seleccionado.</td></tr>`;
+  const totalFiltered = cotizacionesFiltered.length;
+  const totalPages = Math.max(1, Math.ceil(totalFiltered / COTIZ_PAGE_SIZE));
+  if (cotizCurrentPage > totalPages) cotizCurrentPage = totalPages;
+
+  const startIdx = (cotizCurrentPage - 1) * COTIZ_PAGE_SIZE;
+  const endIdx = startIdx + COTIZ_PAGE_SIZE;
+  const pageRows = cotizacionesFiltered.slice(startIdx, endIdx);
+
+  if (pageInfo) pageInfo.textContent = `Página ${cotizCurrentPage} de ${totalPages} (${formatNum(totalFiltered)} cotizaciones)`;
+
+  if (pageRows.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="12" style="text-align: center; padding: 2rem; color: #94a3b8;">No se encontraron cotizaciones registradas.</td></tr>`;
     return;
   }
 
-  tbody.innerHTML = filteredCotiz.map(c => {
-    let statusBadge = `<span class="status-badge-pending">🟡 Pendiente</span>`;
-    if (c.estado === 'Aprobada') statusBadge = `<span class="status-badge-approved">🟢 Aprobada</span>`;
-    if (c.estado === 'Vencida' || c.estado === 'Rechazada') statusBadge = `<span class="status-badge-rejected">🔴 ${c.estado}</span>`;
+  tbody.innerHTML = pageRows.map(r => {
+    let statusBadge = `<span class="status-badge-pending">${r.ESTADO || 'Pendiente'}</span>`;
+    const estLower = (r.ESTADO || '').toLowerCase();
+    if (estLower.includes('aceptada') || estLower.includes('aprobada') || estLower.includes('facturada')) {
+      statusBadge = `<span class="status-badge-approved">🟢 ${r.ESTADO}</span>`;
+    } else if (estLower.includes('perdida') || estLower.includes('rechazada')) {
+      statusBadge = `<span class="status-badge-rejected">🔴 ${r.ESTADO}</span>`;
+    } else if (estLower.includes('enviada') || estLower.includes('preparación')) {
+      statusBadge = `<span class="status-badge-pending">🟡 ${r.ESTADO}</span>`;
+    }
 
-    const itemsCount = (c.items || []).reduce((sum, item) => sum + (Number(item.cant) || 0), 0);
+    const fechaStr = r.FECHA_SOLICITUD instanceof Date ? r.FECHA_SOLICITUD.toLocaleDateString('es-CL') : (r.FECHA_SOLICITUD || '-');
+    const nvFaStr = [r.NV ? `NV: ${r.NV}` : '', r.FA ? `FA: ${r.FA}` : ''].filter(Boolean).join(' / ') || '-';
 
     return `
       <tr>
-        <td><strong>${c.folio}</strong></td>
-        <td>${c.fecha}</td>
-        <td>${c.vencimiento || '-'}</td>
-        <td><strong>${c.cliente}</strong></td>
-        <td>${c.rut || '-'}</td>
-        <td><span class="pct-badge-pill">${itemsCount} items</span></td>
-        <td>$${formatNum(c.neto)}</td>
-        <td><strong style="color: #34d399;">$${formatNum(c.total)}</strong></td>
+        <td><span class="pct-badge-pill">${r.TIPO || 'Estándar'}</span></td>
+        <td><strong>#${r.COTIZACION || '-'}</strong></td>
+        <td>${fechaStr}</td>
+        <td><strong>${r.CLIENTE || '-'}</strong></td>
+        <td>${r.RUT || '-'}</td>
+        <td><span class="sku-badge-pill">${r.SKU || '-'}</span></td>
+        <td><span style="font-size:0.85rem;" title="${r.PRODUCTO}">${(r.PRODUCTO || '-').slice(0, 35)}</span></td>
+        <td>${formatNum(r.CANTIDAD)}</td>
+        <td><strong style="color: #34d399;">$${formatNum(r.TOTAL)}</strong></td>
+        <td>${r.RESPONSABLE || '-'}</td>
+        <td><span style="font-size:0.8rem; color:#60a5fa;">${nvFaStr}</span></td>
         <td>${statusBadge}</td>
-        <td style="text-align: right;">
-          <button type="button" class="btn-secondary btn-sm" onclick="exportCotizacionPDF('${c.folio}')" title="Ver / Exportar PDF">📄 PDF</button>
-          <button type="button" class="btn-secondary btn-sm" onclick="toggleCotizacionStatus('${c.folio}')" title="Cambiar Estado">🔄</button>
-          <button type="button" class="btn-secondary btn-sm" onclick="deleteCotizacion('${c.folio}')" style="color: #f87171;" title="Eliminar">🗑️</button>
-        </td>
       </tr>
     `;
   }).join('');
 }
 
-function openCotizacionModal(folioToEdit = null) {
-  const modal = document.getElementById('cotizacionModalBackdrop');
-  if (!modal) return;
-
-  const form = document.getElementById('cotizacionModalForm');
-  if (form) form.reset();
-
-  const body = document.getElementById('cotizItemsBody');
-  if (body) body.innerHTML = '';
-
-  const nextFolio = `COT-2026-00${cotizacionesList.length + 1}`;
-  const todayStr = new Date().toISOString().split('T')[0];
-  const next2Weeks = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-
-  document.getElementById('cFolio').value = nextFolio;
-  document.getElementById('cFecha').value = todayStr;
-  document.getElementById('cVencimiento').value = next2Weeks;
-  document.getElementById('cEstado').value = 'Pendiente';
-
-  addCotizItemRow();
-
-  modal.classList.add('active');
-  if (typeof AudioSynth !== 'undefined' && AudioSynth.enabled) AudioSynth.play('click');
-}
-
-function closeCotizacionModal() {
-  const modal = document.getElementById('cotizacionModalBackdrop');
-  if (modal) modal.classList.remove('active');
-}
-
-function addCotizItemRow(itemData = {}) {
-  const body = document.getElementById('cotizItemsBody');
-  if (!body) return;
-
-  const tr = document.createElement('tr');
-  tr.innerHTML = `
-    <td><input type="text" class="filter-input c-item-code" placeholder="SKU-01" value="${itemData.codigo || ''}" required style="width:100%;" /></td>
-    <td><input type="text" class="filter-input c-item-desc" placeholder="Descripción del producto o servicio" value="${itemData.descripcion || ''}" required style="width:100%;" /></td>
-    <td><input type="number" class="filter-input c-item-cant" value="${itemData.cant || 1}" min="1" step="any" oninput="calculateCotizTotals()" style="width:100%;" /></td>
-    <td><input type="number" class="filter-input c-item-preuni" value="${itemData.preuni || 0}" step="any" oninput="calculateCotizTotals()" style="width:100%;" /></td>
-    <td><strong class="c-item-subtotal">$0</strong></td>
-    <td style="text-align:center;"><button type="button" class="btn-secondary btn-sm" onclick="this.closest('tr').remove(); calculateCotizTotals();" style="color:#f87171;">✕</button></td>
-  `;
-  body.appendChild(tr);
-  calculateCotizTotals();
-}
-
-function calculateCotizTotals() {
-  const rows = document.querySelectorAll('#cotizItemsBody tr');
-  let netoTotal = 0;
-
-  rows.forEach(tr => {
-    const cant = Number(tr.querySelector('.c-item-cant')?.value || 0);
-    const preuni = Number(tr.querySelector('.c-item-preuni')?.value || 0);
-    const subtotal = cant * preuni;
-    netoTotal += subtotal;
-
-    const subEl = tr.querySelector('.c-item-subtotal');
-    if (subEl) subEl.textContent = `$${formatNum(subtotal)}`;
-  });
-
-  const iva = Math.round(netoTotal * 0.19);
-  const total = netoTotal + iva;
-
-  const subNetoEl = document.getElementById('cotizSubtotalNeto');
-  const ivaEl = document.getElementById('cotizIva');
-  const totalEl = document.getElementById('cotizTotalFinal');
-
-  if (subNetoEl) subNetoEl.textContent = `$${formatNum(netoTotal)}`;
-  if (ivaEl) ivaEl.textContent = `$${formatNum(iva)}`;
-  if (totalEl) totalEl.textContent = `$${formatNum(total)}`;
-
-  return { netoTotal, iva, total };
-}
-
-function saveCotizacion(e) {
-  if (e) e.preventDefault();
-
-  const folio = document.getElementById('cFolio').value.trim();
-  const fecha = document.getElementById('cFecha').value;
-  const vencimiento = document.getElementById('cVencimiento').value;
-  const cliente = document.getElementById('cCliente').value.trim();
-  const rut = document.getElementById('cRut').value.trim();
-  const email = document.getElementById('cEmail').value.trim();
-  const estado = document.getElementById('cEstado').value;
-
-  const itemRows = document.querySelectorAll('#cotizItemsBody tr');
-  const items = [];
-
-  itemRows.forEach(tr => {
-    const codigo = tr.querySelector('.c-item-code')?.value.trim() || '';
-    const descripcion = tr.querySelector('.c-item-desc')?.value.trim() || '';
-    const cant = Number(tr.querySelector('.c-item-cant')?.value || 0);
-    const preuni = Number(tr.querySelector('.c-item-preuni')?.value || 0);
-    const subtotal = cant * preuni;
-    if (codigo || descripcion) {
-      items.push({ codigo, descripcion, cant, preuni, subtotal });
-    }
-  });
-
-  const { netoTotal, iva, total } = calculateCotizTotals();
-
-  const newCotiz = {
-    folio, fecha, vencimiento, cliente, rut, email, estado,
-    items, neto: netoTotal, iva, total
-  };
-
-  const existingIdx = cotizacionesList.findIndex(c => c.folio === folio);
-  if (existingIdx >= 0) {
-    cotizacionesList[existingIdx] = newCotiz;
-  } else {
-    cotizacionesList.unshift(newCotiz);
-  }
-
-  saveCotizacionesToStorage();
-  renderCotizaciones();
-  closeCotizacionModal();
-
-  if (typeof AudioSynth !== 'undefined' && AudioSynth.enabled) AudioSynth.play('success');
-  if (typeof showToast !== 'undefined') showToast('✅ Cotización guardada con éxito');
-}
-
-function toggleCotizacionStatus(folio) {
-  const cotiz = cotizacionesList.find(c => c.folio === folio);
-  if (!cotiz) return;
-
-  if (cotiz.estado === 'Pendiente') cotiz.estado = 'Aprobada';
-  else if (cotiz.estado === 'Aprobada') cotiz.estado = 'Vencida';
-  else cotiz.estado = 'Pendiente';
-
-  saveCotizacionesToStorage();
-  renderCotizaciones();
-  if (typeof showToast !== 'undefined') showToast(`Estado de ${folio} actualizado a ${cotiz.estado}`);
-}
-
-function deleteCotizacion(folio) {
-  if (!confirm(`¿Eliminar la cotización ${folio}?`)) return;
-  cotizacionesList = cotizacionesList.filter(c => c.folio !== folio);
-  saveCotizacionesToStorage();
-  renderCotizaciones();
-  if (typeof showToast !== 'undefined') showToast(`Cotización ${folio} eliminada`);
-}
-
-function exportCotizacionPDF(folio) {
-  const cotiz = cotizacionesList.find(c => c.folio === folio);
-  if (!cotiz) return;
-
-  const printWindow = window.open('', '_blank');
-  const itemsHtml = cotiz.items.map(item => `
-    <tr>
-      <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">${item.codigo}</td>
-      <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">${item.descripcion}</td>
-      <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; text-align: center;">${item.cant}</td>
-      <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; text-align: right;">$${formatNum(item.preuni)}</td>
-      <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; text-align: right;">$${formatNum(item.subtotal)}</td>
-    </tr>
-  `).join('');
-
-  printWindow.document.write(`
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>Cotización ${cotiz.folio} - Glomax S.A.</title>
-      <style>
-        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1e293b; padding: 40px; }
-        .header { display: flex; justify-content: space-between; border-bottom: 2px solid #2563eb; padding-bottom: 20px; margin-bottom: 30px; }
-        .company { font-size: 24px; font-weight: bold; color: #2563eb; }
-        .details { display: flex; justify-content: space-between; margin-bottom: 30px; }
-        .box { background: #f8fafc; padding: 15px; border-radius: 8px; width: 45%; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-        th { background: #0f172a; color: white; padding: 12px; text-align: left; }
-        .totals { float: right; width: 300px; }
-        .totals-row { display: flex; justify-content: space-between; padding: 6px 0; }
-        .total-final { font-size: 18px; font-weight: bold; color: #059669; border-top: 2px solid #059669; padding-top: 8px; }
-      </style>
-    </head>
-    <body>
-      <div class="header">
-        <div>
-          <div class="company">GLOMAX S.A.</div>
-          <div>BI Enterprise Suite · Cotizaciones</div>
-          <div>contacto@glomax.cl | +56 2 2345 6789</div>
-        </div>
-        <div style="text-align: right;">
-          <h2 style="margin:0; color:#2563eb;">COTIZACIÓN</h2>
-          <div style="font-size: 18px; font-weight: bold;">${cotiz.folio}</div>
-          <div>Fecha: ${cotiz.fecha}</div>
-          <div>Vencimiento: ${cotiz.vencimiento || '15 Días'}</div>
-        </div>
-      </div>
-
-      <div class="details">
-        <div class="box">
-          <strong>CLIENTE:</strong> ${cotiz.cliente}<br>
-          <strong>RUT:</strong> ${cotiz.rut || 'N/A'}<br>
-          <strong>EMAIL:</strong> ${cotiz.email || 'N/A'}
-        </div>
-        <div class="box">
-          <strong>ESTADO:</strong> ${cotiz.estado}<br>
-          <strong>CONDICIONES:</strong> Pago a 30 días / Transferencia<br>
-          <strong>MONEDA:</strong> CLP ($)
-        </div>
-      </div>
-
-      <table>
-        <thead>
-          <tr>
-            <th>CÓDIGO</th>
-            <th>DESCRIPCIÓN</th>
-            <th style="text-align: center;">CANT</th>
-            <th style="text-align: right;">PRECIO UNIT</th>
-            <th style="text-align: right;">SUBTOTAL</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${itemsHtml}
-        </tbody>
-      </table>
-
-      <div class="totals">
-        <div class="totals-row"><span>Subtotal Neto:</span> <strong>$${formatNum(cotiz.neto)}</strong></div>
-        <div class="totals-row"><span>IVA (19%):</span> <strong>$${formatNum(cotiz.iva)}</strong></div>
-        <div class="totals-row total-final"><span>TOTAL:</span> <span>$${formatNum(cotiz.total)}</span></div>
-      </div>
-      <script>window.onload = function() { window.print(); };</script>
-    </body>
-    </html>
-  `);
-  printWindow.document.close();
-}
-
 function initCotizacionesListeners() {
-  const statusFilters = document.querySelectorAll('#cotizStatusFilters button[data-cotiz-status]');
-  statusFilters.forEach(btn => {
-    btn.addEventListener('click', () => {
-      statusFilters.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      currentCotizFilterStatus = btn.dataset.cotizStatus;
-      renderCotizaciones();
+  ['fltCotizDesde', 'fltCotizHasta', 'fltCotizResponsable', 'fltCotizEstado', 'fltCotizTipo'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('change', () => {
+      cotizCurrentPage = 1;
+      applyCotizacionesFilters();
     });
   });
 
   const searchBox = document.getElementById('cotizSearchBox');
   if (searchBox) {
-    searchBox.addEventListener('input', () => renderCotizaciones());
+    searchBox.addEventListener('input', () => {
+      cotizCurrentPage = 1;
+      applyCotizacionesFilters();
+    });
+  }
+
+  const btnPrev = document.getElementById('btnCotizPrevPage');
+  if (btnPrev) {
+    btnPrev.addEventListener('click', () => {
+      if (cotizCurrentPage > 1) {
+        cotizCurrentPage--;
+        renderCotizacionesTable();
+      }
+    });
+  }
+
+  const btnNext = document.getElementById('btnCotizNextPage');
+  if (btnNext) {
+    btnNext.addEventListener('click', () => {
+      cotizCurrentPage++;
+      renderCotizacionesTable();
+    });
   }
 }
