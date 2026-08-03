@@ -5282,22 +5282,22 @@ async function fetchCotizacionesData() {
           const cols = (json.table.cols || []).map(c => c ? (c.label || c.id || '') : '');
           const rowsData = (json.table.rows || []).map((row, i) => {
             const obj = {};
+            const rawArray = [];
             if (row && row.c) {
               cols.forEach((colName, j) => {
-                if (colName && row.c[j] !== undefined && row.c[j] !== null) {
-                  let val = row.c[j].v !== null && row.c[j].v !== undefined ? row.c[j].v : '';
-                  if (typeof val === 'string' && val.startsWith('Date(')) {
-                    const match = val.match(/Date\((\d+),(\d+),(\d+)(?:,(\d+),(\d+),(\d+))?\)/);
-                    if (match) val = new Date(Number(match[1]), Number(match[2]), Number(match[3]));
-                  } else if (row.c[j].f !== undefined && (val === '' || val === null)) {
-                    val = row.c[j].f;
-                  }
-                  obj[colName] = val;
+                let val = row.c[j] && row.c[j].v !== null && row.c[j].v !== undefined ? row.c[j].v : '';
+                if (typeof val === 'string' && val.startsWith('Date(')) {
+                  const match = val.match(/Date\((\d+),(\d+),(\d+)(?:,(\d+),(\d+),(\d+))?\)/);
+                  if (match) val = new Date(Number(match[1]), Number(match[2]), Number(match[3]));
+                } else if (row.c[j] && row.c[j].f !== undefined && (val === '' || val === null)) {
+                  val = row.c[j].f;
                 }
+                if (colName) obj[colName] = val;
+                rawArray[j] = val;
               });
             }
             obj['_row'] = i + 2;
-            return normalizeCotizacionRow(obj);
+            return normalizeCotizacionRow(obj, rawArray);
           });
           const filtered = rowsData.filter(n => n && (n.COTIZACION || n.CLIENTE || n.TOTAL || n.SKU || n.PRODUCTO));
           resolve(filtered.length > 0 ? filtered : null);
@@ -5333,7 +5333,7 @@ async function fetchCotizacionesData() {
         if (h && j < r.length) obj[h] = r[j];
       });
       obj['_row'] = i + 1;
-      const norm = normalizeCotizacionRow(obj);
+      const norm = normalizeCotizacionRow(obj, r);
       if (norm && (norm.COTIZACION || norm.CLIENTE || norm.TOTAL || norm.SKU || norm.PRODUCTO)) {
         data.push(norm);
       }
@@ -5346,28 +5346,41 @@ async function fetchCotizacionesData() {
   return null;
 }
 
-function normalizeCotizacionRow(obj) {
+function normalizeCotizacionRow(obj, rawArray = null) {
   if (!obj) return null;
 
-  const tipo = String(obj['Tipo Solicitud'] || '').trim();
-  const rut = String(obj['Rut'] || '').trim();
-  const cliente = String(obj['Cliente'] || '').trim();
-  const cotizacion = String(obj['(#) Cot'] || obj['Cotizacion'] || '').trim();
-  const sku = String(obj['SKU'] || obj['Codigo'] || '').trim();
-  const producto = String(obj['Producto'] || obj['Descripcion'] || '').trim();
-  const cantidad = parseNumberClean(obj['Cantidad'] || 0);
-  const precio = parseNumberClean(obj['Precio'] || 0);
-  const total = parseNumberClean(obj['Total'] || (cantidad * precio));
-  const fechaSolRaw = obj['Fecha Solicitud'] || obj['FECHA'] || '';
-  const responsable = String(obj['Responsable'] || obj['Vendedor'] || '').trim();
-  const estado = String(obj['Estado'] || 'Pendiente').trim();
-  const nv = String(obj['NV'] || '').trim();
-  const fa = String(obj['FA'] || '').trim();
-  const estadoNV = String(obj['Estado NV'] || '').trim();
-  const dias = parseNumberClean(obj['Días'] || obj['Dias'] || 0);
-  const fechaFactRaw = obj['Fecha Factura'] || '';
-  const mesT = String(obj['Mes T'] || obj['MES'] || '').trim();
-  const ano = String(obj['Año'] || obj['AÑO'] || '').trim();
+  const tipo = String((rawArray && rawArray[1]) || obj['Tipo Solicitud'] || '').trim();
+  const rut = String((rawArray && rawArray[2]) || obj['Rut'] || '').trim();
+  const cliente = String((rawArray && rawArray[3]) || obj['Cliente'] || '').trim();
+  const codVendedor = String((rawArray && rawArray[5]) || obj['Cod. Vendedor'] || obj['Cod Vendedor'] || obj['Vendedor'] || '').trim();
+  const cotizacion = String((rawArray && rawArray[6]) || obj['(#) Cot'] || obj['Cotizacion'] || '').trim();
+  const sku = String((rawArray && rawArray[7]) || obj['SKU'] || obj['Codigo'] || '').trim();
+  const producto = String((rawArray && rawArray[8]) || obj['Producto'] || obj['Descripcion'] || '').trim();
+  const cantidad = parseNumberClean((rawArray && rawArray[9]) || obj['Cantidad'] || 0);
+  const precio = parseNumberClean((rawArray && rawArray[10]) || obj['Precio'] || 0);
+  
+  // Columna L (Índice 11) - Total Cotizado ($)
+  const total = parseNumberClean((rawArray && rawArray[11]) || obj['Total'] || (cantidad * precio));
+
+  const fechaSolRaw = (rawArray && rawArray[13]) || obj['Fecha Solicitud'] || obj['FECHA'] || '';
+  const responsable = String((rawArray && rawArray[14]) || obj['Responsable'] || '').trim();
+  
+  // Columna Q (Índice 16) - Estado Operativo
+  const estadoOperativo = String((rawArray && rawArray[16]) || obj['Estado'] || '').trim();
+
+  const nv = String((rawArray && rawArray[19]) || obj['NV'] || '').trim();
+  const fa = String((rawArray && rawArray[20]) || obj['FA'] || '').trim();
+  const estadoNV = String((rawArray && rawArray[21]) || obj['Estado NV'] || '').trim();
+  
+  // Columna X (Índice 23) - Estado Comercial (Perdida, Aceptada, Pendiente)
+  const estadoComercial = String((rawArray && rawArray[23]) || '').trim();
+
+  const estadoFinal = estadoComercial || estadoOperativo || 'Pendiente';
+
+  const dias = parseNumberClean((rawArray && rawArray[24]) || obj['Días'] || obj['Dias'] || 0);
+  const fechaFactRaw = (rawArray && rawArray[27]) || obj['Fecha Factura'] || '';
+  const mesT = String((rawArray && rawArray[30]) || obj['Mes T'] || obj['MES'] || '').trim();
+  const ano = String((rawArray && rawArray[31]) || obj['Año'] || obj['AÑO'] || '').trim();
 
   const dSol = parseRowDate(fechaSolRaw);
   const dFact = parseRowDate(fechaFactRaw);
@@ -5376,6 +5389,7 @@ function normalizeCotizacionRow(obj) {
     TIPO: tipo,
     RUT: rut,
     CLIENTE: cliente,
+    COD_VENDEDOR: codVendedor,
     COTIZACION: cotizacion,
     SKU: sku,
     PRODUCTO: producto,
@@ -5384,7 +5398,9 @@ function normalizeCotizacionRow(obj) {
     TOTAL: total,
     FECHA_SOLICITUD: dSol || fechaSolRaw,
     RESPONSABLE: responsable,
-    ESTADO: estado,
+    ESTADO: estadoFinal,
+    ESTADO_COMERCIAL: estadoComercial,
+    ESTADO_OPERATIVO: estadoOperativo,
     NV: nv,
     FA: fa,
     ESTADO_NV: estadoNV,
@@ -5394,7 +5410,7 @@ function normalizeCotizacionRow(obj) {
     ANO: ano,
     _timeSol: dSol ? dSol.getTime() : 0,
     _timeFact: dFact ? dFact.getTime() : 0,
-    _searchHaystack: `${cotizacion} ${cliente} ${rut} ${sku} ${producto} ${responsable} ${estado} ${nv} ${fa}`.toLowerCase()
+    _searchHaystack: `${cotizacion} ${cliente} ${rut} ${codVendedor} ${sku} ${producto} ${responsable} ${estadoFinal} ${estadoComercial} ${nv} ${fa}`.toLowerCase()
   };
 }
 
@@ -5415,10 +5431,10 @@ function populateCotizFilterOptions() {
   
   const getUniques = (fn) => [...new Set(source.map(fn).filter(Boolean))].sort((a, b) => String(a).localeCompare(String(b)));
 
-  const respSel = document.getElementById('fltCotizResponsable');
-  if (respSel && respSel.options.length <= 1) {
-    const uniques = getUniques(r => r.RESPONSABLE);
-    respSel.innerHTML = `<option value="">Todos los Responsables</option>` + uniques.map(u => `<option value="${u}">${u}</option>`).join('');
+  const vendSel = document.getElementById('fltCotizVendedor');
+  if (vendSel && vendSel.options.length <= 1) {
+    const uniques = getUniques(r => r.COD_VENDEDOR);
+    vendSel.innerHTML = `<option value="">Todos los Vendedores</option>` + uniques.map(u => `<option value="${u}">Cod ${u}</option>`).join('');
   }
 
   const estSel = document.getElementById('fltCotizEstado');
@@ -5441,7 +5457,7 @@ function applyCotizacionesFilters() {
   const dHasta = document.getElementById('fltCotizHasta')?.value ? parseRowDate(document.getElementById('fltCotizHasta').value) : null;
   const tHasta = dHasta ? dHasta.setHours(23, 59, 59, 999) : 0;
 
-  const selResp = document.getElementById('fltCotizResponsable')?.value.toLowerCase() || '';
+  const selVend = document.getElementById('fltCotizVendedor')?.value.toLowerCase() || '';
   const selEst = document.getElementById('fltCotizEstado')?.value.toLowerCase() || '';
   const selTipo = document.getElementById('fltCotizTipo')?.value.toLowerCase() || '';
   const searchVal = document.getElementById('cotizSearchBox')?.value.trim().toLowerCase() || '';
@@ -5450,7 +5466,7 @@ function applyCotizacionesFilters() {
     if (!r) return false;
     if (tDesde > 0 && (r._timeSol < tDesde || !r._timeSol)) return false;
     if (tHasta > 0 && (r._timeSol > tHasta || !r._timeSol)) return false;
-    if (selResp && r.RESPONSABLE.toLowerCase() !== selResp) return false;
+    if (selVend && (r.COD_VENDEDOR || '').toLowerCase() !== selVend) return false;
     if (selEst && r.ESTADO.toLowerCase() !== selEst) return false;
     if (selTipo && r.TIPO.toLowerCase() !== selTipo) return false;
     if (searchVal && !r._searchHaystack.includes(searchVal)) return false;
@@ -5489,17 +5505,18 @@ function renderCotizacionesKPIs() {
 
     const item = tipoMap.get(tipoName);
     const monto = r.TOTAL || 0;
-    const est = (r.ESTADO || '').toLowerCase();
+    const estCom = (r.ESTADO_COMERCIAL || r.ESTADO || '').toLowerCase();
+    const estOp = (r.ESTADO_OPERATIVO || '').toLowerCase();
 
     item.totalCount += 1;
     item.totalMonto += monto;
 
-    if (est.includes('aceptada') || est.includes('aprobada') || est.includes('facturada') || Boolean(r.NV) || Boolean(r.FA)) {
-      item.aceptadasCount += 1;
-      item.aceptadasMonto += monto;
-    } else if (est.includes('perdida') || est.includes('rechazada')) {
+    if (estCom.includes('perdida') || estCom.includes('rechazada')) {
       item.perdidasCount += 1;
       item.perdidasMonto += monto;
+    } else if (estCom.includes('aceptada') || estCom.includes('aprobada') || estCom.includes('facturada') || estOp.includes('aceptada') || Boolean(r.NV) || Boolean(r.FA)) {
+      item.aceptadasCount += 1;
+      item.aceptadasMonto += monto;
     } else {
       item.pendientesCount += 1;
       item.pendientesMonto += monto;
@@ -5587,13 +5604,14 @@ function renderCotizacionesCharts() {
     const idx = MONTH_NAMES.findIndex(m => mesLower.includes(m));
     if (idx < 0) return;
 
-    const est = (r.ESTADO || '').toLowerCase();
+    const estCom = (r.ESTADO_COMERCIAL || r.ESTADO || '').toLowerCase();
+    const estOp = (r.ESTADO_OPERATIVO || '').toLowerCase();
     const totalVal = r.TOTAL || 0;
 
-    if (est.includes('aceptada') || est.includes('aprobada') || est.includes('facturada') || Boolean(r.NV) || Boolean(r.FA)) {
-      aceptadasData[idx] += totalVal;
-    } else if (est.includes('perdida') || est.includes('rechazada')) {
+    if (estCom.includes('perdida') || estCom.includes('rechazada')) {
       perdidasData[idx] += totalVal;
+    } else if (estCom.includes('aceptada') || estCom.includes('aprobada') || estCom.includes('facturada') || estOp.includes('aceptada') || Boolean(r.NV) || Boolean(r.FA)) {
+      aceptadasData[idx] += totalVal;
     } else {
       pendientesData[idx] += totalVal;
     }
