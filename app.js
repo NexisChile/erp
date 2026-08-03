@@ -5726,10 +5726,10 @@ function renderCotizacionesCharts() {
     });
   }
 
-  // 3. Top Responsables
+  // 3. Top Vendedores (Cod. Vendedor)
   const respMap = new Map();
   source.forEach(r => {
-    const key = r.RESPONSABLE || 'General';
+    const key = r.COD_VENDEDOR ? `Cod. ${r.COD_VENDEDOR}` : (r.RESPONSABLE || 'General');
     respMap.set(key, (respMap.get(key) || 0) + (r.TOTAL || 0));
   });
 
@@ -5859,7 +5859,7 @@ function renderCotizacionesTable() {
         <td><span style="font-size:0.85rem;" title="${r.PRODUCTO}">${(r.PRODUCTO || '-').slice(0, 35)}</span></td>
         <td>${formatNum(r.CANTIDAD)}</td>
         <td><strong style="color: #34d399;">$${formatNum(r.TOTAL)}</strong></td>
-        <td>${r.RESPONSABLE || '-'}</td>
+        <td>${r.COD_VENDEDOR ? ('Cod ' + r.COD_VENDEDOR) : (r.RESPONSABLE || '-')}</td>
         <td><span style="font-size:0.8rem; color:#60a5fa;">${nvFaStr}</span></td>
         <td>${statusBadge}</td>
       </tr>
@@ -5868,7 +5868,7 @@ function renderCotizacionesTable() {
 }
 
 function initCotizacionesListeners() {
-  ['fltCotizDesde', 'fltCotizHasta', 'fltCotizResponsable', 'fltCotizEstado', 'fltCotizTipo'].forEach(id => {
+  ['fltCotizDesde', 'fltCotizHasta', 'fltCotizVendedor', 'fltCotizEstado', 'fltCotizTipo'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.addEventListener('change', () => {
       cotizCurrentPage = 1;
