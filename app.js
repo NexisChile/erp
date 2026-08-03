@@ -898,7 +898,7 @@ async function fetchGVizData() {
         };
         const script = document.createElement('script');
         script.id = cbName;
-        script.src = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=responseHandler:${cbName}&gid=${gid}&headers=1`;
+        script.src = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=responseHandler:${cbName}&gid=${gid}&headers=1&_=${Date.now()}`;
         script.onerror = () => { cleanup(); reject(new Error('JSONP script load error')); };
         document.head.appendChild(script);
       });
@@ -915,7 +915,7 @@ async function fetchGVizData() {
   // ---------- Canal 3: CSV Directo (fallback final) ----------
   async function tryCSV() {
     try {
-      const csvUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=${gid}`;
+      const csvUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=${gid}&_=${Date.now()}`;
       const res = await fetch(csvUrl, { signal: AbortSignal.timeout(60000) });
       if (!res.ok) return null;
       const csvText = await res.text();
