@@ -4930,6 +4930,8 @@ function switchView(viewName) {
   
   if (viewName === 'compras') {
     renderComprasView();
+  } else if (viewName === 'cotizaciones') {
+    renderCotizaciones();
   } else if (viewName === 'tablero') {
     renderMonthlyTargetProgress();
     renderMiniKPIs();
@@ -5222,7 +5224,377 @@ function initComprasListeners() {
 }
 
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initComprasListeners);
+  document.addEventListener('DOMContentLoaded', () => {
+    initComprasListeners();
+    initCotizacionesListeners();
+  });
 } else {
   initComprasListeners();
+  initCotizacionesListeners();
+}
+
+// ==========================================================================
+// MÓDULO DE COTIZACIONES (GESTOR & EMISIÓN INTERACTIVA + EXPORTACIÓN PDF)
+// ==========================================================================
+
+let cotizacionesList = JSON.parse(localStorage.getItem('glomax_cotizaciones')) || [
+  {
+    folio: 'COT-2026-001',
+    fecha: '2026-08-01',
+    vencimiento: '2026-08-15',
+    cliente: 'CLÍNICA SANTA MARÍA SpA',
+    rut: '76.890.123-K',
+    email: 'adquisiciones@santamaria.cl',
+    estado: 'Aprobada',
+    items: [
+      { codigo: 'HEM6124', descripcion: 'MONITOR DE PRESION ARTERIAL OMRON 6124', cant: 10, preuni: 45000, subtotal: 450000 },
+      { codigo: 'COXM02', descripcion: 'CONCENTRADOR DE OXIGENO GLOMED 5L', cant: 2, preuni: 350000, subtotal: 700000 }
+    ],
+    neto: 1150000,
+    iva: 218500,
+    total: 1368500
+  },
+  {
+    folio: 'COT-2026-002',
+    fecha: '2026-08-02',
+    vencimiento: '2026-08-20',
+    cliente: 'HOSPITAL DEL SALVADOR',
+    rut: '61.608.000-4',
+    email: 'compras@hospitalsalvador.cl',
+    estado: 'Pendiente',
+    items: [
+      { codigo: 'NEBP020', descripcion: 'NEBULIZADOR PISTON COMPRESOR ULTRASONICO', cant: 15, preuni: 28000, subtotal: 420000 }
+    ],
+    neto: 420000,
+    iva: 79800,
+    total: 499800
+  }
+];
+
+let currentCotizFilterStatus = 'all';
+
+function saveCotizacionesToStorage() {
+  try {
+    localStorage.setItem('glomax_cotizaciones', JSON.stringify(cotizacionesList));
+  } catch (e) { console.warn('LocalStorage error', e); }
+}
+
+function renderCotizaciones() {
+  const tbody = document.getElementById('cotizTableBody');
+  const searchVal = (document.getElementById('cotizSearchBox')?.value || '').trim().toLowerCase();
+
+  let filteredCotiz = cotizacionesList.filter(c => {
+    if (currentCotizFilterStatus !== 'all' && c.estado !== currentCotizFilterStatus) return false;
+    if (searchVal) {
+      const haystack = `${c.folio} ${c.cliente} ${c.rut} ${c.email}`.toLowerCase();
+      if (!haystack.includes(searchVal)) return false;
+    }
+    return true;
+  });
+
+  const totalCotizado = cotizacionesList.reduce((sum, c) => sum + (c.total || 0), 0);
+  const aprobadas = cotizacionesList.filter(c => c.estado === 'Aprobada');
+  const pendientes = cotizacionesList.filter(c => c.estado === 'Pendiente');
+  
+  const totalAprobado = aprobadas.reduce((sum, c) => sum + (c.total || 0), 0);
+  const totalPendiente = pendientes.reduce((sum, c) => sum + (c.total || 0), 0);
+  const conversionRate = cotizacionesList.length > 0 ? (aprobadas.length / cotizacionesList.length) * 100 : 0;
+
+  const kpiTot = document.getElementById('kpiCotizTotal');
+  const kpiCount = document.getElementById('kpiCotizCount');
+  const kpiAppr = document.getElementById('kpiCotizApproved');
+  const kpiApprCount = document.getElementById('kpiCotizApprovedCount');
+  const kpiPend = document.getElementById('kpiCotizPending');
+  const kpiPendCount = document.getElementById('kpiCotizPendingCount');
+  const kpiRate = document.getElementById('kpiCotizRate');
+
+  if (kpiTot) kpiTot.textContent = `$${formatNum(totalCotizado)}`;
+  if (kpiCount) kpiCount.textContent = `${cotizacionesList.length} Cotizaciones en total`;
+  if (kpiAppr) kpiAppr.textContent = `$${formatNum(totalAprobado)}`;
+  if (kpiApprCount) kpiApprCount.textContent = `${aprobadas.length} Aprobadas`;
+  if (kpiPend) kpiPend.textContent = `$${formatNum(totalPendiente)}`;
+  if (kpiPendCount) kpiPendCount.textContent = `${pendientes.length} Pendientes`;
+  if (kpiRate) kpiRate.textContent = `${conversionRate.toFixed(1)}%`;
+
+  if (!tbody) return;
+
+  if (filteredCotiz.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 2rem; color: #94a3b8;">No hay cotizaciones registradas con el filtro seleccionado.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filteredCotiz.map(c => {
+    let statusBadge = `<span class="status-badge-pending">🟡 Pendiente</span>`;
+    if (c.estado === 'Aprobada') statusBadge = `<span class="status-badge-approved">🟢 Aprobada</span>`;
+    if (c.estado === 'Vencida' || c.estado === 'Rechazada') statusBadge = `<span class="status-badge-rejected">🔴 ${c.estado}</span>`;
+
+    const itemsCount = (c.items || []).reduce((sum, item) => sum + (Number(item.cant) || 0), 0);
+
+    return `
+      <tr>
+        <td><strong>${c.folio}</strong></td>
+        <td>${c.fecha}</td>
+        <td>${c.vencimiento || '-'}</td>
+        <td><strong>${c.cliente}</strong></td>
+        <td>${c.rut || '-'}</td>
+        <td><span class="pct-badge-pill">${itemsCount} items</span></td>
+        <td>$${formatNum(c.neto)}</td>
+        <td><strong style="color: #34d399;">$${formatNum(c.total)}</strong></td>
+        <td>${statusBadge}</td>
+        <td style="text-align: right;">
+          <button type="button" class="btn-secondary btn-sm" onclick="exportCotizacionPDF('${c.folio}')" title="Ver / Exportar PDF">📄 PDF</button>
+          <button type="button" class="btn-secondary btn-sm" onclick="toggleCotizacionStatus('${c.folio}')" title="Cambiar Estado">🔄</button>
+          <button type="button" class="btn-secondary btn-sm" onclick="deleteCotizacion('${c.folio}')" style="color: #f87171;" title="Eliminar">🗑️</button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function openCotizacionModal(folioToEdit = null) {
+  const modal = document.getElementById('cotizacionModalBackdrop');
+  if (!modal) return;
+
+  const form = document.getElementById('cotizacionModalForm');
+  if (form) form.reset();
+
+  const body = document.getElementById('cotizItemsBody');
+  if (body) body.innerHTML = '';
+
+  const nextFolio = `COT-2026-00${cotizacionesList.length + 1}`;
+  const todayStr = new Date().toISOString().split('T')[0];
+  const next2Weeks = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+  document.getElementById('cFolio').value = nextFolio;
+  document.getElementById('cFecha').value = todayStr;
+  document.getElementById('cVencimiento').value = next2Weeks;
+  document.getElementById('cEstado').value = 'Pendiente';
+
+  addCotizItemRow();
+
+  modal.classList.add('active');
+  if (typeof AudioSynth !== 'undefined' && AudioSynth.enabled) AudioSynth.play('click');
+}
+
+function closeCotizacionModal() {
+  const modal = document.getElementById('cotizacionModalBackdrop');
+  if (modal) modal.classList.remove('active');
+}
+
+function addCotizItemRow(itemData = {}) {
+  const body = document.getElementById('cotizItemsBody');
+  if (!body) return;
+
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><input type="text" class="filter-input c-item-code" placeholder="SKU-01" value="${itemData.codigo || ''}" required style="width:100%;" /></td>
+    <td><input type="text" class="filter-input c-item-desc" placeholder="Descripción del producto o servicio" value="${itemData.descripcion || ''}" required style="width:100%;" /></td>
+    <td><input type="number" class="filter-input c-item-cant" value="${itemData.cant || 1}" min="1" step="any" oninput="calculateCotizTotals()" style="width:100%;" /></td>
+    <td><input type="number" class="filter-input c-item-preuni" value="${itemData.preuni || 0}" step="any" oninput="calculateCotizTotals()" style="width:100%;" /></td>
+    <td><strong class="c-item-subtotal">$0</strong></td>
+    <td style="text-align:center;"><button type="button" class="btn-secondary btn-sm" onclick="this.closest('tr').remove(); calculateCotizTotals();" style="color:#f87171;">✕</button></td>
+  `;
+  body.appendChild(tr);
+  calculateCotizTotals();
+}
+
+function calculateCotizTotals() {
+  const rows = document.querySelectorAll('#cotizItemsBody tr');
+  let netoTotal = 0;
+
+  rows.forEach(tr => {
+    const cant = Number(tr.querySelector('.c-item-cant')?.value || 0);
+    const preuni = Number(tr.querySelector('.c-item-preuni')?.value || 0);
+    const subtotal = cant * preuni;
+    netoTotal += subtotal;
+
+    const subEl = tr.querySelector('.c-item-subtotal');
+    if (subEl) subEl.textContent = `$${formatNum(subtotal)}`;
+  });
+
+  const iva = Math.round(netoTotal * 0.19);
+  const total = netoTotal + iva;
+
+  const subNetoEl = document.getElementById('cotizSubtotalNeto');
+  const ivaEl = document.getElementById('cotizIva');
+  const totalEl = document.getElementById('cotizTotalFinal');
+
+  if (subNetoEl) subNetoEl.textContent = `$${formatNum(netoTotal)}`;
+  if (ivaEl) ivaEl.textContent = `$${formatNum(iva)}`;
+  if (totalEl) totalEl.textContent = `$${formatNum(total)}`;
+
+  return { netoTotal, iva, total };
+}
+
+function saveCotizacion(e) {
+  if (e) e.preventDefault();
+
+  const folio = document.getElementById('cFolio').value.trim();
+  const fecha = document.getElementById('cFecha').value;
+  const vencimiento = document.getElementById('cVencimiento').value;
+  const cliente = document.getElementById('cCliente').value.trim();
+  const rut = document.getElementById('cRut').value.trim();
+  const email = document.getElementById('cEmail').value.trim();
+  const estado = document.getElementById('cEstado').value;
+
+  const itemRows = document.querySelectorAll('#cotizItemsBody tr');
+  const items = [];
+
+  itemRows.forEach(tr => {
+    const codigo = tr.querySelector('.c-item-code')?.value.trim() || '';
+    const descripcion = tr.querySelector('.c-item-desc')?.value.trim() || '';
+    const cant = Number(tr.querySelector('.c-item-cant')?.value || 0);
+    const preuni = Number(tr.querySelector('.c-item-preuni')?.value || 0);
+    const subtotal = cant * preuni;
+    if (codigo || descripcion) {
+      items.push({ codigo, descripcion, cant, preuni, subtotal });
+    }
+  });
+
+  const { netoTotal, iva, total } = calculateCotizTotals();
+
+  const newCotiz = {
+    folio, fecha, vencimiento, cliente, rut, email, estado,
+    items, neto: netoTotal, iva, total
+  };
+
+  const existingIdx = cotizacionesList.findIndex(c => c.folio === folio);
+  if (existingIdx >= 0) {
+    cotizacionesList[existingIdx] = newCotiz;
+  } else {
+    cotizacionesList.unshift(newCotiz);
+  }
+
+  saveCotizacionesToStorage();
+  renderCotizaciones();
+  closeCotizacionModal();
+
+  if (typeof AudioSynth !== 'undefined' && AudioSynth.enabled) AudioSynth.play('success');
+  if (typeof showToast !== 'undefined') showToast('✅ Cotización guardada con éxito');
+}
+
+function toggleCotizacionStatus(folio) {
+  const cotiz = cotizacionesList.find(c => c.folio === folio);
+  if (!cotiz) return;
+
+  if (cotiz.estado === 'Pendiente') cotiz.estado = 'Aprobada';
+  else if (cotiz.estado === 'Aprobada') cotiz.estado = 'Vencida';
+  else cotiz.estado = 'Pendiente';
+
+  saveCotizacionesToStorage();
+  renderCotizaciones();
+  if (typeof showToast !== 'undefined') showToast(`Estado de ${folio} actualizado a ${cotiz.estado}`);
+}
+
+function deleteCotizacion(folio) {
+  if (!confirm(`¿Eliminar la cotización ${folio}?`)) return;
+  cotizacionesList = cotizacionesList.filter(c => c.folio !== folio);
+  saveCotizacionesToStorage();
+  renderCotizaciones();
+  if (typeof showToast !== 'undefined') showToast(`Cotización ${folio} eliminada`);
+}
+
+function exportCotizacionPDF(folio) {
+  const cotiz = cotizacionesList.find(c => c.folio === folio);
+  if (!cotiz) return;
+
+  const printWindow = window.open('', '_blank');
+  const itemsHtml = cotiz.items.map(item => `
+    <tr>
+      <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">${item.codigo}</td>
+      <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">${item.descripcion}</td>
+      <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; text-align: center;">${item.cant}</td>
+      <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; text-align: right;">$${formatNum(item.preuni)}</td>
+      <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; text-align: right;">$${formatNum(item.subtotal)}</td>
+    </tr>
+  `).join('');
+
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Cotización ${cotiz.folio} - Glomax S.A.</title>
+      <style>
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1e293b; padding: 40px; }
+        .header { display: flex; justify-content: space-between; border-bottom: 2px solid #2563eb; padding-bottom: 20px; margin-bottom: 30px; }
+        .company { font-size: 24px; font-weight: bold; color: #2563eb; }
+        .details { display: flex; justify-content: space-between; margin-bottom: 30px; }
+        .box { background: #f8fafc; padding: 15px; border-radius: 8px; width: 45%; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+        th { background: #0f172a; color: white; padding: 12px; text-align: left; }
+        .totals { float: right; width: 300px; }
+        .totals-row { display: flex; justify-content: space-between; padding: 6px 0; }
+        .total-final { font-size: 18px; font-weight: bold; color: #059669; border-top: 2px solid #059669; padding-top: 8px; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <div>
+          <div class="company">GLOMAX S.A.</div>
+          <div>BI Enterprise Suite · Cotizaciones</div>
+          <div>contacto@glomax.cl | +56 2 2345 6789</div>
+        </div>
+        <div style="text-align: right;">
+          <h2 style="margin:0; color:#2563eb;">COTIZACIÓN</h2>
+          <div style="font-size: 18px; font-weight: bold;">${cotiz.folio}</div>
+          <div>Fecha: ${cotiz.fecha}</div>
+          <div>Vencimiento: ${cotiz.vencimiento || '15 Días'}</div>
+        </div>
+      </div>
+
+      <div class="details">
+        <div class="box">
+          <strong>CLIENTE:</strong> ${cotiz.cliente}<br>
+          <strong>RUT:</strong> ${cotiz.rut || 'N/A'}<br>
+          <strong>EMAIL:</strong> ${cotiz.email || 'N/A'}
+        </div>
+        <div class="box">
+          <strong>ESTADO:</strong> ${cotiz.estado}<br>
+          <strong>CONDICIONES:</strong> Pago a 30 días / Transferencia<br>
+          <strong>MONEDA:</strong> CLP ($)
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>CÓDIGO</th>
+            <th>DESCRIPCIÓN</th>
+            <th style="text-align: center;">CANT</th>
+            <th style="text-align: right;">PRECIO UNIT</th>
+            <th style="text-align: right;">SUBTOTAL</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${itemsHtml}
+        </tbody>
+      </table>
+
+      <div class="totals">
+        <div class="totals-row"><span>Subtotal Neto:</span> <strong>$${formatNum(cotiz.neto)}</strong></div>
+        <div class="totals-row"><span>IVA (19%):</span> <strong>$${formatNum(cotiz.iva)}</strong></div>
+        <div class="totals-row total-final"><span>TOTAL:</span> <span>$${formatNum(cotiz.total)}</span></div>
+      </div>
+      <script>window.onload = function() { window.print(); };</script>
+    </body>
+    </html>
+  `);
+  printWindow.document.close();
+}
+
+function initCotizacionesListeners() {
+  const statusFilters = document.querySelectorAll('#cotizStatusFilters button[data-cotiz-status]');
+  statusFilters.forEach(btn => {
+    btn.addEventListener('click', () => {
+      statusFilters.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentCotizFilterStatus = btn.dataset.cotizStatus;
+      renderCotizaciones();
+    });
+  });
+
+  const searchBox = document.getElementById('cotizSearchBox');
+  if (searchBox) {
+    searchBox.addEventListener('input', () => renderCotizaciones());
+  }
 }

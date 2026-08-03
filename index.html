@@ -340,6 +340,12 @@
           <span class="ax-nav__badge ax-nav__badge--compras">Costos</span>
         </button>
 
+        <button class="ax-nav__item" data-view="cotizaciones">
+          <svg class="ax-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          <span class="ax-nav__label">Cotizaciones</span>
+          <span class="ax-nav__badge ax-nav__badge--cotiz">Nuevo</span>
+        </button>
+
         <p class="ax-sidebar__section">Filtros Rápidos</p>
 
         <div class="ax-nav__group" id="canalToggleGroup">
@@ -1080,6 +1086,97 @@
             </div>
           </div>
         </div>
+
+        <!-- VISTA: COTIZACIONES -->
+        <div class="view" id="view-cotizaciones">
+          <!-- CABECERA Y ACCIONES DE COTIZACIÓN -->
+          <div class="ax-card" style="margin-bottom: 1.25rem; padding: 1.25rem 1.5rem;">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+              <div>
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                  <span class="ax-nav__badge ax-nav__badge--cotiz">MÓDULO DE COTIZACIONES</span>
+                </div>
+                <h2 style="font-size: 1.4rem; font-weight: 800; color: #fff; margin: 0;">Gestión & Emisión de Cotizaciones</h2>
+                <p style="font-size: 0.85rem; color: #94a3b8; margin: 0.2rem 0 0 0;">Crea, gestiona y exporta cotizaciones profesionales en PDF para tus clientes.</p>
+              </div>
+              <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                <button type="button" class="btn-primary" onclick="openCotizacionModal()" style="display: flex; align-items: center; gap: 0.5rem;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                  <span>+ Nueva Cotización</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- FILTROS RÁPIDOS Y BÚSQUEDA DE COTIZACIONES -->
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid rgba(255, 255, 255, 0.08);">
+              <div class="cotiz-status-filters" id="cotizStatusFilters" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                <button type="button" class="preset-btn active" data-cotiz-status="all">Todas</button>
+                <button type="button" class="preset-btn" data-cotiz-status="Pendiente">🟡 Pendientes</button>
+                <button type="button" class="preset-btn" data-cotiz-status="Aprobada">🟢 Aprobadas</button>
+                <button type="button" class="preset-btn" data-cotiz-status="Vencida">🔴 Vencidas / Rechazadas</button>
+              </div>
+              <div style="position: relative; min-width: 260px;">
+                <input type="text" id="cotizSearchBox" class="filter-input" placeholder="Buscar por Folio, Cliente o RUT..." style="width: 100%; padding-left: 2.2rem;" />
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: #94a3b8;"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- KPIS DE COTIZACIONES -->
+          <div class="kpi-grid" style="margin-bottom: 1.25rem;">
+            <div class="ax-card kpi-card">
+              <span class="kpi-title">TOTAL COTIZADO ($)</span>
+              <div class="kpi-value" id="kpiCotizTotal">$0</div>
+              <span class="kpi-subtitle" id="kpiCotizCount">0 Cotizaciones en total</span>
+            </div>
+            <div class="ax-card kpi-card">
+              <span class="kpi-title">COTIZACIONES APROBADAS</span>
+              <div class="kpi-value" style="color: #34d399;" id="kpiCotizApproved">$0</div>
+              <span class="kpi-subtitle" id="kpiCotizApprovedCount">0 Aprobadas</span>
+            </div>
+            <div class="ax-card kpi-card">
+              <span class="kpi-title">PENDIENTES DE CIERRE</span>
+              <div class="kpi-value" style="color: #fbbf24;" id="kpiCotizPending">$0</div>
+              <span class="kpi-subtitle" id="kpiCotizPendingCount">0 Pendientes</span>
+            </div>
+            <div class="ax-card kpi-card">
+              <span class="kpi-title">TASA DE CONVERSIÓN</span>
+              <div class="kpi-value" style="color: #60a5fa;" id="kpiCotizRate">0%</div>
+              <span class="kpi-subtitle">Cotizaciones → Ventas</span>
+            </div>
+          </div>
+
+          <!-- TABLA DE COTIZACIONES -->
+          <div class="ax-card chart-card">
+            <div class="chart-card-header">
+              <div>
+                <span class="chart-tag">REGISTROS</span>
+                <h3 class="chart-main-title">Listado de Cotizaciones Emitidas</h3>
+              </div>
+            </div>
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Nº COTIZACIÓN</th>
+                    <th>FECHA</th>
+                    <th>VENCIMIENTO</th>
+                    <th>CLIENTE</th>
+                    <th>RUT</th>
+                    <th>ITEMS</th>
+                    <th>NETO ($)</th>
+                    <th>TOTAL ($)</th>
+                    <th>ESTADO</th>
+                    <th style="text-align: right;">ACCIONES</th>
+                  </tr>
+                </thead>
+                <tbody id="cotizTableBody">
+                  <!-- Filas dinámicas -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       </main>
     </div>
   </div>
@@ -1212,6 +1309,98 @@
           <button type="submit" class="btn-primary">Guardar Metas</button>
         </div>
       </form>
+  <!-- MODAL DE CREACIÓN / EDICIÓN DE COTIZACIÓN -->
+  <div class="modal-backdrop" id="cotizacionModalBackdrop">
+    <div class="modal-content" style="max-width: 850px;">
+      <div class="modal-header">
+        <div>
+          <h3 id="cotizModalTitle">📑 Nueva Cotización</h3>
+          <p class="modal-subtitle">Genera una cotización comercial formal en formato profesional.</p>
+        </div>
+        <button type="button" class="btn-secondary modal-close-icon" onclick="closeCotizacionModal()">✕</button>
+      </div>
+      <form id="cotizacionModalForm" onsubmit="saveCotizacion(event)">
+        <div class="form-section-title">Datos Principales de la Cotización</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="cFolio">Nº Cotización *</label>
+            <input type="text" id="cFolio" required />
+          </div>
+          <div class="form-group">
+            <label for="cFecha">Fecha Emisión *</label>
+            <input type="date" id="cFecha" required />
+          </div>
+          <div class="form-group">
+            <label for="cVencimiento">Validez / Vencimiento *</label>
+            <input type="date" id="cVencimiento" required />
+          </div>
+          <div class="form-group full">
+            <label for="cCliente">Nombre / Razón Social del Cliente *</label>
+            <input type="text" id="cCliente" placeholder="Ej: Empresa SpA" required />
+          </div>
+          <div class="form-group">
+            <label for="cRut">RUT Cliente</label>
+            <input type="text" id="cRut" placeholder="76.123.456-7" />
+          </div>
+          <div class="form-group">
+            <label for="cEmail">Email Cliente / Contacto</label>
+            <input type="email" id="cEmail" placeholder="contacto@empresa.cl" />
+          </div>
+          <div class="form-group">
+            <label for="cEstado">Estado *</label>
+            <select id="cEstado" class="filter-select">
+              <option value="Pendiente">🟡 Pendiente</option>
+              <option value="Aprobada">🟢 Aprobada</option>
+              <option value="Vencida">🔴 Vencida / Rechazada</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-section-title" style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.25rem;">
+          <span>Detalle de Productos / Servicios</span>
+          <button type="button" class="btn-secondary btn-sm" onclick="addCotizItemRow()">+ Agregar Item</button>
+        </div>
+        <div class="table-container" style="margin-bottom: 1rem;">
+          <table class="data-table" id="cotizItemsTable">
+            <thead>
+              <tr>
+                <th style="width: 18%;">CÓDIGO</th>
+                <th>DESCRIPCIÓN</th>
+                <th style="width: 12%;">CANT</th>
+                <th style="width: 20%;">PRECIO UNIT ($)</th>
+                <th style="width: 20%;">SUBTOTAL ($)</th>
+                <th style="width: 8%;"></th>
+              </tr>
+            </thead>
+            <tbody id="cotizItemsBody">
+              <!-- Dinámico -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- TOTALES Y CALCULOS -->
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 1.5rem;">
+          <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 1rem 1.5rem; min-width: 280px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.9rem;">
+              <span style="color: #94a3b8;">Subtotal Neto:</span>
+              <strong id="cotizSubtotalNeto">$0</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.9rem;">
+              <span style="color: #94a3b8;">IVA (19%):</span>
+              <strong id="cotizIva">$0</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 1.1rem; font-weight: 800; color: #34d399; padding-top: 0.5rem; border-top: 1px solid rgba(255, 255, 255, 0.1);">
+              <span>Total Cotización:</span>
+              <span id="cotizTotalFinal">$0</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" onclick="closeCotizacionModal()">Cancelar</button>
+          <button type="submit" class="btn-primary">Guardar Cotización</button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -1235,7 +1424,7 @@
   </div>
 
   <!-- Scripts -->
-  <script src="config.js?v=20260802_v48"></script>
-  <script src="app.js?v=20260802_v48"></script>
+  <script src="config.js?v=20260802_v49"></script>
+  <script src="app.js?v=20260802_v49"></script>
 </body>
 </html>
