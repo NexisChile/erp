@@ -420,6 +420,26 @@
         </div>
       </header>
 
+      <!-- BARRA MÓVIL DE MÓDULOS PRINCIPALES (100% RESPONSIVA) -->
+      <div class="ax-mobile-modules-bar" id="mobileModulesBar">
+        <button type="button" class="mobile-mod-btn active" data-view="tablero" onclick="switchView('tablero')">
+          <span>📊 Tablero</span>
+        </button>
+        <button type="button" class="mobile-mod-btn" data-view="cotizaciones" onclick="switchView('cotizaciones')">
+          <span>📋 Cotizaciones</span>
+          <span class="mobile-badge-new">Nuevo</span>
+        </button>
+        <button type="button" class="mobile-mod-btn" data-view="compras" onclick="switchView('compras')">
+          <span>🛒 Compras</span>
+        </button>
+        <button type="button" class="mobile-mod-btn" data-view="tabla" onclick="switchView('tabla')">
+          <span>📁 Tabla</span>
+        </button>
+        <button type="button" class="mobile-mod-btn" data-view="bistudio" onclick="switchView('bistudio')">
+          <span>📈 BI Studio</span>
+        </button>
+      </div>
+
       <!-- MAIN WORKSPACE -->
       <main class="ax-main">
         <!-- GLOBAL FILTERS BAR -->
@@ -1489,7 +1509,7 @@
   </div>
 
   <!-- Scripts -->
-  <script src="config.js?v=20260802_v58"></script>
-  <script src="app.js?v=20260802_v58"></script>
+  <script src="config.js?v=20260802_v59"></script>
+  <script src="app.js?v=20260802_v59"></script>
 </body>
 </html>

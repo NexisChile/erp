@@ -4934,13 +4934,20 @@ function closeMobileSidebar() {
 function switchView(viewName) {
   if (!viewName) return;
   closeMobileSidebar();
+
+  // Desktop sidebar nav active state
   document.querySelectorAll('.ax-nav__item[data-view]').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  
   const btn = document.querySelector(`.ax-nav__item[data-view="${viewName}"]`);
-  const targetView = document.getElementById('view-' + viewName);
-  
   if (btn) btn.classList.add('active');
+
+  // Mobile module strip active state
+  document.querySelectorAll('.mobile-mod-btn[data-view]').forEach(b => b.classList.remove('active'));
+  const mobBtn = document.querySelector(`.mobile-mod-btn[data-view="${viewName}"]`);
+  if (mobBtn) mobBtn.classList.add('active');
+
+  // View active state
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  const targetView = document.getElementById('view-' + viewName);
   if (targetView) targetView.classList.add('active');
   
   if (viewName === 'compras') {
