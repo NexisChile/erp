@@ -830,7 +830,7 @@ async function fetchGVizData() {
         _row: i + 1
       };
       const norm = normalizeRow(obj);
-      if (norm.FOLIO || norm.FECHA || norm.CODIGO || norm.DESCRIPCION || norm.CLIENTE || norm.NETO || norm.CANTFACTURADA) {
+      if (norm && (norm.FOLIO || norm.FECHA || norm.CODIGO || norm.DESCRIPCION || norm.CLIENTE || norm.NETO || norm.CANTFACTURADA)) {
         data.push(norm);
       }
     }
@@ -893,7 +893,7 @@ async function fetchGVizData() {
               obj['_row'] = i + 2;
               return normalizeRow(obj);
             });
-            const filtered = rowsData.filter(n => n.FOLIO || n.FECHA || n.CODIGO || n.DESCRIPCION || n.CLIENTE || n.NETO || n.CANTFACTURADA);
+            const filtered = rowsData.filter(n => n && (n.FOLIO || n.FECHA || n.CODIGO || n.DESCRIPCION || n.CLIENTE || n.NETO || n.CANTFACTURADA));
             resolve(filtered.length > 0 ? filtered : null);
           } catch (err) { reject(err); }
         };
