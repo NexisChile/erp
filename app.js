@@ -5416,16 +5416,47 @@ function normalizeCotizacionRow(obj, rawArray = null) {
   };
 }
 
-async function renderCotizacionesView() {
-  if (!cotizacionesRows || cotizacionesRows.length === 0) {
+let isCotizSyncing = false;
+let autoSyncIntervalId = null;
+
+async function refreshCotizacionesLive(silent = false) {
+  if (isCotizSyncing) return;
+  isCotizSyncing = true;
+
+  const syncPill = document.getElementById('syncStatus');
+  if (syncPill && !silent) {
+    syncPill.innerHTML = `<span class="dot" style="background:#fbbf24;"></span> <span>Sincronizando Google Sheets...</span>`;
+  }
+
+  try {
     const loaded = await fetchCotizacionesData();
     if (loaded && loaded.length > 0) {
       cotizacionesRows = loaded;
+      populateCotizFilterOptions();
+      applyCotizacionesFilters();
+    }
+  } catch (err) {
+    console.warn('Auto-sync error:', err);
+  } finally {
+    isCotizSyncing = false;
+    if (syncPill) {
+      const nowStr = new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      syncPill.innerHTML = `<span class="dot" style="background:#10b981;"></span> <span>En vivo (${nowStr})</span>`;
     }
   }
+}
 
-  populateCotizFilterOptions();
-  applyCotizacionesFilters();
+function startCotizacionesAutoPolling() {
+  if (autoSyncIntervalId) clearInterval(autoSyncIntervalId);
+  // Auto-sincronización en segundo plano cada 20 segundos
+  autoSyncIntervalId = setInterval(() => {
+    refreshCotizacionesLive(true);
+  }, 20000);
+}
+
+async function renderCotizacionesView() {
+  await refreshCotizacionesLive(cotizacionesRows && cotizacionesRows.length > 0);
+  startCotizacionesAutoPolling();
 }
 
 function populateCotizFilterOptions() {
