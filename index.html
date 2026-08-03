@@ -1138,26 +1138,41 @@
             </div>
           </div>
 
-          <!-- KPIS DE MEDICIÓN DE COTIZACIONES -->
-          <div class="kpi-grid" style="margin-bottom: 1.25rem;">
-            <div class="ax-card kpi-card">
+          <!-- KPIS DE MEDICIÓN DE COTIZACIONES (HERO GLASS CARDS) -->
+          <div class="cotiz-kpi-grid">
+            <div class="cotiz-kpi-item">
+              <div class="cotiz-kpi-icon cotiz-kpi-icon--blue">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              </div>
               <span class="kpi-title">MONTO TOTAL COTIZADO ($)</span>
-              <div class="kpi-value" id="kpiCotizTotal">$0</div>
+              <div class="cotiz-kpi-val" style="color: #60a5fa;" id="kpiCotizTotal">$0</div>
               <span class="kpi-subtitle" id="kpiCotizCount">0 Solicitudes registradas</span>
             </div>
-            <div class="ax-card kpi-card">
+
+            <div class="cotiz-kpi-item">
+              <div class="cotiz-kpi-icon cotiz-kpi-icon--emerald">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              </div>
               <span class="kpi-title">COTIZACIONES FACTURADAS / GANADAS</span>
-              <div class="kpi-value" style="color: #34d399;" id="kpiCotizApproved">$0</div>
+              <div class="cotiz-kpi-val" style="color: #34d399;" id="kpiCotizApproved">$0</div>
               <span class="kpi-subtitle" id="kpiCotizApprovedCount">0 Convertidas a Venta</span>
             </div>
-            <div class="ax-card kpi-card">
+
+            <div class="cotiz-kpi-item">
+              <div class="cotiz-kpi-icon cotiz-kpi-icon--amber">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              </div>
               <span class="kpi-title">COTIZACIONES PENDIENTES</span>
-              <div class="kpi-value" style="color: #fbbf24;" id="kpiCotizPending">$0</div>
+              <div class="cotiz-kpi-val" style="color: #fbbf24;" id="kpiCotizPending">$0</div>
               <span class="kpi-subtitle" id="kpiCotizPendingCount">0 En negociación</span>
             </div>
-            <div class="ax-card kpi-card">
+
+            <div class="cotiz-kpi-item">
+              <div class="cotiz-kpi-icon cotiz-kpi-icon--purple">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+              </div>
               <span class="kpi-title">TASA DE CONVERSIÓN EN VENTA</span>
-              <div class="kpi-value" style="color: #60a5fa;" id="kpiCotizRate">0%</div>
+              <div class="cotiz-kpi-val" style="color: #a78bfa;" id="kpiCotizRate">0%</div>
               <span class="kpi-subtitle" id="kpiCotizAvgDays">Promedio: 0 días cierre</span>
             </div>
           </div>
@@ -1167,8 +1182,8 @@
             <div class="ax-card chart-card">
               <div class="chart-card-header">
                 <div>
-                  <span class="chart-tag">TENDENCIA TEMPORAL</span>
-                  <h3 class="chart-main-title">Evolución Mensual de Cotizaciones ($)</h3>
+                  <span class="chart-tag">TENDENCIA TEMPORAL (AÑO EN CURSO)</span>
+                  <h3 class="chart-main-title" id="chartCotizEvolTitle">Evolución Mensual: Aceptadas, Pendientes y Perdidas ($)</h3>
                 </div>
               </div>
               <div class="chart-container">
@@ -1503,7 +1518,7 @@
   </div>
 
   <!-- Scripts -->
-  <script src="config.js?v=20260802_v50"></script>
-  <script src="app.js?v=20260802_v50"></script>
+  <script src="config.js?v=20260802_v52"></script>
+  <script src="app.js?v=20260802_v52"></script>
 </body>
 </html>

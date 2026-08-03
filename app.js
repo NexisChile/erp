@@ -5493,39 +5493,115 @@ function renderCotizacionesCharts() {
 
   const source = cotizacionesFiltered;
 
-  // 1. Evolución Mensual
-  const monthMap = new Map();
-  source.forEach(r => {
-    const key = r.MES_T ? `${r.MES_T} ${r.ANO || ''}`.trim() : 'Sin Fecha';
-    monthMap.set(key, (monthMap.get(key) || 0) + (r.TOTAL || 0));
+  // 1. Evolución Mensual (Gráfico Lineal: Aceptadas, Pendientes y Perdidas para el Año en Curso)
+  const MONTH_NAMES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+  const MONTH_SHORT = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+  // Determinar año en curso (ej: 2026 o el mayor año válido >= 2020)
+  const validYears = source.map(r => parseInt(r.ANO)).filter(y => !isNaN(y) && y >= 2020);
+  const currentYear = validYears.length > 0 ? Math.max(...validYears) : new Date().getFullYear();
+
+  const titleEl = document.getElementById('chartCotizEvolTitle');
+  if (titleEl) titleEl.textContent = `Evolución Mensual: Aceptadas, Pendientes y Perdidas (${currentYear})`;
+
+  const yearRows = source.filter(r => {
+    const y = parseInt(r.ANO);
+    return y === currentYear;
   });
 
-  const monthLabels = Array.from(monthMap.keys()).slice(-12);
-  const monthValues = monthLabels.map(k => monthMap.get(k));
+  const aceptadasData = new Array(12).fill(0);
+  const pendientesData = new Array(12).fill(0);
+  const perdidasData = new Array(12).fill(0);
+
+  yearRows.forEach(r => {
+    const mesLower = String(r.MES_T || '').trim().toLowerCase();
+    const idx = MONTH_NAMES.findIndex(m => mesLower.includes(m));
+    if (idx < 0) return;
+
+    const est = (r.ESTADO || '').toLowerCase();
+    const totalVal = r.TOTAL || 0;
+
+    if (est.includes('aceptada') || est.includes('aprobada') || est.includes('facturada') || Boolean(r.NV) || Boolean(r.FA)) {
+      aceptadasData[idx] += totalVal;
+    } else if (est.includes('perdida') || est.includes('rechazada')) {
+      perdidasData[idx] += totalVal;
+    } else {
+      pendientesData[idx] += totalVal;
+    }
+  });
 
   const ctxEvol = document.getElementById('chartCotizEvolucion');
   if (ctxEvol) {
     if (chartCotizEvolInstance) chartCotizEvolInstance.destroy();
     chartCotizEvolInstance = new Chart(ctxEvol, {
-      type: 'bar',
+      type: 'line',
       data: {
-        labels: monthLabels,
-        datasets: [{
-          label: 'Monto Cotizado ($)',
-          data: monthValues,
-          backgroundColor: 'rgba(59, 130, 246, 0.7)',
-          borderColor: '#3b82f6',
-          borderWidth: 1,
-          borderRadius: 6
-        }]
+        labels: MONTH_SHORT,
+        datasets: [
+          {
+            label: '🟢 Aceptadas ($)',
+            data: aceptadasData,
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16, 185, 129, 0.15)',
+            borderWidth: 3,
+            tension: 0.35,
+            fill: true,
+            pointBackgroundColor: '#10b981',
+            pointRadius: 4,
+            pointHoverRadius: 7
+          },
+          {
+            label: '🟡 Pendientes ($)',
+            data: pendientesData,
+            borderColor: '#fbbf24',
+            backgroundColor: 'rgba(251, 191, 36, 0.15)',
+            borderWidth: 3,
+            tension: 0.35,
+            fill: true,
+            pointBackgroundColor: '#fbbf24',
+            pointRadius: 4,
+            pointHoverRadius: 7
+          },
+          {
+            label: '🔴 Perdidas ($)',
+            data: perdidasData,
+            borderColor: '#f87171',
+            backgroundColor: 'rgba(248, 113, 113, 0.15)',
+            borderWidth: 3,
+            tension: 0.35,
+            fill: true,
+            pointBackgroundColor: '#f87171',
+            pointRadius: 4,
+            pointHoverRadius: 7
+          }
+        ]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
+        plugins: {
+          legend: {
+            display: true,
+            position: 'top',
+            labels: { color: '#cbd5e1', font: { size: 11, weight: 'bold' }, usePointStyle: true, boxWidth: 8 }
+          },
+          tooltip: {
+            mode: 'index',
+            intersect: false,
+            callbacks: {
+              label: ctx => `${ctx.dataset.label}: $${formatNum(ctx.parsed.y)}`
+            }
+          }
+        },
         scales: {
-          y: { ticks: { color: '#94a3b8', callback: v => '$' + (v / 1000000).toFixed(1) + 'M' }, grid: { color: 'rgba(255,255,255,0.05)' } },
-          x: { ticks: { color: '#94a3b8' }, grid: { display: false } }
+          y: {
+            ticks: { color: '#94a3b8', callback: v => '$' + (v / 1000000).toFixed(1) + 'M' },
+            grid: { color: 'rgba(255, 255, 255, 0.05)' }
+          },
+          x: {
+            ticks: { color: '#94a3b8' },
+            grid: { color: 'rgba(255, 255, 255, 0.03)' }
+          }
         }
       }
     });
@@ -5670,14 +5746,16 @@ function renderCotizacionesTable() {
   }
 
   tbody.innerHTML = pageRows.map(r => {
-    let statusBadge = `<span class="status-badge-pending">${r.ESTADO || 'Pendiente'}</span>`;
+    let statusBadge = `<span class="cotiz-status-pill cotiz-status--pendiente">⚪ ${r.ESTADO || 'Pendiente'}</span>`;
     const estLower = (r.ESTADO || '').toLowerCase();
     if (estLower.includes('aceptada') || estLower.includes('aprobada') || estLower.includes('facturada')) {
-      statusBadge = `<span class="status-badge-approved">🟢 ${r.ESTADO}</span>`;
+      statusBadge = `<span class="cotiz-status-pill cotiz-status--aceptada">🟢 ${r.ESTADO}</span>`;
     } else if (estLower.includes('perdida') || estLower.includes('rechazada')) {
-      statusBadge = `<span class="status-badge-rejected">🔴 ${r.ESTADO}</span>`;
-    } else if (estLower.includes('enviada') || estLower.includes('preparación')) {
-      statusBadge = `<span class="status-badge-pending">🟡 ${r.ESTADO}</span>`;
+      statusBadge = `<span class="cotiz-status-pill cotiz-status--perdida">🔴 ${r.ESTADO}</span>`;
+    } else if (estLower.includes('enviada')) {
+      statusBadge = `<span class="cotiz-status-pill cotiz-status--enviada">🟡 ${r.ESTADO}</span>`;
+    } else if (estLower.includes('preparación')) {
+      statusBadge = `<span class="cotiz-status-pill cotiz-status--preparacion">🔵 ${r.ESTADO}</span>`;
     }
 
     const fechaStr = r.FECHA_SOLICITUD instanceof Date ? r.FECHA_SOLICITUD.toLocaleDateString('es-CL') : (r.FECHA_SOLICITUD || '-');
