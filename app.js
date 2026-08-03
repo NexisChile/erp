@@ -678,7 +678,7 @@ function parseNumberClean(val) {
   return isNegative ? -n : n;
 }
 
-function parseFechaString(val) {
+function parseRowDate(val) {
   if (!val) return null;
   if (val instanceof Date) return val;
   const str = String(val).trim();
@@ -699,6 +699,7 @@ function parseFechaString(val) {
   const d = new Date(str);
   return isNaN(d.getTime()) ? val : d;
 }
+function parseFechaString(val) { return parseRowDate(val); }
 
 // ---------- API & ENGINE HYBRID CONEXIÓN ----------
 
