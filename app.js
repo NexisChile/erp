@@ -5448,44 +5448,109 @@ function applyCotizacionesFilters() {
 }
 
 function renderCotizacionesKPIs() {
-  const source = cotizacionesFiltered;
+  const source = cotizacionesFiltered || [];
+  const container = document.getElementById('cotizTipoCardsContainer');
+  const subtitleEl = document.getElementById('cotizTipoCardsSubtitle');
+  if (!container) return;
 
-  const totalCotizado = source.reduce((sum, r) => sum + (r.TOTAL || 0), 0);
-  const totalCount = source.length;
+  // Agrupar por Tipo de Solicitud (Columna B)
+  const tipoMap = new Map();
 
-  const aprobadas = source.filter(r => {
+  source.forEach(r => {
+    const tipoName = String(r.TIPO || 'Sin Especificar').trim();
+    if (!tipoMap.has(tipoName)) {
+      tipoMap.set(tipoName, {
+        name: tipoName,
+        totalMonto: 0,
+        totalCount: 0,
+        aceptadasCount: 0,
+        aceptadasMonto: 0,
+        pendientesCount: 0,
+        pendientesMonto: 0,
+        perdidasCount: 0,
+        perdidasMonto: 0
+      });
+    }
+
+    const item = tipoMap.get(tipoName);
+    const monto = r.TOTAL || 0;
     const est = (r.ESTADO || '').toLowerCase();
-    return est.includes('aceptada') || est.includes('aprobada') || est.includes('facturada') || Boolean(r.NV) || Boolean(r.FA);
+
+    item.totalCount += 1;
+    item.totalMonto += monto;
+
+    if (est.includes('aceptada') || est.includes('aprobada') || est.includes('facturada') || Boolean(r.NV) || Boolean(r.FA)) {
+      item.aceptadasCount += 1;
+      item.aceptadasMonto += monto;
+    } else if (est.includes('perdida') || est.includes('rechazada')) {
+      item.perdidasCount += 1;
+      item.perdidasMonto += monto;
+    } else {
+      item.pendientesCount += 1;
+      item.pendientesMonto += monto;
+    }
   });
-  const totalAprobado = aprobadas.reduce((sum, r) => sum + (r.TOTAL || 0), 0);
 
-  const pendientes = source.filter(r => {
-    const est = (r.ESTADO || '').toLowerCase();
-    return est.includes('enviada') || est.includes('preparación') || est.includes('pendiente');
-  });
-  const totalPendiente = pendientes.reduce((sum, r) => sum + (r.TOTAL || 0), 0);
+  const tiposList = Array.from(tipoMap.values()).sort((a, b) => b.totalMonto - a.totalMonto);
 
-  const conversionRate = totalCount > 0 ? (aprobadas.length / totalCount) * 100 : 0;
-  const validDays = source.map(r => r.DIAS).filter(d => d > 0);
-  const avgDays = validDays.length > 0 ? validDays.reduce((a, b) => a + b, 0) / validDays.length : 0;
+  if (subtitleEl) {
+    subtitleEl.textContent = `Mostrando ${tiposList.length} tipos de solicitud (${formatNum(source.length)} cotizaciones filtradas)`;
+  }
 
-  const kpiTot = document.getElementById('kpiCotizTotal');
-  const kpiCount = document.getElementById('kpiCotizCount');
-  const kpiAppr = document.getElementById('kpiCotizApproved');
-  const kpiApprCount = document.getElementById('kpiCotizApprovedCount');
-  const kpiPend = document.getElementById('kpiCotizPending');
-  const kpiPendCount = document.getElementById('kpiCotizPendingCount');
-  const kpiRate = document.getElementById('kpiCotizRate');
-  const kpiAvgDays = document.getElementById('kpiCotizAvgDays');
+  if (tiposList.length === 0) {
+    container.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding:2rem; color:#94a3b8;">No se encontraron tipos de solicitud con los filtros seleccionados.</div>`;
+    return;
+  }
 
-  if (kpiTot) kpiTot.textContent = `$${formatNum(totalCotizado)}`;
-  if (kpiCount) kpiCount.textContent = `${formatNum(totalCount)} Solicitudes registradas`;
-  if (kpiAppr) kpiAppr.textContent = `$${formatNum(totalAprobado)}`;
-  if (kpiApprCount) kpiApprCount.textContent = `${formatNum(aprobadas.length)} Convertidas a Venta`;
-  if (kpiPend) kpiPend.textContent = `$${formatNum(totalPendiente)}`;
-  if (kpiPendCount) kpiPendCount.textContent = `${formatNum(pendientes.length)} En negociación`;
-  if (kpiRate) kpiRate.textContent = `${conversionRate.toFixed(1)}%`;
-  if (kpiAvgDays) kpiAvgDays.textContent = `Promedio: ${Math.round(avgDays)} días cierre`;
+  const iconMap = {
+    'estándar': '📋',
+    'estandar': '📋',
+    'promoción': '🏷️',
+    'promocion': '🏷️',
+    'especial': '⭐',
+    'cyber': '⚡'
+  };
+
+  container.innerHTML = tiposList.map(t => {
+    const icon = iconMap[t.name.toLowerCase()] || '📁';
+    return `
+      <div class="cotiz-tipo-card">
+        <div class="cotiz-tipo-card-header">
+          <div class="cotiz-tipo-badge">
+            <span>${icon}</span>
+            <span>${t.name}</span>
+          </div>
+          <span style="font-size:0.75rem; font-weight:700; color:#94a3b8; background:rgba(255,255,255,0.06); padding:2px 8px; border-radius:10px;">
+            ${formatNum(t.totalCount)} COTS
+          </span>
+        </div>
+
+        <div class="cotiz-tipo-monto">$${formatNum(t.totalMonto)}</div>
+
+        <div class="cotiz-counters-grid">
+          <div class="cotiz-counter-box">
+            <span class="cotiz-counter-lbl" style="color:#94a3b8;">📊 Total Cots</span>
+            <span class="cotiz-counter-num" style="color:#f8fafc;">${formatNum(t.totalCount)}</span>
+          </div>
+
+          <div class="cotiz-counter-box">
+            <span class="cotiz-counter-lbl" style="color:#34d399;">🟢 Aceptadas</span>
+            <span class="cotiz-counter-num" style="color:#34d399;">${formatNum(t.aceptadasCount)}</span>
+          </div>
+
+          <div class="cotiz-counter-box">
+            <span class="cotiz-counter-lbl" style="color:#fbbf24;">🟡 Pendientes</span>
+            <span class="cotiz-counter-num" style="color:#fbbf24;">${formatNum(t.pendientesCount)}</span>
+          </div>
+
+          <div class="cotiz-counter-box">
+            <span class="cotiz-counter-lbl" style="color:#f87171;">🔴 Perdidas</span>
+            <span class="cotiz-counter-num" style="color:#f87171;">${formatNum(t.perdidasCount)}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
 }
 
 function renderCotizacionesCharts() {
