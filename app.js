@@ -5520,46 +5520,36 @@ function renderCotizacionesKPIs() {
   container.innerHTML = tiposList.map(t => {
     const conversionPct = t.totalCount > 0 ? (t.aceptadasCount / t.totalCount) * 100 : 0;
     return `
-      <div class="ux-tipo-card">
-        <div>
-          <div class="ux-card-top-row">
-            <span class="ux-card-tag-pill">TIPO: ${t.name.toUpperCase()}</span>
-            <span class="ux-card-count-badge">${formatNum(t.totalCount)} cotizaciones</span>
-          </div>
-
-          <div class="ux-card-val-group">
-            <span class="ux-card-amount-num">$${formatNum(t.totalMonto)}</span>
-            <span class="ux-card-conversion-rate">${conversionPct.toFixed(1)}% Conversión</span>
-          </div>
-
-          <div class="ux-progress-track">
-            <div class="ux-progress-fill" style="width: ${Math.min(100, Math.max(0, conversionPct))}%;"></div>
-          </div>
+      <div class="ax-card hero-kpi-card">
+        <div class="today-header">
+          <span class="today-badge">TIPO SOLICITUD</span>
+          <span class="today-label" style="font-weight: 800; font-size: 1rem; color: #fff;">${t.name}</span>
+          <span class="today-date">${formatNum(t.totalCount)} cotizaciones</span>
         </div>
 
-        <div class="ux-stat-grid">
-          <div class="ux-stat-col">
-            <span class="ux-stat-lbl" style="color:#60a5fa;">TOTAL</span>
-            <span class="ux-stat-val" style="color:#f8fafc;">${formatNum(t.totalCount)}</span>
-            <span class="ux-stat-submonto">$${formatNum(t.totalMonto)}</span>
+        <div class="today-value" style="margin: 0.5rem 0;">$${formatNum(t.totalMonto)}</div>
+
+        <div class="growth-badge growth-positive" style="margin-bottom: 0.85rem; width: fit-content;">
+          <span>▲ ${conversionPct.toFixed(1)}% Tasa de Conversión</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; padding-top: 0.75rem; border-top: 1px solid rgba(255,255,255,0.08); text-align: center;">
+          <div>
+            <span style="font-size: 0.68rem; color: #34d399; font-weight: 800; display: block; text-transform: uppercase;">🟢 Aceptadas</span>
+            <strong style="font-size: 0.95rem; color: #f8fafc;">${formatNum(t.aceptadasCount)}</strong>
+            <span style="font-size: 0.68rem; color: #94a3b8; display: block;">$${formatNum(t.aceptadasMonto)}</span>
           </div>
 
-          <div class="ux-stat-col">
-            <span class="ux-stat-lbl" style="color:#34d399;">ACEPTADAS</span>
-            <span class="ux-stat-val" style="color:#34d399;">${formatNum(t.aceptadasCount)}</span>
-            <span class="ux-stat-submonto">$${formatNum(t.aceptadasMonto)}</span>
+          <div>
+            <span style="font-size: 0.68rem; color: #fbbf24; font-weight: 800; display: block; text-transform: uppercase;">🟡 Pendientes</span>
+            <strong style="font-size: 0.95rem; color: #f8fafc;">${formatNum(t.pendientesCount)}</strong>
+            <span style="font-size: 0.68rem; color: #94a3b8; display: block;">$${formatNum(t.pendientesMonto)}</span>
           </div>
 
-          <div class="ux-stat-col">
-            <span class="ux-stat-lbl" style="color:#fbbf24;">PENDIENTES</span>
-            <span class="ux-stat-val" style="color:#fbbf24;">${formatNum(t.pendientesCount)}</span>
-            <span class="ux-stat-submonto">$${formatNum(t.pendientesMonto)}</span>
-          </div>
-
-          <div class="ux-stat-col">
-            <span class="ux-stat-lbl" style="color:#f87171;">PERDIDAS</span>
-            <span class="ux-stat-val" style="color:#f87171;">${formatNum(t.perdidasCount)}</span>
-            <span class="ux-stat-submonto">$${formatNum(t.perdidasMonto)}</span>
+          <div>
+            <span style="font-size: 0.68rem; color: #f87171; font-weight: 800; display: block; text-transform: uppercase;">🔴 Perdidas</span>
+            <strong style="font-size: 0.95rem; color: #f8fafc;">${formatNum(t.perdidasCount)}</strong>
+            <span style="font-size: 0.68rem; color: #94a3b8; display: block;">$${formatNum(t.perdidasMonto)}</span>
           </div>
         </div>
       </div>

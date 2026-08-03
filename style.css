@@ -6527,5 +6527,499 @@ select#comprasStrategySelect {
   font-size: 0.8rem !important;
 }
 
+/* ==========================================================================
+   HIGH-END GLASSMORPHISM COTIZACIONES DASHBOARD STYLES
+   ========================================================================== */
+
+.cotiz-hero-card {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85)) !important;
+  border: 1px solid rgba(59, 130, 246, 0.25) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.1) !important;
+  padding: 1.5rem 1.75rem !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+.cotiz-hero-card::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  height: 3px !important;
+  background: linear-gradient(90deg, #3b82f6, #10b981, #6366f1) !important;
+}
+
+.cotiz-kpi-grid {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 1.25rem !important;
+  margin-bottom: 1.5rem !important;
+}
+
+@media (max-width: 1100px) {
+  .cotiz-kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }
+}
+@media (max-width: 600px) {
+  .cotiz-kpi-grid { grid-template-columns: 1fr !important; }
+}
+
+.cotiz-kpi-item {
+  background: rgba(18, 26, 43, 0.85) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 16px !important;
+  padding: 1.25rem 1.4rem !important;
+  position: relative !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3) !important;
+}
+
+.cotiz-kpi-item:hover {
+  transform: translateY(-4px) !important;
+  border-color: rgba(59, 130, 246, 0.4) !important;
+  box-shadow: 0 16px 40px rgba(59, 130, 246, 0.15) !important;
+}
+
+.cotiz-kpi-icon {
+  width: 42px !important;
+  height: 42px !important;
+  border-radius: 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin-bottom: 0.75rem !important;
+}
+
+.cotiz-kpi-icon--blue {
+  background: rgba(59, 130, 246, 0.15) !important;
+  color: #60a5fa !important;
+  border: 1px solid rgba(59, 130, 246, 0.3) !important;
+}
+
+.cotiz-kpi-icon--emerald {
+  background: rgba(16, 185, 129, 0.15) !important;
+  color: #34d399 !important;
+  border: 1px solid rgba(16, 185, 129, 0.3) !important;
+}
+
+.cotiz-kpi-icon--amber {
+  background: rgba(245, 158, 11, 0.15) !important;
+  color: #fbbf24 !important;
+  border: 1px solid rgba(245, 158, 11, 0.3) !important;
+}
+
+.cotiz-kpi-icon--purple {
+  background: rgba(139, 92, 246, 0.15) !important;
+  color: #a78bfa !important;
+  border: 1px solid rgba(139, 92, 246, 0.3) !important;
+}
+
+.cotiz-kpi-val {
+  font-size: 1.6rem !important;
+  font-weight: 800 !important;
+  font-family: var(--ax-font-sans) !important;
+  letter-spacing: -0.5px !important;
+  margin: 0.2rem 0 !important;
+}
+
+.cotiz-status-pill {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 5px 12px !important;
+  border-radius: 20px !important;
+  font-size: 0.78rem !important;
+  font-weight: 700 !important;
+}
+
+.cotiz-status--aceptada {
+  background: rgba(16, 185, 129, 0.16) !important;
+  color: #34d399 !important;
+  border: 1px solid rgba(16, 185, 129, 0.35) !important;
+}
+
+.cotiz-status--enviada {
+  background: rgba(245, 158, 11, 0.16) !important;
+  color: #fbbf24 !important;
+  border: 1px solid rgba(245, 158, 11, 0.35) !important;
+}
+
+.cotiz-status--preparacion {
+  background: rgba(59, 130, 246, 0.16) !important;
+  color: #60a5fa !important;
+  border: 1px solid rgba(59, 130, 246, 0.35) !important;
+}
+
+.cotiz-status--perdida {
+  background: rgba(239, 68, 68, 0.16) !important;
+  color: #f87171 !important;
+  border: 1px solid rgba(239, 68, 68, 0.35) !important;
+}
+
+.cotiz-status--pendiente {
+  background: rgba(148, 163, 184, 0.16) !important;
+  color: #cbd5e1 !important;
+  border: 1px solid rgba(148, 163, 184, 0.35) !important;
+}
+
+/* CARDS POR TIPO DE SOLICITUD */
+.cotiz-tipo-cards-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)) !important;
+  gap: 1.25rem !important;
+}
+
+.cotiz-tipo-card {
+  background: linear-gradient(135deg, rgba(18, 26, 43, 0.95), rgba(30, 41, 59, 0.85)) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 16px !important;
+  padding: 1.25rem 1.4rem !important;
+  position: relative !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.cotiz-tipo-card:hover {
+  transform: translateY(-4px) !important;
+  border-color: rgba(59, 130, 246, 0.4) !important;
+  box-shadow: 0 16px 40px rgba(59, 130, 246, 0.18) !important;
+}
+
+.cotiz-tipo-card-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  margin-bottom: 0.75rem !important;
+  padding-bottom: 0.65rem !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+.cotiz-tipo-badge {
+  font-size: 0.9rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.5px !important;
+  color: #fff !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+.cotiz-tipo-monto {
+  font-size: 1.45rem !important;
+  font-weight: 800 !important;
+  color: #60a5fa !important;
+  margin: 0.2rem 0 0.85rem 0 !important;
+}
+
+.cotiz-counters-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 0.6rem !important;
+  background: rgba(10, 15, 29, 0.6) !important;
+  border-radius: 12px !important;
+  padding: 0.75rem !important;
+  border: 1px solid rgba(255, 255, 255, 0.04) !important;
+}
+
+.cotiz-counter-box {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+}
+
+.cotiz-counter-lbl {
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  color: #94a3b8 !important;
+}
+
+.cotiz-counter-num {
+  font-size: 1.05rem !important;
+  font-weight: 800 !important;
+}
+
+/* DESIGN V2 (EXACT MATCH TO IMAGE 2) & MOBILE RESPONSIVENESS */
+.cotiz-tipo-card-v2 {
+  background: #0f172a !important;
+  border: 1px solid rgba(59, 130, 246, 0.25) !important;
+  border-radius: 14px !important;
+  padding: 1.25rem 1.4rem !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  min-height: 160px !important;
+  transition: transform 0.2s ease, border-color 0.2s ease !important;
+}
+
+.cotiz-tipo-card-v2:hover {
+  transform: translateY(-3px) !important;
+  border-color: rgba(59, 130, 246, 0.5) !important;
+}
+
+.cotiz-card-tag {
+  display: inline-block !important;
+  padding: 3px 10px !important;
+  border-radius: 6px !important;
+  font-size: 0.68rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.5px !important;
+  text-transform: uppercase !important;
+  background: rgba(59, 130, 246, 0.15) !important;
+  color: #60a5fa !important;
+  border: 1px solid rgba(59, 130, 246, 0.3) !important;
+  width: fit-content !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.cotiz-card-title {
+  font-size: 0.85rem !important;
+  color: #94a3b8 !important;
+  margin: 0 0 0.3rem 0 !important;
+}
+
+.cotiz-card-amount {
+  font-size: 1.75rem !important;
+  font-weight: 800 !important;
+  color: #ffffff !important;
+  letter-spacing: -0.5px !important;
+  margin: 0.2rem 0 0.85rem 0 !important;
+}
+
+.cotiz-card-footer-stats {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  flex-wrap: wrap !important;
+  padding-top: 0.75rem !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  font-size: 0.78rem !important;
+}
+
+/* RESPONSIVE MOBILE SIDEBAR DRAWER OVERLAY */
+@media (max-width: 900px) {
+  .ax-layout {
+    flex-direction: column !important;
+  }
+
+  .ax-sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    left: -300px !important;
+    width: 280px !important;
+    height: 100vh !important;
+    z-index: 9999 !important;
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.7) !important;
+  }
+
+  .ax-sidebar.mobile-open {
+    left: 0 !important;
+  }
+
+  .ax-sidebar-backdrop {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(4px);
+    z-index: 9998;
+  }
+
+  .ax-sidebar-backdrop.active {
+    display: block !important;
+  }
+
+  .ax-mobile-menu-btn {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.18) !important;
+    color: #fff !important;
+    padding: 8px !important;
+    border-radius: 8px !important;
+    cursor: pointer !important;
+  }
+
+  .ax-header {
+    padding: 0.75rem 1rem !important;
+  }
+
+  .ax-main {
+    padding: 0.85rem !important;
+  }
+
+  .cotiz-tipo-cards-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .charts-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (min-width: 901px) {
+  .ax-mobile-menu-btn {
+    display: none !important;
+  }
+  .ax-sidebar-backdrop {
+    display: none !important;
+  }
+}
+
+/* ==========================================================================
+   EXECUTIVE UX DESIGN (PRO ENTERPRISE CARDS & METRIC GRID)
+   ========================================================================== */
+
+.ux-tipo-card {
+  background: rgba(15, 23, 42, 0.92) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 16px !important;
+  padding: 1.4rem 1.5rem !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  gap: 1rem !important;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+.ux-tipo-card::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  height: 2px !important;
+  background: linear-gradient(90deg, #3b82f6, #10b981) !important;
+  opacity: 0.8 !important;
+}
+
+.ux-tipo-card:hover {
+  transform: translateY(-4px) !important;
+  border-color: rgba(59, 130, 246, 0.45) !important;
+  box-shadow: 0 18px 45px rgba(59, 130, 246, 0.16) !important;
+}
+
+.ux-card-top-row {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+
+.ux-card-tag-pill {
+  font-size: 0.7rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.06em !important;
+  text-transform: uppercase !important;
+  padding: 3px 10px !important;
+  border-radius: 6px !important;
+  background: rgba(59, 130, 246, 0.14) !important;
+  color: #60a5fa !important;
+  border: 1px solid rgba(59, 130, 246, 0.3) !important;
+}
+
+.ux-card-count-badge {
+  font-size: 0.75rem !important;
+  font-weight: 700 !important;
+  color: #94a3b8 !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  padding: 2px 8px !important;
+  border-radius: 6px !important;
+}
+
+.ux-card-val-group {
+  display: flex !important;
+  align-items: baseline !important;
+  justify-content: space-between !important;
+  flex-wrap: wrap !important;
+  gap: 0.5rem !important;
+  margin-top: 0.4rem !important;
+}
+
+.ux-card-amount-num {
+  font-family: var(--ax-font-sans) !important;
+  font-size: 1.85rem !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.02em !important;
+  color: #ffffff !important;
+}
+
+.ux-card-conversion-rate {
+  font-size: 0.78rem !important;
+  font-weight: 800 !important;
+  color: #34d399 !important;
+  background: rgba(16, 185, 129, 0.12) !important;
+  border: 1px solid rgba(16, 185, 129, 0.25) !important;
+  padding: 3px 8px !important;
+  border-radius: 12px !important;
+}
+
+.ux-progress-track {
+  width: 100% !important;
+  height: 4px !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-radius: 4px !important;
+  overflow: hidden !important;
+  margin: 0.4rem 0 0.6rem 0 !important;
+}
+
+.ux-progress-fill {
+  height: 100% !important;
+  background: linear-gradient(90deg, #10b981, #059669) !important;
+  border-radius: 4px !important;
+  transition: width 0.4s ease !important;
+}
+
+.ux-stat-grid {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 0.5rem !important;
+  background: rgba(10, 15, 29, 0.55) !important;
+  border-radius: 10px !important;
+  padding: 0.75rem 0.85rem !important;
+  border: 1px solid rgba(255, 255, 255, 0.04) !important;
+}
+
+@media (max-width: 640px) {
+  .ux-stat-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.75rem !important;
+  }
+}
+
+.ux-stat-col {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+}
+
+.ux-stat-lbl {
+  font-size: 0.68rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.03em !important;
+}
+
+.ux-stat-val {
+  font-size: 0.95rem !important;
+  font-weight: 800 !important;
+  font-family: var(--ax-font-sans) !important;
+}
+
+.ux-stat-submonto {
+  font-size: 0.68rem !important;
+  color: #94a3b8 !important;
+  font-weight: 600 !important;
+}
+
 
 
