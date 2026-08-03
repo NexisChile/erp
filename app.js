@@ -4917,8 +4917,23 @@ if (modalBackdrop) {
 
 // ---------- Helper Actions para Command Palette & Header ----------
 
+function toggleMobileSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const backdrop = document.getElementById('sidebarBackdrop');
+  if (sidebar) sidebar.classList.toggle('mobile-open');
+  if (backdrop) backdrop.classList.toggle('active');
+}
+
+function closeMobileSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const backdrop = document.getElementById('sidebarBackdrop');
+  if (sidebar) sidebar.classList.remove('mobile-open');
+  if (backdrop) backdrop.classList.remove('active');
+}
+
 function switchView(viewName) {
   if (!viewName) return;
+  closeMobileSidebar();
   document.querySelectorAll('.ax-nav__item[data-view]').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   
@@ -5514,39 +5529,21 @@ function renderCotizacionesKPIs() {
   container.innerHTML = tiposList.map(t => {
     const icon = iconMap[t.name.toLowerCase()] || '📁';
     return `
-      <div class="cotiz-tipo-card">
-        <div class="cotiz-tipo-card-header">
-          <div class="cotiz-tipo-badge">
-            <span>${icon}</span>
-            <span>${t.name}</span>
-          </div>
-          <span style="font-size:0.75rem; font-weight:700; color:#94a3b8; background:rgba(255,255,255,0.06); padding:2px 8px; border-radius:10px;">
-            ${formatNum(t.totalCount)} COTS
-          </span>
+      <div class="cotiz-tipo-card-v2">
+        <div>
+          <div class="cotiz-card-tag">${icon} TIPO: ${t.name.toUpperCase()}</div>
+          <div class="cotiz-card-title">${formatNum(t.totalCount)} solicitudes registradas</div>
+          <div class="cotiz-card-amount">$${formatNum(t.totalMonto)}</div>
         </div>
 
-        <div class="cotiz-tipo-monto">$${formatNum(t.totalMonto)}</div>
-
-        <div class="cotiz-counters-grid">
-          <div class="cotiz-counter-box">
-            <span class="cotiz-counter-lbl" style="color:#94a3b8;">📊 Total Cots</span>
-            <span class="cotiz-counter-num" style="color:#f8fafc;">${formatNum(t.totalCount)}</span>
-          </div>
-
-          <div class="cotiz-counter-box">
-            <span class="cotiz-counter-lbl" style="color:#34d399;">🟢 Aceptadas</span>
-            <span class="cotiz-counter-num" style="color:#34d399;">${formatNum(t.aceptadasCount)}</span>
-          </div>
-
-          <div class="cotiz-counter-box">
-            <span class="cotiz-counter-lbl" style="color:#fbbf24;">🟡 Pendientes</span>
-            <span class="cotiz-counter-num" style="color:#fbbf24;">${formatNum(t.pendientesCount)}</span>
-          </div>
-
-          <div class="cotiz-counter-box">
-            <span class="cotiz-counter-lbl" style="color:#f87171;">🔴 Perdidas</span>
-            <span class="cotiz-counter-num" style="color:#f87171;">${formatNum(t.perdidasCount)}</span>
-          </div>
+        <div class="cotiz-card-footer-stats">
+          <span style="color:#60a5fa; font-weight:700;">📊 ${formatNum(t.totalCount)} Cots</span>
+          <span>•</span>
+          <span style="color:#34d399; font-weight:700;">🟢 ${formatNum(t.aceptadasCount)} Aceptadas</span>
+          <span>•</span>
+          <span style="color:#fbbf24; font-weight:700;">🟡 ${formatNum(t.pendientesCount)} Pendientes</span>
+          <span>•</span>
+          <span style="color:#f87171; font-weight:700;">🔴 ${formatNum(t.perdidasCount)} Perdidas</span>
         </div>
       </div>
     `;

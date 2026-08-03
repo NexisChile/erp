@@ -281,8 +281,11 @@
   </div>
 
   <div class="ax-layout">
+    <!-- BACKDROP PARA NAVEGACIÓN MÓVIL -->
+    <div class="ax-sidebar-backdrop" id="sidebarBackdrop" onclick="closeMobileSidebar()"></div>
+
     <!-- ===== SIDEBAR NAVIGATION ===== -->
-    <aside class="ax-sidebar">
+    <aside class="ax-sidebar" id="sidebar">
       <!-- BRAND -->
       <div class="ax-sidebar__brand">
         <a class="ax-sidebar__logo" href="#">
@@ -374,6 +377,9 @@
       <!-- TOP HEADER -->
       <header class="ax-header">
         <div class="ax-header__left">
+          <button type="button" class="ax-mobile-menu-btn" id="mobileMenuBtn" aria-label="Abrir Menú" onclick="toggleMobileSidebar()" style="margin-right: 0.75rem;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+          </button>
           <div class="ax-header__title-group">
             <h1 class="ax-header__title">Glomax S.A. · Dashboard de Ventas</h1>
             <span class="ax-header__subtitle">Análisis Comercial en Tiempo Real</span>
@@ -1494,7 +1500,7 @@
   </div>
 
   <!-- Scripts -->
-  <script src="config.js?v=20260802_v53"></script>
-  <script src="app.js?v=20260802_v53"></script>
+  <script src="config.js?v=20260802_v54"></script>
+  <script src="app.js?v=20260802_v54"></script>
 </body>
 </html>
