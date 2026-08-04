@@ -2784,19 +2784,25 @@ function renderTicker() {
 
 // ---------- Venta del día ----------
 
-function isSameDay(value, ref) {
 
-  const d = new Date(value);
 
-  if (isNaN(d.getTime())) return false;
 
-  return d.getFullYear() === ref.getFullYear() &&
-
-    d.getMonth() === ref.getMonth() &&
-
-    d.getDate() === ref.getDate();
-
+function animateCLPValue(elementId, targetValue) {
+  const el = document.getElementById(elementId);
+  if (!el) return;
+  const target = Math.round(Number(targetValue) || 0);
+  el.textContent = formatCLP(target);
 }
+
+function isSameDay(value, ref) {
+  if (!value || !ref) return false;
+  const d = parseRowDate(value);
+  if (!d || isNaN(d.getTime())) return false;
+  return d.getFullYear() === ref.getFullYear() &&
+    d.getMonth() === ref.getMonth() &&
+    d.getDate() === ref.getDate();
+}
+
 
 function formatHeroTrend(current, prev, labelPrev, prevYearName) {
   const yr = prevYearName || '2025';
