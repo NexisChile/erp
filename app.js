@@ -5940,8 +5940,10 @@ function initCotizacionesListeners() {
 }
 
 
+
 // ==========================================
 // MÓDULO DE PRODUCTOS Y PROYECCIÓN POR SKU
+// (Hoja Ventas - Cols: F=Cant, N=PreUni, O=Neto, Z=Costos, AA=CostoTotal, AB=Utilidad)
 // ==========================================
 
 let currentProdSelectedSku = null;
@@ -5949,6 +5951,61 @@ let prodChartMetric = 'qty'; // 'qty' | 'neto'
 let prodProjectionChartInstance = null;
 let prodYearlyChartInstance = null;
 let prodProductsMap = new Map();
+let currentDolarRate = 950; // Fallback CLP per 1 USD
+
+// Helper to robustly extract row value by string key or array column index
+function getRowVal(r, keys, arrayIdx) {
+  if (!r) return undefined;
+  if (Array.isArray(r) && arrayIdx !== undefined && r[arrayIdx] !== undefined) {
+    return r[arrayIdx];
+  }
+  for (const k of keys) {
+    if (r[k] !== undefined && r[k] !== null && r[k] !== '') {
+      return r[k];
+    }
+  }
+  return undefined;
+}
+
+// Fetch live USD rate from API
+async function fetchDolarRate() {
+  const statusEl = document.getElementById('prodDolarStatus');
+  const inputEl = document.getElementById('prodDolarRateInput');
+
+  try {
+    const res = await fetch('https://mindicador.cl/api/dolar');
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.serie && data.serie[0] && data.serie[0].valor) {
+        currentDolarRate = parseFloat(data.serie[0].valor);
+        if (inputEl) inputEl.value = Math.round(currentDolarRate * 10) / 10;
+        if (statusEl) statusEl.innerHTML = `🟢 Oficial (mindicador): <strong>$${currentDolarRate.toFixed(1)}</strong>`;
+        updateProdProjection();
+        return;
+      }
+    }
+  } catch (e) {
+    console.warn('Primary dollar API mindicador.cl failed, trying fallback...', e);
+  }
+
+  try {
+    const res2 = await fetch('https://cl.dolarapi.com/v1/cotizaciones/usd');
+    if (res2.ok) {
+      const data2 = await res2.json();
+      if (data2 && data2.venta) {
+        currentDolarRate = parseFloat(data2.venta);
+        if (inputEl) inputEl.value = Math.round(currentDolarRate * 10) / 10;
+        if (statusEl) statusEl.innerHTML = `🟢 Oficial (dolarapi): <strong>$${currentDolarRate.toFixed(1)}</strong>`;
+        updateProdProjection();
+        return;
+      }
+    }
+  } catch (e) {
+    console.warn('Secondary dollar API failed, using fallback 950', e);
+  }
+
+  if (statusEl) statusEl.innerHTML = `⚙️ Referencia Manual: <strong>$${currentDolarRate}</strong>`;
+}
 
 function getProductsMap() {
   const map = new Map();
@@ -5956,24 +6013,45 @@ function getProductsMap() {
 
   dataset.forEach(r => {
     if (!r) return;
-    const rawSku = (r['CODIGO'] || r['Codigo'] || r['SKU'] || r['DESCRIPCION'] || r['Descripcion'] || '').toString().trim();
+
+    // Col D (idx 3) = CODIGO / SKU
+    const rawSku = (getRowVal(r, ['CODIGO', 'Codigo', 'SKU', 'DESCRIPCION'], 3) || '').toString().trim();
     if (!rawSku) return;
 
     const sku = rawSku.toUpperCase();
-    const desc = (r['DESCRIPCION'] || r['Descripcion'] || r['GLOSA'] || sku).toString().trim();
-    const familia = (r['FAMILIA'] || r['Familia'] || r['Grupo'] || 'General').toString().trim();
-    const categoria = (r['CATEGORIA'] || r['Categoria'] || r['LINEA'] || 'General').toString().trim();
+    // Col E (idx 4) = DESCRIPCION
+    const desc = (getRowVal(r, ['DESCRIPCION', 'Descripcion', 'GLOSA'], 4) || sku).toString().trim();
+    // Col Q (idx 16) = FAMILIA
+    const familia = (getRowVal(r, ['FAMILIA', 'Familia', 'Grupo'], 16) || 'General').toString().trim();
+    // Col R (idx 17) = CATEGORIA
+    const categoria = (getRowVal(r, ['CATEGORIA', 'Categoria', 'LINEA'], 17) || 'General').toString().trim();
 
-    const cant = parseNumberClean(r['CANTFACTURADA']);
-    const preuni = parseNumberClean(r['PREUNI']);
-    const costos = parseNumberClean(r['COSTOS']);
-    const neto = r['NETO'] !== undefined && r['NETO'] !== '' ? parseNumberClean(r['NETO']) : (cant * preuni);
-    const costoTotalNet = r['COSTO TOTAL NET'] !== undefined && r['COSTO TOTAL NET'] !== '' ? parseNumberClean(r['COSTO TOTAL NET']) : (cant * costos);
-    const utilidad = r['($) UTILIDAD'] !== undefined && r['($) UTILIDAD'] !== '' ? parseNumberClean(r['($) UTILIDAD']) : (neto - costoTotalNet);
+    // Col F (idx 5) = CANTFACTURADA (Unidades Vendidas)
+    const cant = parseNumberClean(getRowVal(r, ['CANTFACTURADA', 'CantFacturada', 'CANT'], 5));
 
-    const dObj = parseRowDate(r['FECHA'] || r['Fecha']);
-    const year = dObj ? dObj.getFullYear() : (parseInt(r['AÑO'] || r['Año']) || new Date().getFullYear());
-    const month = dObj ? (dObj.getMonth() + 1) : (parseInt(r['MES'] || r['# MES']) || 1);
+    // Col N (idx 13) = PREUNI (Precio Venta Unitario)
+    const preuni = parseNumberClean(getRowVal(r, ['PREUNI', 'PreUni', 'PRECIO'], 13));
+
+    // Col O (idx 14) = NETO (Venta Total)
+    const rawNeto = getRowVal(r, ['NETO', 'Neto', 'NETO TOTAL'], 14);
+    const neto = (rawNeto !== undefined && rawNeto !== '') ? parseNumberClean(rawNeto) : (cant * preuni);
+
+    // Col Z (idx 25) = COSTOS (Costo Unitario)
+    const costos = parseNumberClean(getRowVal(r, ['COSTOS', 'Costos', 'COSTO'], 25));
+
+    // Col AA (idx 26) = COSTO TOTAL NET (Costo Total)
+    const rawCostoTotal = getRowVal(r, ['COSTO TOTAL NET', 'Costo Total Net', 'COSTO TOTAL'], 26);
+    const costoTotalNet = (rawCostoTotal !== undefined && rawCostoTotal !== '') ? parseNumberClean(rawCostoTotal) : (cant * costos);
+
+    // Col AB (idx 27) = ($) UTILIDAD (Utilidad)
+    const rawUtilidad = getRowVal(r, ['($) UTILIDAD', 'Utilidad', 'UTILIDAD'], 27);
+    const utilidad = (rawUtilidad !== undefined && rawUtilidad !== '') ? parseNumberClean(rawUtilidad) : (neto - costoTotalNet);
+
+    // Col C (idx 2) = FECHA / Col Y (idx 24) = AÑO / Col X (idx 23) = MES
+    const fechaRaw = getRowVal(r, ['FECHA', 'Fecha'], 2);
+    const dObj = parseRowDate(fechaRaw);
+    const year = dObj ? dObj.getFullYear() : (parseInt(getRowVal(r, ['AÑO', 'Año'], 24)) || new Date().getFullYear());
+    const month = dObj ? (dObj.getMonth() + 1) : (parseInt(getRowVal(r, ['MES', '# MES'], 23)) || 1);
 
     if (!map.has(sku)) {
       map.set(sku, {
@@ -5998,14 +6076,17 @@ function getProductsMap() {
     item.utilidadTotal += utilidad;
     item.txCount += 1;
     item.transactions.push({
-      folio: r['FOLIO'] || r['Folio'] || 'N/A',
-      fecha: r['FECHA'] || r['Fecha'] || '',
-      cliente: r['CLIENTE'] || r['Cliente'] || 'N/A',
-      canal: r['CANAL FINAL'] || r['Canal'] || 'General',
-      tienda: r['TIENDA FINAL'] || r['Tienda'] || '',
+      folio: getRowVal(r, ['FOLIO', 'Folio'], 0) || 'N/A',
+      fecha: fechaRaw || '',
+      cliente: getRowVal(r, ['CLIENTE', 'Cliente'], 8) || 'N/A',
+      canal: getRowVal(r, ['CANAL FINAL', 'Canal'], 20) || 'General',
+      tienda: getRowVal(r, ['TIENDA FINAL', 'Tienda'], 21) || '',
       cant: cant,
       preuni: preuni,
       neto: neto,
+      costos: costos,
+      costoTotalNet: costoTotalNet,
+      utilidad: utilidad,
       dObj: dObj
     });
 
@@ -6045,7 +6126,7 @@ function renderProductosView() {
   const sortedProds = Array.from(prodProductsMap.values()).sort((a, b) => b.cantTotal - a.cantTotal);
 
   if (sortedProds.length === 0) {
-    selectEl.innerHTML = '<option value="">No hay productos disponibles</option>';
+    selectEl.innerHTML = '<option value="">No hay productos disponibles en Ventas</option>';
     return;
   }
 
@@ -6080,6 +6161,19 @@ function renderProductosView() {
       speedModeSelect.addEventListener('change', () => updateProdProjection());
     }
 
+    const dolarInput = document.getElementById('prodDolarRateInput');
+    if (dolarInput) {
+      dolarInput.addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value);
+        if (val && val > 0) {
+          currentDolarRate = val;
+          const statusEl = document.getElementById('prodDolarStatus');
+          if (statusEl) statusEl.innerHTML = `✍️ Personalizado: <strong>$${currentDolarRate.toFixed(1)}</strong>`;
+          updateProdProjection();
+        }
+      });
+    }
+
     const randomBtn = document.getElementById('prodRandomBtn');
     if (randomBtn) {
       randomBtn.addEventListener('click', () => {
@@ -6109,6 +6203,9 @@ function renderProductosView() {
         drop.style.display = 'none';
       }
     });
+
+    // Fetch official dollar rate on load
+    fetchDolarRate();
   }
 
   if (!currentProdSelectedSku && sortedProds.length > 0) {
@@ -6188,15 +6285,23 @@ function selectProductSku(sku) {
   const subEl = document.getElementById('prodSubtitle');
   if (subEl) subEl.textContent = `Transacciones registradas: ${p.txCount} | Categoría: ${p.categoria} | Familia: ${p.familia}`;
 
+  // Calculated Weighted Average Selling Price (Col N / Col O) & Average Unit Cost (Col Z / Col AA)
   const avgPrice = p.cantTotal > 0 ? (p.netoTotal / p.cantTotal) : 0;
   const avgCost = p.cantTotal > 0 ? (p.costoTotal / p.cantTotal) : 0;
   const marginPct = p.netoTotal > 0 ? ((p.netoTotal - p.costoTotal) / p.netoTotal) * 100 : 0;
 
+  const avgPriceUSD = currentDolarRate > 0 ? (avgPrice / currentDolarRate) : 0;
+  const avgCostUSD = currentDolarRate > 0 ? (avgCost / currentDolarRate) : 0;
+
   const avgPriceEl = document.getElementById('prodAvgPrice');
   if (avgPriceEl) avgPriceEl.textContent = `$${formatCLP(avgPrice)}`;
+  const avgPriceUSDEl = document.getElementById('prodAvgPriceUSD');
+  if (avgPriceUSDEl) avgPriceUSDEl.textContent = `USD $${avgPriceUSD.toFixed(2)}`;
 
   const avgCostEl = document.getElementById('prodAvgCost');
   if (avgCostEl) avgCostEl.textContent = `$${formatCLP(avgCost)}`;
+  const avgCostUSDEl = document.getElementById('prodAvgCostUSD');
+  if (avgCostUSDEl) avgCostUSDEl.textContent = `USD $${avgCostUSD.toFixed(2)}`;
 
   const marginEl = document.getElementById('prodMarginPct');
   if (marginEl) {
@@ -6208,7 +6313,7 @@ function selectProductSku(sku) {
   if (totalQtyEl) totalQtyEl.textContent = `${formatNum(p.cantTotal)} und.`;
 
   const totalRevEl = document.getElementById('prodKpiTotalRevenue');
-  if (totalRevEl) totalRevEl.textContent = `$${formatNum(p.netoTotal)} Neto`;
+  if (totalRevEl) totalRevEl.textContent = `$${formatNum(p.netoTotal)} Neto (Col O)`;
 
   let peakYear = 'N/A';
   let maxYearQty = -1;
@@ -6327,18 +6432,27 @@ function updateProdProjection() {
   const resDaysEl = document.getElementById('prodProjResultDays');
   const resDateEl = document.getElementById('prodProjDepletionDate');
   const speedLabelEl = document.getElementById('prodProjSpeedLabel');
+
   const estRevEl = document.getElementById('prodProjEstRevenue');
+  const estRevUSDEl = document.getElementById('prodProjEstRevenueUSD');
   const estCostEl = document.getElementById('prodProjEstCost');
+  const estCostUSDEl = document.getElementById('prodProjEstCostUSD');
   const estProfEl = document.getElementById('prodProjEstProfit');
+  const estProfUSDEl = document.getElementById('prodProjEstProfitUSD');
 
   if (monthlyVelocity <= 0 || projQty <= 0) {
     if (resMonthsEl) resMonthsEl.textContent = '0.0 Meses';
     if (resDaysEl) resDaysEl.textContent = 'Sin ventas de referencia suficiente';
     if (resDateEl) resDateEl.textContent = 'Indefinido';
     if (speedLabelEl) speedLabelEl.textContent = speedLabel;
-    if (estRevEl) estRevEl.textContent = '$0';
-    if (estCostEl) estCostEl.textContent = '$0';
-    if (estProfEl) estProfEl.textContent = '$0';
+
+    if (estRevEl) estRevEl.textContent = '$0 CLP';
+    if (estRevUSDEl) estRevUSDEl.textContent = 'USD $0';
+    if (estCostEl) estCostEl.textContent = '$0 CLP';
+    if (estCostUSDEl) estCostUSDEl.textContent = 'USD $0';
+    if (estProfEl) estProfEl.textContent = '$0 CLP';
+    if (estProfUSDEl) estProfUSDEl.textContent = 'USD $0';
+
     renderProdProjectionChart(0, 0, 0);
     return;
   }
@@ -6352,19 +6466,32 @@ function updateProdProjection() {
   const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
   const formattedDepletionDate = `${monthNames[depletionDate.getMonth()]} ${depletionDate.getFullYear()}`;
 
+  // Average Selling Price (Col N / Col O) & Average Cost (Col Z / Col AA)
   const avgPrice = p.cantTotal > 0 ? (p.netoTotal / p.cantTotal) : 0;
   const avgCost = p.cantTotal > 0 ? (p.costoTotal / p.cantTotal) : 0;
+
   const estRev = projQty * avgPrice;
   const estCost = projQty * avgCost;
   const estProf = estRev - estCost;
+
+  const rate = currentDolarRate > 0 ? currentDolarRate : 950;
+  const estRevUSD = estRev / rate;
+  const estCostUSD = estCost / rate;
+  const estProfUSD = estProf / rate;
 
   if (resMonthsEl) resMonthsEl.textContent = `${monthsToDeplete.toFixed(1)} Meses`;
   if (resDaysEl) resDaysEl.textContent = `≈ ${daysToDeplete} Días de cobertura comercial`;
   if (resDateEl) resDateEl.textContent = formattedDepletionDate;
   if (speedLabelEl) speedLabelEl.textContent = speedLabel;
-  if (estRevEl) estRevEl.textContent = `$${formatNum(Math.round(estRev))}`;
-  if (estCostEl) estCostEl.textContent = `$${formatNum(Math.round(estCost))}`;
-  if (estProfEl) estProfEl.textContent = `$${formatNum(Math.round(estProf))}`;
+
+  if (estRevEl) estRevEl.textContent = `$${formatNum(Math.round(estRev))} CLP`;
+  if (estRevUSDEl) estRevUSDEl.textContent = `USD $${formatNum(Math.round(estRevUSD))}`;
+
+  if (estCostEl) estCostEl.textContent = `$${formatNum(Math.round(estCost))} CLP`;
+  if (estCostUSDEl) estCostUSDEl.textContent = `USD $${formatNum(Math.round(estCostUSD))}`;
+
+  if (estProfEl) estProfEl.textContent = `$${formatNum(Math.round(estProf))} CLP`;
+  if (estProfUSDEl) estProfUSDEl.textContent = `USD $${formatNum(Math.round(estProfUSD))}`;
 
   renderProdProjectionChart(projQty, monthlyVelocity, monthsToDeplete);
 }
@@ -6548,7 +6675,7 @@ function renderProdYearlyTable(productItem) {
 
   const sortedYears = Array.from(productItem.yearsMap.keys()).sort((a, b) => b - a);
   if (sortedYears.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #94a3b8;">Sin datos registrados.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #94a3b8;">Sin datos registrados en Ventas.</td></tr>';
     return;
   }
 
@@ -6594,7 +6721,7 @@ function renderProdTxTable(transactions) {
   if (countBadge) countBadge.textContent = `${transactions.length} Registros`;
 
   if (!transactions || transactions.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #94a3b8;">Sin transacciones para este SKU.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #94a3b8;">Sin transacciones en planilla Ventas para este SKU.</td></tr>';
     return;
   }
 

@@ -1270,7 +1270,7 @@
 
           <!-- TARJETA DE BÚSQUEDA Y SELECCIÓN DE SKU -->
           <div class="ax-card" style="padding: 1.5rem; margin-bottom: 1.5rem; border-left: 4px solid #a855f7; background: linear-gradient(135deg, rgba(168, 85, 247, 0.08) 0%, rgba(15, 23, 42, 0.95) 100%);">
-            <div style="display: grid; grid-template-columns: 1.5fr 1fr auto; gap: 1rem; align-items: end;">
+            <div style="display: grid; grid-template-columns: 1.4fr 1.2fr 0.9fr auto; gap: 1rem; align-items: end;">
               <div>
                 <label for="prodSkuSearch" style="display: block; font-size: 0.78rem; font-weight: 700; color: #cbd5e1; text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.5px;">
                   🔍 Buscar SKU o Descripción de Producto
@@ -1283,11 +1283,22 @@
 
               <div>
                 <label for="prodSkuSelect" style="display: block; font-size: 0.78rem; font-weight: 700; color: #cbd5e1; text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.5px;">
-                  📦 Seleccionar de la Lista de Productos
+                  📦 Lista de Productos (Ventas)
                 </label>
                 <select id="prodSkuSelect" class="filter-select" style="width: 100%; height: 46px; font-size: 0.9rem; font-weight: 600; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 10px; color: #fff;">
                   <option value="">Cargando productos...</option>
                 </select>
+              </div>
+
+              <div>
+                <label for="prodDolarRateInput" style="display: block; font-size: 0.78rem; font-weight: 700; color: #cbd5e1; text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.5px;">
+                  💵 Valor Dólar ($ CLP / USD)
+                </label>
+                <div class="input-with-icon" style="position: relative;">
+                  <span class="currency-prefix" style="color: #10b981; left: 10px;">$</span>
+                  <input type="number" id="prodDolarRateInput" min="1" step="0.5" value="950" placeholder="950" style="width: 100%; padding-left: 28px; height: 46px; font-size: 1.05rem; font-weight: 800; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 10px; color: #fff;" />
+                </div>
+                <div id="prodDolarStatus" style="font-size: 0.68rem; color: #10b981; margin-top: 0.2rem; white-space: nowrap;">Obteniendo valor...</div>
               </div>
 
               <div style="display: flex; gap: 0.5rem;">
@@ -1322,12 +1333,14 @@
               </div>
               <div id="prodQuickStats" style="display: flex; gap: 1.5rem; text-align: right;">
                 <div>
-                  <div style="font-size: 0.72rem; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Precio Prom. Venta</div>
+                  <div style="font-size: 0.72rem; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Precio Prom. Venta (Col N)</div>
                   <div id="prodAvgPrice" style="font-size: 1.25rem; font-weight: 800; color: #38bdf8;">$0</div>
+                  <div id="prodAvgPriceUSD" style="font-size: 0.75rem; font-weight: 700; color: #94a3b8;">USD $0</div>
                 </div>
                 <div>
-                  <div style="font-size: 0.72rem; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Costo Unit. Prom.</div>
+                  <div style="font-size: 0.72rem; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Costo Unit. Prom. (Col Z)</div>
                   <div id="prodAvgCost" style="font-size: 1.25rem; font-weight: 800; color: #f43f5e;">$0</div>
+                  <div id="prodAvgCostUSD" style="font-size: 0.75rem; font-weight: 700; color: #94a3b8;">USD $0</div>
                 </div>
                 <div>
                   <div style="font-size: 0.72rem; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Margen %</div>
@@ -1431,16 +1444,19 @@
                   <!-- CARDS RESUMEN FINANCIERO DE LA PROYECCIÓN -->
                   <div class="bi-advisor-projections" style="grid-template-columns: repeat(3, 1fr);">
                     <div class="proj-card highlight-blue">
-                      <span class="proj-label">Venta Proyectada ($)</span>
-                      <span class="proj-val" id="prodProjEstRevenue">$0</span>
+                      <span class="proj-label">Venta Proyectada (Col O)</span>
+                      <span class="proj-val" id="prodProjEstRevenue">$0 CLP</span>
+                      <div id="prodProjEstRevenueUSD" style="font-size: 0.8rem; font-weight: 700; color: #60a5fa; margin-top: 0.2rem;">USD $0</div>
                     </div>
                     <div class="proj-card">
-                      <span class="proj-label">Inversión Costos ($)</span>
-                      <span class="proj-val" id="prodProjEstCost" style="color: #f43f5e;">$0</span>
+                      <span class="proj-label">Inversión Costos (Col AA)</span>
+                      <span class="proj-val" id="prodProjEstCost" style="color: #f43f5e;">$0 CLP</span>
+                      <div id="prodProjEstCostUSD" style="font-size: 0.8rem; font-weight: 700; color: #fda4af; margin-top: 0.2rem;">USD $0</div>
                     </div>
                     <div class="proj-card highlight-green">
-                      <span class="proj-label">Utilidad Proyectada ($)</span>
-                      <span class="proj-val" id="prodProjEstProfit">$0</span>
+                      <span class="proj-label">Utilidad Proyectada (Col AB)</span>
+                      <span class="proj-val" id="prodProjEstProfit">$0 CLP</span>
+                      <div id="prodProjEstProfitUSD" style="font-size: 0.8rem; font-weight: 700; color: #34d399; margin-top: 0.2rem;">USD $0</div>
                     </div>
                   </div>
                 </div>
