@@ -10766,6 +10766,10 @@ input[type="range"]::-webkit-slider-thumb:hover {
   display: inline-block;
   padding: 0.2rem 0.6rem;
   background: rgba(59, 130, 246, 0.12);
+  color: #60a5fa;
+  border-radius: 6px;
+}
+
 /* --- Table Design Enhancements --- */
 .table-container {
   width: 100%;
