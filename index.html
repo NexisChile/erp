@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet" />
   <!-- Stylesheets & Libraries -->
-  <link rel="stylesheet" href="style.css?v=20260804_emitir_cotiz_v400" />
+  <link rel="stylesheet" href="style.css?v=20260804_modal_cotiz_v500" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
@@ -1707,96 +1707,96 @@
           <button type="submit" class="btn-primary">Guardar Metas</button>
         </div>
       </form>
-  <!-- MODAL DE CREACIÓN / EDICIÓN DE COTIZACIÓN -->
+  <!-- MODAL FORM NUEVA COTIZACIÓN (ESTRUCTURA IDÉNTICA A REGISTRO DE VENTA) -->
   <div class="modal-backdrop" id="cotizacionModalBackdrop">
-    <div class="modal-content" style="max-width: 850px;">
+    <div class="modal-content">
       <div class="modal-header">
         <div>
-          <h3 id="cotizModalTitle">📑 Nueva Cotización</h3>
-          <p class="modal-subtitle">Genera una cotización comercial formal en formato profesional.</p>
+          <h3 id="cotizModalTitle">Nueva Cotización</h3>
+          <p class="modal-subtitle">Completa los campos requeridos para registrar la cotización en Google Sheets.</p>
         </div>
-        <button type="button" class="btn-secondary modal-close-icon" onclick="closeCotizacionModal()">✕</button>
+        <button type="button" class="btn-secondary modal-close-icon" id="closeCotizModalBtn" onclick="closeCotizacionModal()" title="Cerrar modal">✕</button>
       </div>
-      <form id="cotizacionModalForm" onsubmit="saveCotizacion(event)">
-        <div class="form-section-title">Datos Principales de la Cotización</div>
+      <form id="cotizacionModalForm">
+        <div class="form-section-title">Información del Documento</div>
         <div class="form-grid">
           <div class="form-group">
-            <label for="cFolio">Nº Cotización *</label>
-            <input type="text" id="cFolio" required />
+            <label for="cFolio">Folio *</label>
+            <input type="text" id="cFolio" placeholder="Ej: 10452" required />
           </div>
           <div class="form-group">
-            <label for="cFecha">Fecha Emisión *</label>
+            <label for="cTipo">Tipo Documento *</label>
+            <input type="text" id="cTipo" value="Cotización" required />
+          </div>
+          <div class="form-group">
+            <label for="cFecha">Fecha *</label>
             <input type="date" id="cFecha" required />
           </div>
+        </div>
+
+        <div class="form-section-title">Detalle del Producto & Precio</div>
+        <div class="form-grid">
           <div class="form-group">
-            <label for="cVencimiento">Validez / Vencimiento *</label>
-            <input type="date" id="cVencimiento" required />
+            <label for="cCodigo">Código Producto *</label>
+            <input type="text" id="cCodigo" placeholder="SKU-001" required />
           </div>
           <div class="form-group full">
-            <label for="cCliente">Nombre / Razón Social del Cliente *</label>
-            <input type="text" id="cCliente" placeholder="Ej: Empresa SpA" required />
+            <label for="cDescripcion">Descripción *</label>
+            <input type="text" id="cDescripcion" placeholder="Nombre o descripción detallada" required />
           </div>
           <div class="form-group">
-            <label for="cRut">RUT Cliente</label>
+            <label for="cCant">Cant Facturada *</label>
+            <input type="number" id="cCant" value="1" step="any" required />
+          </div>
+          <div class="form-group">
+            <label for="cPreUni">Precio Unitario ($) *</label>
+            <input type="number" id="cPreUni" value="0" step="any" required />
+          </div>
+          <div class="form-group">
+            <label for="cCostos">Costo Unitario ($)</label>
+            <input type="number" id="cCostos" value="0" step="any" placeholder="0" />
+          </div>
+        </div>
+
+        <div class="form-section-title">Cliente & Clasificación Comercial</div>
+        <div class="form-grid">
+          <div class="form-group full">
+            <label for="cCliente">Nombre Cliente *</label>
+            <input type="text" id="cCliente" placeholder="Razón social o Nombre del cliente" required />
+          </div>
+          <div class="form-group">
+            <label for="cRut">RUT</label>
             <input type="text" id="cRut" placeholder="76.123.456-7" />
           </div>
           <div class="form-group">
-            <label for="cEmail">Email Cliente / Contacto</label>
-            <input type="email" id="cEmail" placeholder="contacto@empresa.cl" />
+            <label for="cVendedor">Vendedor</label>
+            <input type="text" id="cVendedor" placeholder="Ej: VEND-01" />
           </div>
           <div class="form-group">
-            <label for="cEstado">Estado *</label>
-            <select id="cEstado" class="filter-select">
-              <option value="Pendiente">🟡 Pendiente</option>
-              <option value="Aprobada">🟢 Aprobada</option>
-              <option value="Vencida">🔴 Vencida / Rechazada</option>
-            </select>
+            <label for="cCanal">Canal Final</label>
+            <input type="text" id="cCanal" placeholder="Ej: Distribución" />
           </div>
-        </div>
-
-        <div class="form-section-title" style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.25rem;">
-          <span>Detalle de Productos / Servicios</span>
-          <button type="button" class="btn-secondary btn-sm" onclick="addCotizItemRow()">+ Agregar Item</button>
-        </div>
-        <div class="table-container" style="margin-bottom: 1rem;">
-          <table class="data-table" id="cotizItemsTable">
-            <thead>
-              <tr>
-                <th style="width: 18%;">CÓDIGO</th>
-                <th>DESCRIPCIÓN</th>
-                <th style="width: 12%;">CANT</th>
-                <th style="width: 20%;">PRECIO UNIT ($)</th>
-                <th style="width: 20%;">SUBTOTAL ($)</th>
-                <th style="width: 8%;"></th>
-              </tr>
-            </thead>
-            <tbody id="cotizItemsBody">
-              <!-- Dinámico -->
-            </tbody>
-          </table>
-        </div>
-
-        <!-- TOTALES Y CALCULOS -->
-        <div style="display: flex; justify-content: flex-end; margin-bottom: 1.5rem;">
-          <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 1rem 1.5rem; min-width: 280px;">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.9rem;">
-              <span style="color: #94a3b8;">Subtotal Neto:</span>
-              <strong id="cotizSubtotalNeto">$0</strong>
-            </div>
-            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.9rem;">
-              <span style="color: #94a3b8;">IVA (19%):</span>
-              <strong id="cotizIva">$0</strong>
-            </div>
-            <div style="display: flex; justify-content: space-between; font-size: 1.1rem; font-weight: 800; color: #34d399; padding-top: 0.5rem; border-top: 1px solid rgba(255, 255, 255, 0.1);">
-              <span>Total Cotización:</span>
-              <span id="cotizTotalFinal">$0</span>
-            </div>
+          <div class="form-group">
+            <label for="cTienda">Tienda Final</label>
+            <input type="text" id="cTienda" placeholder="Ej: Casa Matriz" />
+          </div>
+          <div class="form-group">
+            <label for="cFamilia">Familia</label>
+            <input type="text" id="cFamilia" placeholder="Ej: Abarrotes" />
+          </div>
+          <div class="form-group">
+            <label for="cCategoria">Categoría</label>
+            <input type="text" id="cCategoria" placeholder="Ej: Bebidas" />
+          </div>
+          <div class="form-group">
+            <label for="cRegion">Región</label>
+            <input type="text" id="cRegion" placeholder="Ej: RM" />
           </div>
         </div>
 
         <div class="modal-actions">
-          <button type="button" class="btn-secondary" onclick="closeCotizacionModal()">Cancelar</button>
-          <button type="submit" class="btn-primary">Guardar Cotización</button>
+          <button type="button" class="btn-secondary" id="cancelCotizModalBtn" onclick="closeCotizacionModal()">Cancelar</button>
+          <button type="submit" class="btn-primary" id="saveCotizModalBtn">Guardar Cotización</button>
         </div>
       </form>
     </div>
@@ -1823,6 +1823,6 @@
 
   <!-- Scripts -->
   <script src="config.js?v=20260802_v62"></script>
-  <script src="app.js?v=20260804_emitir_cotiz_v400"></script>
+  <script src="app.js?v=20260804_modal_cotiz_v500"></script>
 </body>
 </html>

@@ -12862,3 +12862,23 @@ select#comprasStrategySelect {
   transform: translateY(-1px) !important;
   box-shadow: 0 6px 18px rgba(59, 130, 246, 0.5) !important;
 }
+
+/* Modal Backdrop System */
+.modal-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(11, 15, 25, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 99999;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.modal-backdrop.show {
+  display: flex !important;
+  opacity: 1 !important;
+}
