@@ -4853,6 +4853,20 @@ function closeMobileSidebar() {
   if (backdrop) backdrop.classList.remove('active');
 }
 
+function toggleMobileFilters() {
+  const controls = document.querySelector('.filter-controls');
+  const btn = document.getElementById('toggleMobileFiltersBtn');
+  if (controls) {
+    controls.classList.toggle('show-mobile');
+    const isExpanded = controls.classList.contains('show-mobile');
+    if (btn) {
+      btn.classList.toggle('active', isExpanded);
+      const span = btn.querySelector('span');
+      if (span) span.textContent = isExpanded ? 'Filtros ▴' : 'Filtros ▾';
+    }
+  }
+}
+
 function switchView(viewName) {
   if (!viewName) return;
   closeMobileSidebar();

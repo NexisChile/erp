@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet" />
   <!-- Stylesheets & Libraries -->
-  <link rel="stylesheet" href="style.css?v=20260804_v200" />
+  <link rel="stylesheet" href="style.css?v=20260804_pro_mobile_v3" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
@@ -440,10 +440,16 @@
               <button type="button" class="preset-btn" data-preset="thisYear">Este Año</button>
               <button type="button" class="preset-btn active" data-preset="all">Todo</button>
             </div>
-            <button type="button" class="btn-secondary btn-sm" id="clearFiltersBtn">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
-              <span>Limpiar Filtros</span>
-            </button>
+            <div class="filter-actions-group">
+              <button type="button" class="btn-secondary btn-sm mobile-filter-toggle-btn" id="toggleMobileFiltersBtn" onclick="toggleMobileFilters()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
+                <span>Filtros ▾</span>
+              </button>
+              <button type="button" class="btn-secondary btn-sm" id="clearFiltersBtn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                <span>Limpiar Filtros</span>
+              </button>
+            </div>
           </div>
 
           <div class="filter-controls">
