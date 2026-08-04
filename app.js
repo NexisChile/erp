@@ -2798,118 +2798,51 @@ function isSameDay(value, ref) {
 
 }
 
-function formatHeroTrend(current, prev, labelPrev) {
-
+function formatHeroTrend(current, prev, labelPrev, prevYearName) {
+  const yr = prevYearName || '2025';
   if (!prev || prev === 0) {
-
-    if (current > 0) return `<span class="hero-compare-badge up">▲ +100% vs ${labelPrev}</span>`;
-
-    return `<span class="hero-compare-badge">-- vs ${labelPrev}</span>`;
-
+    if (current > 0) {
+      return `<span class="hero-compare-badge up">▲ +100% vs ${labelPrev}</span> <span style="font-weight:700; color:#94a3b8; font-size:0.78rem; margin-left:4px;">(${yr}: $0)</span>`;
+    }
+    return `<span class="hero-compare-badge">-- vs ${labelPrev}</span> <span style="font-weight:700; color:#94a3b8; font-size:0.78rem; margin-left:4px;">(${yr}: $0)</span>`;
   }
 
   const pct = ((current - prev) / prev) * 100;
-
   const isUp = pct >= 0;
-
   const sign = isUp ? '▲ +' : '▼ ';
-
   const cls = isUp ? 'up' : 'down';
 
-  return `<span class="hero-compare-badge ${cls}">${sign}${pct.toFixed(1)}% vs ${labelPrev} (${formatCLP(prev)})</span>`;
-
+  return `<span class="hero-compare-badge ${cls}">${sign}${pct.toFixed(1)}% vs ${labelPrev}</span> <span style="font-weight:700; color:#cbd5e1; font-size:0.8rem; margin-left:6px;">(${yr}: ${formatCLP(prev)})</span>`;
 }
 
 function calcMarginPercent(rowSet) {
-
+  if (!rowSet || rowSet.length === 0) return 0;
   const totalNeto = rowSet.reduce((a, r) => a + (Number(r['NETO']) || 0), 0);
-
   if (!totalNeto) return 0;
 
   const totalUtil = rowSet.reduce((a, r) => {
-
     let u = Number(r['($) UTILIDAD']) || Number(r['UTILIDAD']) || Number(r['MARGEN']) || 0;
-
     if (!u && r['COSTO'] !== undefined) {
-
       u = (Number(r['NETO']) || 0) - (Number(r['COSTO']) || 0);
-
     }
-
     return a + u;
-
   }, 0);
 
   return (totalUtil / totalNeto) * 100;
-
 }
 
 function formatMarginPair(mCurr, mPrev, yearCurr, yearPrev) {
-
   const cStr = mCurr.toFixed(1) + '%';
-
   const pStr = mPrev.toFixed(1) + '%';
-
   const diff = mCurr - mPrev;
-
   const isUp = diff >= 0;
+  const color = isUp ? '#34d399' : '#f43f5e';
+  const sign = isUp ? '▲ +' : '▼ ';
 
-  const color = isUp ? '#10B981' : '#F43F5E';
-
-  const symbol = isUp ? '▲' : '▼';
-
-  return ` · <span style="font-weight:600; color:var(--ax-text-secondary);">Margen:</span> <span style="color:${color}; font-weight:700;">${cStr} ${yearCurr}</span> <span style="opacity:0.75;">(vs ${pStr} ${yearPrev} ${symbol})</span>`;
-
-}
-
-const valueAnimState = {};
-
-function animateCLPValue(elementId, targetValue, durationMs = 500) {
-
-  const el = document.getElementById(elementId);
-
-  if (!el) return;
-
-  const startValue = valueAnimState[elementId] || 0;
-
-  valueAnimState[elementId] = targetValue;
-
-  if (startValue === targetValue || durationMs <= 0) {
-
-    el.textContent = formatCLP(targetValue);
-
-    return;
-
-  }
-
-  const startTime = performance.now();
-
-  function update(now) {
-
-    const elapsed = now - startTime;
-
-    const progress = Math.min(1, elapsed / durationMs);
-
-    const easeOut = 1 - Math.pow(1 - progress, 3);
-
-    const currentValue = startValue + (targetValue - startValue) * easeOut;
-
-    el.textContent = formatCLP(currentValue);
-
-    if (progress < 1) {
-
-      requestAnimationFrame(update);
-
-    } else {
-
-      el.textContent = formatCLP(targetValue);
-
-    }
-
-  }
-
-  requestAnimationFrame(update);
-
+  return `<div style="margin-top: 0.35rem; font-size: 0.78rem; display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; background: rgba(15,23,42,0.6); padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.08);">` +
+    `<span style="color: #cbd5e1;">Margen ${yearCurr}: <strong style="color: ${color}; font-weight:700;">${cStr}</strong></span>` +
+    `<span style="color: #94a3b8; border-left: 1px solid rgba(255,255,255,0.15); padding-left: 0.4rem;">vs ${yearPrev}: <strong style="color: #e2e8f0; font-weight:700;">${pStr}</strong> (${sign}${diff.toFixed(1)} pp)</span>` +
+    `</div>`;
 }
 
 function renderTodayCard() {
@@ -2967,7 +2900,7 @@ function renderTodayCard() {
 
   const elTodayComp = document.getElementById('todayCompare');
 
-  if (elTodayComp) elTodayComp.innerHTML = formatHeroTrend(totalHoy, totalHoyPrev, `mismo día ${prevYear}`);
+  if (elTodayComp) elTodayComp.innerHTML = formatHeroTrend(totalHoy, totalHoyPrev, `mismo día ${prevYear}`, prevYear);
 
   const elTodaySub = document.getElementById('todaySub');
 
@@ -3019,7 +2952,7 @@ function renderTodayCard() {
 
   const elMonthComp = document.getElementById('monthCompare');
 
-  if (elMonthComp) elMonthComp.innerHTML = formatHeroTrend(totalMes, totalMesPrev, `MTD ${prevYear} (al ${currentDay} ${monthShortName})`);
+  if (elMonthComp) elMonthComp.innerHTML = formatHeroTrend(totalMes, totalMesPrev, `MTD ${prevYear} (al ${currentDay} ${monthShortName})`, prevYear);
 
   const elMonthSub = document.getElementById('monthSub');
 
@@ -3073,7 +3006,7 @@ function renderTodayCard() {
 
   const elYearComp = document.getElementById('yearCompare');
 
-  if (elYearComp) elYearComp.innerHTML = formatHeroTrend(totalAño, totalAñoPrev, `YTD ${prevYear} (al ${currentDay} ${monthShortName})`);
+  if (elYearComp) elYearComp.innerHTML = formatHeroTrend(totalAño, totalAñoPrev, `YTD ${prevYear} (al ${currentDay} ${monthShortName})`, prevYear);
 
   const elYearSub = document.getElementById('yearSub');
 
@@ -3097,7 +3030,7 @@ function renderTodayCard() {
 
   const elTodayProjComp = document.getElementById('todayProjCompare');
 
-  if (elTodayProjComp) elTodayProjComp.innerHTML = formatHeroTrend(projectedHoy, totalHoyPrev, `día ${prevYear}`);
+  if (elTodayProjComp) elTodayProjComp.innerHTML = formatHeroTrend(projectedHoy, totalHoyPrev, `día ${prevYear}`, prevYear);
 
   const elTodayProjSub = document.getElementById('todayProjSub');
 
@@ -3133,7 +3066,7 @@ function renderTodayCard() {
 
   const elMonthProjComp = document.getElementById('monthProjCompare');
 
-  if (elMonthProjComp) elMonthProjComp.innerHTML = formatHeroTrend(projectedMes, totalMesPrevFull, `mes completo ${prevYear}`);
+  if (elMonthProjComp) elMonthProjComp.innerHTML = formatHeroTrend(projectedMes, totalMesPrevFull, `mes completo ${prevYear}`, prevYear);
 
   const elMonthProjSub = document.getElementById('monthProjSub');
 
@@ -3171,7 +3104,7 @@ function renderTodayCard() {
 
   const elYearProjComp = document.getElementById('yearProjCompare');
 
-  if (elYearProjComp) elYearProjComp.innerHTML = formatHeroTrend(projectedAño, totalAñoPrevFull, `año completo ${prevYear}`);
+  if (elYearProjComp) elYearProjComp.innerHTML = formatHeroTrend(projectedAño, totalAñoPrevFull, `año completo ${prevYear}`, prevYear);
 
   const elYearProjSub = document.getElementById('yearProjSub');
 
