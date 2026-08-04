@@ -679,27 +679,6 @@ function parseNumberClean(val) {
   return isNegative ? -n : n;
 }
 
-function parseRowDate(val) {
-  if (!val) return null;
-  if (val instanceof Date) return val;
-  const str = String(val).trim();
-  if (str.startsWith('Date(')) {
-    const match = str.match(/Date\((\d+),(\d+),(\d+)(?:,(\d+),(\d+),(\d+))?\)/);
-    if (match) {
-      return new Date(Number(match[1]), Number(match[2]), Number(match[3]));
-    }
-  }
-  const dmyMatch = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
-  if (dmyMatch) {
-    return new Date(Number(dmyMatch[3]), Number(dmyMatch[2]) - 1, Number(dmyMatch[1]));
-  }
-  const ymdMatch = str.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
-  if (ymdMatch) {
-    return new Date(Number(ymdMatch[1]), Number(ymdMatch[2]) - 1, Number(ymdMatch[3]));
-  }
-  const d = new Date(str);
-  return isNaN(d.getTime()) ? val : d;
-}
 function parseFechaString(val) { return parseRowDate(val); }
 
 // ---------- API & ENGINE HYBRID CONEXIÓN ----------
@@ -842,10 +821,16 @@ async function fetchGVizData() {
   async function tryLocalProxy() {
     try {
       const origin = window.location.origin;
-      if (!origin || origin.startsWith('file:')) return null;
+      if (!origin || origin.startsWith('file:')) {
+        console.warn('⚡ Proxy local no disponible en protocolo file://. Ejecuta python server.py y abre http://localhost:8000');
+        return null;
+      }
       const proxyUrl = `${origin}/api/proxy`;
       const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(60000) });
-      if (!res.ok) return null;
+      if (!res.ok) {
+        console.warn(`⚡ Proxy local /api/proxy devolvió status ${res.status}. Asegúrate de ejecutar 'python server.py' en lugar de 'python -m http.server'.`);
+        return null;
+      }
       const csvText = await res.text();
       const data = parseCsvText(csvText);
       if (data && data.length > 0) {
@@ -863,7 +848,7 @@ async function fetchGVizData() {
     try {
       const jsonpData = await new Promise((resolve, reject) => {
         const cbName = 'gviz_cb_' + Date.now() + '_' + Math.floor(Math.random() * 1000000);
-        const timer = setTimeout(() => { cleanup(); reject(new Error('JSONP timeout')); }, 45000);
+        const timer = setTimeout(() => { cleanup(); reject(new Error('JSONP timeout (5s)')); }, 5000);
         function cleanup() {
           clearTimeout(timer);
           delete window[cbName];
@@ -918,7 +903,7 @@ async function fetchGVizData() {
   async function tryCSV() {
     try {
       const csvUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=${gid}&_=${Date.now()}`;
-      const res = await fetch(csvUrl, { signal: AbortSignal.timeout(60000) });
+      const res = await fetch(csvUrl, { signal: AbortSignal.timeout(5000) });
       if (!res.ok) return null;
       const csvText = await res.text();
       const data = parseCsvText(csvText);
@@ -940,15 +925,11 @@ async function fetchGVizData() {
 }
 
 async function apiGet() {
-
-  const res = await fetch(API_URL, { method: 'GET' });
-
+  const url = API_URL + (API_URL.includes('?') ? '&' : '?') + 'action=getVentas';
+  const res = await fetch(url, { method: 'GET' });
   const json = await res.json();
-
   if (!json.ok) throw new Error(json.error || 'Error al leer datos');
-
   return Array.isArray(json.data) ? json.data.map(normalizeRow) : json.data;
-
 }
 
 async function apiPost(payload) {
@@ -1009,9 +990,10 @@ async function loadData(showLoadingState = true) {
         }
       }
 
-      if (!freshRows && (!rows || rows.length === 0)) {
+      if (!freshRows) {
         try {
           freshRows = await apiGet();
+          if (freshRows && freshRows.length > 0) modeLabel = 'Apps Script API';
         } catch (apiErr) {
           console.warn('Apps Script apiGet fallback', apiErr);
         }
