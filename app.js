@@ -5909,6 +5909,14 @@ function initCotizacionesListeners() {
       if (e.target === cotizBackdrop) closeCotizacionModal();
     });
   }
+
+  const openCotizBtn = document.getElementById('openCotizModalBtn');
+  if (openCotizBtn) {
+    openCotizBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      openCotizacionModal();
+    });
+  }
 }
 
 // ==========================================================================
@@ -5916,6 +5924,7 @@ function initCotizacionesListeners() {
 // ==========================================================================
 
 function openCotizacionModal() {
+  console.log('[Cotizaciones] Opening Cotización Modal...');
   const backdrop = document.getElementById('cotizacionModalBackdrop');
   const form = document.getElementById('cotizacionModalForm');
   if (form) form.reset();
@@ -5941,6 +5950,9 @@ function openCotizacionModal() {
   if (backdrop) {
     backdrop.classList.add('show');
     backdrop.style.display = 'flex';
+    backdrop.style.opacity = '1';
+    backdrop.style.visibility = 'visible';
+    backdrop.style.zIndex = '99999';
   }
 }
 
@@ -5951,6 +5963,9 @@ function closeCotizacionModal() {
     backdrop.style.display = 'none';
   }
 }
+
+window.openCotizacionModal = openCotizacionModal;
+window.closeCotizacionModal = closeCotizacionModal;
 
 function saveCotizacion(event) {
   if (event) event.preventDefault();
@@ -6007,6 +6022,8 @@ function saveCotizacion(event) {
 
   alert(`✅ Cotización #${folio} registrada con éxito por $${formatNum(total)}.`);
 }
+
+window.saveCotizacion = saveCotizacion;
 
 
 
