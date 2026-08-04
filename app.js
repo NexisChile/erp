@@ -1799,62 +1799,67 @@ function formatLocalYMD(d) {
   return `${y}-${m}-${day}`;
 }
 
+function getTodayReferenceDate() {
+  const now = new Date();
+  let maxDate = null;
+  if (typeof rows !== 'undefined' && rows && rows.length > 0) {
+    for (let i = 0; i < rows.length; i++) {
+      const d = parseRowDate(rows[i]['FECHA']);
+      if (d && (!maxDate || d > maxDate)) maxDate = d;
+    }
+  }
+  if (typeof cotizacionesRows !== 'undefined' && cotizacionesRows && cotizacionesRows.length > 0) {
+    for (let i = 0; i < cotizacionesRows.length; i++) {
+      const d = parseRowDate(cotizacionesRows[i]['FECHA_SOLICITUD'] || cotizacionesRows[i]['FECHA']);
+      if (d && (!maxDate || d > maxDate)) maxDate = d;
+    }
+  }
+  if (!maxDate || now >= maxDate) return now;
+  return maxDate;
+}
+
 function applyDatePreset(preset) {
-
-  const today = getReferenceDate();
-
+  const today = getTodayReferenceDate();
   let desde = '', hasta = '';
 
   if (preset === 'today') {
-
     desde = formatLocalYMD(today);
-
     hasta = desde;
-
   } else if (preset === '7days') {
-
     const past = new Date(today.getTime() - 6 * 86400000);
-
     desde = formatLocalYMD(past);
-
     hasta = formatLocalYMD(today);
-
   } else if (preset === 'thisMonth') {
-
     const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-
     desde = formatLocalYMD(firstDay);
-
     hasta = formatLocalYMD(today);
-
   } else if (preset === 'thisYear') {
-
     const firstDay = new Date(today.getFullYear(), 0, 1);
-
     desde = formatLocalYMD(firstDay);
-
     hasta = formatLocalYMD(today);
-
   } else if (preset === 'all') {
-
     desde = '';
-
     hasta = '';
-
   }
 
-  document.getElementById('fltDesde').value = desde;
+  const fDesde = document.getElementById('fltDesde');
+  const fHasta = document.getElementById('fltHasta');
+  if (fDesde) fDesde.value = desde;
+  if (fHasta) fHasta.value = hasta;
 
-  document.getElementById('fltHasta').value = hasta;
+  const fCotizDesde = document.getElementById('fltCotizDesde');
+  const fCotizHasta = document.getElementById('fltCotizHasta');
+  if (fCotizDesde) fCotizDesde.value = desde;
+  if (fCotizHasta) fCotizHasta.value = hasta;
 
   document.querySelectorAll('.preset-btn[data-preset]').forEach(b => {
-
     b.classList.toggle('active', b.dataset.preset === preset);
-
   });
 
   applyFilters();
-
+  if (typeof applyCotizacionesFilters === 'function') {
+    applyCotizacionesFilters();
+  }
 }
 
 ['fltDesde', 'fltHasta', 'fltCanal', 'fltTienda', 'fltVendedor', 'fltFamilia', 'fltCategoria', 'fltRegion'].forEach(id => {
@@ -1864,29 +1869,29 @@ function applyDatePreset(preset) {
       el.addEventListener(evt, () => {
         document.querySelectorAll('.preset-btn[data-preset]').forEach(b => b.classList.remove('active'));
         applyFilters();
+        if (typeof applyCotizacionesFilters === 'function') applyCotizacionesFilters();
       });
     });
   }
 });
 
-document.getElementById('clearFiltersBtn').addEventListener('click', () => {
-  ['fltDesde', 'fltHasta', 'fltCanal', 'fltTienda', 'fltVendedor', 'fltFamilia', 'fltCategoria', 'fltRegion'].forEach(id => {
+document.getElementById('clearFiltersBtn')?.addEventListener('click', () => {
+  ['fltDesde', 'fltHasta', 'fltCanal', 'fltTienda', 'fltVendedor', 'fltFamilia', 'fltCategoria', 'fltRegion', 'fltCotizDesde', 'fltCotizHasta', 'fltCotizVendedor', 'fltCotizEstado', 'fltCotizTipo'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
 
   document.querySelectorAll('.preset-btn[data-preset]').forEach(b => b.classList.remove('active'));
-
   const yearBtn = document.querySelector('.preset-btn[data-preset="thisYear"]');
-
   if (yearBtn) yearBtn.classList.add('active');
 
   const sb = document.getElementById('searchBox');
-
   if (sb) sb.value = '';
+  const cotizSb = document.getElementById('cotizSearchBox');
+  if (cotizSb) cotizSb.value = '';
 
   applyFilters();
-
+  if (typeof applyCotizacionesFilters === 'function') applyCotizacionesFilters();
 });
 
 // ---------- Render orquestador ----------
@@ -5422,10 +5427,13 @@ function populateCotizFilterOptions() {
 }
 
 function applyCotizacionesFilters() {
-  const dDesde = document.getElementById('fltCotizDesde')?.value ? parseRowDate(document.getElementById('fltCotizDesde').value) : null;
+  const cotizDesdeVal = document.getElementById('fltCotizDesde')?.value || document.getElementById('fltDesde')?.value || '';
+  const cotizHastaVal = document.getElementById('fltCotizHasta')?.value || document.getElementById('fltHasta')?.value || '';
+
+  const dDesde = cotizDesdeVal ? parseRowDate(cotizDesdeVal) : null;
   const tDesde = dDesde ? dDesde.setHours(0, 0, 0, 0) : 0;
 
-  const dHasta = document.getElementById('fltCotizHasta')?.value ? parseRowDate(document.getElementById('fltCotizHasta').value) : null;
+  const dHasta = cotizHastaVal ? parseRowDate(cotizHastaVal) : null;
   const tHasta = dHasta ? dHasta.setHours(23, 59, 59, 999) : 0;
 
   const selVend = document.getElementById('fltCotizVendedor')?.value.toLowerCase() || '';
