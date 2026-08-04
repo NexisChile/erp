@@ -5896,6 +5896,193 @@ function initCotizacionesListeners() {
   }
 }
 
+// ==========================================================================
+// CREACIÓN / EDICIÓN DE COTIZACIÓN (MODAL & LÓGICA DE NEGOCIO)
+// ==========================================================================
+
+function openCotizacionModal() {
+  const backdrop = document.getElementById('cotizacionModalBackdrop');
+  if (!backdrop) return;
+
+  const form = document.getElementById('cotizacionModalForm');
+  if (form) form.reset();
+
+  const titleEl = document.getElementById('cotizModalTitle');
+  if (titleEl) titleEl.textContent = '📑 Nueva Cotización';
+
+  // Generar Folio Automático
+  const folioEl = document.getElementById('cFolio');
+  if (folioEl) {
+    const nextNum = Math.floor(Math.random() * 9000 + 1000);
+    folioEl.value = `COT-2026-${nextNum}`;
+  }
+
+  // Fecha Emisión por defecto hoy
+  const today = new Date().toISOString().split('T')[0];
+  const fechaEl = document.getElementById('cFecha');
+  if (fechaEl) fechaEl.value = today;
+
+  // Validez 15 días
+  const venc = new Date();
+  venc.setDate(venc.getDate() + 15);
+  const vencEl = document.getElementById('cVencimiento');
+  if (vencEl) vencEl.value = venc.toISOString().split('T')[0];
+
+  // Limpiar items y agregar 1 fila inicial
+  const body = document.getElementById('cotizItemsBody');
+  if (body) {
+    body.innerHTML = '';
+    addCotizItemRow();
+  }
+
+  backdrop.style.display = 'flex';
+  backdrop.style.opacity = '1';
+  backdrop.style.pointerEvents = 'auto';
+}
+
+function closeCotizacionModal() {
+  const backdrop = document.getElementById('cotizacionModalBackdrop');
+  if (backdrop) {
+    backdrop.style.display = 'none';
+    backdrop.style.opacity = '0';
+    backdrop.style.pointerEvents = 'none';
+  }
+}
+
+function addCotizItemRow(sku = '', desc = '', cant = 1, precio = 0) {
+  const body = document.getElementById('cotizItemsBody');
+  if (!body) return;
+
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td>
+      <input type="text" class="filter-input row-sku" value="${sku}" placeholder="SKU-001" style="height:36px; font-size:0.85rem;" />
+    </td>
+    <td>
+      <input type="text" class="filter-input row-desc" value="${desc}" placeholder="Descripción del producto o servicio" style="height:36px; font-size:0.85rem;" required />
+    </td>
+    <td>
+      <input type="number" class="filter-input row-cant" value="${cant}" min="1" step="1" style="height:36px; font-size:0.85rem;" required />
+    </td>
+    <td>
+      <input type="number" class="filter-input row-precio" value="${precio}" min="0" step="1" style="height:36px; font-size:0.85rem;" required />
+    </td>
+    <td style="font-weight: 800; color: #34d399; vertical-align: middle;">
+      <span class="row-subtotal">$0</span>
+    </td>
+    <td style="text-align: center; vertical-align: middle;">
+      <button type="button" class="btn-secondary btn-sm" onclick="removeCotizItemRow(this)" style="padding: 4px 8px; color: #f87171;" title="Eliminar fila">✕</button>
+    </td>
+  `;
+
+  body.appendChild(tr);
+
+  const cantInput = tr.querySelector('.row-cant');
+  const precioInput = tr.querySelector('.row-precio');
+
+  const updateFn = () => {
+    const c = parseFloat(cantInput.value) || 0;
+    const p = parseFloat(precioInput.value) || 0;
+    const st = c * p;
+    tr.querySelector('.row-subtotal').textContent = `$${formatNum(Math.round(st))}`;
+    calcCotizTotals();
+  };
+
+  cantInput.addEventListener('input', updateFn);
+  precioInput.addEventListener('input', updateFn);
+
+  updateFn();
+}
+
+function removeCotizItemRow(btn) {
+  const tr = btn.closest('tr');
+  if (tr) {
+    tr.remove();
+    calcCotizTotals();
+  }
+}
+
+function calcCotizTotals() {
+  const rows = document.querySelectorAll('#cotizItemsBody tr');
+  let netoTotal = 0;
+
+  rows.forEach(tr => {
+    const c = parseFloat(tr.querySelector('.row-cant')?.value) || 0;
+    const p = parseFloat(tr.querySelector('.row-precio')?.value) || 0;
+    netoTotal += (c * p);
+  });
+
+  const iva = Math.round(netoTotal * 0.19);
+  const total = Math.round(netoTotal + iva);
+
+  const subEl = document.getElementById('cotizSubtotalNeto');
+  const ivaEl = document.getElementById('cotizIva');
+  const totEl = document.getElementById('cotizTotalFinal');
+
+  if (subEl) subEl.textContent = `$${formatNum(Math.round(netoTotal))}`;
+  if (ivaEl) ivaEl.textContent = `$${formatNum(iva)}`;
+  if (totEl) totEl.textContent = `$${formatNum(total)}`;
+}
+
+function saveCotizacion(event) {
+  event.preventDefault();
+
+  const folio = document.getElementById('cFolio')?.value || 'COT-NUEVA';
+  const fechaStr = document.getElementById('cFecha')?.value || new Date().toISOString().split('T')[0];
+  const cliente = document.getElementById('cCliente')?.value || 'Cliente Nuevo';
+  const rut = document.getElementById('cRut')?.value || '';
+  const estado = document.getElementById('cEstado')?.value || 'Pendiente';
+
+  const itemRows = document.querySelectorAll('#cotizItemsBody tr');
+  let totalMonto = 0;
+  let skuPrimer = '';
+  let prodPrimer = '';
+  let cantTotal = 0;
+
+  itemRows.forEach((tr, index) => {
+    const sku = tr.querySelector('.row-sku')?.value || '';
+    const desc = tr.querySelector('.row-desc')?.value || '';
+    const c = parseFloat(tr.querySelector('.row-cant')?.value) || 0;
+    const p = parseFloat(tr.querySelector('.row-precio')?.value) || 0;
+    const st = c * p;
+
+    if (index === 0) {
+      skuPrimer = sku;
+      prodPrimer = desc;
+    }
+    cantTotal += c;
+    totalMonto += st;
+  });
+
+  const totalConIva = Math.round(totalMonto * 1.19);
+
+  const newCotiz = {
+    COTIZACION: folio,
+    TIPO: 'Estándar',
+    FECHA_SOLICITUD: fechaStr,
+    CLIENTE: cliente,
+    RUT: rut,
+    SKU: skuPrimer || 'COT-SKU',
+    PRODUCTO: prodPrimer || 'Productos Cotizados',
+    CANTIDAD: cantTotal,
+    TOTAL: totalConIva,
+    COD_VENDEDOR: 'VEND-01',
+    RESPONSABLE: 'Vendedor App',
+    ESTADO_COMERCIAL: estado,
+    ESTADO_OPERATIVO: estado,
+    NV: '',
+    FA: ''
+  };
+
+  cotizacionesRows.unshift(newCotiz);
+  cotizacionesFiltered = [...cotizacionesRows];
+
+  applyCotizacionesFilters();
+  closeCotizacionModal();
+
+  alert(`✅ Cotización ${folio} creada con éxito por $${formatNum(totalConIva)}.`);
+}
+
 
 
 // ==========================================
