@@ -4872,6 +4872,20 @@ function toggleMobileFilters() {
   }
 }
 
+function toggleCotizMobileFilters() {
+  const controls = document.querySelector('#view-cotizaciones .filter-controls');
+  const btn = document.getElementById('toggleCotizFiltersBtn');
+  if (controls) {
+    controls.classList.toggle('show-mobile');
+    const isExpanded = controls.classList.contains('show-mobile');
+    if (btn) {
+      btn.classList.toggle('active', isExpanded);
+      const span = btn.querySelector('span');
+      if (span) span.textContent = isExpanded ? 'Filtros ▴' : 'Filtros ▾';
+    }
+  }
+}
+
 function switchView(viewName) {
   if (!viewName) return;
   closeMobileSidebar();
@@ -5516,36 +5530,36 @@ function renderCotizacionesKPIs() {
   container.innerHTML = tiposList.map(t => {
     const conversionPct = t.totalCount > 0 ? (t.aceptadasCount / t.totalCount) * 100 : 0;
     return `
-      <div class="ax-card hero-kpi-card">
+      <div class="ax-card hero-kpi-card cotiz-kpi-card">
         <div class="today-header">
-          <span class="today-badge">TIPO SOLICITUD</span>
+          <span class="today-badge badge-purple">TIPO SOLICITUD</span>
           <span class="today-label" style="font-weight: 800; font-size: 1rem; color: #fff;">${t.name}</span>
           <span class="today-date">${formatNum(t.totalCount)} cotizaciones</span>
         </div>
 
-        <div class="today-value" style="margin: 0.5rem 0;">$${formatNum(t.totalMonto)}</div>
+        <div class="today-value" style="margin: 0.5rem 0;">$${formatNum(Math.round(t.totalMonto))}</div>
 
         <div class="growth-badge growth-positive" style="margin-bottom: 0.85rem; width: fit-content;">
           <span>▲ ${conversionPct.toFixed(1)}% Tasa de Conversión</span>
         </div>
 
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; padding-top: 0.75rem; border-top: 1px solid rgba(255,255,255,0.08); text-align: center;">
-          <div>
-            <span style="font-size: 0.68rem; color: #34d399; font-weight: 800; display: block; text-transform: uppercase;">🟢 Aceptadas</span>
-            <strong style="font-size: 0.95rem; color: #f8fafc;">${formatNum(t.aceptadasCount)}</strong>
-            <span style="font-size: 0.68rem; color: #94a3b8; display: block;">$${formatNum(t.aceptadasMonto)}</span>
+        <div class="cotiz-card-breakdown">
+          <div class="breakdown-box">
+            <span class="breakdown-label label-green">🟢 Aceptadas</span>
+            <strong class="breakdown-count">${formatNum(t.aceptadasCount)}</strong>
+            <span class="breakdown-amount">$${formatNum(Math.round(t.aceptadasMonto))}</span>
           </div>
 
-          <div>
-            <span style="font-size: 0.68rem; color: #fbbf24; font-weight: 800; display: block; text-transform: uppercase;">🟡 Pendientes</span>
-            <strong style="font-size: 0.95rem; color: #f8fafc;">${formatNum(t.pendientesCount)}</strong>
-            <span style="font-size: 0.68rem; color: #94a3b8; display: block;">$${formatNum(t.pendientesMonto)}</span>
+          <div class="breakdown-box">
+            <span class="breakdown-label label-amber">🟡 Pendientes</span>
+            <strong class="breakdown-count">${formatNum(t.pendientesCount)}</strong>
+            <span class="breakdown-amount">$${formatNum(Math.round(t.pendientesMonto))}</span>
           </div>
 
-          <div>
-            <span style="font-size: 0.68rem; color: #f87171; font-weight: 800; display: block; text-transform: uppercase;">🔴 Perdidas</span>
-            <strong style="font-size: 0.95rem; color: #f8fafc;">${formatNum(t.perdidasCount)}</strong>
-            <span style="font-size: 0.68rem; color: #94a3b8; display: block;">$${formatNum(t.perdidasMonto)}</span>
+          <div class="breakdown-box">
+            <span class="breakdown-label label-rose">🔴 Perdidas</span>
+            <strong class="breakdown-count">${formatNum(t.perdidasCount)}</strong>
+            <span class="breakdown-amount">$${formatNum(Math.round(t.perdidasMonto))}</span>
           </div>
         </div>
       </div>
