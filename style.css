@@ -12282,8 +12282,32 @@ select#comprasStrategySelect {
 }
 
 /* ==========================================================================
-   ULTRA-PREMIUM PRO MOBILE & TABLET DESIGN SYSTEM (2026 UI/UX)
+   COMPLETE PRO MOBILE & TABLET DESIGN SYSTEM (ALL MODULES & VIEWS)
    ========================================================================== */
+
+/* Touch Scroll Containers for All Data Tables */
+.table-card,
+.table-responsive,
+.ax-table-wrapper,
+.advisor-table-wrapper,
+.cotiz-table-wrapper,
+.prod-table-wrapper {
+  width: 100% !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  margin-bottom: 1rem !important;
+  border-radius: var(--ax-radius-lg) !important;
+}
+
+/* Base minimum width for data tables so text stays clean & legible */
+.ax-table,
+.tabla-registros,
+.advisor-table,
+.cotiz-table,
+.data-table,
+.prod-table {
+  min-width: 680px !important;
+}
 
 /* Mobile Hamburger Toggle Button */
 .ax-mobile-toggle {
@@ -12343,9 +12367,9 @@ select#comprasStrategySelect {
     width: 300px !important;
     max-width: 88vw !important;
     height: 100vh !important;
-    background: #0F172A !important; /* Solid Dark Background - Fixes "no se ve nada" */
+    background: #0F172A !important;
     border-right: 1px solid rgba(255, 255, 255, 0.15) !important;
-    z-index: 99999 !important; /* Highest Z-Index */
+    z-index: 99999 !important;
     transform: translateX(-100%) !important;
     transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
     box-shadow: 12px 0 50px rgba(0, 0, 0, 0.85) !important;
@@ -12397,7 +12421,7 @@ select#comprasStrategySelect {
   }
 
   .ax-nav__item {
-    color: #F1F5F9 !important; /* Crisp high-contrast white text */
+    color: #F1F5F9 !important;
     font-weight: 600 !important;
     font-size: 0.95rem !important;
     padding: 0.85rem 1rem !important;
@@ -12474,7 +12498,6 @@ select#comprasStrategySelect {
     flex-shrink: 0 !important;
   }
 
-  /* Clean up cluttered header buttons on mobile */
   #presentationModeBtn,
   #exportPdfBtn,
   #soundToggleBtn,
@@ -12587,7 +12610,6 @@ select#comprasStrategySelect {
     color: #FFFFFF !important;
   }
 
-  /* COLLAPSED FILTERS BY DEFAULT ON MOBILE (Fixes screen height issue) */
   .filter-controls {
     display: none !important;
     grid-template-columns: repeat(1, 1fr) !important;
@@ -12621,59 +12643,77 @@ select#comprasStrategySelect {
     padding: 0 0.75rem !important;
   }
 
-  /* Hero Cards & KPI Grids */
-  .hero-cards-grid {
+  /* ALL GRID CONTAINERS -> SINGLE COLUMN ON MOBILE */
+  .hero-cards-grid,
+  .mini-kpis-grid,
+  .charts-grid,
+  .bi-grid,
+  .rfm-grid,
+  .bi-sim-grid,
+  .bi-advisor-grid,
+  .bi-advisor-projections,
+  .cotiz-tipo-cards-grid,
+  .form-grid,
+  .kpi-grid {
     grid-template-columns: 1fr !important;
     gap: 0.85rem !important;
   }
 
-  .hero-kpi-card {
-    padding: 1.15rem 1.25rem !important;
-    background: #1E293B !important;
-    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  /* Inline styled grids & multi-column flex containers override */
+  div[style*="grid-template-columns"] {
+    grid-template-columns: 1fr !important;
+    gap: 0.85rem !important;
+  }
+
+  /* Flex Header Wrappers on Cards & Modules */
+  .compras-header-card,
+  .cotiz-header,
+  .table-header-bar,
+  .table-toolbar,
+  .compras-toolbar,
+  .table-footer,
+  .cotiz-table-footer,
+  .modal-actions,
+  .card-header-flex,
+  .bi-sim-header,
+  .bi-advisor-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.75rem !important;
+    text-align: left !important;
+  }
+
+  /* Card Headings & Metric Labels */
+  .hero-kpi-card,
+  .ax-card,
+  .chart-card,
+  .table-card,
+  .bi-sim-card,
+  .bi-compras-advisor-card {
+    padding: 1rem 1.15rem !important;
     border-radius: 14px !important;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35) !important;
   }
 
   .today-value {
     font-size: 1.85rem !important;
     font-weight: 800 !important;
     color: #FFFFFF !important;
-    letter-spacing: -0.5px !important;
     margin: 0.35rem 0 !important;
   }
 
-  .mini-kpis-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 0.75rem !important;
-  }
-
-  .mini-kpi-card {
-    padding: 0.85rem 1rem !important;
-    background: #1E293B !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-radius: 12px !important;
+  .proj-val {
+    font-size: 1.45rem !important;
+    font-weight: 800 !important;
   }
 
   .mini-kpi-value {
     font-size: 1.2rem !important;
     font-weight: 800 !important;
-    color: #60A5FA !important;
   }
 
-  .bi-advisor-projections {
-    grid-template-columns: 1fr !important;
-  }
-
-  .bi-advisor-grid {
-    grid-template-columns: 1fr !important;
-  }
-
-  /* Section Titles */
   .dashboard-section-title {
     font-size: 1.05rem !important;
     font-weight: 800 !important;
-    color: #F8FAFC !important;
   }
 
   .dashboard-section-header {
@@ -12682,74 +12722,49 @@ select#comprasStrategySelect {
     gap: 0.35rem !important;
   }
 
-  /* Charts Containers */
-  .charts-grid,
-  .bi-grid {
-    grid-template-columns: 1fr !important;
-    gap: 1rem !important;
+  /* Search & Toolbar Inputs */
+  .search-box-input,
+  .compras-search-wrap,
+  .prod-search-wrap {
+    width: 100% !important;
+    min-width: 0 !important;
   }
 
+  /* Modals & Omnibox on Mobile */
+  .ax-modal,
+  .ax-command-palette,
+  .modal-content,
+  .cmd-palette-card {
+    width: 95% !important;
+    max-width: 520px !important;
+    margin: 0.75rem auto !important;
+    padding: 1.15rem !important;
+    border-radius: 16px !important;
+  }
+
+  /* Canvas Charts Container heights */
   .chart-card canvas {
     max-width: 100% !important;
     height: auto !important;
-    min-height: 220px !important;
-  }
-
-  /* Responsive Touch Scroll Tables */
-  .table-card,
-  .table-responsive,
-  .ax-table-wrapper,
-  .advisor-table-wrapper {
-    width: 100% !important;
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    margin-bottom: 1rem !important;
-  }
-
-  .ax-table,
-  .tabla-registros,
-  .advisor-table {
-    min-width: 600px !important;
-  }
-
-  .table-header-bar {
-    flex-direction: column !important;
-    align-items: stretch !important;
-    gap: 0.75rem !important;
-  }
-
-  .table-header-controls {
-    flex-wrap: wrap !important;
-    width: 100% !important;
-  }
-
-  /* Command Palette Omnibox & Modals */
-  .ax-modal,
-  .ax-command-palette {
-    width: 94% !important;
-    max-width: 520px !important;
-    margin: 1rem auto !important;
-    padding: 1.25rem !important;
-    border-radius: var(--ax-radius-lg) !important;
+    min-height: 210px !important;
   }
 }
 
-/* EXTRA SMALL MOBILES (< 480px) */
 @media screen and (max-width: 480px) {
-  .mini-kpis-grid {
-    grid-template-columns: 1fr !important;
-  }
-
   .today-value {
-    font-size: 1.65rem !important;
+    font-size: 1.6rem !important;
   }
 
   .proj-val {
-    font-size: 1.35rem !important;
+    font-size: 1.3rem !important;
   }
 
   .ax-header__title {
     font-size: 0.9rem !important;
-    max-width: 160px;
+    max-width: 160px !important;
+  }
+
+  .mini-kpis-grid {
+    grid-template-columns: 1fr !important;
   }
 }
