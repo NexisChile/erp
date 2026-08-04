@@ -6720,7 +6720,7 @@ function renderProdTxTable(transactions) {
 
   if (!transactions || transactions.length === 0) {
     if (countBadge) countBadge.textContent = '0 Clientes';
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #94a3b8;">Sin ventas registradas para este SKU.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: #94a3b8;">Sin ventas registradas para este SKU.</td></tr>';
     return;
   }
 
@@ -6740,6 +6740,8 @@ function renderProdTxTable(transactions) {
         cliente: clientName,
         cantTotal: 0,
         netoTotal: 0,
+        costoTotal: 0,
+        utilidadTotal: 0,
         txCount: 0,
         channels: new Set()
       });
@@ -6748,7 +6750,19 @@ function renderProdTxTable(transactions) {
     const cItem = clientsMap.get(clientKey);
     cItem.cantTotal += t.cant;
     cItem.netoTotal += t.neto;
+    
+    const cCost = (t.costoTotalNet !== undefined && t.costoTotalNet !== 0) 
+      ? t.costoTotalNet 
+      : (t.cant * (t.costos || 0));
+    
+    const cUtil = (t.utilidad !== undefined && t.utilidad !== 0) 
+      ? t.utilidad 
+      : (t.neto - cCost);
+
+    cItem.costoTotal += cCost;
+    cItem.utilidadTotal += cUtil;
     cItem.txCount += 1;
+
     if (t.canal) {
       cItem.channels.add(t.canal + (t.tienda ? ' / ' + t.tienda : ''));
     }
@@ -6761,18 +6775,23 @@ function renderProdTxTable(transactions) {
   let html = '';
   sortedClients.forEach(c => {
     const avgPrice = c.cantTotal > 0 ? (c.netoTotal / c.cantTotal) : 0;
+    const marginPct = c.netoTotal > 0 ? ((c.netoTotal - c.costoTotal) / c.netoTotal) * 100 : 0;
     const partPct = skuTotalQty > 0 ? (c.cantTotal / skuTotalQty) * 100 : 0;
     const channelsStr = Array.from(c.channels).slice(0, 2).join(', ') || 'General';
 
+    const marginColor = marginPct >= 30 ? '#34d399' : (marginPct > 0 ? '#f59e0b' : '#f43f5e');
+
     html += `
       <tr class="advisor-row">
-        <td><strong style="color: #f8fafc; font-size: 0.9rem;">${c.cliente}</strong></td>
-        <td><span style="color: #94a3b8; font-size: 0.82rem;">${channelsStr}</span></td>
-        <td style="text-align: center; white-space: nowrap;"><span class="skus-count-badge" style="background: rgba(59,130,246,0.15); color: #60a5fa; white-space: nowrap; display: inline-block; padding: 4px 12px;">${c.txCount} ${c.txCount === 1 ? 'compra' : 'compras'}</span></td>
-        <td style="text-align: right;"><strong style="color: #38bdf8; font-size: 0.95rem;">${formatNum(c.cantTotal)} und.</strong></td>
-        <td style="text-align: right;">$${formatNum(Math.round(avgPrice))}</td>
-        <td style="text-align: right; font-weight: 700; color: #34d399;">$${formatNum(Math.round(c.netoTotal))}</td>
-        <td style="text-align: right;"><span style="color: #c084fc; font-weight: 700;">${partPct.toFixed(1)}%</span></td>
+        <td style="text-align: left;"><strong style="color: #f8fafc; font-size: 0.88rem;">${c.cliente}</strong></td>
+        <td style="text-align: left;"><span style="color: #94a3b8; font-size: 0.82rem;">${channelsStr}</span></td>
+        <td style="text-align: center; white-space: nowrap;"><span class="skus-count-badge" style="background: rgba(59,130,246,0.15); color: #60a5fa; white-space: nowrap; display: inline-block; padding: 4px 10px;">${c.txCount} ${c.txCount === 1 ? 'compra' : 'compras'}</span></td>
+        <td style="text-align: right; white-space: nowrap;"><strong style="color: #38bdf8; font-size: 0.92rem;">${formatNum(c.cantTotal)} und.</strong></td>
+        <td style="text-align: right; white-space: nowrap;">$${formatNum(Math.round(avgPrice))}</td>
+        <td style="text-align: right; white-space: nowrap; font-weight: 700;">$${formatNum(Math.round(c.netoTotal))}</td>
+        <td style="text-align: right; white-space: nowrap; font-weight: 700; color: #34d399;">$${formatNum(Math.round(c.utilidadTotal))}</td>
+        <td style="text-align: right; white-space: nowrap;"><span class="suggested-units-pill" style="background: rgba(16,185,129,0.12); color: ${marginColor}; font-weight: 700;">${marginPct.toFixed(1)}%</span></td>
+        <td style="text-align: right; white-space: nowrap;"><span style="color: #c084fc; font-weight: 700;">${partPct.toFixed(1)}%</span></td>
       </tr>
     `;
   });
