@@ -5920,14 +5920,149 @@ function initCotizacionesListeners() {
 }
 
 // ==========================================================================
+// MAPA DE IMÁGENES DE PRODUCTOS (HOJA IMAGENES GID=1736518601)
+// ==========================================================================
+
+let productImagesMap = new Map();
+
+async function fetchProductImagesMap() {
+  if (productImagesMap.size > 0) return;
+  try {
+    const SPREADSHEET_IMAGENES_GID = "1736518601";
+    const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:csv&gid=${SPREADSHEET_IMAGENES_GID}`;
+    const response = await fetch(url);
+    if (!response.ok) return;
+
+    const csvText = await response.text();
+    const rows = parseCSVText(csvText);
+
+    productImagesMap.clear();
+    rows.forEach((cols, idx) => {
+      if (idx === 0) return;
+      if (cols.length >= 2) {
+        const sku = String(cols[0] || '').trim().toUpperCase();
+        const imgUrl = String(cols[1] || cols[2] || '').trim();
+        const desc = String(cols[6] || cols[5] || '').trim();
+
+        if (sku && imgUrl && (imgUrl.startsWith('http://') || imgUrl.startsWith('https://'))) {
+          productImagesMap.set(sku, { url: imgUrl, desc: desc });
+        }
+      }
+    });
+
+    console.log(`[Imagenes] Sincronizadas ${productImagesMap.size} imágenes de productos de Google Sheets.`);
+  } catch (err) {
+    console.warn('[Imagenes] Error al cargar imágenes desde Google Sheets:', err);
+  }
+}
+
+function parseCSVText(text) {
+  const lines = [];
+  let row = [];
+  let inQuotes = false;
+  let current = '';
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    const nextChar = text[i + 1];
+
+    if (char === '"') {
+      if (inQuotes && nextChar === '"') {
+        current += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (char === ',' && !inQuotes) {
+      row.push(current);
+      current = '';
+    } else if ((char === '\r' || char === '\n') && !inQuotes) {
+      if (char === '\r' && nextChar === '\n') i++;
+      row.push(current);
+      lines.push(row);
+      row = [];
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  if (current || row.length > 0) {
+    row.push(current);
+    lines.push(row);
+  }
+  return lines;
+}
+
+function lookupProductBySku(skuInput) {
+  const sku = String(skuInput || '').trim().toUpperCase();
+  const container = document.getElementById('cotizImageContainer');
+  const descInput = document.getElementById('cDescripcion');
+
+  if (!sku) {
+    if (container) {
+      container.innerHTML = `
+        <div class="cotiz-image-placeholder">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          <span>Ingresa un SKU para cargar la imagen</span>
+        </div>
+      `;
+    }
+    return;
+  }
+
+  let item = productImagesMap.get(sku);
+  if (!item) {
+    for (let [k, v] of productImagesMap.entries()) {
+      if (k.startsWith(sku) || sku.startsWith(k)) {
+        item = v;
+        break;
+      }
+    }
+  }
+
+  if (item && item.url) {
+    if (container) {
+      container.innerHTML = `
+        <div style="display: flex; flex-direction: column; align-items: center;">
+          <img src="${item.url}" alt="${sku}" class="cotiz-sku-img" onerror="this.onerror=null; this.src='https://via.placeholder.com/180?text=No+Disponible';" />
+          <span class="cotiz-sku-caption">SKU: ${sku}${item.desc ? ' — ' + item.desc.slice(0, 40) : ''}</span>
+        </div>
+      `;
+    }
+    if (descInput && item.desc && (!descInput.value || descInput.value === 'Nombre o descripción detallada' || descInput.value === 'Producto Cotizado')) {
+      descInput.value = item.desc;
+    }
+  } else {
+    if (container) {
+      container.innerHTML = `
+        <div class="cotiz-image-placeholder" style="color: #fbbf24;">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span>Sin imagen para SKU: <strong>${sku}</strong></span>
+        </div>
+      `;
+    }
+  }
+}
+
+window.lookupProductBySku = lookupProductBySku;
+window.fetchProductImagesMap = fetchProductImagesMap;
+
+// Pre-cargar mapa de imágenes en segundo plano al cargar el módulo
+fetchProductImagesMap();
+
+// ==========================================================================
 // CREACIÓN / EDICIÓN DE COTIZACIÓN (MODAL GEMELO DE REGISTRO DE VENTA)
 // ==========================================================================
 
 function openCotizacionModal() {
   console.log('[Cotizaciones] Opening Cotización Modal...');
+  fetchProductImagesMap();
   const backdrop = document.getElementById('cotizacionModalBackdrop');
   const form = document.getElementById('cotizacionModalForm');
   if (form) form.reset();
+
+  // Limpiar vista previa de imagen
+  lookupProductBySku('');
 
   const titleEl = document.getElementById('cotizModalTitle');
   if (titleEl) titleEl.textContent = 'Nueva Cotización';
