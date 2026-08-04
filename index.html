@@ -1520,30 +1520,30 @@
               </div>
             </div>
 
-            <!-- SECCIÓN HISTÓRICO DE TRANSACCIONES / REGISTROS -->
+            <!-- SECCIÓN RESUMEN DE VENTAS POR CLIENTE -->
             <div class="ax-card" style="padding: 1.5rem;">
               <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 1rem; margin-bottom: 1rem;">
                 <div>
-                  <h3 style="font-size: 1.05rem; font-weight: 800; color: #f8fafc; margin: 0;">📜 Registros Recientes de Ventas de este SKU</h3>
-                  <p style="font-size: 0.8rem; color: #94a3b8; margin: 0.2rem 0 0 0;">Histórico detallado de facturas y clientes que han comprado este producto.</p>
+                  <h3 style="font-size: 1.05rem; font-weight: 800; color: #f8fafc; margin: 0;">👥 Resumen de Ventas por Cliente (Columna I)</h3>
+                  <p style="font-size: 0.8rem; color: #94a3b8; margin: 0.2rem 0 0 0;">Acumulado de unidades totales compradas y facturación neta por cliente para este SKU.</p>
                 </div>
-                <span class="skus-count-badge" id="prodTxCountBadge">0 Registros</span>
+                <span class="skus-count-badge" id="prodTxCountBadge">0 Clientes</span>
               </div>
-              <div style="overflow-x: auto; max-height: 350px;">
+              <div style="overflow-x: auto; max-height: 400px;">
                 <table class="advisor-table">
                   <thead>
                     <tr>
-                      <th>Folio</th>
-                      <th>Fecha</th>
-                      <th>Cliente</th>
+                      <th>Cliente (Columna I)</th>
                       <th>Canal / Tienda</th>
-                      <th style="text-align: right;">Cantidad</th>
-                      <th style="text-align: right;">Precio Unit.</th>
-                      <th style="text-align: right;">Total Neto</th>
+                      <th style="text-align: center;">N° Compras</th>
+                      <th style="text-align: right;">Cantidad Total (Col F)</th>
+                      <th style="text-align: right;">Precio Prom. Unit. (Col N)</th>
+                      <th style="text-align: right;">Venta Total Neta ($) (Col O)</th>
+                      <th style="text-align: right;">% Part. SKU</th>
                     </tr>
                   </thead>
                   <tbody id="prodTxTableBody">
-                    <tr><td colspan="7" style="text-align: center; color: #94a3b8;">No hay registros cargados.</td></tr>
+                    <tr><td colspan="7" style="text-align: center; color: #94a3b8;">Selecciona un producto para ver la lista de clientes.</td></tr>
                   </tbody>
                 </table>
               </div>

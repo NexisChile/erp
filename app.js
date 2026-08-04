@@ -6718,27 +6718,61 @@ function renderProdTxTable(transactions) {
   const countBadge = document.getElementById('prodTxCountBadge');
   if (!tbody) return;
 
-  if (countBadge) countBadge.textContent = `${transactions.length} Registros`;
-
   if (!transactions || transactions.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #94a3b8;">Sin transacciones en planilla Ventas para este SKU.</td></tr>';
+    if (countBadge) countBadge.textContent = '0 Clientes';
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #94a3b8;">Sin ventas registradas para este SKU.</td></tr>';
     return;
   }
 
-  const sortedTx = transactions.slice().sort((a, b) => (b.dObj && a.dObj) ? (b.dObj - a.dObj) : 0);
-  const recent50 = sortedTx.slice(0, 50);
+  // Agrupar por Cliente (Columna I)
+  const clientsMap = new Map();
+  let skuTotalQty = 0;
+
+  transactions.forEach(t => {
+    const rawClient = (t.cliente || '').toString().trim();
+    const clientName = (rawClient && rawClient.toUpperCase() !== 'N/A') ? rawClient : 'Sin Registro / Consumidor Final';
+    const clientKey = clientName.toUpperCase();
+
+    skuTotalQty += t.cant;
+
+    if (!clientsMap.has(clientKey)) {
+      clientsMap.set(clientKey, {
+        cliente: clientName,
+        cantTotal: 0,
+        netoTotal: 0,
+        txCount: 0,
+        channels: new Set()
+      });
+    }
+
+    const cItem = clientsMap.get(clientKey);
+    cItem.cantTotal += t.cant;
+    cItem.netoTotal += t.neto;
+    cItem.txCount += 1;
+    if (t.canal) {
+      cItem.channels.add(t.canal + (t.tienda ? ' / ' + t.tienda : ''));
+    }
+  });
+
+  const sortedClients = Array.from(clientsMap.values()).sort((a, b) => b.cantTotal - a.cantTotal);
+
+  if (countBadge) countBadge.textContent = `${sortedClients.length} Clientes Únicos`;
 
   let html = '';
-  recent50.forEach(t => {
+  sortedClients.forEach(c => {
+    const avgPrice = c.cantTotal > 0 ? (c.netoTotal / c.cantTotal) : 0;
+    const partPct = skuTotalQty > 0 ? (c.cantTotal / skuTotalQty) * 100 : 0;
+    const channelsStr = Array.from(c.channels).slice(0, 2).join(', ') || 'General';
+
     html += `
       <tr class="advisor-row">
-        <td><strong style="color: #60a5fa; font-family: 'JetBrains Mono', monospace;">#${t.folio}</strong></td>
-        <td>${t.fecha}</td>
-        <td><strong>${t.cliente}</strong></td>
-        <td><span style="color: #94a3b8;">${t.canal}${t.tienda ? ' / ' + t.tienda : ''}</span></td>
-        <td style="text-align: right;"><strong style="color: #38bdf8;">${formatNum(t.cant)}</strong></td>
-        <td style="text-align: right;">$${formatNum(t.preuni)}</td>
-        <td style="text-align: right; font-weight: 700; color: #34d399;">$${formatNum(t.neto)}</td>
+        <td><strong style="color: #f8fafc; font-size: 0.9rem;">${c.cliente}</strong></td>
+        <td><span style="color: #94a3b8; font-size: 0.82rem;">${channelsStr}</span></td>
+        <td style="text-align: center;"><span class="skus-count-badge" style="background: rgba(59,130,246,0.15); color: #60a5fa;">${c.txCount} ${c.txCount === 1 ? 'compra' : 'compras'}</span></td>
+        <td style="text-align: right;"><strong style="color: #38bdf8; font-size: 0.95rem;">${formatNum(c.cantTotal)} und.</strong></td>
+        <td style="text-align: right;">$${formatNum(Math.round(avgPrice))}</td>
+        <td style="text-align: right; font-weight: 700; color: #34d399;">$${formatNum(Math.round(c.netoTotal))}</td>
+        <td style="text-align: right;"><span style="color: #c084fc; font-weight: 700;">${partPct.toFixed(1)}%</span></td>
       </tr>
     `;
   });
