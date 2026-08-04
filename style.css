@@ -12276,3 +12276,296 @@ select#comprasStrategySelect {
   color: #c084fc !important;
   border: 1px solid rgba(168, 85, 247, 0.4) !important;
 }
+
+/* ==========================================================================
+   RESPONSIVE DESIGN & MOBILE VERSION (SMARTPHONES & TABLETS)
+   ========================================================================== */
+
+/* Mobile Hamburger Toggle Button */
+.ax-mobile-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: var(--ax-surface);
+  border: 1px solid var(--ax-border);
+  border-radius: var(--ax-radius-md);
+  color: var(--ax-text-primary);
+  cursor: pointer;
+  margin-right: 0.75rem;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.ax-mobile-toggle:hover,
+.ax-mobile-toggle:active {
+  background: var(--ax-surface-hover);
+  border-color: var(--ax-accent);
+  color: var(--ax-accent);
+}
+
+/* Sidebar Mobile Backdrop Overlay */
+.ax-sidebar-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(11, 15, 25, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 998;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.ax-sidebar-backdrop.active {
+  display: block !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* TABLET & MOBILE LAYOUT (< 1024px) */
+@media screen and (max-width: 1024px) {
+  .ax-mobile-toggle {
+    display: flex !important;
+  }
+
+  .ax-sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    width: 290px !important;
+    max-width: 85vw !important;
+    height: 100vh !important;
+    z-index: 999 !important;
+    transform: translateX(-100%) !important;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.6) !important;
+  }
+
+  .ax-sidebar.mobile-open {
+    transform: translateX(0) !important;
+  }
+
+  .ax-sidebar-close-btn {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 50% !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid var(--ax-border) !important;
+    color: var(--ax-text-primary) !important;
+    font-size: 1.25rem !important;
+    cursor: pointer !important;
+    transition: background 0.2s ease !important;
+  }
+
+  .ax-sidebar-close-btn:hover {
+    background: rgba(239, 68, 68, 0.2) !important;
+    color: var(--ax-accent-rose) !important;
+  }
+
+  .ax-header {
+    padding: 0 1rem !important;
+    height: 64px !important;
+  }
+
+  .ax-header__title {
+    font-size: 1rem !important;
+    max-width: 220px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .ax-header__subtitle {
+    display: none !important;
+  }
+
+  .ax-main {
+    padding: 1rem 1.25rem !important;
+  }
+}
+
+/* SMARTPHONE MOBILE VERSION (< 768px) */
+@media screen and (max-width: 768px) {
+  .ax-header {
+    padding: 0 0.75rem !important;
+  }
+
+  .ax-header__right {
+    gap: 0.35rem !important;
+  }
+
+  /* Compact buttons in header on mobile */
+  .ax-header__right .btn-secondary span,
+  .ax-header__right .ax-search-pill span:not(:first-child),
+  .ax-header__right .sync-status-pill span:not(.dot) {
+    display: none !important;
+  }
+
+  .ax-search-pill {
+    padding: 0.45rem 0.6rem !important;
+  }
+
+  .btn-secondary {
+    padding: 0.45rem 0.65rem !important;
+  }
+
+  .latency-badge {
+    display: none !important;
+  }
+
+  .ax-main {
+    padding: 0.85rem 0.75rem !important;
+  }
+
+  /* Global Filters Bar */
+  .filters-bar {
+    padding: 0.85rem !important;
+  }
+
+  .filters-bar__header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.75rem !important;
+  }
+
+  .date-presets {
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    padding-bottom: 6px !important;
+    -webkit-overflow-scrolling: touch !important;
+    width: 100% !important;
+  }
+
+  .date-presets::-webkit-scrollbar {
+    height: 3px;
+  }
+
+  .date-presets::-webkit-scrollbar-thumb {
+    background: var(--ax-border);
+    border-radius: 3px;
+  }
+
+  .filter-controls {
+    grid-template-columns: repeat(1, 1fr) !important;
+    gap: 0.65rem !important;
+  }
+
+  @media screen and (min-width: 480px) and (max-width: 768px) {
+    .filter-controls {
+      grid-template-columns: repeat(2, 1fr) !important;
+    }
+  }
+
+  /* Hero Cards & KPI Grids */
+  .hero-cards-grid {
+    grid-template-columns: 1fr !important;
+    gap: 0.85rem !important;
+  }
+
+  .mini-kpis-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.75rem !important;
+  }
+
+  .bi-advisor-projections {
+    grid-template-columns: 1fr !important;
+  }
+
+  .bi-advisor-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Section Titles */
+  .dashboard-section-title {
+    font-size: 1.05rem !important;
+  }
+
+  .dashboard-section-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.35rem !important;
+  }
+
+  /* Charts Containers */
+  .charts-grid,
+  .bi-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+
+  .chart-card canvas {
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 220px !important;
+  }
+
+  /* Responsive Touch Scroll Tables */
+  .table-card,
+  .table-responsive,
+  .ax-table-wrapper,
+  .advisor-table-wrapper {
+    width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    margin-bottom: 1rem !important;
+  }
+
+  .ax-table,
+  .tabla-registros,
+  .advisor-table {
+    min-width: 600px !important;
+  }
+
+  .table-header-bar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.75rem !important;
+  }
+
+  .table-header-controls {
+    flex-wrap: wrap !important;
+    width: 100% !important;
+  }
+
+  /* Command Palette Omnibox & Modals */
+  .ax-modal,
+  .ax-command-palette {
+    width: 94% !important;
+    max-width: 520px !important;
+    margin: 1rem auto !important;
+    padding: 1.25rem !important;
+    border-radius: var(--ax-radius-lg) !important;
+  }
+}
+
+/* EXTRA SMALL MOBILES (< 480px) */
+@media screen and (max-width: 480px) {
+  .mini-kpis-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .today-value {
+    font-size: 1.6rem !important;
+  }
+
+  .proj-val {
+    font-size: 1.35rem !important;
+  }
+
+  .ax-header__title {
+    font-size: 0.9rem !important;
+    max-width: 160px;
+  }
+
+  .preset-btn {
+    padding: 5px 10px !important;
+    font-size: 0.75rem !important;
+  }
+}
