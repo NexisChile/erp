@@ -344,6 +344,7 @@ const CmdPalette = {
 
     const actions = [
 
+      { label: 'Ver Productos & Proyección por SKU', action: () => switchView('productos'), type: 'Navegación' },
       { label: 'Ver Tablero Principal', action: () => switchView('tablero'), type: 'Navegación' },
 
       { label: 'Ver Tabla de Registros', action: () => switchView('tabla'), type: 'Navegación' },
@@ -4945,7 +4946,9 @@ function switchView(viewName) {
   const targetView = document.getElementById('view-' + viewName);
   if (targetView) targetView.classList.add('active');
   
-  if (viewName === 'compras') {
+  if (viewName === 'productos') {
+    renderProductosView();
+  } else if (viewName === 'compras') {
     renderComprasView();
   } else if (viewName === 'cotizaciones') {
     renderCotizacionesView();
@@ -5934,4 +5937,684 @@ function initCotizacionesListeners() {
       renderCotizacionesTable();
     });
   }
+}
+
+
+// ==========================================
+// MÓDULO DE PRODUCTOS Y PROYECCIÓN POR SKU
+// ==========================================
+
+let currentProdSelectedSku = null;
+let prodChartMetric = 'qty'; // 'qty' | 'neto'
+let prodProjectionChartInstance = null;
+let prodYearlyChartInstance = null;
+let prodProductsMap = new Map();
+
+function getProductsMap() {
+  const map = new Map();
+  const dataset = (Array.isArray(filtered) && filtered.length > 0) ? filtered : (rows || []);
+
+  dataset.forEach(r => {
+    if (!r) return;
+    const rawSku = (r['CODIGO'] || r['Codigo'] || r['SKU'] || r['DESCRIPCION'] || r['Descripcion'] || '').toString().trim();
+    if (!rawSku) return;
+
+    const sku = rawSku.toUpperCase();
+    const desc = (r['DESCRIPCION'] || r['Descripcion'] || r['GLOSA'] || sku).toString().trim();
+    const familia = (r['FAMILIA'] || r['Familia'] || r['Grupo'] || 'General').toString().trim();
+    const categoria = (r['CATEGORIA'] || r['Categoria'] || r['LINEA'] || 'General').toString().trim();
+
+    const cant = parseNumberClean(r['CANTFACTURADA']);
+    const preuni = parseNumberClean(r['PREUNI']);
+    const costos = parseNumberClean(r['COSTOS']);
+    const neto = r['NETO'] !== undefined && r['NETO'] !== '' ? parseNumberClean(r['NETO']) : (cant * preuni);
+    const costoTotalNet = r['COSTO TOTAL NET'] !== undefined && r['COSTO TOTAL NET'] !== '' ? parseNumberClean(r['COSTO TOTAL NET']) : (cant * costos);
+    const utilidad = r['($) UTILIDAD'] !== undefined && r['($) UTILIDAD'] !== '' ? parseNumberClean(r['($) UTILIDAD']) : (neto - costoTotalNet);
+
+    const dObj = parseRowDate(r['FECHA'] || r['Fecha']);
+    const year = dObj ? dObj.getFullYear() : (parseInt(r['AÑO'] || r['Año']) || new Date().getFullYear());
+    const month = dObj ? (dObj.getMonth() + 1) : (parseInt(r['MES'] || r['# MES']) || 1);
+
+    if (!map.has(sku)) {
+      map.set(sku, {
+        sku: sku,
+        descripcion: desc,
+        familia: familia,
+        categoria: categoria,
+        cantTotal: 0,
+        netoTotal: 0,
+        costoTotal: 0,
+        utilidadTotal: 0,
+        txCount: 0,
+        yearsMap: new Map(),
+        transactions: []
+      });
+    }
+
+    const item = map.get(sku);
+    item.cantTotal += cant;
+    item.netoTotal += neto;
+    item.costoTotal += costoTotalNet;
+    item.utilidadTotal += utilidad;
+    item.txCount += 1;
+    item.transactions.push({
+      folio: r['FOLIO'] || r['Folio'] || 'N/A',
+      fecha: r['FECHA'] || r['Fecha'] || '',
+      cliente: r['CLIENTE'] || r['Cliente'] || 'N/A',
+      canal: r['CANAL FINAL'] || r['Canal'] || 'General',
+      tienda: r['TIENDA FINAL'] || r['Tienda'] || '',
+      cant: cant,
+      preuni: preuni,
+      neto: neto,
+      dObj: dObj
+    });
+
+    if (!item.yearsMap.has(year)) {
+      item.yearsMap.set(year, {
+        months: new Map(),
+        totalQty: 0,
+        totalNeto: 0,
+        totalCosto: 0,
+        totalUtilidad: 0
+      });
+    }
+    const yObj = item.yearsMap.get(year);
+    yObj.totalQty += cant;
+    yObj.totalNeto += neto;
+    yObj.totalCosto += costoTotalNet;
+    yObj.totalUtilidad += utilidad;
+
+    if (!yObj.months.has(month)) {
+      yObj.months.set(month, { qty: 0, neto: 0, costo: 0, utilidad: 0 });
+    }
+    const mObj = yObj.months.get(month);
+    mObj.qty += cant;
+    mObj.neto += neto;
+    mObj.costo += costoTotalNet;
+    mObj.utilidad += utilidad;
+  });
+
+  return map;
+}
+
+function renderProductosView() {
+  prodProductsMap = getProductsMap();
+  const selectEl = document.getElementById('prodSkuSelect');
+  if (!selectEl) return;
+
+  const sortedProds = Array.from(prodProductsMap.values()).sort((a, b) => b.cantTotal - a.cantTotal);
+
+  if (sortedProds.length === 0) {
+    selectEl.innerHTML = '<option value="">No hay productos disponibles</option>';
+    return;
+  }
+
+  let html = '<option value="">-- Selecciona un SKU / Producto (' + sortedProds.length + ' disponibles) --</option>';
+  sortedProds.forEach(p => {
+    const isSelected = p.sku === currentProdSelectedSku ? 'selected' : '';
+    html += `<option value="${p.sku}" ${isSelected}>${p.sku} | ${p.descripcion.substring(0, 45)} (${formatNum(p.cantTotal)} und. - $${formatNum(p.netoTotal)})</option>`;
+  });
+  selectEl.innerHTML = html;
+
+  if (!selectEl.dataset.bound) {
+    selectEl.dataset.bound = 'true';
+    selectEl.addEventListener('change', (e) => {
+      if (e.target.value) {
+        selectProductSku(e.target.value);
+      }
+    });
+
+    const searchInput = document.getElementById('prodSkuSearch');
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => handleProdSearchInput(e.target.value));
+      searchInput.addEventListener('focus', (e) => handleProdSearchInput(e.target.value));
+    }
+
+    const qtyInput = document.getElementById('prodProjQtyInput');
+    if (qtyInput) {
+      qtyInput.addEventListener('input', () => updateProdProjection());
+    }
+
+    const speedModeSelect = document.getElementById('prodProjSpeedMode');
+    if (speedModeSelect) {
+      speedModeSelect.addEventListener('change', () => updateProdProjection());
+    }
+
+    const randomBtn = document.getElementById('prodRandomBtn');
+    if (randomBtn) {
+      randomBtn.addEventListener('click', () => {
+        const keys = Array.from(prodProductsMap.keys());
+        if (keys.length > 0) {
+          const randomSku = keys[Math.floor(Math.random() * keys.length)];
+          selectProductSku(randomSku);
+        }
+      });
+    }
+
+    const clearBtn = document.getElementById('prodClearBtn');
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => {
+        currentProdSelectedSku = null;
+        selectEl.value = '';
+        const searchInput = document.getElementById('prodSkuSearch');
+        if (searchInput) searchInput.value = '';
+        renderProductosView();
+      });
+    }
+
+    document.addEventListener('click', (e) => {
+      const drop = document.getElementById('prodSkuSuggestions');
+      const input = document.getElementById('prodSkuSearch');
+      if (drop && input && !drop.contains(e.target) && e.target !== input) {
+        drop.style.display = 'none';
+      }
+    });
+  }
+
+  if (!currentProdSelectedSku && sortedProds.length > 0) {
+    selectProductSku(sortedProds[0].sku);
+  } else if (currentProdSelectedSku) {
+    selectProductSku(currentProdSelectedSku);
+  }
+}
+
+function handleProdSearchInput(val) {
+  const drop = document.getElementById('prodSkuSuggestions');
+  if (!drop) return;
+
+  const q = (val || '').trim().toLowerCase();
+  if (!q) {
+    drop.style.display = 'none';
+    return;
+  }
+
+  const matches = [];
+  for (const p of prodProductsMap.values()) {
+    if (p.sku.toLowerCase().includes(q) || p.descripcion.toLowerCase().includes(q) || p.categoria.toLowerCase().includes(q)) {
+      matches.push(p);
+      if (matches.length >= 12) break;
+    }
+  }
+
+  if (matches.length === 0) {
+    drop.innerHTML = '<div style="padding: 10px; color: #94a3b8; font-size: 0.85rem; text-align: center;">No se encontraron productos con ese SKU / nombre.</div>';
+    drop.style.display = 'block';
+    return;
+  }
+
+  let html = '';
+  matches.forEach(p => {
+    html += `
+      <div class="prod-suggestion-item" onclick="selectProductSku('${p.sku}'); document.getElementById('prodSkuSuggestions').style.display='none';">
+        <div>
+          <strong style="color: #c084fc; font-family: 'JetBrains Mono', monospace;">${p.sku}</strong>
+          <span style="color: #cbd5e1; margin-left: 6px;">${p.descripcion}</span>
+        </div>
+        <div style="font-size: 0.78rem; color: #94a3b8; text-align: right;">
+          <div><strong style="color: #38bdf8;">${formatNum(p.cantTotal)} und.</strong></div>
+          <div>$${formatNum(p.netoTotal)}</div>
+        </div>
+      </div>
+    `;
+  });
+  drop.innerHTML = html;
+  drop.style.display = 'block';
+}
+
+function selectProductSku(sku) {
+  if (!sku || !prodProductsMap.has(sku)) return;
+  currentProdSelectedSku = sku;
+
+  const p = prodProductsMap.get(sku);
+
+  const selectEl = document.getElementById('prodSkuSelect');
+  if (selectEl) selectEl.value = sku;
+
+  const searchInput = document.getElementById('prodSkuSearch');
+  if (searchInput) searchInput.value = `${p.sku} - ${p.descripcion}`;
+
+  const skuBadge = document.getElementById('prodSkuBadge');
+  if (skuBadge) skuBadge.textContent = `SKU: ${p.sku}`;
+
+  const catBadge = document.getElementById('prodCategoryBadge');
+  if (catBadge) catBadge.textContent = `Cat: ${p.categoria}`;
+
+  const famBadge = document.getElementById('prodFamiliaBadge');
+  if (famBadge) famBadge.textContent = `Fam: ${p.familia}`;
+
+  const titleEl = document.getElementById('prodTitle');
+  if (titleEl) titleEl.textContent = p.descripcion;
+
+  const subEl = document.getElementById('prodSubtitle');
+  if (subEl) subEl.textContent = `Transacciones registradas: ${p.txCount} | Categoría: ${p.categoria} | Familia: ${p.familia}`;
+
+  const avgPrice = p.cantTotal > 0 ? (p.netoTotal / p.cantTotal) : 0;
+  const avgCost = p.cantTotal > 0 ? (p.costoTotal / p.cantTotal) : 0;
+  const marginPct = p.netoTotal > 0 ? ((p.netoTotal - p.costoTotal) / p.netoTotal) * 100 : 0;
+
+  const avgPriceEl = document.getElementById('prodAvgPrice');
+  if (avgPriceEl) avgPriceEl.textContent = `$${formatCLP(avgPrice)}`;
+
+  const avgCostEl = document.getElementById('prodAvgCost');
+  if (avgCostEl) avgCostEl.textContent = `$${formatCLP(avgCost)}`;
+
+  const marginEl = document.getElementById('prodMarginPct');
+  if (marginEl) {
+    marginEl.textContent = `${marginPct.toFixed(1)}%`;
+    marginEl.style.color = marginPct >= 30 ? '#34d399' : (marginPct > 0 ? '#f59e0b' : '#f43f5e');
+  }
+
+  const totalQtyEl = document.getElementById('prodKpiTotalQty');
+  if (totalQtyEl) totalQtyEl.textContent = `${formatNum(p.cantTotal)} und.`;
+
+  const totalRevEl = document.getElementById('prodKpiTotalRevenue');
+  if (totalRevEl) totalRevEl.textContent = `$${formatNum(p.netoTotal)} Neto`;
+
+  let peakYear = 'N/A';
+  let maxYearQty = -1;
+  p.yearsMap.forEach((yData, y) => {
+    if (yData.totalQty > maxYearQty) {
+      maxYearQty = yData.totalQty;
+      peakYear = y;
+    }
+  });
+
+  const peakYearEl = document.getElementById('prodKpiPeakYear');
+  if (peakYearEl) peakYearEl.textContent = peakYear;
+  const peakYearSub = document.getElementById('prodKpiPeakYearSub');
+  if (peakYearSub) peakYearSub.textContent = maxYearQty > 0 ? `${formatNum(maxYearQty)} und. vendidas` : '';
+
+  const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+  const monthTotals = Array(12).fill(0);
+  p.yearsMap.forEach((yData) => {
+    yData.months.forEach((mObj, mNum) => {
+      if (mNum >= 1 && mNum <= 12) {
+        monthTotals[mNum - 1] += mObj.qty;
+      }
+    });
+  });
+
+  let peakMonthIdx = 0;
+  let maxMonthQty = -1;
+  monthTotals.forEach((qty, idx) => {
+    if (qty > maxMonthQty) {
+      maxMonthQty = qty;
+      peakMonthIdx = idx;
+    }
+  });
+
+  const peakMonthEl = document.getElementById('prodKpiPeakMonth');
+  if (peakMonthEl) peakMonthEl.textContent = maxMonthQty > 0 ? monthNames[peakMonthIdx] : 'N/A';
+  const peakMonthSub = document.getElementById('prodKpiPeakMonthSub');
+  if (peakMonthSub) peakMonthSub.textContent = maxMonthQty > 0 ? `${formatNum(maxMonthQty)} und. históricas` : '';
+
+  renderProdYearlyChart(p);
+  renderProdYearlyTable(p);
+  renderProdTxTable(p.transactions);
+
+  updateProdProjection();
+}
+
+function setProdProjPreset(qty) {
+  const input = document.getElementById('prodProjQtyInput');
+  if (input) {
+    input.value = qty;
+    updateProdProjection();
+  }
+}
+
+function updateProdProjection() {
+  if (!currentProdSelectedSku || !prodProductsMap.has(currentProdSelectedSku)) return;
+
+  const p = prodProductsMap.get(currentProdSelectedSku);
+  const qtyInput = document.getElementById('prodProjQtyInput');
+  const modeSelect = document.getElementById('prodProjSpeedMode');
+
+  const projQty = parseInt(qtyInput ? qtyInput.value : 100) || 0;
+  const speedMode = modeSelect ? modeSelect.value : '12m';
+
+  const allTx = p.transactions.slice().sort((a, b) => (a.dObj && b.dObj) ? (a.dObj - b.dObj) : 0);
+  
+  let monthlyVelocity = 0;
+  let speedLabel = '';
+
+  const ymSales = new Map();
+  allTx.forEach(t => {
+    if (!t.dObj) return;
+    const key = `${t.dObj.getFullYear()}-${String(t.dObj.getMonth() + 1).padStart(2, '0')}`;
+    ymSales.set(key, (ymSales.get(key) || 0) + t.cant);
+  });
+
+  const sortedYM = Array.from(ymSales.keys()).sort();
+  const totalActiveMonths = Math.max(1, sortedYM.length);
+  const avgAllMonths = p.cantTotal / totalActiveMonths;
+
+  const now = new Date();
+  function getUnitsInLastNMonths(nMonths) {
+    let sum = 0;
+    for (let i = 0; i < nMonths; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      if (ymSales.has(key)) {
+        sum += ymSales.get(key);
+      }
+    }
+    return { sum, avg: sum / nMonths };
+  }
+
+  const u12 = getUnitsInLastNMonths(12);
+  const u6 = getUnitsInLastNMonths(6);
+  const u3 = getUnitsInLastNMonths(3);
+
+  if (speedMode === '12m') {
+    monthlyVelocity = u12.avg > 0 ? u12.avg : avgAllMonths;
+    speedLabel = `Ritmo (Últimos 12M): ${monthlyVelocity.toFixed(1)} u./mes`;
+  } else if (speedMode === '6m') {
+    monthlyVelocity = u6.avg > 0 ? u6.avg : (u12.avg > 0 ? u12.avg : avgAllMonths);
+    speedLabel = `Ritmo (Últimos 6M): ${monthlyVelocity.toFixed(1)} u./mes`;
+  } else if (speedMode === '3m') {
+    monthlyVelocity = u3.avg > 0 ? u3.avg : (u6.avg > 0 ? u6.avg : avgAllMonths);
+    speedLabel = `Ritmo (Últimos 3M): ${monthlyVelocity.toFixed(1)} u./mes`;
+  } else {
+    monthlyVelocity = avgAllMonths;
+    speedLabel = `Ritmo (Histórico General): ${monthlyVelocity.toFixed(1)} u./mes`;
+  }
+
+  const speedKpiEl = document.getElementById('prodKpiMonthlySpeed');
+  if (speedKpiEl) speedKpiEl.textContent = `${monthlyVelocity.toFixed(1)} und/mes`;
+
+  const resMonthsEl = document.getElementById('prodProjResultMonths');
+  const resDaysEl = document.getElementById('prodProjResultDays');
+  const resDateEl = document.getElementById('prodProjDepletionDate');
+  const speedLabelEl = document.getElementById('prodProjSpeedLabel');
+  const estRevEl = document.getElementById('prodProjEstRevenue');
+  const estCostEl = document.getElementById('prodProjEstCost');
+  const estProfEl = document.getElementById('prodProjEstProfit');
+
+  if (monthlyVelocity <= 0 || projQty <= 0) {
+    if (resMonthsEl) resMonthsEl.textContent = '0.0 Meses';
+    if (resDaysEl) resDaysEl.textContent = 'Sin ventas de referencia suficiente';
+    if (resDateEl) resDateEl.textContent = 'Indefinido';
+    if (speedLabelEl) speedLabelEl.textContent = speedLabel;
+    if (estRevEl) estRevEl.textContent = '$0';
+    if (estCostEl) estCostEl.textContent = '$0';
+    if (estProfEl) estProfEl.textContent = '$0';
+    renderProdProjectionChart(0, 0, 0);
+    return;
+  }
+
+  const monthsToDeplete = projQty / monthlyVelocity;
+  const daysToDeplete = Math.round(monthsToDeplete * 30.4375);
+
+  const depletionDate = new Date();
+  depletionDate.setDate(depletionDate.getDate() + daysToDeplete);
+
+  const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+  const formattedDepletionDate = `${monthNames[depletionDate.getMonth()]} ${depletionDate.getFullYear()}`;
+
+  const avgPrice = p.cantTotal > 0 ? (p.netoTotal / p.cantTotal) : 0;
+  const avgCost = p.cantTotal > 0 ? (p.costoTotal / p.cantTotal) : 0;
+  const estRev = projQty * avgPrice;
+  const estCost = projQty * avgCost;
+  const estProf = estRev - estCost;
+
+  if (resMonthsEl) resMonthsEl.textContent = `${monthsToDeplete.toFixed(1)} Meses`;
+  if (resDaysEl) resDaysEl.textContent = `≈ ${daysToDeplete} Días de cobertura comercial`;
+  if (resDateEl) resDateEl.textContent = formattedDepletionDate;
+  if (speedLabelEl) speedLabelEl.textContent = speedLabel;
+  if (estRevEl) estRevEl.textContent = `$${formatNum(Math.round(estRev))}`;
+  if (estCostEl) estCostEl.textContent = `$${formatNum(Math.round(estCost))}`;
+  if (estProfEl) estProfEl.textContent = `$${formatNum(Math.round(estProf))}`;
+
+  renderProdProjectionChart(projQty, monthlyVelocity, monthsToDeplete);
+}
+
+function renderProdProjectionChart(startQty, monthlyVelocity, monthsToDeplete) {
+  const canvas = document.getElementById('prodProjectionChart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  if (prodProjectionChartInstance) {
+    prodProjectionChartInstance.destroy();
+  }
+
+  if (startQty <= 0 || monthlyVelocity <= 0) {
+    return;
+  }
+
+  const labels = [];
+  const dataStock = [];
+  const maxMonths = Math.min(36, Math.ceil(monthsToDeplete) + 1);
+
+  const now = new Date();
+  const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+  for (let m = 0; m <= maxMonths; m++) {
+    const d = new Date(now.getFullYear(), now.getMonth() + m, 1);
+    labels.push(`M${m} (${monthNames[d.getMonth()]})`);
+
+    const remaining = Math.max(0, startQty - (m * monthlyVelocity));
+    dataStock.push(Math.round(remaining));
+  }
+
+  prodProjectionChartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Stock Proyectado (Unidades)',
+        data: dataStock,
+        borderColor: '#a855f7',
+        backgroundColor: 'rgba(168, 85, 247, 0.15)',
+        borderWidth: 3,
+        fill: true,
+        tension: 0.3,
+        pointBackgroundColor: '#c084fc',
+        pointRadius: 4,
+        pointHoverRadius: 7
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => ` Stock remanente: ${formatNum(ctx.raw)} unidades`
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(255, 255, 255, 0.05)' },
+          ticks: { color: '#94a3b8', font: { size: 11 } }
+        },
+        y: {
+          grid: { color: 'rgba(255, 255, 255, 0.05)' },
+          ticks: { color: '#94a3b8', font: { size: 11 } },
+          beginAtZero: true
+        }
+      }
+    }
+  });
+}
+
+function setProdChartMetric(metric) {
+  prodChartMetric = metric;
+  const qtyBtn = document.getElementById('prodChartMetricQtyBtn');
+  const netoBtn = document.getElementById('prodChartMetricNetoBtn');
+
+  if (qtyBtn && netoBtn) {
+    qtyBtn.classList.toggle('active', metric === 'qty');
+    netoBtn.classList.toggle('active', metric === 'neto');
+  }
+
+  if (currentProdSelectedSku && prodProductsMap.has(currentProdSelectedSku)) {
+    renderProdYearlyChart(prodProductsMap.get(currentProdSelectedSku));
+  }
+}
+
+function renderProdYearlyChart(productItem) {
+  const canvas = document.getElementById('prodYearlyChart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  if (prodYearlyChartInstance) {
+    prodYearlyChartInstance.destroy();
+  }
+
+  const monthsLabels = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+  const sortedYears = Array.from(productItem.yearsMap.keys()).sort();
+
+  const colors = [
+    { border: '#3b82f6', bg: 'rgba(59, 130, 246, 0.7)' },
+    { border: '#a855f7', bg: 'rgba(168, 85, 247, 0.7)' },
+    { border: '#f59e0b', bg: 'rgba(245, 158, 11, 0.7)' },
+    { border: '#10b981', bg: 'rgba(16, 185, 129, 0.7)' },
+    { border: '#ec4899', bg: 'rgba(236, 72, 153, 0.7)' }
+  ];
+
+  const datasets = sortedYears.map((year, idx) => {
+    const yObj = productItem.yearsMap.get(year);
+    const data = [];
+    for (let m = 1; m <= 12; m++) {
+      const mObj = yObj.months.get(m);
+      if (mObj) {
+        data.push(prodChartMetric === 'qty' ? mObj.qty : mObj.neto);
+      } else {
+        data.push(0);
+      }
+    }
+    const color = colors[idx % colors.length];
+    return {
+      label: `Año ${year}`,
+      data: data,
+      backgroundColor: color.bg,
+      borderColor: color.border,
+      borderWidth: 2,
+      borderRadius: 4
+    };
+  });
+
+  prodYearlyChartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: monthsLabels,
+      datasets: datasets
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: true,
+          position: 'top',
+          labels: { color: '#cbd5e1', font: { weight: '600', size: 12 } }
+        },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => {
+              const val = ctx.raw;
+              return prodChartMetric === 'qty'
+                ? ` ${ctx.dataset.label}: ${formatNum(val)} unidades`
+                : ` ${ctx.dataset.label}: $${formatNum(val)}`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(255, 255, 255, 0.05)' },
+          ticks: { color: '#94a3b8', font: { size: 11, weight: '600' } }
+        },
+        y: {
+          grid: { color: 'rgba(255, 255, 255, 0.05)' },
+          ticks: {
+            color: '#94a3b8',
+            font: { size: 11 },
+            callback: (val) => prodChartMetric === 'qty' ? formatNum(val) : '$' + formatNum(val)
+          },
+          beginAtZero: true
+        }
+      }
+    }
+  });
+}
+
+function renderProdYearlyTable(productItem) {
+  const tbody = document.getElementById('prodYearlyTableBody');
+  if (!tbody) return;
+
+  const sortedYears = Array.from(productItem.yearsMap.keys()).sort((a, b) => b - a);
+  if (sortedYears.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #94a3b8;">Sin datos registrados.</td></tr>';
+    return;
+  }
+
+  const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+  let html = '';
+
+  sortedYears.forEach(year => {
+    const yObj = productItem.yearsMap.get(year);
+    const marginPct = yObj.totalNeto > 0 ? ((yObj.totalNeto - yObj.totalCosto) / yObj.totalNeto) * 100 : 0;
+    const partPct = productItem.cantTotal > 0 ? (yObj.totalQty / productItem.cantTotal) * 100 : 0;
+
+    let peakMonth = 'N/A';
+    let maxMQty = -1;
+    yObj.months.forEach((mObj, mNum) => {
+      if (mObj.qty > maxMQty) {
+        maxMQty = mObj.qty;
+        peakMonth = monthNames[mNum - 1];
+      }
+    });
+
+    html += `
+      <tr class="advisor-row">
+        <td><strong style="color: #f59e0b; font-size: 0.95rem;">${year}</strong></td>
+        <td style="text-align: right;"><strong style="color: #38bdf8;">${formatNum(yObj.totalQty)} und.</strong></td>
+        <td style="text-align: right; font-weight: 700;">$${formatNum(yObj.totalNeto)}</td>
+        <td style="text-align: right; color: #94a3b8;">$${formatNum(yObj.totalCosto)}</td>
+        <td style="text-align: right; color: #34d399; font-weight: 700;">$${formatNum(yObj.totalUtilidad)}</td>
+        <td style="text-align: right;"><span class="suggested-units-pill" style="background: rgba(16,185,129,0.15); color: #34d399;">${marginPct.toFixed(1)}%</span></td>
+        <td style="text-align: right; color: #c084fc; font-weight: 700;">${partPct.toFixed(1)}%</td>
+        <td><span class="skus-count-badge" style="background: rgba(59,130,246,0.15); color: #60a5fa;">${peakMonth} (${formatNum(maxMQty)})</span></td>
+      </tr>
+    `;
+  });
+
+  tbody.innerHTML = html;
+}
+
+function renderProdTxTable(transactions) {
+  const tbody = document.getElementById('prodTxTableBody');
+  const countBadge = document.getElementById('prodTxCountBadge');
+  if (!tbody) return;
+
+  if (countBadge) countBadge.textContent = `${transactions.length} Registros`;
+
+  if (!transactions || transactions.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #94a3b8;">Sin transacciones para este SKU.</td></tr>';
+    return;
+  }
+
+  const sortedTx = transactions.slice().sort((a, b) => (b.dObj && a.dObj) ? (b.dObj - a.dObj) : 0);
+  const recent50 = sortedTx.slice(0, 50);
+
+  let html = '';
+  recent50.forEach(t => {
+    html += `
+      <tr class="advisor-row">
+        <td><strong style="color: #60a5fa; font-family: 'JetBrains Mono', monospace;">#${t.folio}</strong></td>
+        <td>${t.fecha}</td>
+        <td><strong>${t.cliente}</strong></td>
+        <td><span style="color: #94a3b8;">${t.canal}${t.tienda ? ' / ' + t.tienda : ''}</span></td>
+        <td style="text-align: right;"><strong style="color: #38bdf8;">${formatNum(t.cant)}</strong></td>
+        <td style="text-align: right;">$${formatNum(t.preuni)}</td>
+        <td style="text-align: right; font-weight: 700; color: #34d399;">$${formatNum(t.neto)}</td>
+      </tr>
+    `;
+  });
+
+  tbody.innerHTML = html;
 }
