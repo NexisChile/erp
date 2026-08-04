@@ -6768,7 +6768,7 @@ function renderProdTxTable(transactions) {
       <tr class="advisor-row">
         <td><strong style="color: #f8fafc; font-size: 0.9rem;">${c.cliente}</strong></td>
         <td><span style="color: #94a3b8; font-size: 0.82rem;">${channelsStr}</span></td>
-        <td style="text-align: center;"><span class="skus-count-badge" style="background: rgba(59,130,246,0.15); color: #60a5fa;">${c.txCount} ${c.txCount === 1 ? 'compra' : 'compras'}</span></td>
+        <td style="text-align: center; white-space: nowrap;"><span class="skus-count-badge" style="background: rgba(59,130,246,0.15); color: #60a5fa; white-space: nowrap; display: inline-block; padding: 4px 12px;">${c.txCount} ${c.txCount === 1 ? 'compra' : 'compras'}</span></td>
         <td style="text-align: right;"><strong style="color: #38bdf8; font-size: 0.95rem;">${formatNum(c.cantTotal)} und.</strong></td>
         <td style="text-align: right;">$${formatNum(Math.round(avgPrice))}</td>
         <td style="text-align: right; font-weight: 700; color: #34d399;">$${formatNum(Math.round(c.netoTotal))}</td>
