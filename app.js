@@ -37,15 +37,30 @@ const AuthManager = {
     this.checkSession();
   },
 
-  checkSession() {
+  openLoginModal() {
     const modal = document.getElementById('loginModal');
+    if (modal) {
+      modal.classList.remove('hidden');
+      modal.style.display = 'flex';
+    }
+  },
+
+  closeLoginModal() {
+    const modal = document.getElementById('loginModal');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.style.display = 'none';
+    }
+  },
+
+  checkSession() {
     const sessionStr = localStorage.getItem('glomax_auth_session');
     if (sessionStr) {
       try {
         const session = JSON.parse(sessionStr);
-        if (session && session.email) {
+        if (session && session.email && session.canal) {
           this.currentUser = session;
-          if (modal) modal.classList.add('hidden');
+          this.closeLoginModal();
           this.renderProfileBadge();
           this.applyUserChannelPermissions();
           return true;
@@ -55,7 +70,8 @@ const AuthManager = {
       }
     }
     this.currentUser = null;
-    if (modal) modal.classList.remove('hidden');
+    this.renderProfileBadge();
+    this.openLoginModal();
     return false;
   },
 
@@ -99,9 +115,7 @@ const AuthManager = {
       AudioSynth.play('sync');
     }
 
-    const modal = document.getElementById('loginModal');
-    if (modal) modal.classList.add('hidden');
-
+    this.closeLoginModal();
     this.renderProfileBadge();
     this.applyUserChannelPermissions();
 
@@ -118,9 +132,7 @@ const AuthManager = {
   logout() {
     localStorage.removeItem('glomax_auth_session');
     this.currentUser = null;
-    const badge = document.getElementById('userProfileBadge');
-    if (badge) badge.style.display = 'none';
-
+    
     const select = document.getElementById('fltCanal');
     if (select) {
       select.disabled = false;
@@ -128,8 +140,8 @@ const AuthManager = {
       select.value = '';
     }
 
-    const modal = document.getElementById('loginModal');
-    if (modal) modal.classList.remove('hidden');
+    this.renderProfileBadge();
+    this.openLoginModal();
 
     if (typeof applyFilters === 'function') {
       applyFilters();
@@ -138,19 +150,28 @@ const AuthManager = {
 
   renderProfileBadge() {
     const badge = document.getElementById('userProfileBadge');
+    const headerBtn = document.getElementById('headerLoginBtn');
     const avatar = document.getElementById('userAvatar');
     const emailBadge = document.getElementById('userEmailBadge');
     const channelBadge = document.getElementById('userChannelBadge');
+    const sidebarLabel = document.getElementById('sidebarAuthLabel');
+    const sidebarBadge = document.getElementById('sidebarAuthBadge');
 
     if (!this.currentUser) {
       if (badge) badge.style.display = 'none';
+      if (headerBtn) headerBtn.style.display = 'flex';
+      if (sidebarLabel) sidebarLabel.textContent = 'Iniciar Sesión / Canal';
+      if (sidebarBadge) sidebarBadge.textContent = 'Login';
       return;
     }
 
     if (badge) badge.style.display = 'flex';
+    if (headerBtn) headerBtn.style.display = 'none';
     if (avatar) avatar.textContent = (this.currentUser.email[0] || 'U').toUpperCase();
     if (emailBadge) emailBadge.textContent = this.currentUser.email;
     if (channelBadge) channelBadge.textContent = `Canal: ${this.currentUser.canal}`;
+    if (sidebarLabel) sidebarLabel.textContent = `${this.currentUser.email}`;
+    if (sidebarBadge) sidebarBadge.textContent = `${this.currentUser.canal}`;
   },
 
   applyUserChannelPermissions() {
