@@ -2179,6 +2179,8 @@ function renderAll() {
     try { renderComprasView(); } catch (e) { console.error('renderComprasView err:', e); }
   } else if (activeViewId === 'view-bistudio') {
     try { renderBIEngine(); } catch (e) { console.error('renderBIEngine err:', e); }
+  } else if (activeViewId === 'view-mixsugerido') {
+    try { renderMixSugeridoModule(); } catch (e) { console.error('renderMixSugeridoModule err:', e); }
   }
 }
 
@@ -5169,6 +5171,8 @@ function switchView(viewName) {
     renderComprasView();
   } else if (viewName === 'cotizaciones') {
     renderCotizacionesView();
+  } else if (viewName === 'mixsugerido') {
+    renderMixSugeridoModule();
   } else if (viewName === 'tablero') {
     renderMonthlyTargetProgress();
     renderMiniKPIs();
@@ -7283,11 +7287,192 @@ function renderProdTxTable(transactions) {
   tbody.innerHTML = html;
 }
 
+// ---------- MÓDULO MIX DE PRODUCTOS SUGERIDO POR MEJOR VENTA ----------
+
+let currentMixSegment = 'ALL';
+
+function renderMixSugeridoModule() {
+  const segmentSelect = document.getElementById('mixCanalSegment');
+  if (segmentSelect) {
+    if (segmentSelect.options.length <= 1) {
+      const canales = uniqueValues('CANAL FINAL');
+      segmentSelect.innerHTML = `<option value="ALL">🌐 Global (Todos los Canales)</option>` +
+        canales.map(c => `<option value="${c}">${c}</option>`).join('');
+    }
+    currentMixSegment = segmentSelect.value;
+  }
+
+  const f = getFilters();
+  const dDesde = f.desde ? parseRowDate(f.desde) : null;
+  const tDesde = dDesde ? dDesde.setHours(0, 0, 0, 0) : 0;
+  const dHasta = f.hasta ? parseRowDate(f.hasta) : null;
+  const tHasta = dHasta ? dHasta.setHours(23, 59, 59, 999) : 0;
+
+  const periodRows = rows.filter(r => {
+    if (!r) return false;
+    if (tDesde > 0 && (r._time < tDesde || !r._time)) return false;
+    if (tHasta > 0 && (r._time > tHasta || !r._time)) return false;
+    
+    if (currentMixSegment !== 'ALL') {
+      if (normalizeChannelStr(r._canal || r['CANAL FINAL'] || r['Canal Final']) !== normalizeChannelStr(currentMixSegment)) {
+        return false;
+      }
+    }
+
+    if (f.canal && normalizeChannelStr(r._canal || r['CANAL FINAL'] || r['Canal Final']) !== normalizeChannelStr(f.canal)) {
+      return false;
+    }
+
+    return true;
+  });
+
+  const skuMap = new Map();
+  let grandTotalNeto = 0;
+  let grandTotalCant = 0;
+  let grandTotalCost = 0;
+  let grandTotalProfit = 0;
+
+  periodRows.forEach(r => {
+    const rawCodigo = String(r['CODIGO'] || r['Codigo'] || '').trim();
+    const rawDesc = String(r['DESCRIPCION'] || r['Descripcion'] || '').trim();
+    if (!rawCodigo && !rawDesc) return;
+
+    const skuKey = (rawCodigo || rawDesc).toUpperCase();
+    const cant = Number(r['CANTFACTURADA']) || 0;
+    const neto = Number(r['NETO']) || 0;
+    const costoUnit = Number(r['COSTOS']) || 0;
+    const costoTotalNet = (r['COSTO TOTAL NET'] !== undefined && Number(r['COSTO TOTAL NET']) !== 0) 
+      ? Number(r['COSTO TOTAL NET']) 
+      : (cant * costoUnit);
+    const utilidad = (r['($) UTILIDAD'] !== undefined && Number(r['($) UTILIDAD']) !== 0) 
+      ? Number(r['($) UTILIDAD']) 
+      : (neto - costoTotalNet);
+
+    grandTotalNeto += neto;
+    grandTotalCant += cant;
+    grandTotalCost += costoTotalNet;
+    grandTotalProfit += utilidad;
+
+    if (!skuMap.has(skuKey)) {
+      skuMap.set(skuKey, {
+        codigo: rawCodigo || 'N/A',
+        descripcion: rawDesc || rawCodigo || 'Producto Sin Descripción',
+        familia: r['FAMILIA'] || r['GRUPO'] || 'General',
+        cantTotal: 0,
+        netoTotal: 0,
+        costoTotal: 0,
+        utilidadTotal: 0
+      });
+    }
+
+    const item = skuMap.get(skuKey);
+    item.cantTotal += cant;
+    item.netoTotal += neto;
+    item.costoTotal += costoTotalNet;
+    item.utilidadTotal += utilidad;
+  });
+
+  const skuList = Array.from(skuMap.values());
+  const maxCant = Math.max(1, ...skuList.map(s => s.cantTotal));
+
+  skuList.forEach(s => {
+    s.margenPct = s.netoTotal > 0 ? ((s.netoTotal - s.costoTotal) / s.netoTotal) * 100 : 0;
+    s.mixPct = grandTotalNeto > 0 ? (s.netoTotal / grandTotalNeto) * 100 : 0;
+  });
+
+  const kpiSkus = document.getElementById('mixKpiSkus');
+  const kpiRevenue = document.getElementById('mixKpiRevenue');
+  const kpiProfit = document.getElementById('mixKpiProfit');
+  const kpiMarginSub = document.getElementById('mixKpiMarginSub');
+
+  const avgMargin = grandTotalNeto > 0 ? ((grandTotalNeto - grandTotalCost) / grandTotalNeto) * 100 : 0;
+
+  if (kpiSkus) kpiSkus.textContent = `${formatNum(skuList.length)} SKUs`;
+  if (kpiRevenue) kpiRevenue.textContent = formatCLP(grandTotalNeto);
+  if (kpiProfit) kpiProfit.textContent = formatCLP(grandTotalProfit);
+  if (kpiMarginSub) kpiMarginSub.textContent = `Margen promedio: ${avgMargin.toFixed(1)}%`;
+
+  const searchInput = document.getElementById('mixSearchBox');
+  const sortSelect = document.getElementById('mixSortSelect');
+  const qSearch = searchInput ? searchInput.value.toLowerCase().trim() : '';
+  const sortBy = sortSelect ? sortSelect.value : 'neto';
+
+  let filteredList = skuList;
+  if (qSearch) {
+    filteredList = filteredList.filter(s => 
+      s.codigo.toLowerCase().includes(qSearch) || 
+      s.descripcion.toLowerCase().includes(qSearch) ||
+      s.familia.toLowerCase().includes(qSearch)
+    );
+  }
+
+  if (sortBy === 'neto') {
+    filteredList.sort((a, b) => b.netoTotal - a.netoTotal);
+  } else if (sortBy === 'cant') {
+    filteredList.sort((a, b) => b.cantTotal - a.cantTotal);
+  } else if (sortBy === 'margin') {
+    filteredList.sort((a, b) => b.margenPct - a.margenPct);
+  } else if (sortBy === 'utilidad') {
+    filteredList.sort((a, b) => b.utilidadTotal - a.utilidadTotal);
+  }
+
+  const tbody = document.getElementById('mixSugeridoTableBody');
+  if (!tbody) return;
+
+  if (!filteredList.length) {
+    tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: #94a3b8; padding: 2rem;">No se encontraron productos para el segmento y periodo seleccionado.</td></tr>`;
+    return;
+  }
+
+  let html = '';
+  filteredList.forEach((s, idx) => {
+    let tagBadge = '<span class="mix-tag-volume">📦 Volumen</span>';
+    if (idx < 5 && s.margenPct >= 20) {
+      tagBadge = '<span class="mix-tag-star">⭐️ Top Star</span>';
+    } else if (s.margenPct >= 35) {
+      tagBadge = '<span class="mix-tag-profit">💰 Alta Rentabilidad</span>';
+    } else if (s.cantTotal >= maxCant * 0.4) {
+      tagBadge = '<span class="mix-tag-volume">🔥 Alto Volumen</span>';
+    }
+
+    const marginColor = s.margenPct >= 30 ? '#34d399' : (s.margenPct > 0 ? '#f59e0b' : '#f43f5e');
+
+    html += `
+      <tr class="advisor-row">
+        <td style="text-align: center;"><strong style="color: #60a5fa;">#${idx + 1}</strong></td>
+        <td style="text-align: left;"><span class="sku-badge-pill">${s.codigo}</span></td>
+        <td style="text-align: left;"><strong style="color: #f8fafc; font-size: 0.86rem;">${s.descripcion}</strong></td>
+        <td style="text-align: left;"><span class="tag-pill">${s.familia}</span></td>
+        <td style="text-align: center;">${tagBadge}</td>
+        <td style="text-align: right; white-space: nowrap;"><strong style="color: #38bdf8;">${formatNum(s.cantTotal)} und.</strong></td>
+        <td style="text-align: right; white-space: nowrap; font-weight: 700;">${formatCLP(s.netoTotal)}</td>
+        <td style="text-align: right; white-space: nowrap; font-weight: 700; color: #34d399;">${formatCLP(s.utilidadTotal)}</td>
+        <td style="text-align: right; white-space: nowrap;"><span class="suggested-units-pill" style="background: rgba(16,185,129,0.12); color: ${marginColor};">${s.margenPct.toFixed(1)}%</span></td>
+        <td style="text-align: right; white-space: nowrap;">
+          <strong style="color: #c084fc;">${s.mixPct.toFixed(1)}%</strong>
+          <div class="mix-progress-bar-container">
+            <div class="mix-progress-bar-fill" style="width: ${Math.min(100, Math.max(4, s.mixPct * 3))}%;"></div>
+          </div>
+        </td>
+      </tr>
+    `;
+  });
+
+  tbody.innerHTML = html;
+}
+
 // Inicialización garantizada del módulo de autenticación
 function initAuthSystem() {
   if (typeof AuthManager !== 'undefined') {
     AuthManager.init();
   }
+
+  const seg = document.getElementById('mixCanalSegment');
+  if (seg) seg.addEventListener('change', renderMixSugeridoModule);
+  const sortEl = document.getElementById('mixSortSelect');
+  if (sortEl) sortEl.addEventListener('change', renderMixSugeridoModule);
+  const searchEl = document.getElementById('mixSearchBox');
+  if (searchEl) searchEl.addEventListener('input', renderMixSugeridoModule);
 }
 
 if (document.readyState === 'loading') {
