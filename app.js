@@ -14,6 +14,224 @@ let currentSortField = null;
 
 let currentSortAsc = true;
 
+// Helper para normalizar cadenas de canales (evitar discrepancias por mayúsculas o tildes)
+function normalizeChannelStr(str) {
+  if (!str) return '';
+  return str.toString().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
+
+// ---------- SISTEMA DE AUTENTICACIÓN & CONTROL DE ACCESO POR CANAL ----------
+
+const AuthManager = {
+  accounts: [
+    { email: 'ccoxhead@gmail.com', pass: '123456', canal: 'Público', name: 'C. Coxhead' },
+    { email: 'admin@glomax.cl', pass: 'admin123', canal: 'Todos', name: 'Administrador BI' },
+    { email: 'retail@glomax.cl', pass: '123456', canal: 'Retail', name: 'Ventas Retail' },
+    { email: 'mayorista@glomax.cl', pass: '123456', canal: 'Mayorista', name: 'Ventas Mayorista' }
+  ],
+  
+  currentUser: null,
+
+  init() {
+    this.bindEvents();
+    this.checkSession();
+  },
+
+  checkSession() {
+    const modal = document.getElementById('loginModal');
+    const sessionStr = localStorage.getItem('glomax_auth_session');
+    if (sessionStr) {
+      try {
+        const session = JSON.parse(sessionStr);
+        if (session && session.email) {
+          this.currentUser = session;
+          if (modal) modal.classList.add('hidden');
+          this.renderProfileBadge();
+          this.applyUserChannelPermissions();
+          return true;
+        }
+      } catch (e) {
+        localStorage.removeItem('glomax_auth_session');
+      }
+    }
+    this.currentUser = null;
+    if (modal) modal.classList.remove('hidden');
+    return false;
+  },
+
+  login(email, pass, canal) {
+    const cleanEmail = (email || '').trim().toLowerCase();
+    const cleanPass = (pass || '').trim();
+    let selectedCanal = (canal || '').trim();
+
+    if (!cleanEmail || !cleanPass) {
+      this.showError('Por favor ingresa tu correo y contraseña.');
+      return false;
+    }
+
+    let acct = this.accounts.find(a => a.email.toLowerCase() === cleanEmail);
+    if (acct) {
+      if (acct.pass !== cleanPass) {
+        this.showError('Contraseña incorrecta. Por favor verifica tus datos.');
+        return false;
+      }
+      if (!selectedCanal || acct.canal !== 'Todos') {
+        selectedCanal = acct.canal;
+      }
+    } else {
+      if (cleanPass.length < 4) {
+        this.showError('La contraseña debe tener al menos 4 caracteres.');
+        return false;
+      }
+      if (!selectedCanal) selectedCanal = 'Público';
+    }
+
+    const session = {
+      email: cleanEmail,
+      canal: selectedCanal,
+      loginTime: new Date().toISOString()
+    };
+
+    localStorage.setItem('glomax_auth_session', JSON.stringify(session));
+    this.currentUser = session;
+
+    if (typeof AudioSynth !== 'undefined' && AudioSynth.play) {
+      AudioSynth.play('sync');
+    }
+
+    const modal = document.getElementById('loginModal');
+    if (modal) modal.classList.add('hidden');
+
+    this.renderProfileBadge();
+    this.applyUserChannelPermissions();
+
+    if (typeof populateFilterOptions === 'function') {
+      populateFilterOptions();
+    }
+    if (typeof applyFilters === 'function') {
+      applyFilters();
+    }
+
+    return true;
+  },
+
+  logout() {
+    localStorage.removeItem('glomax_auth_session');
+    this.currentUser = null;
+    const badge = document.getElementById('userProfileBadge');
+    if (badge) badge.style.display = 'none';
+
+    const select = document.getElementById('fltCanal');
+    if (select) {
+      select.disabled = false;
+      select.classList.remove('locked-channel');
+      select.value = '';
+    }
+
+    const modal = document.getElementById('loginModal');
+    if (modal) modal.classList.remove('hidden');
+
+    if (typeof applyFilters === 'function') {
+      applyFilters();
+    }
+  },
+
+  renderProfileBadge() {
+    const badge = document.getElementById('userProfileBadge');
+    const avatar = document.getElementById('userAvatar');
+    const emailBadge = document.getElementById('userEmailBadge');
+    const channelBadge = document.getElementById('userChannelBadge');
+
+    if (!this.currentUser) {
+      if (badge) badge.style.display = 'none';
+      return;
+    }
+
+    if (badge) badge.style.display = 'flex';
+    if (avatar) avatar.textContent = (this.currentUser.email[0] || 'U').toUpperCase();
+    if (emailBadge) emailBadge.textContent = this.currentUser.email;
+    if (channelBadge) channelBadge.textContent = `Canal: ${this.currentUser.canal}`;
+  },
+
+  applyUserChannelPermissions() {
+    if (!this.currentUser) return;
+
+    const select = document.getElementById('fltCanal');
+    const isRestricted = this.currentUser.canal && this.currentUser.canal.toLowerCase() !== 'todos';
+
+    if (select) {
+      if (isRestricted) {
+        let matchOpt = Array.from(select.options).find(opt => normalizeChannelStr(opt.value) === normalizeChannelStr(this.currentUser.canal));
+        if (matchOpt) {
+          select.value = matchOpt.value;
+        } else {
+          const newOpt = document.createElement('option');
+          newOpt.value = this.currentUser.canal;
+          newOpt.textContent = this.currentUser.canal;
+          select.appendChild(newOpt);
+          select.value = this.currentUser.canal;
+        }
+        select.disabled = true;
+        select.classList.add('locked-channel');
+        select.title = `Acceso restringido únicamente al canal ${this.currentUser.canal}`;
+      } else {
+        select.disabled = false;
+        select.classList.remove('locked-channel');
+        select.title = '';
+      }
+    }
+  },
+
+  showError(msg) {
+    const errBox = document.getElementById('loginErrorMsg');
+    if (errBox) {
+      errBox.textContent = msg;
+      errBox.style.display = 'block';
+    }
+  },
+
+  bindEvents() {
+    const form = document.getElementById('loginForm');
+    if (form) {
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const email = document.getElementById('loginEmail').value;
+        const pass = document.getElementById('loginPassword').value;
+        const canal = document.getElementById('loginCanal').value;
+        this.login(email, pass, canal);
+      });
+    }
+
+    const togglePw = document.getElementById('loginTogglePw');
+    if (togglePw) {
+      togglePw.addEventListener('click', () => {
+        const passInput = document.getElementById('loginPassword');
+        if (passInput) {
+          const isPw = passInput.type === 'password';
+          passInput.type = isPw ? 'text' : 'password';
+        }
+      });
+    }
+
+    const btnLogout = document.getElementById('btnLogoutBtn');
+    if (btnLogout) {
+      btnLogout.addEventListener('click', () => this.logout());
+    }
+
+    document.querySelectorAll('.quick-pill').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const email = btn.dataset.email;
+        const pass = btn.dataset.pass;
+        const canal = btn.dataset.canal;
+        document.getElementById('loginEmail').value = email;
+        document.getElementById('loginPassword').value = pass;
+        document.getElementById('loginCanal').value = canal;
+        this.login(email, pass, canal);
+      });
+    });
+  }
+};
+
 // ---------- BASE DE DATOS LOCAL INDEXEDDB (Carga 0ms) ----------
 
 const GlomaxDB = {
@@ -1139,6 +1357,10 @@ function populateFilterOptions() {
 
   });
 
+  if (typeof AuthManager !== 'undefined') {
+    AuthManager.applyUserChannelPermissions();
+  }
+
   renderCanalSubmenu();
 
 }
@@ -1148,22 +1370,29 @@ function populateFilterOptions() {
 function renderCanalSubmenu() {
 
   const submenu = document.getElementById('canalSubmenu');
+  if (!submenu) return;
 
   const canales = uniqueValues('CANAL FINAL');
 
-  const canalActivo = document.getElementById('fltCanal').value;
+  let canalActivo = document.getElementById('fltCanal') ? document.getElementById('fltCanal').value : '';
+  const isRestricted = (typeof AuthManager !== 'undefined' && AuthManager.currentUser && AuthManager.currentUser.canal && AuthManager.currentUser.canal.toLowerCase() !== 'todos');
 
-  submenu.innerHTML = canales.map(c => `
+  if (isRestricted) {
+    canalActivo = AuthManager.currentUser.canal;
+  }
 
-    <button class="nav-subitem ${c === canalActivo ? 'active' : ''}" data-canal="${c}">${c}</button>
+  submenu.innerHTML = canales.map(c => {
+    const isCurrent = (normalizeChannelStr(c) === normalizeChannelStr(canalActivo));
+    const disabledAttr = (isRestricted && !isCurrent) ? 'disabled style="opacity:0.35; cursor:not-allowed;"' : '';
+    return `<button class="nav-subitem ${isCurrent ? 'active' : ''}" data-canal="${c}" ${disabledAttr}>${c}</button>`;
+  }).join('');
 
-  `).join('');
-
-  submenu.querySelectorAll('.nav-subitem').forEach(btn => {
+  submenu.querySelectorAll('.nav-subitem:not([disabled])').forEach(btn => {
 
     btn.addEventListener('click', () => {
 
-      document.getElementById('fltCanal').value = btn.dataset.canal;
+      const flt = document.getElementById('fltCanal');
+      if (flt) flt.value = btn.dataset.canal;
 
       applyFilters();
 
@@ -1173,9 +1402,10 @@ function renderCanalSubmenu() {
 
       document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
 
-      document.querySelector('.nav-item[data-view="tablero"]').classList.add('active');
-
-      document.getElementById('view-tablero').classList.add('active');
+      const tabBtn = document.querySelector('.nav-item[data-view="tablero"]');
+      const tabView = document.getElementById('view-tablero');
+      if (tabBtn) tabBtn.classList.add('active');
+      if (tabView) tabView.classList.add('active');
 
     });
 
@@ -1183,33 +1413,45 @@ function renderCanalSubmenu() {
 
 }
 
-document.getElementById('canalToggle').addEventListener('click', () => {
+const canalToggleBtn = document.getElementById('canalToggle');
+if (canalToggleBtn) {
+  canalToggleBtn.addEventListener('click', () => {
 
-  document.getElementById('canalToggle').classList.toggle('expanded');
+    canalToggleBtn.classList.toggle('expanded');
 
-  document.getElementById('canalSubmenu').classList.toggle('open');
+    const canalSub = document.getElementById('canalSubmenu');
+    if (canalSub) canalSub.classList.toggle('open');
 
-});
+  });
+}
 
 function getFilters() {
+  let canalVal = document.getElementById('fltCanal') ? document.getElementById('fltCanal').value : '';
+
+  if (typeof AuthManager !== 'undefined' && AuthManager.currentUser) {
+    const userCanal = AuthManager.currentUser.canal;
+    if (userCanal && userCanal.toLowerCase() !== 'todos') {
+      canalVal = userCanal;
+    }
+  }
 
   return {
 
-    desde: document.getElementById('fltDesde').value,
+    desde: document.getElementById('fltDesde') ? document.getElementById('fltDesde').value : '',
 
-    hasta: document.getElementById('fltHasta').value,
+    hasta: document.getElementById('fltHasta') ? document.getElementById('fltHasta').value : '',
 
-    canal: document.getElementById('fltCanal').value,
+    canal: canalVal,
 
-    tienda: document.getElementById('fltTienda').value,
+    tienda: document.getElementById('fltTienda') ? document.getElementById('fltTienda').value : '',
 
-    vendedor: document.getElementById('fltVendedor').value,
+    vendedor: document.getElementById('fltVendedor') ? document.getElementById('fltVendedor').value : '',
 
-    familia: document.getElementById('fltFamilia').value,
+    familia: document.getElementById('fltFamilia') ? document.getElementById('fltFamilia').value : '',
 
     categoria: document.getElementById('fltCategoria') ? document.getElementById('fltCategoria').value : '',
 
-    region: document.getElementById('fltRegion').value,
+    region: document.getElementById('fltRegion') ? document.getElementById('fltRegion').value : '',
 
     search: (document.getElementById('searchBox') ? document.getElementById('searchBox').value : '').trim().toLowerCase()
 
@@ -1226,7 +1468,7 @@ function applyFilters() {
   const dHasta = f.hasta ? parseRowDate(f.hasta) : null;
   const tHasta = dHasta ? dHasta.setHours(23, 59, 59, 999) : 0;
 
-  const selCanal = f.canal ? f.canal.toLowerCase() : '';
+  const selCanal = f.canal ? normalizeChannelStr(f.canal) : '';
   const selTienda = f.tienda ? f.tienda.toLowerCase() : '';
   const selVendedor = f.vendedor ? f.vendedor.toLowerCase() : '';
   const selFamilia = f.familia ? f.familia.toLowerCase() : '';
@@ -1238,7 +1480,7 @@ function applyFilters() {
     if (!r) return false;
     if (tDesde > 0 && (r._time < tDesde || !r._time)) return false;
     if (tHasta > 0 && (r._time > tHasta || !r._time)) return false;
-    if (selCanal && r._canal !== selCanal) return false;
+    if (selCanal && normalizeChannelStr(r._canal || r['CANAL FINAL'] || r['Canal Final']) !== selCanal) return false;
     if (selTienda && r._tienda !== selTienda) return false;
     if (selVendedor && r._vendedor !== selVendedor) return false;
     if (selFamilia && r._familia !== selFamilia) return false;
@@ -7019,3 +7261,10 @@ function renderProdTxTable(transactions) {
 
   tbody.innerHTML = html;
 }
+
+// Inicialización del módulo de autenticación al cargar el documento
+document.addEventListener('DOMContentLoaded', () => {
+  if (typeof AuthManager !== 'undefined') {
+    AuthManager.init();
+  }
+});
