@@ -1064,8 +1064,8 @@ async function fetchGVizData() {
         console.warn('⚡ Proxy local no disponible en protocolo file://. Ejecuta python server.py y abre http://localhost:8000');
         return null;
       }
-      const proxyUrl = `${origin}/api/proxy`;
-      const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(60000) });
+      const proxyUrl = `${origin}/api/proxy?_=${Date.now()}`;
+      const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(60000), cache: 'no-store' });
       if (!res.ok) {
         console.warn(`⚡ Proxy local /api/proxy devolvió status ${res.status}. Asegúrate de ejecutar 'python server.py' en lugar de 'python -m http.server'.`);
         return null;
@@ -1164,8 +1164,8 @@ async function fetchGVizData() {
 }
 
 async function apiGet() {
-  const url = API_URL + (API_URL.includes('?') ? '&' : '?') + 'action=getVentas';
-  const res = await fetch(url, { method: 'GET' });
+  const url = API_URL + (API_URL.includes('?') ? '&' : '?') + `action=getVentas&_=${Date.now()}`;
+  const res = await fetch(url, { method: 'GET', cache: 'no-store' });
   const json = await res.json();
   if (!json.ok) throw new Error(json.error || 'Error al leer datos');
   return Array.isArray(json.data) ? json.data.map(normalizeRow) : json.data;
@@ -5340,11 +5340,16 @@ if (modalForm) {
 // ---------- Auto Refresh & Inicializaciones ----------
 
 function startAutoRefresh() {
-
   if (refreshTimer) clearInterval(refreshTimer);
+  
+  const isEnabled = (typeof ENABLE_AUTO_REFRESH === 'undefined' || ENABLE_AUTO_REFRESH);
+  if (!isEnabled) return;
 
-  refreshTimer = setInterval(() => loadData(false), 30000);
+  const intervalMs = (typeof REFRESH_INTERVAL_MS !== 'undefined' && REFRESH_INTERVAL_MS > 0) ? REFRESH_INTERVAL_MS : 15000;
 
+  refreshTimer = setInterval(() => {
+    loadData(false);
+  }, intervalMs);
 }
 
 // Inicializar Command Palette

@@ -1,54 +1,14 @@
-// Pega aquí la URL de tu Apps Script desplegado como "Aplicación web".
-
-
-
+// URL de tu Google Apps Script desplegado como "Aplicación web"
 const API_URL = "https://script.google.com/macros/s/AKfycbyMDMYwtWnKRDQ-iixHPKhzTMaBMyb4R8mwRSuE9vWiUX1dybmmT1BhxR9Tt40C5b3vPw/exec";
 
-
-
-
-
-
-
-// (Opcional) ID de tu Google Spreadsheet para activación del canal ultrarrápido GViz (~150ms)
-
-
-
-// Ejemplo: "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms"
-
-
-
+// ID de tu Google Spreadsheet y GIDs de pestañas
 const SPREADSHEET_ID = "16bU5xUuPDvI6xIpuBabK9j_EiUFgcgMTq1T0S2LeVgQ";
-const SPREADSHEET_GID = "999482111";
-const SPREADSHEET_COTIZACIONES_GID = "2001859242";
+const SPREADSHEET_GID = "999482111"; // Pestaña Ventas
+const SPREADSHEET_COTIZACIONES_GID = "2001859242"; // Pestaña Cotizaciones
 
-
-
-
-
-
-
-// Configuración de Motor Ultrarrápido & Sincronización
-
-
-
-const REFRESH_INTERVAL_MS = 15000;
-
-
-
-const ENABLE_LOCAL_CACHE = true;      // Carga instantánea 0ms desde IndexedDB
-
-
-
-const ENABLE_OPTIMISTIC_UPDATES = true; // Ediciones e inserciones instantáneas 0ms
-
-
-
-const SOUND_EFFECTS = true;             // Efectos sonoros sintetizados por Web Audio
-
-
-
-
-
-
-
+// Configuración de Auto-Actualización y Sincronización Automática en Segundo Plano
+const ENABLE_AUTO_REFRESH = true;        // Habilita auto-refresco automático
+const REFRESH_INTERVAL_MS = 15000;        // Frecuencia de actualización en milisegundos (15 segundos)
+const ENABLE_LOCAL_CACHE = true;          // Carga instantánea 0ms desde IndexedDB
+const ENABLE_OPTIMISTIC_UPDATES = true;   // Ediciones e inserciones instantáneas 0ms
+const SOUND_EFFECTS = true;               // Efectos sonoros sintetizados por Web Audio
