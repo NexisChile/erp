@@ -7262,9 +7262,15 @@ function renderProdTxTable(transactions) {
   tbody.innerHTML = html;
 }
 
-// Inicialización del módulo de autenticación al cargar el documento
-document.addEventListener('DOMContentLoaded', () => {
+// Inicialización garantizada del módulo de autenticación
+function initAuthSystem() {
   if (typeof AuthManager !== 'undefined') {
     AuthManager.init();
   }
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initAuthSystem);
+} else {
+  initAuthSystem();
+}
