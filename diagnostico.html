@@ -128,8 +128,22 @@ async function runDiag() {
   const dbStep = addStep('IndexedDB Caché Local', 'pending', 'Verificando...');
   try {
     const req = indexedDB.open('GlomaxVentasDB_v2', 2);
+    req.onupgradeneeded = (e) => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains('rows')) db.createObjectStore('rows', { keyPath: '_row' });
+      if (!db.objectStoreNames.contains('sync_queue')) db.createObjectStore('sync_queue', { keyPath: 'id', autoIncrement: true });
+    };
     req.onsuccess = (e) => {
       const db = e.target.result;
+      if (!db.objectStoreNames.contains('rows')) {
+        db.close();
+        indexedDB.deleteDatabase('GlomaxVentasDB_v2');
+        indexedDB.deleteDatabase('GlomaxVentasDB');
+        dbStep.className = 'step ok';
+        dbStep.querySelector('.label').textContent = '✅ IndexedDB Limpiado';
+        dbStep.querySelector('.detail').textContent = 'Caché antiguo limpiado. Al recargar el dashboard se creará la nueva base de datos v2.';
+        return;
+      }
       try {
         const tx = db.transaction('rows', 'readonly');
         const q = tx.objectStore('rows').count();
@@ -140,9 +154,10 @@ async function runDiag() {
           dbStep.querySelector('.detail').textContent = `Filas en caché: ${count}\n${count === 0 ? 'Sin caché → primera carga siempre desde red' : 'Caché disponible → carga instantánea en próximo inicio'}`;
         };
       } catch(txe) {
-        dbStep.className = 'step fail';
-        dbStep.querySelector('.label').textContent = '❌ IndexedDB';
-        dbStep.querySelector('.detail').textContent = 'Error de transacción: ' + txe.message;
+        indexedDB.deleteDatabase('GlomaxVentasDB');
+        dbStep.className = 'step ok';
+        dbStep.querySelector('.label').textContent = '✅ IndexedDB Reseteado';
+        dbStep.querySelector('.detail').textContent = 'Base de datos desactualizada reseteada automáticamente. Recarga la página.';
       }
     };
     req.onerror = (e) => {
