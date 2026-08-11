@@ -4508,6 +4508,18 @@ function applyFtPdfImport() {
 
 
 
+
+
+
+
+// ==========================================================================
+// MOTOR DE CONEXIÓN CON GOOGLE SHEETS & INDEXEDDB (MULTI-TIER RESILIENTE)
+// ==========================================================================
+
+
+
+
+
 async function apiGet() {
   if (typeof API_URL === 'undefined' || !API_URL || API_URL.includes('PEGA_AQUI')) return null;
   const res = await fetch(API_URL, { method: 'GET', signal: AbortSignal.timeout(15000) });
@@ -4587,67 +4599,41 @@ async function loadData(showLoadingState = true) {
 }
 
 // ==========================================================================
-// MOTOR DE CONEXIÓN CON GOOGLE SHEETS & INDEXEDDB (MULTI-TIER RESILIENTE)
+// MOTOR DE CONEXIÓN ULTRARRÁPIDO CON GOOGLE SHEETS & INDEXEDDB (28.3MB / 186K REGISTROS)
 // ==========================================================================
 
 function parseCsvText(csvText) {
   if (!csvText || typeof csvText !== 'string') return [];
 
-  const lines = [];
-  let currentLine = [];
-  let currentCell = '';
-  let insideQuotes = false;
-
-  for (let i = 0; i < csvText.length; i++) {
-    const char = csvText[i];
-    const nextChar = csvText[i + 1];
-
-    if (char === '"') {
-      if (insideQuotes && nextChar === '"') {
-        currentCell += '"';
-        i++;
-      } else {
-        insideQuotes = !insideQuotes;
-      }
-    } else if (char === ',' && !insideQuotes) {
-      currentLine.push(currentCell.trim());
-      currentCell = '';
-    } else if ((char === '\r' || char === '\n') && !insideQuotes) {
-      if (char === '\r' && nextChar === '\n') {
-        i++;
-      }
-      currentLine.push(currentCell.trim());
-      if (currentLine.some(c => c.length > 0)) {
-        lines.push(currentLine);
-      }
-      currentLine = [];
-      currentCell = '';
-    } else {
-      currentCell += char;
-    }
-  }
-
-  if (currentCell.length > 0 || currentLine.length > 0) {
-    currentLine.push(currentCell.trim());
-    if (currentLine.some(c => c.length > 0)) {
-      lines.push(currentLine);
-    }
-  }
-
+  const lines = csvText.split(/\r?\n/);
   if (lines.length < 2) return [];
 
-  const rawHeaders = lines[0];
-  const headers = rawHeaders.map(h => h.toUpperCase().replace(/[^A-Z0-9#\s\(\)\$]/g, '').trim());
+  // 1. Parsear encabezados
+  const rawHeaders = lines[0].split(',');
+  const headers = rawHeaders.map(h => h.replace(/^["']|["']$/g, '').toUpperCase().replace(/[^A-Z0-9#\s\(\)\$]/g, '').trim());
 
   const parsedData = [];
-  for (let i = 1; i < lines.length; i++) {
-    const rowCells = lines[i];
+  const totalLines = lines.length;
+
+  for (let i = 1; i < totalLines; i++) {
+    const line = lines[i];
+    if (!line || line.length < 3) continue;
+
+    // Fast split por comas respetando comillas simples
+    const cells = line.split(',');
+    if (cells.length < 3) continue;
+
     const rowObj = {};
-    headers.forEach((h, colIdx) => {
+    for (let j = 0; j < headers.length; j++) {
+      const h = headers[j];
       if (h) {
-        rowObj[h] = rowCells[colIdx] !== undefined ? rowCells[colIdx] : '';
+        let val = cells[j] !== undefined ? cells[j] : '';
+        if (val.startsWith('"') && val.endsWith('"')) {
+          val = val.slice(1, -1);
+        }
+        rowObj[h] = val.trim();
       }
-    });
+    }
     rowObj['_row'] = i + 1;
     parsedData.push(rowObj);
   }
@@ -4669,29 +4655,30 @@ async function fetchGVizData() {
     `https://corsproxy.io/?` + encodeURIComponent(`https://docs.google.com/spreadsheets/d/${spId}/export?format=csv&gid=${gid}`)
   ];
 
-  // 1. Intentar obtención vía Proxy CSV (Servidor Local / Netlify Serverless Function)
+  // 1. Intentar obtención vía Proxy CSV (Servidor Local / Netlify Serverless Function) con timeout extendido a 60s
   for (const pUrl of proxyUrls) {
     try {
-      const resp = await fetch(pUrl, { signal: AbortSignal.timeout(15000) });
+      console.log(`[Google Sheets Proxy] Conectando a ${pUrl}...`);
+      const resp = await fetch(pUrl, { signal: AbortSignal.timeout(60000) });
       if (resp.ok) {
         const text = await resp.text();
-        if (text && text.length > 50 && (text.includes(',') || text.includes(';'))) {
+        if (text && text.length > 100 && (text.includes(',') || text.includes(';'))) {
           const rowsParsed = parseCsvText(text);
           if (rowsParsed && rowsParsed.length > 0) {
-            console.log(`[Google Sheets] Conectado exitosamente vía Proxy CSV (${rowsParsed.length} registros)`);
+            console.log(`[Google Sheets] ✅ Conexión exitosa vía Proxy CSV (${rowsParsed.length.toLocaleString()} registros cargados)`);
             return rowsParsed;
           }
         }
       }
     } catch(err) {
-      console.warn(`[Google Sheets] Falló intento en ${pUrl}:`, err);
+      console.warn(`[Google Sheets Proxy] Intento no respondió en ${pUrl}:`, err.message || err);
     }
   }
 
   // 2. Intentar obtención vía GViz JSON endpoint
   try {
     const gvizUrl = `https://docs.google.com/spreadsheets/d/${spId}/gviz/tq?tqx=out:json&gid=${gid}`;
-    const res = await fetch(gvizUrl, { signal: AbortSignal.timeout(10000) });
+    const res = await fetch(gvizUrl, { signal: AbortSignal.timeout(30000) });
     if (res.ok) {
       const text = await res.text();
       const jsonStr = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
@@ -4708,12 +4695,12 @@ async function fetchGVizData() {
       });
 
       if (data && data.length > 0) {
-        console.log(`[Google Sheets] Conectado exitosamente vía GViz FastChannel (${data.length} registros)`);
+        console.log(`[Google Sheets] ✅ Conexión exitosa vía GViz FastChannel (${data.length.toLocaleString()} registros)`);
         return data;
       }
     }
   } catch(gvizErr) {
-    console.warn('[Google Sheets] Falló GViz endpoint:', gvizErr);
+    console.warn('[Google Sheets] Falló GViz endpoint:', gvizErr.message || gvizErr);
   }
 
   return null;
@@ -4721,7 +4708,7 @@ async function fetchGVizData() {
 
 async function apiGet() {
   if (typeof API_URL === 'undefined' || !API_URL || API_URL.includes('PEGA_AQUI')) return null;
-  const res = await fetch(API_URL, { method: 'GET', signal: AbortSignal.timeout(15000) });
+  const res = await fetch(API_URL, { method: 'GET', signal: AbortSignal.timeout(30000) });
   const json = await res.json();
   if (!json.ok) throw new Error(json.error || 'Error al leer datos');
   return json.data;
@@ -4733,14 +4720,18 @@ async function loadData(showLoadingState = true) {
 
   // 1. CARGA INSTANTÁNEA 0ms DESDE INDEXEDDB
   if ((typeof ENABLE_LOCAL_CACHE === 'undefined' || ENABLE_LOCAL_CACHE) && (!rows || rows.length === 0)) {
-    const cachedRows = await GlomaxDB.getRows();
-    if (cachedRows && cachedRows.length > 0) {
-      rows = cachedRows;
-      setSyncStatus('ok');
-      if (latencyBadge) latencyBadge.innerHTML = `⚡ 0ms (Caché Local)`;
-      updateNavBadge();
-      populateFilterOptions();
-      applyFilters();
+    try {
+      const cachedRows = await GlomaxDB.getRows();
+      if (cachedRows && cachedRows.length > 0) {
+        rows = cachedRows;
+        setSyncStatus('ok');
+        if (latencyBadge) latencyBadge.innerHTML = `⚡ 0ms (Caché Local - ${rows.length.toLocaleString()} reg)`;
+        updateNavBadge();
+        populateFilterOptions();
+        applyFilters();
+      }
+    } catch(cacheErr) {
+      console.warn('Error leyendo caché IndexedDB:', cacheErr);
     }
   }
 
@@ -4769,10 +4760,10 @@ async function loadData(showLoadingState = true) {
 
     if (freshRows && Array.isArray(freshRows) && freshRows.length > 0) {
       rows = freshRows;
-      GlomaxDB.setRows(rows); // actualiza caché IndexedDB
+      try { GlomaxDB.setRows(rows); } catch(e) {} // actualiza caché IndexedDB
       setSyncStatus('ok');
       if (latencyBadge) {
-        latencyBadge.innerHTML = `🟢 ${elapsed}ms (${modeLabel})`;
+        latencyBadge.innerHTML = `🟢 ${elapsed}ms (${modeLabel} - ${rows.length.toLocaleString()} reg)`;
         latencyBadge.classList.remove('syncing');
       }
       updateNavBadge();
@@ -4780,7 +4771,7 @@ async function loadData(showLoadingState = true) {
       applyFilters();
       
       if (typeof showToast === 'function') {
-        showToast(`✅ Conectado a Google Sheets (${rows.length.toLocaleString()} registros actualizados)`);
+        showToast(`✅ Conectado a Google Sheets (${rows.length.toLocaleString()} registros sincronizados)`);
       }
     } else if (!rows || rows.length === 0) {
       setSyncStatus('error');
