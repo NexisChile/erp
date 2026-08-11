@@ -8,8 +8,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <!-- Stylesheets & Libraries -->
-  <link rel="stylesheet" href="style.css?v=20260806_mix_banner_v400" />
+  <link rel="stylesheet" href="style.css?v=20260811_v9999_RELEASE" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
@@ -348,6 +351,12 @@
           <svg class="ax-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
           <span class="ax-nav__label">Productos & SKUs</span>
           <span class="ax-nav__badge ax-nav__badge--prod" style="background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4);">SKU</span>
+        </button>
+
+        <button class="ax-nav__item" data-view="fichatecnica">
+          <svg class="ax-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          <span class="ax-nav__label">Ficha Técnica</span>
+          <span class="ax-nav__badge ax-nav__badge--ficha" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.5);">SPEC</span>
         </button>
 
         <button class="ax-nav__item" data-view="cotizaciones">
@@ -1622,6 +1631,8 @@
                 </table>
               </div>
             </div>
+          </div>
+        </div>
 
         <!-- VISTA MIX DE PRODUCTOS SUGERIDO -->
         <div class="view" id="view-mixsugerido">
@@ -1720,6 +1731,73 @@
                 </table>
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- VISTA FICHA TÉCNICA -->
+        <div class="view" id="view-fichatecnica">
+          <div class="dashboard-section-header" style="margin-top: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <div class="section-title-wrap">
+                <span class="section-badge-dot" style="background: #38bdf8; box-shadow: 0 0 12px rgba(56, 189, 248, 0.6);"></span>
+                <h2 class="dashboard-section-title">Ficha Técnica de Productos</h2>
+              </div>
+              <span class="section-subtitle">Especificaciones Físicas, Parámetros Técnicos, BOM y Certificaciones de Calidad</span>
+            </div>
+
+            <!-- BOTONES DE ACCIÓN RÁPIDA DE FICHA TÉCNICA -->
+            <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+              <button type="button" class="btn-secondary" onclick="openFtUrlModal()" title="Importar especificaciones desde una URL de www.glomax.cl" style="border-color: rgba(56, 189, 248, 0.5); color: #38bdf8;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                <span>🌐 Importar URL Glomax</span>
+              </button>
+              <button type="button" class="btn-secondary" onclick="openFtCompareModal()" title="Comparar 2 SKUs lado a lado">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5"/><path d="M4 20L21 3"/><path d="M21 16v5h-5"/><path d="M15 15l6 6"/><path d="M4 4l5 5"/></svg>
+                <span>Comparar SKUs</span>
+              </button>
+              <button type="button" class="btn-secondary" onclick="openFtEditModal()" title="Editar o personalizar especificaciones técnicas del SKU">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                <span>Editar Spec</span>
+              </button>
+              <button type="button" class="btn-secondary" onclick="exportFtPdf()" title="Exportar Ficha Técnica en PDF de alta calidad" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4);">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <span>📥 Descargar PDF</span>
+              </button>
+              <button type="button" class="btn-secondary" onclick="printFichaTecnica()" title="Imprimir Ficha Técnica">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                <span>🖨️ Imprimir</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- CONTROLES DE FILTRO Y SELECCIÓN DE SKU PARA FICHA TÉCNICA -->
+          <div class="ax-card" style="margin-top: 1.25rem; padding: 1.25rem; border-color: rgba(56, 189, 248, 0.3);">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; align-items: center;">
+              <div>
+                <label style="font-size: 0.78rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px; display: block;">Buscar o Autocompletar SKU:</label>
+                <div style="position: relative;">
+                  <input type="search" id="ftSkuSearch" class="filter-input" placeholder="🔍 Escribe SKU, nombre o categoría..." style="height: 40px; font-size: 0.85rem;" />
+                  <div id="ftSkuSuggestions" class="prod-suggestions-dropdown" style="display:none;"></div>
+                </div>
+              </div>
+
+              <div>
+                <label style="font-size: 0.78rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px; display: block;">Seleccionar Producto / SKU:</label>
+                <select id="ftSkuSelect" class="filter-select" style="height: 40px; font-size: 0.85rem; width: 100%;">
+                  <option value="">Cargando catálogo...</option>
+                </select>
+              </div>
+
+              <div style="display: flex; gap: 0.5rem; align-items: flex-end; height: 100%;">
+                <button type="button" class="btn-secondary" id="ftRandomBtn" title="Seleccionar SKU al azar" style="height: 40px; flex: 1;">🎲 Azar</button>
+                <button type="button" class="btn-secondary" id="ftClearBtn" title="Limpiar filtro" style="height: 40px;">❌ Limpiar</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- REJILLA PRINCIPAL DE DATOS TÉCNICOS -->
+          <div id="ftContentArea" style="margin-top: 1.5rem;">
+            <!-- Contenido generado dinámicamente -->
           </div>
         </div>
 
@@ -2071,8 +2149,223 @@
     </div>
   </div>
 
+  <!-- MODAL EDITAR FICHA TÉCNICA -->
+  <div class="modal-backdrop" id="ftEditModal">
+    <div class="modal-content" style="max-width: 720px; border-color: rgba(56, 189, 248, 0.4);">
+      <div class="modal-header">
+        <div>
+          <h3 id="ftEditModalTitle" style="color: #38bdf8;">✏️ Editar Ficha Técnica de Producto</h3>
+          <p class="modal-subtitle" id="ftEditModalSub">Personaliza los datos técnicos, físicos y empaque de este SKU.</p>
+        </div>
+        <button type="button" class="btn-secondary modal-close-icon" onclick="closeFtEditModal()" title="Cerrar modal">✕</button>
+      </div>
+
+      <form id="ftEditForm" onsubmit="saveFtSpecs(event)">
+        <input type="hidden" id="ftEditSku" />
+
+        <div class="form-section-title" style="color: #38bdf8; border-bottom-color: rgba(56, 189, 248, 0.3);">1. Especificaciones Físicas & Logística</div>
+        <div class="form-grid">
+          <div class="form-group full">
+            <label for="ftEditFotoUrl">URL Fotografía / Imagen de Producto</label>
+            <input type="text" id="ftEditFotoUrl" placeholder="https://www.glomax.cl/imagenes/producto.jpg" />
+          </div>
+          <div class="form-group">
+            <label for="ftEditDimensiones">Dimensiones (Alto x Ancho x Prof. mm)</label>
+            <input type="text" id="ftEditDimensiones" placeholder="Ej: 450 x 300 x 200 mm" />
+          </div>
+          <div class="form-group">
+            <label for="ftEditPesoNeto">Peso Neto (kg)</label>
+            <input type="text" id="ftEditPesoNeto" placeholder="Ej: 4.5 kg" />
+          </div>
+          <div class="form-group">
+            <label for="ftEditPesoBruto">Peso Bruto (kg)</label>
+            <input type="text" id="ftEditPesoBruto" placeholder="Ej: 5.2 kg" />
+          </div>
+          <div class="form-group">
+            <label for="ftEditVolumen">Volumen Embalaje (m³)</label>
+            <input type="text" id="ftEditVolumen" placeholder="Ej: 0.027 m³" />
+          </div>
+          <div class="form-group">
+            <label for="ftEditCajasPallet">Unidades / Cajas por Pallet</label>
+            <input type="text" id="ftEditCajasPallet" placeholder="Ej: 48 cajas (4x12)" />
+          </div>
+          <div class="form-group">
+            <label for="ftEditOrigen">País de Origen / Fabricación</label>
+            <input type="text" id="ftEditOrigen" placeholder="Ej: Chile / Importado" />
+          </div>
+        </div>
+
+        <div class="form-section-title" style="color: #38bdf8; border-bottom-color: rgba(56, 189, 248, 0.3);">2. Parámetros Técnicos & Materiales</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="ftEditMaterial">Material Principal</label>
+            <input type="text" id="ftEditMaterial" placeholder="Ej: Acero Inoxidable 304 / Polímero HD" />
+          </div>
+          <div class="form-group">
+            <label for="ftEditAcabado">Acabado Superficial</label>
+            <input type="text" id="ftEditAcabado" placeholder="Ej: Mate Electroestático / Pulido Espejo" />
+          </div>
+          <div class="form-group">
+            <label for="ftEditTempRango">Rango Temp. Trabajo</label>
+            <input type="text" id="ftEditTempRango" placeholder="Ej: -10°C a +60°C" />
+          </div>
+          <div class="form-group">
+            <label for="ftEditCertificaciones">Certificaciones Normativas</label>
+            <input type="text" id="ftEditCertificaciones" placeholder="Ej: CE, ISO 9001, RoHS, NCh 2024" />
+          </div>
+          <div class="form-group">
+            <label for="ftEditGradoIP">Grado de Protección IP</label>
+            <input type="text" id="ftEditGradoIP" placeholder="Ej: IP65 / NEMA 4X" />
+          </div>
+          <div class="form-group">
+            <label for="ftEditElectrico">Voltaje / Potencia / Especificación</label>
+            <input type="text" id="ftEditElectrico" placeholder="Ej: 220V - 50Hz / 1500W" />
+          </div>
+        </div>
+
+        <div class="form-section-title" style="color: #38bdf8; border-bottom-color: rgba(56, 189, 248, 0.3);">3. Garantía & Control de Calidad</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="ftEditGarantia">Garantía Comercial (Meses)</label>
+            <input type="text" id="ftEditGarantia" placeholder="Ej: 12 Meses Glomax S.A." />
+          </div>
+          <div class="form-group">
+            <label for="ftEditHSCode">Código Arancelario (HS Code)</label>
+            <input type="text" id="ftEditHSCode" placeholder="Ej: 8481.80.90" />
+          </div>
+          <div class="form-group full">
+            <label for="ftEditNotas">Notas Técnicas & Recomendaciones de Seguridad</label>
+            <textarea id="ftEditNotas" rows="3" class="filter-input" style="width:100%; height:auto; padding:8px;" placeholder="Detalles adicionales de instalación, almacenamiento o normas técnicas..."></textarea>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" onclick="closeFtEditModal()">Cancelar</button>
+          <button type="submit" class="btn-primary" style="background: linear-gradient(135deg, #0284c7, #38bdf8); color:#030712;">💾 Guardar Cambios Spec</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL COMPARAR SKUS -->
+  <div class="modal-backdrop" id="ftCompareModal">
+    <div class="modal-content" style="max-width: 960px; border-color: rgba(56, 189, 248, 0.4);">
+      <div class="modal-header">
+        <div>
+          <h3 style="color: #38bdf8;">🔄 Comparativa Técnica de SKUs Lado a Lado</h3>
+          <p class="modal-subtitle">Compara especificaciones físicas, precios, márgenes y materiales entre dos productos del catálogo.</p>
+        </div>
+        <button type="button" class="btn-secondary modal-close-icon" onclick="closeFtCompareModal()" title="Cerrar modal">✕</button>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem;">
+        <div>
+          <label style="font-size: 0.78rem; font-weight: 700; color: #38bdf8; text-transform: uppercase; margin-bottom: 4px; display: block;">Producto A (Base):</label>
+          <select id="ftCompareSkuA" class="filter-select" style="width: 100%; height: 38px;" onchange="renderFtComparison()"></select>
+        </div>
+        <div>
+          <label style="font-size: 0.78rem; font-weight: 700; color: #c084fc; text-transform: uppercase; margin-bottom: 4px; display: block;">Producto B (Comparativa):</label>
+          <select id="ftCompareSkuB" class="filter-select" style="width: 100%; height: 38px;" onchange="renderFtComparison()"></select>
+        </div>
+      </div>
+
+      <div id="ftCompareResultsArea" class="table-responsive">
+        <!-- Renderizado de tabla comparativa en JS -->
+      </div>
+
+      <div class="modal-actions" style="margin-top: 1rem;">
+        <button type="button" class="btn-secondary" onclick="closeFtCompareModal()">Cerrar Comparación</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL IMPORTAR FICHA DESDE URL GLOMAX -->
+  <div class="modal-backdrop" id="ftUrlModal">
+    <div class="modal-content" style="max-width: 680px; border-color: rgba(56, 189, 248, 0.5);">
+      <div class="modal-header">
+        <div>
+          <h3 style="color: #38bdf8; display: flex; align-items: center; gap: 8px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            <span>Buscar SKU o Escrapear URL (www.glomax.cl)</span>
+          </h3>
+          <p class="modal-subtitle">Ingresa un SKU (ej. ARM012) o pega la URL del producto para hacer web scraping de su información y fotos oficiales.</p>
+        </div>
+        <button type="button" class="btn-secondary modal-close-icon" onclick="closeFtUrlModal()" title="Cerrar modal">✕</button>
+      </div>
+
+      <form id="ftUrlForm" onsubmit="processFtUrlImport(event)">
+        <div class="form-group full" style="margin-bottom: 1.25rem;">
+          <label for="ftUrlInput" style="font-weight: 700; color: #cbd5e1;">SKU o URL del Producto (www.glomax.cl) *</label>
+          <div style="display: flex; gap: 8px;">
+            <input type="text" id="ftUrlInput" placeholder="Ej: ARM012 o https://www.glomax.cl/productos/armo012-silla" class="filter-input" style="flex: 1; height: 42px; font-size: 0.9rem;" required />
+            <button type="submit" id="ftUrlSubmitBtn" class="btn-primary" style="height: 42px; background: linear-gradient(135deg, #0284c7, #38bdf8); color: #030712; padding: 0 16px;">
+              <span>⚡ Escrapear Info</span>
+            </button>
+          </div>
+          <span style="font-size: 0.75rem; color: #94a3b8; margin-top: 4px; display: block;">Ejemplos válidos: <code>ARM012</code>, <code>GLX-102</code> o URL completa de Glomax.cl</span>
+        </div>
+
+        <!-- LOADER SPINNER -->
+        <div id="ftUrlLoader" style="display: none; text-align: center; padding: 1.5rem; background: rgba(6, 10, 19, 0.6); border-radius: 12px; margin-bottom: 1rem;">
+          <div class="pulse-dot" style="width: 14px; height: 14px; background: #38bdf8; display: inline-block; margin-right: 8px;"></div>
+          <span style="color: #38bdf8; font-weight: 700;">Conectando con www.glomax.cl y escrapeando fotos e información del producto...</span>
+        </div>
+
+        <!-- AREA DE PREVIEW & EDICIÓN PRE-IMPORTACIÓN -->
+        <div id="ftUrlPreviewArea" style="display: none; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 12px; padding: 1rem; margin-bottom: 1rem;">
+          <div style="font-size: 0.85rem; font-weight: 700; color: #34d399; margin-bottom: 8px;">✅ Información & Foto Encontrada:</div>
+          
+          <!-- PREVISUALIZACION DE FOTO EXTRAÍDA -->
+          <div id="ftImportPhotoPreview" style="margin-bottom: 12px; text-align: center;"></div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="ftImportSku">SKU Identificado</label>
+              <input type="text" id="ftImportSku" required />
+            </div>
+            <div class="form-group">
+              <label for="ftImportPrecio">Precio Lista ($)</label>
+              <input type="number" id="ftImportPrecio" required />
+            </div>
+            <div class="form-group full">
+              <label for="ftImportNombre">Nombre / Título del Producto</label>
+              <input type="text" id="ftImportNombre" required />
+            </div>
+            <div class="form-group full">
+              <label for="ftImportFotoUrl">URL de la Imagen / Foto del Producto</label>
+              <input type="text" id="ftImportFotoUrl" placeholder="https://..." oninput="updateImportPhotoPreview(this.value)" />
+            </div>
+            <div class="form-group">
+              <label for="ftImportCategoria">Categoría</label>
+              <input type="text" id="ftImportCategoria" />
+            </div>
+            <div class="form-group">
+              <label for="ftImportMarca">Marca</label>
+              <input type="text" id="ftImportMarca" />
+            </div>
+            <div class="form-group">
+              <label for="ftImportDimensiones">Dimensiones (mm)</label>
+              <input type="text" id="ftImportDimensiones" />
+            </div>
+            <div class="form-group">
+              <label for="ftImportMaterial">Material Principal</label>
+              <input type="text" id="ftImportMaterial" />
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" onclick="closeFtUrlModal()">Cancelar</button>
+          <button type="button" id="ftApplyUrlBtn" class="btn-primary" style="display: none; background: linear-gradient(135deg, #059669, #10b981); color: #ffffff;" onclick="applyFtUrlImport()">
+            <span>💾 Cargar a Ficha Técnica & Generar PDF</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Scripts -->
-  <script src="config.js?v=20260806_mix_banner_v400"></script>
-  <script src="app.js?v=20260806_mix_banner_v400"></script>
+  <script src="config.js?v=20260811_v9999_RELEASE"></script>
+  <script src="app.js?v=20260811_v9999_RELEASE"></script>
 </body>
 </html>
