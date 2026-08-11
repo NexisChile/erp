@@ -3890,70 +3890,7 @@ function parseCsvText(csvText) {
   return parsedData;
 }
 
-async function fetchGVizData() {
-  if (typeof SPREADSHEET_ID === 'undefined' || !SPREADSHEET_ID) return null;
 
-  const spId = SPREADSHEET_ID;
-  const gid = typeof SPREADSHEET_GID !== 'undefined' ? SPREADSHEET_GID : '999482111';
-
-  const proxyUrls = [
-    `/api/proxy?spreadsheet_id=${spId}&gid=${gid}`,
-    `/api/csv?spreadsheet_id=${spId}&gid=${gid}`,
-    `https://docs.google.com/spreadsheets/d/${spId}/export?format=csv&gid=${gid}`,
-    `https://api.allorigins.win/raw?url=` + encodeURIComponent(`https://docs.google.com/spreadsheets/d/${spId}/export?format=csv&gid=${gid}`),
-    `https://corsproxy.io/?` + encodeURIComponent(`https://docs.google.com/spreadsheets/d/${spId}/export?format=csv&gid=${gid}`)
-  ];
-
-  // 1. Intentar obtención vía Proxy CSV (Servidor Local / Netlify Serverless Function) con timeout extendido a 60s
-  for (const pUrl of proxyUrls) {
-    try {
-      console.log(`[Google Sheets Proxy] Conectando a ${pUrl}...`);
-      const resp = await fetch(pUrl, { signal: AbortSignal.timeout(60000) });
-      if (resp.ok) {
-        const text = await resp.text();
-        if (text && text.length > 100 && (text.includes(',') || text.includes(';'))) {
-          const rowsParsed = parseCsvText(text);
-          if (rowsParsed && rowsParsed.length > 0) {
-            console.log(`[Google Sheets] ✅ Conexión exitosa vía Proxy CSV (${rowsParsed.length.toLocaleString()} registros cargados)`);
-            return rowsParsed;
-          }
-        }
-      }
-    } catch(err) {
-      console.warn(`[Google Sheets Proxy] Intento no respondió en ${pUrl}:`, err.message || err);
-    }
-  }
-
-  // 2. Intentar obtención vía GViz JSON endpoint
-  try {
-    const gvizUrl = `https://docs.google.com/spreadsheets/d/${spId}/gviz/tq?tqx=out:json&gid=${gid}`;
-    const res = await fetch(gvizUrl, { signal: AbortSignal.timeout(30000) });
-    if (res.ok) {
-      const text = await res.text();
-      const jsonStr = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
-      const json = JSON.parse(jsonStr);
-
-      const cols = json.table.cols.map(c => c ? c.label.toUpperCase().trim() : '');
-      const data = json.table.rows.map((row, i) => {
-        const obj = {};
-        cols.forEach((colName, j) => {
-          if (colName) obj[colName] = row.c && row.c[j] ? (row.c[j].v !== null ? row.c[j].v : '') : '';
-        });
-        obj['_row'] = i + 2;
-        return obj;
-      });
-
-      if (data && data.length > 0) {
-        console.log(`[Google Sheets] ✅ Conexión exitosa vía GViz FastChannel (${data.length.toLocaleString()} registros)`);
-        return data;
-      }
-    }
-  } catch(gvizErr) {
-    console.warn('[Google Sheets] Falló GViz endpoint:', gvizErr.message || gvizErr);
-  }
-
-  return null;
-}
 
 async function apiGet() {
   if (typeof API_URL === 'undefined' || !API_URL || API_URL.includes('PEGA_AQUI')) return null;
@@ -4035,4 +3972,144 @@ async function loadData(showLoadingState = true) {
       if (latencyBadge) latencyBadge.innerHTML = `🔴 Sin conexión`;
     }
   }
+}
+
+// ==========================================================================
+// MOTOR DE CONEXIÓN UNIFICADO Y UNIVERSAL (GITHUB PAGES, NETLIFY & LOCAL)
+// ==========================================================================
+
+function fetchGVizViaJSONP(spreadsheetId, gid) {
+  return new Promise((resolve, reject) => {
+    const callbackName = 'gviz_jsonp_cb_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
+    const timeoutTimer = setTimeout(() => {
+      delete window[callbackName];
+      if (scriptEl && scriptEl.parentNode) scriptEl.parentNode.removeChild(scriptEl);
+      reject(new Error('Timeout de conexión JSONP (25s)'));
+    }, 25000);
+
+    window[callbackName] = function(json) {
+      clearTimeout(timeoutTimer);
+      delete window[callbackName];
+      if (scriptEl && scriptEl.parentNode) scriptEl.parentNode.removeChild(scriptEl);
+
+      if (!json || !json.table || !json.table.rows) {
+        reject(new Error('Formato JSONP inválido desde Google Sheets'));
+        return;
+      }
+
+      const rawCols = json.table.cols || [];
+      const cols = rawCols.map(c => c ? (c.label || c.id || '').toUpperCase().trim() : '');
+
+      const parsedRows = json.table.rows.map((row, i) => {
+        const obj = {};
+        cols.forEach((colName, j) => {
+          if (colName) {
+            let val = '';
+            if (row.c && row.c[j]) {
+              val = row.c[j].f !== undefined && row.c[j].f !== null ? row.c[j].f : (row.c[j].v !== null ? row.c[j].v : '');
+            }
+            obj[colName] = val;
+          }
+        });
+        obj['_row'] = i + 2;
+        return obj;
+      });
+
+      resolve(parsedRows);
+    };
+
+    const scriptEl = document.createElement('script');
+    scriptEl.src = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?tqx=responseHandler:${callbackName}&gid=${gid}&headers=1`;
+    scriptEl.onerror = function() {
+      clearTimeout(timeoutTimer);
+      delete window[callbackName];
+      if (scriptEl.parentNode) scriptEl.parentNode.removeChild(scriptEl);
+      reject(new Error('Error al cargar script JSONP de Google Sheets'));
+    };
+
+    document.head.appendChild(scriptEl);
+  });
+}
+
+async function fetchGVizData() {
+  if (typeof SPREADSHEET_ID === 'undefined' || !SPREADSHEET_ID) return null;
+
+  const spId = SPREADSHEET_ID;
+  const gid = typeof SPREADSHEET_GID !== 'undefined' ? SPREADSHEET_GID : '999482111';
+  const isGitHubPages = window.location.hostname.includes('github.io');
+
+  console.log(`[Glomax Engine] Entorno detectado: ${isGitHubPages ? 'GitHub Pages (Static)' : window.location.hostname}`);
+
+  // 1. Si estamos en GitHub Pages, usar primero el canal JSONP GViz que funciona al 100% en GitHub Pages
+  if (isGitHubPages) {
+    try {
+      console.log('[GitHub Pages] 🚀 Conectando a Google Sheets vía JSONP FastChannel...');
+      const jsonpRows = await fetchGVizViaJSONP(spId, gid);
+      if (jsonpRows && jsonpRows.length > 0) {
+        console.log(`[GitHub Pages] ✅ Conexión exitosa vía JSONP (${jsonpRows.length.toLocaleString()} registros)`);
+        return jsonpRows;
+      }
+    } catch (jsonpErr) {
+      console.warn('[GitHub Pages] Falló canal JSONP, probando fallbacks:', jsonpErr.message || jsonpErr);
+    }
+  }
+
+  // 2. Si estamos en Localhost o Netlify, probar Proxy local /api/proxy
+  if (!isGitHubPages) {
+    const proxyUrls = [
+      `/api/proxy?spreadsheet_id=${spId}&gid=${gid}`,
+      `/api/csv?spreadsheet_id=${spId}&gid=${gid}`
+    ];
+
+    for (const pUrl of proxyUrls) {
+      try {
+        const resp = await fetch(pUrl, { signal: AbortSignal.timeout(15000) });
+        if (resp.ok) {
+          const text = await resp.text();
+          if (text && text.length > 200 && !text.trim().startsWith('<')) {
+            const rowsParsed = parseCsvText(text);
+            if (rowsParsed && rowsParsed.length > 0) {
+              console.log(`[Proxy Local] ✅ Conexión exitosa vía Proxy CSV (${rowsParsed.length.toLocaleString()} registros)`);
+              return rowsParsed;
+            }
+          }
+        }
+      } catch(err) {
+        console.warn(`[Proxy Local] Falló ${pUrl}:`, err.message || err);
+      }
+    }
+  }
+
+  // 3. Fallback Universal: JSONP GViz
+  try {
+    console.log('[Universal Engine] Intentando canal JSONP FastChannel...');
+    const jsonpRows = await fetchGVizViaJSONP(spId, gid);
+    if (jsonpRows && jsonpRows.length > 0) return jsonpRows;
+  } catch(e) {
+    console.warn('[Universal Engine] Falló JSONP:', e.message || e);
+  }
+
+  // 4. Fallback Universal: Proxies CORS para CSV directo
+  const corsProxies = [
+    `https://api.allorigins.win/raw?url=` + encodeURIComponent(`https://docs.google.com/spreadsheets/d/${spId}/export?format=csv&gid=${gid}`),
+    `https://corsproxy.io/?` + encodeURIComponent(`https://docs.google.com/spreadsheets/d/${spId}/export?format=csv&gid=${gid}`)
+  ];
+
+  for (const cUrl of corsProxies) {
+    try {
+      const resp = await fetch(cUrl, { signal: AbortSignal.timeout(20000) });
+      if (resp.ok) {
+        const text = await resp.text();
+        if (text && text.length > 200 && !text.trim().startsWith('<')) {
+          const rowsParsed = parseCsvText(text);
+          if (rowsParsed && rowsParsed.length > 0) {
+            console.log(`[Universal Proxy] ✅ Conexión exitosa vía AllOrigins/CorsProxy (${rowsParsed.length.toLocaleString()} registros)`);
+            return rowsParsed;
+          }
+        }
+      }
+    } catch(e) {}
+  }
+
+  return null;
 }
