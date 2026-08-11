@@ -335,32 +335,9 @@ function setSyncStatus(state) {
 }
 
 // ---------- API & ENGINE HYBRID CONEXIÓN ----------
-async function fetchGVizData() {
-  if (typeof SPREADSHEET_ID === 'undefined' || !SPREADSHEET_ID) return null;
-  const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&sheet=Ventas`;
-  const res = await fetch(url);
-  const text = await res.text();
-  const jsonStr = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
-  const json = JSON.parse(jsonStr);
-  
-  const cols = json.table.cols.map(c => c ? c.label : '');
-  const data = json.table.rows.map((row, i) => {
-    const obj = {};
-    cols.forEach((colName, j) => {
-      if (colName) obj[colName] = row.c[j] ? (row.c[j].v !== null ? row.c[j].v : '') : '';
-    });
-    obj['_row'] = i + 2;
-    return obj;
-  });
-  return data;
-}
 
-async function apiGet() {
-  const res = await fetch(API_URL, { method: 'GET' });
-  const json = await res.json();
-  if (!json.ok) throw new Error(json.error || 'Error al leer datos');
-  return json.data;
-}
+
+
 
 async function apiPost(payload) {
   const res = await fetch(API_URL, {
@@ -373,66 +350,7 @@ async function apiPost(payload) {
   return json;
 }
 
-async function loadData(showLoadingState = true) {
-  const startTime = performance.now();
-  const latencyBadge = document.getElementById('latencyBadge');
 
-  // 1. CARGA INSTANTÁNEA 0ms DESDE INDEXEDDB
-  if ((typeof ENABLE_LOCAL_CACHE === 'undefined' || ENABLE_LOCAL_CACHE) && (!rows || rows.length === 0)) {
-    const cachedRows = await GlomaxDB.getRows();
-    if (cachedRows && cachedRows.length > 0) {
-      rows = cachedRows;
-      setSyncStatus('ok');
-      if (latencyBadge) latencyBadge.innerHTML = `⚡ 0ms (Caché Local)`;
-      updateNavBadge();
-      populateFilterOptions();
-      applyFilters();
-    }
-  }
-
-  if (showLoadingState && (!rows || rows.length === 0)) setSyncStatus('loading');
-
-  // 2. FETCH FRESCO EN SEGUNDO PLANO (STALE-WHILE-REVALIDATE)
-  try {
-    let freshRows = null;
-    let modeLabel = 'Apps Script';
-
-    if (typeof SPREADSHEET_ID !== 'undefined' && SPREADSHEET_ID) {
-      try {
-        freshRows = await fetchGVizData();
-        modeLabel = 'GViz FastChannel';
-      } catch (gvizErr) {
-        console.warn('GViz fallback to Apps Script', gvizErr);
-      }
-    }
-
-    if (!freshRows) {
-      freshRows = await apiGet();
-    }
-
-    const elapsed = Math.round(performance.now() - startTime);
-
-    if (freshRows && Array.isArray(freshRows)) {
-      rows = freshRows;
-      GlomaxDB.setRows(rows); // actualiza caché IndexedDB
-      setSyncStatus('ok');
-      if (latencyBadge) {
-        latencyBadge.innerHTML = `⚡ ${elapsed}ms (${modeLabel})`;
-        latencyBadge.classList.remove('syncing');
-      }
-      updateNavBadge();
-      populateFilterOptions();
-      applyFilters();
-    }
-
-    processSyncQueue();
-  } catch (err) {
-    setSyncStatus('error');
-    console.error(err);
-    if (latencyBadge) latencyBadge.innerHTML = `⚠️ Sin conexión`;
-    if (API_URL.includes('PEGA_AQUI')) showToast('Configura tu URL de Apps Script en config.js');
-  }
-}
 
 async function processSyncQueue() {
   const pending = await GlomaxDB.getPendingMutations();
@@ -855,12 +773,7 @@ function setSyncStatus(state) {
 }
 
 // ---------- API ----------
-async function apiGet() {
-  const res = await fetch(API_URL, { method: 'GET' });
-  const json = await res.json();
-  if (!json.ok) throw new Error(json.error || 'Error al leer datos');
-  return json.data;
-}
+
 async function apiPost(payload) {
   const res = await fetch(API_URL, {
     method: 'POST',
@@ -872,20 +785,7 @@ async function apiPost(payload) {
   return json;
 }
 
-async function loadData(showLoadingState = true) {
-  if (showLoadingState) setSyncStatus('loading');
-  try {
-    rows = await apiGet();
-    setSyncStatus('ok');
-    populateFilterOptions();
-    applyFilters();
-  } catch (err) {
-    setSyncStatus('error');
-    console.error(err);
-    if (API_URL.includes('PEGA_AQUI')) showToast('Configura tu URL de Apps Script en config.js');
-    else showToast('No se pudo conectar con el Sheet');
-  }
-}
+
 
 // ---------- Filtros ----------
 function uniqueValues(field) {
@@ -4595,5 +4495,304 @@ function applyFtPdfImport() {
 
   if (typeof showToast === 'function') {
     showToast(`🎉 ¡Ficha Técnica oficial generada en formato licitación para SKU ${sku}!`);
+  }
+}
+
+
+
+// ==========================================================================
+// MOTOR DE CONEXIÓN CON GOOGLE SHEETS & INDEXEDDB (MULTI-TIER RESILIENTE)
+// ==========================================================================
+
+
+
+
+
+async function apiGet() {
+  if (typeof API_URL === 'undefined' || !API_URL || API_URL.includes('PEGA_AQUI')) return null;
+  const res = await fetch(API_URL, { method: 'GET', signal: AbortSignal.timeout(15000) });
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'Error al leer datos');
+  return json.data;
+}
+
+async function loadData(showLoadingState = true) {
+  const startTime = performance.now();
+  const latencyBadge = document.getElementById('latencyBadge');
+
+  // 1. CARGA INSTANTÁNEA 0ms DESDE INDEXEDDB
+  if ((typeof ENABLE_LOCAL_CACHE === 'undefined' || ENABLE_LOCAL_CACHE) && (!rows || rows.length === 0)) {
+    const cachedRows = await GlomaxDB.getRows();
+    if (cachedRows && cachedRows.length > 0) {
+      rows = cachedRows;
+      setSyncStatus('ok');
+      if (latencyBadge) latencyBadge.innerHTML = `⚡ 0ms (Caché Local)`;
+      updateNavBadge();
+      populateFilterOptions();
+      applyFilters();
+    }
+  }
+
+  if (showLoadingState && (!rows || rows.length === 0)) setSyncStatus('loading');
+
+  // 2. FETCH FRESCO EN SEGUNDO PLANO (STALE-WHILE-REVALIDATE)
+  try {
+    let freshRows = null;
+    let modeLabel = 'Apps Script';
+
+    if (typeof SPREADSHEET_ID !== 'undefined' && SPREADSHEET_ID) {
+      try {
+        freshRows = await fetchGVizData();
+        if (freshRows) modeLabel = 'Google Sheets Live';
+      } catch (gvizErr) {
+        console.warn('Google Sheets fallback a Apps Script', gvizErr);
+      }
+    }
+
+    if (!freshRows) {
+      freshRows = await apiGet();
+      if (freshRows) modeLabel = 'Apps Script API';
+    }
+
+    const elapsed = Math.round(performance.now() - startTime);
+
+    if (freshRows && Array.isArray(freshRows) && freshRows.length > 0) {
+      rows = freshRows;
+      GlomaxDB.setRows(rows); // actualiza caché IndexedDB
+      setSyncStatus('ok');
+      if (latencyBadge) {
+        latencyBadge.innerHTML = `🟢 ${elapsed}ms (${modeLabel})`;
+        latencyBadge.classList.remove('syncing');
+      }
+      updateNavBadge();
+      populateFilterOptions();
+      applyFilters();
+      
+      if (typeof showToast === 'function') {
+        showToast(`✅ Conectado a Google Sheets (${rows.length.toLocaleString()} registros actualizados)`);
+      }
+    } else if (!rows || rows.length === 0) {
+      setSyncStatus('error');
+      if (latencyBadge) latencyBadge.innerHTML = `🔴 Sin conexión`;
+    }
+
+    processSyncQueue();
+  } catch (err) {
+    console.error('Error al cargar datos desde Google Sheets:', err);
+    if (!rows || rows.length === 0) {
+      setSyncStatus('error');
+      if (latencyBadge) latencyBadge.innerHTML = `🔴 Sin conexión`;
+    }
+  }
+}
+
+// ==========================================================================
+// MOTOR DE CONEXIÓN CON GOOGLE SHEETS & INDEXEDDB (MULTI-TIER RESILIENTE)
+// ==========================================================================
+
+function parseCsvText(csvText) {
+  if (!csvText || typeof csvText !== 'string') return [];
+
+  const lines = [];
+  let currentLine = [];
+  let currentCell = '';
+  let insideQuotes = false;
+
+  for (let i = 0; i < csvText.length; i++) {
+    const char = csvText[i];
+    const nextChar = csvText[i + 1];
+
+    if (char === '"') {
+      if (insideQuotes && nextChar === '"') {
+        currentCell += '"';
+        i++;
+      } else {
+        insideQuotes = !insideQuotes;
+      }
+    } else if (char === ',' && !insideQuotes) {
+      currentLine.push(currentCell.trim());
+      currentCell = '';
+    } else if ((char === '\r' || char === '\n') && !insideQuotes) {
+      if (char === '\r' && nextChar === '\n') {
+        i++;
+      }
+      currentLine.push(currentCell.trim());
+      if (currentLine.some(c => c.length > 0)) {
+        lines.push(currentLine);
+      }
+      currentLine = [];
+      currentCell = '';
+    } else {
+      currentCell += char;
+    }
+  }
+
+  if (currentCell.length > 0 || currentLine.length > 0) {
+    currentLine.push(currentCell.trim());
+    if (currentLine.some(c => c.length > 0)) {
+      lines.push(currentLine);
+    }
+  }
+
+  if (lines.length < 2) return [];
+
+  const rawHeaders = lines[0];
+  const headers = rawHeaders.map(h => h.toUpperCase().replace(/[^A-Z0-9#\s\(\)\$]/g, '').trim());
+
+  const parsedData = [];
+  for (let i = 1; i < lines.length; i++) {
+    const rowCells = lines[i];
+    const rowObj = {};
+    headers.forEach((h, colIdx) => {
+      if (h) {
+        rowObj[h] = rowCells[colIdx] !== undefined ? rowCells[colIdx] : '';
+      }
+    });
+    rowObj['_row'] = i + 1;
+    parsedData.push(rowObj);
+  }
+
+  return parsedData;
+}
+
+async function fetchGVizData() {
+  if (typeof SPREADSHEET_ID === 'undefined' || !SPREADSHEET_ID) return null;
+
+  const spId = SPREADSHEET_ID;
+  const gid = typeof SPREADSHEET_GID !== 'undefined' ? SPREADSHEET_GID : '999482111';
+
+  const proxyUrls = [
+    `/api/proxy?spreadsheet_id=${spId}&gid=${gid}`,
+    `/api/csv?spreadsheet_id=${spId}&gid=${gid}`,
+    `https://docs.google.com/spreadsheets/d/${spId}/export?format=csv&gid=${gid}`,
+    `https://api.allorigins.win/raw?url=` + encodeURIComponent(`https://docs.google.com/spreadsheets/d/${spId}/export?format=csv&gid=${gid}`),
+    `https://corsproxy.io/?` + encodeURIComponent(`https://docs.google.com/spreadsheets/d/${spId}/export?format=csv&gid=${gid}`)
+  ];
+
+  // 1. Intentar obtención vía Proxy CSV (Servidor Local / Netlify Serverless Function)
+  for (const pUrl of proxyUrls) {
+    try {
+      const resp = await fetch(pUrl, { signal: AbortSignal.timeout(15000) });
+      if (resp.ok) {
+        const text = await resp.text();
+        if (text && text.length > 50 && (text.includes(',') || text.includes(';'))) {
+          const rowsParsed = parseCsvText(text);
+          if (rowsParsed && rowsParsed.length > 0) {
+            console.log(`[Google Sheets] Conectado exitosamente vía Proxy CSV (${rowsParsed.length} registros)`);
+            return rowsParsed;
+          }
+        }
+      }
+    } catch(err) {
+      console.warn(`[Google Sheets] Falló intento en ${pUrl}:`, err);
+    }
+  }
+
+  // 2. Intentar obtención vía GViz JSON endpoint
+  try {
+    const gvizUrl = `https://docs.google.com/spreadsheets/d/${spId}/gviz/tq?tqx=out:json&gid=${gid}`;
+    const res = await fetch(gvizUrl, { signal: AbortSignal.timeout(10000) });
+    if (res.ok) {
+      const text = await res.text();
+      const jsonStr = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
+      const json = JSON.parse(jsonStr);
+
+      const cols = json.table.cols.map(c => c ? c.label.toUpperCase().trim() : '');
+      const data = json.table.rows.map((row, i) => {
+        const obj = {};
+        cols.forEach((colName, j) => {
+          if (colName) obj[colName] = row.c && row.c[j] ? (row.c[j].v !== null ? row.c[j].v : '') : '';
+        });
+        obj['_row'] = i + 2;
+        return obj;
+      });
+
+      if (data && data.length > 0) {
+        console.log(`[Google Sheets] Conectado exitosamente vía GViz FastChannel (${data.length} registros)`);
+        return data;
+      }
+    }
+  } catch(gvizErr) {
+    console.warn('[Google Sheets] Falló GViz endpoint:', gvizErr);
+  }
+
+  return null;
+}
+
+async function apiGet() {
+  if (typeof API_URL === 'undefined' || !API_URL || API_URL.includes('PEGA_AQUI')) return null;
+  const res = await fetch(API_URL, { method: 'GET', signal: AbortSignal.timeout(15000) });
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'Error al leer datos');
+  return json.data;
+}
+
+async function loadData(showLoadingState = true) {
+  const startTime = performance.now();
+  const latencyBadge = document.getElementById('latencyBadge');
+
+  // 1. CARGA INSTANTÁNEA 0ms DESDE INDEXEDDB
+  if ((typeof ENABLE_LOCAL_CACHE === 'undefined' || ENABLE_LOCAL_CACHE) && (!rows || rows.length === 0)) {
+    const cachedRows = await GlomaxDB.getRows();
+    if (cachedRows && cachedRows.length > 0) {
+      rows = cachedRows;
+      setSyncStatus('ok');
+      if (latencyBadge) latencyBadge.innerHTML = `⚡ 0ms (Caché Local)`;
+      updateNavBadge();
+      populateFilterOptions();
+      applyFilters();
+    }
+  }
+
+  if (showLoadingState && (!rows || rows.length === 0)) setSyncStatus('loading');
+
+  // 2. FETCH FRESCO EN SEGUNDO PLANO (STALE-WHILE-REVALIDATE)
+  try {
+    let freshRows = null;
+    let modeLabel = 'Apps Script';
+
+    if (typeof SPREADSHEET_ID !== 'undefined' && SPREADSHEET_ID) {
+      try {
+        freshRows = await fetchGVizData();
+        if (freshRows) modeLabel = 'Google Sheets Live';
+      } catch (gvizErr) {
+        console.warn('Google Sheets fallback a Apps Script', gvizErr);
+      }
+    }
+
+    if (!freshRows) {
+      freshRows = await apiGet();
+      if (freshRows) modeLabel = 'Apps Script API';
+    }
+
+    const elapsed = Math.round(performance.now() - startTime);
+
+    if (freshRows && Array.isArray(freshRows) && freshRows.length > 0) {
+      rows = freshRows;
+      GlomaxDB.setRows(rows); // actualiza caché IndexedDB
+      setSyncStatus('ok');
+      if (latencyBadge) {
+        latencyBadge.innerHTML = `🟢 ${elapsed}ms (${modeLabel})`;
+        latencyBadge.classList.remove('syncing');
+      }
+      updateNavBadge();
+      populateFilterOptions();
+      applyFilters();
+      
+      if (typeof showToast === 'function') {
+        showToast(`✅ Conectado a Google Sheets (${rows.length.toLocaleString()} registros actualizados)`);
+      }
+    } else if (!rows || rows.length === 0) {
+      setSyncStatus('error');
+      if (latencyBadge) latencyBadge.innerHTML = `🔴 Sin conexión`;
+    }
+
+    processSyncQueue();
+  } catch (err) {
+    console.error('Error al cargar datos desde Google Sheets:', err);
+    if (!rows || rows.length === 0) {
+      setSyncStatus('error');
+      if (latencyBadge) latencyBadge.innerHTML = `🔴 Sin conexión`;
+    }
   }
 }
