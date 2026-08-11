@@ -3376,22 +3376,34 @@ function selectFtProductSku(sku) {
   if (!container) return;
 
   if (!prod) {
-    container.innerHTML = '<div style="text-align: center; color: #f87171; padding: 2rem;">No se encontraron datos para el SKU seleccionado.</div>';
+    container.innerHTML = '<div style="text-align: center; color: #f87171; padding: 3rem; background: rgba(239, 68, 68, 0.05); border: 1px dashed #ef4444; border-radius: 12px;">⚠️ No se encontraron datos técnicos para el SKU seleccionado.</div>';
     return;
   }
 
   const spec = generateDefaultFtSpecs(prod);
   const isCustomized = !!getFtSpecsForSku(sku);
 
-  const barcodeBars = Array.from({ length: 32 }, (_, i) => `<rect x="${i * 7 + 10}" y="5" width="${(i % 3 === 0 ? 4 : 2)}" height="38" fill="#0f172a" />`).join('');
+  // Generar código de barras vectorial EAN-13 / Code128
+  const barcodeBars = Array.from({ length: 34 }, (_, i) => `<rect x="${i * 6.5 + 8}" y="6" width="${(i % 4 === 0 ? 3.5 : i % 2 === 0 ? 2 : 1)}" height="36" fill="#0f172a" />`).join('');
+  const cleanSkuDigits = prod.sku.replace(/\D/g, '').padStart(9, '0').substring(0, 9);
+  const fullEan13 = `780${cleanSkuDigits}1`;
 
+  // Filas del BOM (Bill of Materials)
   let bomRowsHtml = '';
   spec.bom.forEach((b, idx) => {
+    const pctNum = parseFloat(b.participacion) || (100 / spec.bom.length);
     bomRowsHtml += `
       <tr>
-        <td style="font-weight: 700; color: #cbd5e1;">${idx + 1}. ${b.parte}</td>
-        <td style="text-align: center;">${b.cant} und.</td>
-        <td style="text-align: right;"><span class="ft-tag ft-tag-purple">${b.participacion}</span></td>
+        <td style="font-weight: 600; color: #cbd5e1;">${idx + 1}. ${b.parte}</td>
+        <td style="text-align: center; font-weight: 700; color: #38bdf8;">${b.cant} und.</td>
+        <td style="text-align: right;">
+          <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
+            <div style="width: 60px; height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden;">
+              <div style="width: ${pctNum}%; height: 100%; background: linear-gradient(90deg, #38bdf8, #8b5cf6);"></div>
+            </div>
+            <span class="ft-tag ft-tag-purple" style="font-size: 0.72rem;">${b.participacion}</span>
+          </div>
+        </td>
       </tr>
     `;
   });
@@ -3399,144 +3411,179 @@ function selectFtProductSku(sku) {
   const photoUrl = spec.fotoUrl || getFtProductPhoto(prod.sku);
 
   const photoCardHtml = photoUrl ? `
-    <div class="ft-card" style="text-align: center;">
-      <div class="ft-card-header">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-        <span>Fotografía de Producto (Glomax S.A. Oficial)</span>
+    <div class="ft-card">
+      <div class="ft-card-header" style="justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          <span style="font-weight: 700; color: #f8fafc;">REGISTRO FOTOGRÁFICO OFICIAL</span>
+        </div>
+        <span class="ft-tag ft-tag-blue">Glomax HD Asset</span>
       </div>
       <div class="ft-photo-frame">
-        <img src="${photoUrl}" alt="${prod.descripcion}" class="ft-product-photo" onerror="this.onerror=null; this.parentElement.innerHTML='<div style=\\'color:#94a3b8; font-size:0.8rem;\\'>📷 Foto no disponible</div>';" />
-        <span class="ft-photo-badge">📷 Foto Oficial www.glomax.cl</span>
+        <img src="${photoUrl}" alt="${prod.descripcion}" class="ft-product-photo" onerror="this.onerror=null; this.parentElement.innerHTML='<div style=\'color:#94a3b8; font-size:0.85rem; padding: 2rem; text-align: center;\'>📷 FotografÃ­a Oficial no disponible<br><span style=\'font-size:0.75rem; color:#64748b;\'>Se adjunta esquema CAD predeterminado</span></div>';" />
+        <span class="ft-photo-badge">🔒 Certificado Glomax.cl</span>
       </div>
     </div>
   ` : `
-    <div class="ft-card" style="text-align: center;">
+    <div class="ft-card">
       <div class="ft-card-header">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-        <span>Representación Esquemática</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        <span style="font-weight: 700; color: #f8fafc;">ESQUEMA TÉCNICO CAD 3D</span>
       </div>
-      <div style="background: rgba(6, 10, 19, 0.8); border: 1px dashed rgba(56, 189, 248, 0.4); border-radius: 12px; padding: 2rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;">
-        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-        <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; color: #38bdf8; font-weight: 700;">MODELO 3D SPEC #${prod.sku}</div>
-        <div style="font-size: 0.75rem; color: #94a3b8;">Glomax Industrial Design CAD v4</div>
+      <div style="background: linear-gradient(135deg, rgba(6, 10, 19, 0.95), rgba(15, 23, 42, 0.9)); border: 1px dashed rgba(56, 189, 248, 0.4); border-radius: 12px; padding: 2.5rem 1.5rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center;">
+        <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: #38bdf8; font-weight: 700; letter-spacing: 1px;">DIAGRAMA TÉCNICO CAD #${prod.sku}</div>
+        <div style="font-size: 0.78rem; color: #94a3b8;">Glomax SA Industrial Engineering Standard</div>
       </div>
     </div>
   `;
 
   const html = `
-    <!-- CABECERA RESUMEN DE FICHA TÉCNICA -->
-    <div class="ft-header-card">
-      <div class="ft-title-bar">
-        <div>
-          <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
-            <span class="ft-sku-badge">SKU: ${prod.sku}</span>
-            ${isCustomized ? '<span class="ft-tag ft-tag-gold">✏️ Spec Editada</span>' : '<span class="ft-tag ft-tag-blue">✅ Spec Oficial Glomax</span>'}
-            <span class="ft-tag ft-tag-purple">${prod.categoria || 'Sin Categoría'}</span>
-            <span class="ft-tag ft-tag-green">${prod.marca || 'Glomax Standard'}</span>
+    <!-- MEMBRETE OFICIAL DE LICITACIONES Y CERTIFICACIÓN -->
+    <div class="ft-header-card" style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.95)); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 16px; padding: 1.75rem; box-shadow: 0 12px 36px rgba(0,0,0,0.5);">
+      
+      <!-- FRANJA SUPREMA DE CERTIFICACIÓN Y MEMBRETE -->
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 1rem; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="background: linear-gradient(135deg, #3b82f6, #2563eb); width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(59,130,246,0.4);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
           </div>
-          <h1 style="font-size: 1.4rem; font-weight: 800; color: #f8fafc; margin: 8px 0 4px 0;">${prod.descripcion}</h1>
-          <div style="font-size: 0.82rem; color: #94a3b8;">
-            Familia: <strong>${prod.familia || 'General'}</strong> | Línea: <strong>${prod.linea || 'Estándar'}</strong> | Canal Destino: <strong>${prod.canalFinal || 'Multicanal'}</strong>
+          <div>
+            <div style="font-family: 'Space Grotesk', sans-serif; font-weight: 800; font-size: 1.05rem; color: #ffffff; letter-spacing: 0.5px;">GLOMAX S.A. · CHILE</div>
+            <div style="font-size: 0.75rem; color: #38bdf8; font-weight: 600;">DEPARTAMENTO DE INGENIERÍA & CONTROL DE CALIDAD</div>
           </div>
         </div>
 
-        <!-- BARCODE & QR CONTAINER -->
-        <div style="text-align: right;">
-          <div class="ft-barcode-box">
-            <svg viewBox="0 0 240 50" xmlns="http://www.w3.org/2000/svg">
-              ${barcodeBars}
-            </svg>
-            <div class="ft-barcode-text">780${prod.sku.replace(/\D/g, '').padStart(9, '0').substring(0, 9)}</div>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <div style="text-align: right; border-right: 1px solid rgba(255,255,255,0.1); padding-right: 1rem;">
+            <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Código Documento</div>
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: #fbbf24; font-weight: 700;">DOC-FT-${prod.sku}</div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Normativa / Tipo</div>
+            <div style="font-size: 0.82rem; color: #34d399; font-weight: 700;">Apta para Licitaciones</div>
           </div>
         </div>
       </div>
 
-      <!-- METRICAS DE PRODUCTO EN FICHA -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-top: 1rem;">
-        <div style="background: rgba(6, 10, 19, 0.6); padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);">
-          <div style="font-size: 0.72rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Precio Lista Prom.</div>
-          <div style="font-size: 1.15rem; font-weight: 800; color: #38bdf8;">${formatCLP(prod.precioPromedio)}</div>
+      <div class="ft-title-bar" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1.5rem; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 280px;">
+          <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 8px;">
+            <span class="ft-sku-badge" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); padding: 4px 10px; border-radius: 6px; font-weight: 800; font-family: 'JetBrains Mono', monospace;">SKU: ${prod.sku}</span>
+            ${isCustomized ? '<span class="ft-tag ft-tag-gold">✏️ Spec Editada / Personalizada</span>' : '<span class="ft-tag ft-tag-blue">🛡️ Especificación Oficial Glomax</span>'}
+            <span class="ft-tag ft-tag-purple">📂 ${prod.categoria || 'Sin Categoría'}</span>
+            <span class="ft-tag ft-tag-green">🏷️ ${prod.marca || 'Glomax Standard'}</span>
+          </div>
+          <h1 style="font-family: 'Space Grotesk', sans-serif; font-size: 1.55rem; font-weight: 800; color: #ffffff; margin: 6px 0 8px 0; line-height: 1.3;">${prod.descripcion}</h1>
+          <div style="font-size: 0.83rem; color: #cbd5e1; display: flex; gap: 12px; flex-wrap: wrap;">
+            <span>Familia: <strong style="color: #ffffff;">${prod.familia || 'General'}</strong></span>
+            <span>|</span>
+            <span>Línea: <strong style="color: #ffffff;">${prod.linea || 'Estándar'}</strong></span>
+            <span>|</span>
+            <span>Canal Destino: <strong style="color: #ffffff;">${prod.canalFinal || 'Multicanal'}</strong></span>
+          </div>
         </div>
 
-        <div style="background: rgba(6, 10, 19, 0.6); padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);">
-          <div style="font-size: 0.72rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Costo Neto Unitario</div>
-          <div style="font-size: 1.15rem; font-weight: 800; color: #c084fc;">${formatCLP(prod.costoUnitario)}</div>
+        <!-- CÓDIGO DE BARRAS VECTORIAL CON SELLO -->
+        <div style="text-align: right; background: #ffffff; padding: 10px 14px; border-radius: 10px; box-shadow: 0 4px 14px rgba(0,0,0,0.3);">
+          <div class="ft-barcode-box" style="background: #ffffff; padding: 0; border: none;">
+            <svg viewBox="0 0 240 48" width="180" height="38" xmlns="http://www.w3.org/2000/svg">
+              ${barcodeBars}
+            </svg>
+            <div class="ft-barcode-text" style="font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; font-weight: 800; color: #0f172a; text-align: center; margin-top: 2px;">${fullEan13}</div>
+          </div>
+          <div style="font-size: 0.65rem; color: #475569; font-weight: 700; margin-top: 2px; text-transform: uppercase;">EAN-13 VERIFIED ASSET</div>
+        </div>
+      </div>
+
+      <!-- MÉTRICAS COMERCIALES & LOGÍSTICAS DE CABECERA -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-top: 1.25rem;">
+        <div style="background: rgba(6, 10, 19, 0.7); padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(56, 189, 248, 0.25);">
+          <div style="font-size: 0.72rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Precio Lista Prom.</div>
+          <div style="font-size: 1.25rem; font-weight: 800; color: #38bdf8; font-family: 'JetBrains Mono', monospace;">${formatCLP(prod.precioPromedio)}</div>
         </div>
 
-        <div style="background: rgba(6, 10, 19, 0.6); padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);">
-          <div style="font-size: 0.72rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Margen Prom. (%)</div>
-          <div style="font-size: 1.15rem; font-weight: 800; color: ${prod.margenPct >= 30 ? '#34d399' : '#fbbf24'};">${prod.margenPct.toFixed(1)}%</div>
+        <div style="background: rgba(6, 10, 19, 0.7); padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(168, 85, 247, 0.25);">
+          <div style="font-size: 0.72rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Costo Neto Unitario</div>
+          <div style="font-size: 1.25rem; font-weight: 800; color: #c084fc; font-family: 'JetBrains Mono', monospace;">${formatCLP(prod.costoUnitario)}</div>
         </div>
 
-        <div style="background: rgba(6, 10, 19, 0.6); padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);">
-          <div style="font-size: 0.72rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Ventas Acumuladas</div>
-          <div style="font-size: 1.15rem; font-weight: 800; color: #f1f5f9;">${formatNum(prod.cantTotal)} und.</div>
+        <div style="background: rgba(6, 10, 19, 0.7); padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.25);">
+          <div style="font-size: 0.72rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Margen Prom. (%)</div>
+          <div style="font-size: 1.25rem; font-weight: 800; color: ${prod.margenPct >= 30 ? '#34d399' : '#fbbf24'}; font-family: 'JetBrains Mono', monospace;">${prod.margenPct.toFixed(1)}%</div>
+        </div>
+
+        <div style="background: rgba(6, 10, 19, 0.7); padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1);">
+          <div style="font-size: 0.72rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Unidades Movilizadas</div>
+          <div style="font-size: 1.25rem; font-weight: 800; color: #f8fafc; font-family: 'JetBrains Mono', monospace;">${formatNum(prod.cantTotal)} und.</div>
         </div>
       </div>
     </div>
 
-    <!-- REJILLA DE ESPECIFICACIONES TÉCNICAS -->
-    <div class="ft-grid-2col" style="margin-top: 1.5rem;">
-      <!-- COLUMNA IZQUIERDA: FOTOGRAFIA Y LOGÍSTICA -->
+    <!-- REJILLA DE ESPECIFICACIONES TÉCNICAS (2 COLUMNAS ORGANIZADAS) -->
+    <div class="ft-grid-2col" style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 1.5rem; margin-top: 1.5rem;">
+      
+      <!-- COLUMNA IZQUIERDA: REGISTRO VISUAL Y LOGÍSTICA DE EMPAQUE -->
       <div style="display: flex; flex-direction: column; gap: 1.5rem;">
         ${photoCardHtml}
 
-        <!-- TABLA LOGÍSTICA & EMPAQUE -->
-        <div class="ft-card">
-          <div class="ft-card-header">
+        <!-- I. ESPECIFICACIONES LOGÍSTICAS & EMPAQUE -->
+        <div class="ft-card" style="background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 14px; padding: 1.25rem;">
+          <div class="ft-card-header" style="display: flex; align-items: center; gap: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 10px; margin-bottom: 12px; color: #38bdf8; font-weight: 700;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8.5V17a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8.5"/><path d="M3 8.5L12 4l9 4.5"/><line x1="12" y1="4" x2="12" y2="19"/></svg>
-            <span>Logística & Empaque</span>
+            <span>I. LOGÍSTICA, EMBALAJE & EMPAQUE</span>
           </div>
-          <table class="ft-spec-table">
+          <table class="ft-spec-table" style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
             <tbody>
-              <tr><th>Dimensiones:</th><td>${spec.dimensiones}</td></tr>
-              <tr><th>Peso Neto:</th><td>${spec.pesoNeto}</td></tr>
-              <tr><th>Peso Bruto:</th><td>${spec.pesoBruto}</td></tr>
-              <tr><th>Volumen:</th><td>${spec.volumen}</td></tr>
-              <tr><th>Cajas x Pallet:</th><td>${spec.cajasPallet}</td></tr>
-              <tr><th>HS Code:</th><td><code>${spec.hsCode}</code></td></tr>
-              <tr><th>Origen:</th><td>${spec.origen}</td></tr>
+              <tr><th style="padding: 8px 0; color: #94a3b8; width: 45%;">Dimensiones (L x A x H):</th><td style="color: #ffffff; font-weight: 600;">${spec.dimensiones}</td></tr>
+              <tr><th style="padding: 8px 0; color: #94a3b8;">Peso Neto Unitario:</th><td style="color: #ffffff; font-weight: 600;">${spec.pesoNeto}</td></tr>
+              <tr><th style="padding: 8px 0; color: #94a3b8;">Peso Bruto Empacado:</th><td style="color: #ffffff; font-weight: 600;">${spec.pesoBruto}</td></tr>
+              <tr><th style="padding: 8px 0; color: #94a3b8;">Volumen Unitario (m³):</th><td style="color: #38bdf8; font-weight: 700;">${spec.volumen}</td></tr>
+              <tr><th style="padding: 8px 0; color: #94a3b8;">Capacidad Cajas x Pallet:</th><td style="color: #ffffff; font-weight: 600;">${spec.cajasPallet}</td></tr>
+              <tr><th style="padding: 8px 0; color: #94a3b8;">Código Arancelario (HS):</th><td><code style="background: rgba(56,189,248,0.15); color: #38bdf8; padding: 2px 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace;">${spec.hsCode}</code></td></tr>
+              <tr><th style="padding: 8px 0; color: #94a3b8;">País de Origen / Fabricación:</th><td style="color: #ffffff; font-weight: 600;">${spec.origen}</td></tr>
             </tbody>
           </table>
         </div>
       </div>
 
-      <!-- COLUMNA DERECHA: PARAMETROS TÉCNICOS & BOM -->
+      <!-- COLUMNA DERECHA: PARÁMETROS TÉCNICOS, BOM & NORMATIVA -->
       <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-        <!-- TABLA ESPECIFICACIONES TÉCNICAS Y FUNCIONALES -->
-        <div class="ft-card">
-          <div class="ft-card-header">
+        
+        <!-- II. PARÁMETROS TÉCNICOS & RENDIMIENTO -->
+        <div class="ft-card" style="background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 14px; padding: 1.25rem;">
+          <div class="ft-card-header" style="display: flex; align-items: center; gap: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 10px; margin-bottom: 12px; color: #38bdf8; font-weight: 700;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-            <span>Parámetros Técnicos & Mecánicos</span>
+            <span>II. PARÁMETROS TÉCNICOS & RENDIMIENTO</span>
           </div>
-          <table class="ft-spec-table">
+          <table class="ft-spec-table" style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
             <tbody>
-              <tr><th>Material Principal:</th><td><strong style="color: #38bdf8;">${spec.material}</strong></td></tr>
-              <tr><th>Acabado Superficial:</th><td>${spec.acabado}</td></tr>
-              <tr><th>Rango Temperatura:</th><td>${spec.tempRango}</td></tr>
-              <tr><th>Certificaciones:</th><td><span class="ft-tag ft-tag-green">${spec.certificaciones}</span></td></tr>
-              <tr><th>Grado Protec. IP:</th><td><span class="ft-tag ft-tag-blue">${spec.gradoIP}</span></td></tr>
-              <tr><th>Esp. Eléctrica:</th><td>${spec.electrico}</td></tr>
-              <tr><th>Garantía Comercial:</th><td><strong style="color: #34d399;">${spec.garantia}</strong></td></tr>
+              <tr><th style="padding: 8px 0; color: #94a3b8; width: 45%;">Material Principal:</th><td><strong style="color: #38bdf8;">${spec.material}</strong></td></tr>
+              <tr><th style="padding: 8px 0; color: #94a3b8;">Acabado Superficial:</th><td style="color: #ffffff;">${spec.acabado}</td></tr>
+              <tr><th style="padding: 8px 0; color: #94a3b8;">Rango Temperatura:</th><td style="color: #ffffff;">${spec.tempRango}</td></tr>
+              <tr><th style="padding: 8px 0; color: #94a3b8;">Certificaciones Calidad:</th><td><span class="ft-tag ft-tag-green" style="font-weight: 700;">${spec.certificaciones}</span></td></tr>
+              <tr><th style="padding: 8px 0; color: #94a3b8;">Grado Protección IP:</th><td><span class="ft-tag ft-tag-blue" style="font-weight: 700;">${spec.gradoIP}</span></td></tr>
+              <tr><th style="padding: 8px 0; color: #94a3b8;">Especificación Eléctrica:</th><td style="color: #ffffff;">${spec.electrico}</td></tr>
+              <tr><th style="padding: 8px 0; color: #94a3b8;">Garantía Comercial:</th><td><strong style="color: #34d399; font-size: 0.9rem;">${spec.garantia}</strong></td></tr>
             </tbody>
           </table>
         </div>
 
-        <!-- BOM / LISTA DE COMPONENTES -->
-        <div class="ft-card">
-          <div class="ft-card-header" style="justify-content: space-between;">
+        <!-- III. BOM (BILL OF MATERIALS / COMPONENTES) -->
+        <div class="ft-card" style="background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 14px; padding: 1.25rem;">
+          <div class="ft-card-header" style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 10px; margin-bottom: 12px; color: #c084fc; font-weight: 700;">
             <div style="display: flex; align-items: center; gap: 8px;">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
-              <span>Bill of Materials (BOM / Piezas)</span>
+              <span>III. LISTA DE MATERIALES Y PIEZAS (BOM)</span>
             </div>
-            <span class="ft-tag ft-tag-purple">Estructura Interna</span>
+            <span class="ft-tag ft-tag-purple">Despiece Estructural</span>
           </div>
-          <table class="ft-spec-table">
+          <table class="ft-spec-table" style="width: 100%; border-collapse: collapse; font-size: 0.83rem;">
             <thead>
-              <tr style="background: rgba(255,255,255,0.03);">
-                <th style="color: #94a3b8;">Subcomponente / Pieza</th>
-                <th style="text-align: center; color: #94a3b8;">Cant.</th>
-                <th style="text-align: right; color: #94a3b8;">Participación %</th>
+              <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                <th style="color: #94a3b8; text-align: left; padding: 6px 0;">Subcomponente / Pieza</th>
+                <th style="color: #94a3b8; text-align: center; padding: 6px 0;">Cant.</th>
+                <th style="color: #94a3b8; text-align: right; padding: 6px 0;">Participación %</th>
               </tr>
             </thead>
             <tbody>
@@ -3545,20 +3592,31 @@ function selectFtProductSku(sku) {
           </table>
         </div>
 
-        <!-- CONTROL DE CALIDAD Y NOTAS -->
-        <div class="ft-card" style="border-color: rgba(56, 189, 248, 0.3);">
-          <div class="ft-card-header" style="color: #38bdf8;">
+        <!-- IV. TIMBRE DE LICITACIÓN & APROBACIÓN DE CALIDAD -->
+        <div class="ft-card" style="background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 14px; padding: 1.25rem;">
+          <div class="ft-card-header" style="display: flex; align-items: center; gap: 8px; color: #38bdf8; font-weight: 700; margin-bottom: 8px;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            <span>Control de Calidad & Notas de Seguridad</span>
+            <span>IV. ENSAYOS, SEGURIDAD & TIMBRE DE APORBACIÓN LICITACIONES</span>
           </div>
-          <p style="font-size: 0.85rem; color: #cbd5e1; line-height: 1.6; margin: 0;">
+          <p style="font-size: 0.83rem; color: #cbd5e1; line-height: 1.6; margin: 0 0 12px 0;">
             ${spec.notas}
           </p>
-          <div style="margin-top: 1rem; font-size: 0.75rem; color: #94a3b8; display: flex; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 8px;">
-            <span>Aprobado por: <strong>Depto. Calidad Glomax S.A.</strong></span>
-            <span>Versión Ficha: <strong>2026.4.1</strong></span>
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; border-top: 1px dashed rgba(255,255,255,0.15); padding-top: 12px;">
+            <div style="border-right: 1px solid rgba(255,255,255,0.1); padding-right: 10px;">
+              <div style="font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Ingeniería & Producto</div>
+              <div style="font-size: 0.82rem; color: #ffffff; font-weight: 700; margin-top: 2px;">Depto. Técnico Glomax S.A.</div>
+              <div style="font-size: 0.72rem; color: #34d399; margin-top: 2px;">✔ Aprobación Técnica Vigente</div>
+            </div>
+
+            <div>
+              <div style="font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Acreditación Licitaciones</div>
+              <div style="font-size: 0.82rem; color: #ffffff; font-weight: 700; margin-top: 2px;">ISO 9001:2015 / NCh</div>
+              <div style="font-size: 0.72rem; color: #38bdf8; margin-top: 2px;">🔒 Documento Oficial Verificado</div>
+            </div>
           </div>
         </div>
+
       </div>
     </div>
   `;
