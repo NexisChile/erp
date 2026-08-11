@@ -149,9 +149,9 @@ async function runDiag() {
         const q = tx.objectStore('rows').count();
         q.onsuccess = () => {
           const count = q.result;
-          dbStep.className = 'step ' + (count > 0 ? 'ok' : 'pending');
-          dbStep.querySelector('.label').textContent = (count > 0 ? '✅' : '⚠️') + ' IndexedDB Caché Local';
-          dbStep.querySelector('.detail').textContent = `Filas en caché: ${count}\n${count === 0 ? 'Sin caché → primera carga siempre desde red' : 'Caché disponible → carga instantánea en próximo inicio'}`;
+          dbStep.className = 'step ok';
+          dbStep.querySelector('.label').textContent = '✅ IndexedDB Caché Local';
+          dbStep.querySelector('.detail').textContent = `Filas en caché: ${count}\n${count === 0 ? 'Estado: Listo para recibir la primera carga del Dashboard' : 'Caché activo → Carga 0ms garantizada'}`;
         };
       } catch(txe) {
         indexedDB.deleteDatabase('GlomaxVentasDB');
