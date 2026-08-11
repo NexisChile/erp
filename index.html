@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="style.css?v=20260811_v9999_RELEASE" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <style>
     /* CRITICAL UI OVERRIDE FOR PURCHASING BI ADVISOR & INVESTMENT TABLE */
     .bi-compras-advisor-card {
@@ -1747,9 +1748,9 @@
 
             <!-- BOTONES DE ACCIÓN RÁPIDA DE FICHA TÉCNICA -->
             <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-              <button type="button" class="btn-secondary" onclick="openFtUrlModal()" title="Importar especificaciones desde una URL de www.glomax.cl" style="border-color: rgba(56, 189, 248, 0.5); color: #38bdf8;">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                <span>🌐 Importar URL Glomax</span>
+              <button type="button" class="btn-secondary" onclick="openFtPdfUploadModal()" title="Cargar un archivo PDF para extraer información y generar la Ficha Técnica oficial en formato licitación" style="border-color: rgba(56, 189, 248, 0.5); color: #38bdf8; background: rgba(56, 189, 248, 0.1);">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="12" x2="12" y2="18"/><polyline points="9 15 12 12 15 15"/></svg>
+                <span>📄 Cargar PDF Ficha Técnica</span>
               </button>
               <button type="button" class="btn-secondary" onclick="openFtCompareModal()" title="Comparar 2 SKUs lado a lado">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5"/><path d="M4 20L21 3"/><path d="M21 16v5h-5"/><path d="M15 15l6 6"/><path d="M4 4l5 5"/></svg>
@@ -2279,88 +2280,82 @@
     </div>
   </div>
 
-  <!-- MODAL IMPORTAR FICHA DESDE URL GLOMAX -->
-  <div class="modal-backdrop" id="ftUrlModal">
-    <div class="modal-content" style="max-width: 680px; border-color: rgba(56, 189, 248, 0.5);">
-      <div class="modal-header">
+  <!-- MODAL CARGAR PDF FICHA TÉCNICA -->
+  <div class="modal-backdrop" id="ftPdfUploadModal">
+    <div class="modal-content" style="max-width: 650px; background: rgba(15, 23, 42, 0.98); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 16px; box-shadow: 0 16px 40px rgba(0,0,0,0.6);">
+      <div class="modal-header" style="border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px;">
         <div>
-          <h3 style="color: #38bdf8; display: flex; align-items: center; gap: 8px;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-            <span>Buscar SKU o Escrapear URL (www.glomax.cl)</span>
+          <h3 style="color: #38bdf8; font-family: 'Space Grotesk', sans-serif; font-weight: 800; display: flex; align-items: center; gap: 8px;">
+            📄 Cargar PDF de Ficha Técnica
           </h3>
-          <p class="modal-subtitle">Ingresa un SKU (ej. ARM012) o pega la URL del producto para hacer web scraping de su información y fotos oficiales.</p>
+          <p class="modal-subtitle" style="color: #94a3b8; font-size: 0.83rem;">
+            Sube un archivo PDF para extraer automáticamente su información técnica y generar la nueva Ficha Técnica oficial apta para licitaciones.
+          </p>
         </div>
-        <button type="button" class="btn-secondary modal-close-icon" onclick="closeFtUrlModal()" title="Cerrar modal">✕</button>
+        <button type="button" class="btn-secondary modal-close-icon" onclick="closeFtPdfUploadModal()">✕</button>
       </div>
 
-      <form id="ftUrlForm" onsubmit="processFtUrlImport(event)">
-        <div class="form-group full" style="margin-bottom: 1.25rem;">
-          <label for="ftUrlInput" style="font-weight: 700; color: #cbd5e1;">SKU o URL del Producto (www.glomax.cl) *</label>
-          <div style="display: flex; gap: 8px;">
-            <input type="text" id="ftUrlInput" placeholder="Ej: ARM012 o https://www.glomax.cl/productos/armo012-silla" class="filter-input" style="flex: 1; height: 42px; font-size: 0.9rem;" required />
-            <button type="submit" id="ftUrlSubmitBtn" class="btn-primary" style="height: 42px; background: linear-gradient(135deg, #0284c7, #38bdf8); color: #030712; padding: 0 16px;">
-              <span>⚡ Escrapear Info</span>
-            </button>
+      <div style="padding: 1rem 0;">
+        <!-- DROPZONE PARA EL ARCHIVO PDF -->
+        <div id="ftPdfDropzone" style="border: 2px dashed rgba(56, 189, 248, 0.4); border-radius: 14px; padding: 2.5rem 1.5rem; text-align: center; background: rgba(6, 10, 19, 0.6); cursor: pointer; transition: all 0.2s ease;" onclick="document.getElementById('ftPdfFileInput').click()">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="1.5" style="margin-bottom: 12px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="12" x2="12" y2="18"/><polyline points="9 15 12 12 15 15"/></svg>
+          <div style="font-size: 1rem; font-weight: 700; color: #ffffff;">Haz clic o arrastra un archivo PDF aquí</div>
+          <div style="font-size: 0.78rem; color: #94a3b8; margin-top: 6px;">Formatos permitidos: .PDF (Fichas Técnicas, Catálogos, Especificaciones)</div>
+          <input type="file" id="ftPdfFileInput" accept=".pdf" style="display: none;" onchange="handleFtPdfFileSelect(event)" />
+        </div>
+
+        <!-- INDICADOR DE PROCESAMIENTO / LOADER -->
+        <div id="ftPdfLoader" style="display: none; text-align: center; padding: 2rem 1rem;">
+          <div style="display: inline-block; width: 36px; height: 36px; border: 3px solid rgba(56,189,248,0.2); border-top-color: #38bdf8; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+          <div style="font-size: 0.9rem; font-weight: 700; color: #38bdf8; margin-top: 12px;">Leyendo y procesando documento PDF con IA Reader...</div>
+          <div style="font-size: 0.78rem; color: #94a3b8; margin-top: 4px;">Extrayendo SKU, dimensiones, especificaciones y materiales</div>
+        </div>
+
+        <!-- PREVISUALIZACIÓN DE DATOS EXTRAÍDOS -->
+        <div id="ftPdfPreviewArea" style="display: none; background: rgba(6, 10, 19, 0.9); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 12px; padding: 1.25rem; margin-top: 1.25rem;">
+          <div style="font-size: 0.88rem; font-weight: 700; color: #34d399; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+            ✅ Información Extraída del PDF:
           </div>
-          <span style="font-size: 0.75rem; color: #94a3b8; margin-top: 4px; display: block;">Ejemplos válidos: <code>ARM012</code>, <code>GLX-102</code> o URL completa de Glomax.cl</span>
-        </div>
-
-        <!-- LOADER SPINNER -->
-        <div id="ftUrlLoader" style="display: none; text-align: center; padding: 1.5rem; background: rgba(6, 10, 19, 0.6); border-radius: 12px; margin-bottom: 1rem;">
-          <div class="pulse-dot" style="width: 14px; height: 14px; background: #38bdf8; display: inline-block; margin-right: 8px;"></div>
-          <span style="color: #38bdf8; font-weight: 700;">Conectando con www.glomax.cl y escrapeando fotos e información del producto...</span>
-        </div>
-
-        <!-- AREA DE PREVIEW & EDICIÓN PRE-IMPORTACIÓN -->
-        <div id="ftUrlPreviewArea" style="display: none; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 12px; padding: 1rem; margin-bottom: 1rem;">
-          <div style="font-size: 0.85rem; font-weight: 700; color: #34d399; margin-bottom: 8px;">✅ Información & Foto Encontrada:</div>
           
-          <!-- PREVISUALIZACION DE FOTO EXTRAÍDA -->
-          <div id="ftImportPhotoPreview" style="margin-bottom: 12px; text-align: center;"></div>
-
           <div class="form-grid">
             <div class="form-group">
-              <label for="ftImportSku">SKU Identificado</label>
-              <input type="text" id="ftImportSku" required />
+              <label for="ftPdfSku">SKU Detectado *</label>
+              <input type="text" id="ftPdfSku" required />
             </div>
             <div class="form-group">
-              <label for="ftImportPrecio">Precio Lista ($)</label>
-              <input type="number" id="ftImportPrecio" required />
+              <label for="ftPdfPrecio">Precio Lista ($)</label>
+              <input type="number" id="ftPdfPrecio" required />
             </div>
             <div class="form-group full">
-              <label for="ftImportNombre">Nombre / Título del Producto</label>
-              <input type="text" id="ftImportNombre" required />
-            </div>
-            <div class="form-group full">
-              <label for="ftImportFotoUrl">URL de la Imagen / Foto del Producto</label>
-              <input type="text" id="ftImportFotoUrl" placeholder="https://..." oninput="updateImportPhotoPreview(this.value)" />
+              <label for="ftPdfNombre">Nombre del Producto / Título *</label>
+              <input type="text" id="ftPdfNombre" required />
             </div>
             <div class="form-group">
-              <label for="ftImportCategoria">Categoría</label>
-              <input type="text" id="ftImportCategoria" />
+              <label for="ftPdfCategoria">Categoría</label>
+              <input type="text" id="ftPdfCategoria" />
             </div>
             <div class="form-group">
-              <label for="ftImportMarca">Marca</label>
-              <input type="text" id="ftImportMarca" />
+              <label for="ftPdfMarca">Marca / Proveedor</label>
+              <input type="text" id="ftPdfMarca" />
             </div>
             <div class="form-group">
-              <label for="ftImportDimensiones">Dimensiones (mm)</label>
-              <input type="text" id="ftImportDimensiones" />
+              <label for="ftPdfDimensiones">Dimensiones (L x A x H)</label>
+              <input type="text" id="ftPdfDimensiones" />
             </div>
             <div class="form-group">
-              <label for="ftImportMaterial">Material Principal</label>
-              <input type="text" id="ftImportMaterial" />
+              <label for="ftPdfMaterial">Material Principal</label>
+              <input type="text" id="ftPdfMaterial" />
             </div>
           </div>
         </div>
+      </div>
 
-        <div class="modal-actions">
-          <button type="button" class="btn-secondary" onclick="closeFtUrlModal()">Cancelar</button>
-          <button type="button" id="ftApplyUrlBtn" class="btn-primary" style="display: none; background: linear-gradient(135deg, #059669, #10b981); color: #ffffff;" onclick="applyFtUrlImport()">
-            <span>💾 Cargar a Ficha Técnica & Generar PDF</span>
-          </button>
-        </div>
-      </form>
+      <div class="modal-actions" style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 12px; display: flex; justify-content: flex-end; gap: 8px;">
+        <button type="button" class="btn-secondary" onclick="closeFtPdfUploadModal()">Cancelar</button>
+        <button type="button" id="ftApplyPdfBtn" class="btn-primary" style="display: none; background: linear-gradient(135deg, #059669, #10b981); color: #ffffff;" onclick="applyFtPdfImport()">
+          <span>💾 Generar Ficha Técnica Oficial (Formato Licitación)</span>
+        </button>
+      </div>
     </div>
   </div>
 
