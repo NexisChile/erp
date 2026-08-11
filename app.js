@@ -456,6 +456,30 @@ async function processSyncQueue() {
 }
 
 
+
+// ==========================================================================
+// VARIABLES Y ESTADO GLOBAL (FICHA TÉCNICA, IMÁGENES Y SCRAPER DE GLOMAX)
+// ==========================================================================
+
+
+
+
+
+
+
+
+
+// ==========================================================================
+// VARIABLES Y ESTADO GLOBAL (FICHA TÉCNICA, IMÁGENES Y SCRAPER DE GLOMAX)
+// ==========================================================================
+let glomaxLiveCatalogMap = new Map();
+let glomaxScrapePromise = null;
+let productImagesMap = new Map();
+let ftProductsMap = new Map();
+let currentFtSelectedSku = null;
+const FT_STORAGE_KEY = 'glomax_ft_specs_v1';
+
+
 // ==========================================================================
 // MÓDULO DE AUTENTICACIÓN Y CONTROL DE ACCESO (AuthManager)
 // ==========================================================================
@@ -3009,12 +3033,12 @@ function saveTargetSettings() {
    MÓDULO FICHA TÉCNICA (GLOMAX S.A.) - CON SCRAPING EN VIVO DE WWW.GLOMAX.CL
    ========================================================================== */
 
-let currentFtSelectedSku = null;
-let ftProductsMap = new Map();
-let glomaxLiveCatalogMap = new Map();
-let glomaxScrapePromise = null;
 
-const FT_STORAGE_KEY = 'glomax_ft_specs_v1';
+
+
+
+
+
 
 async function fetchGlomaxLiveCatalog() {
   if (glomaxLiveCatalogMap.size > 0) return glomaxLiveCatalogMap;
@@ -4149,4 +4173,48 @@ function exportFtPdf() {
     if (document.body.contains(pdfContainer)) document.body.removeChild(pdfContainer);
     window.print();
   }
+}
+
+
+function getProductsMap() {
+  const map = new Map();
+  const sourceRows = (filtered && filtered.length > 0) ? filtered : (rows || []);
+
+  sourceRows.forEach(r => {
+    const rawSku = (r['CODIGO'] || r['DESCRIPCION'] || '').toString().trim();
+    if (!rawSku) return;
+
+    const skuKey = rawSku.toUpperCase();
+    const cant = Number(r['CANTFACTURADA']) || 0;
+    const neto = Number(r['NETO']) || 0;
+    const preuni = Number(r['PREUNI']) || (cant > 0 ? neto / cant : 0);
+    const costo = Number(r['COSTOS']) || (preuni * 0.6);
+    const utilidad = Number(r['($) UTILIDAD']) || (neto - (costo * cant));
+
+    if (!map.has(skuKey)) {
+      map.set(skuKey, {
+        sku: skuKey,
+        codigo: r['CODIGO'] || skuKey,
+        descripcion: r['DESCRIPCION'] || skuKey,
+        cantTotal: 0,
+        netoTotal: 0,
+        utilidadTotal: 0,
+        margenPct: 0,
+        precioPromedio: preuni,
+        costoUnitario: costo,
+        familia: r['FAMILIA'] || 'Sin Familia',
+        categoria: r['CATEGORIA'] || 'General',
+        marca: r['MARCA'] || 'Glomax'
+      });
+    }
+
+    const item = map.get(skuKey);
+    item.cantTotal += cant;
+    item.netoTotal += neto;
+    item.utilidadTotal += utilidad;
+    item.precioPromedio = item.cantTotal > 0 ? (item.netoTotal / item.cantTotal) : preuni;
+    item.margenPct = item.netoTotal > 0 ? ((item.utilidadTotal / item.netoTotal) * 100) : 0;
+  });
+
+  return map;
 }
