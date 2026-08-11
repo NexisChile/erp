@@ -1,0 +1,4 @@
+/api/proxy /.netlify/functions/proxy 200!
+/api/csv /.netlify/functions/proxy 200!
+/api/glomax-products /.netlify/functions/glomax-products 200!
+/api/glomax /.netlify/functions/glomax-products 200!

@@ -36,6 +36,11 @@ class Handler(BaseHTTPRequestHandler):
             self._proxy_csv()
             return
 
+        # Ruta proxy: descarga catálogo de productos directamente desde glomax.cl
+        if path == '/api/glomax-products' or path == '/api/glomax':
+            self._proxy_glomax_products()
+            return
+
         # Archivos estaticos
         if path == '/' or path == '':
             path = '/index.html'
@@ -63,11 +68,20 @@ class Handler(BaseHTTPRequestHandler):
         except Exception as e:
             self.send_error(500, str(e))
 
+    def _proxy_csv(self):
         import time
+        from urllib.parse import parse_qs, urlparse
+
+        parsed_url = urlparse(self.path)
+        params = parse_qs(parsed_url.query)
+
+        spreadsheet_id = params.get('spreadsheet_id', [SPREADSHEET_ID])[0]
+        gid = params.get('gid', [SPREADSHEET_GID])[0]
+
         url = (
             "https://docs.google.com/spreadsheets/d/{}/export"
             "?format=csv&gid={}&_={}"
-        ).format(SPREADSHEET_ID, SPREADSHEET_GID, int(time.time() * 1000))
+        ).format(spreadsheet_id, gid, int(time.time() * 1000))
         try:
             req = urllib.request.Request(
                 url,
@@ -77,6 +91,31 @@ class Handler(BaseHTTPRequestHandler):
                 body = resp.read()
             self.send_response(200)
             self.send_header('Content-Type', 'text/csv; charset=utf-8')
+            self.send_header('Content-Length', str(len(body)))
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.send_header('Cache-Control', 'no-store')
+            self.end_headers()
+            self.wfile.write(body)
+        except Exception as e:
+            msg = ("ERROR: " + str(e)).encode('utf-8')
+            self.send_response(500)
+            self.send_header('Content-Type', 'text/plain')
+            self.send_header('Content-Length', str(len(msg)))
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(msg)
+
+    def _proxy_glomax_products(self):
+        url = "https://glomax.cl/products.json?limit=250"
+        try:
+            req = urllib.request.Request(
+                url,
+                headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+            )
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                body = resp.read()
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json; charset=utf-8')
             self.send_header('Content-Length', str(len(body)))
             self.send_header('Access-Control-Allow-Origin', '*')
             self.send_header('Cache-Control', 'no-store')

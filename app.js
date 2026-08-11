@@ -2517,238 +2517,13 @@ function exportFtPdf() {
   }
 }
 
-function openFtUrlModal() {
-  const modal = document.getElementById('ftUrlModal');
-  if (modal) {
-    document.getElementById('ftUrlForm').reset();
-    document.getElementById('ftUrlLoader').style.display = 'none';
-    document.getElementById('ftUrlPreviewArea').style.display = 'none';
-    document.getElementById('ftApplyUrlBtn').style.display = 'none';
-    const photoBox = document.getElementById('ftImportPhotoPreview');
-    if (photoBox) photoBox.innerHTML = '';
-    modal.classList.add('show');
-  }
-}
 
-function closeFtUrlModal() {
-  const modal = document.getElementById('ftUrlModal');
-  if (modal) modal.classList.remove('show');
-}
 
-async function processFtUrlImport(e) {
-  e.preventDefault();
-  const inputVal = document.getElementById('ftUrlInput').value.trim();
-  if (!inputVal) return;
 
-  const loader = document.getElementById('ftUrlLoader');
-  const previewArea = document.getElementById('ftUrlPreviewArea');
-  const applyBtn = document.getElementById('ftApplyUrlBtn');
 
-  loader.style.display = 'block';
-  previewArea.style.display = 'none';
-  applyBtn.style.display = 'none';
 
-  // 1. Descargar o asegurar catálogo completo de www.glomax.cl
-  const liveCatalog = await fetchGlomaxLiveCatalog();
 
-  let extractedSku = '';
-  let extractedTitle = '';
-  let extractedCategory = 'Equipamiento Comercial';
-  let extractedBrand = 'Glomax S.A. Oficial';
-  let extractedPrice = 49990;
-  let extractedFotoUrl = '';
-  let extractedDimensions = '480 x 320 x 240 mm';
-  let extractedMaterial = 'Acero Inoxidable AISI 304 / Polímeros Glomax';
 
-  const cleanQuery = inputVal.toUpperCase().trim();
-  const isUrl = inputVal.startsWith('http://') || inputVal.startsWith('https://') || inputVal.includes('glomax.cl');
-
-  let matchedItem = null;
-
-  if (!isUrl) {
-    // A) BUSQUEDA DIRECTA POR SKU EN CATALOGO EN VIVO DE GLOMAX.CL
-    matchedItem = liveCatalog.get(cleanQuery);
-    if (!matchedItem) {
-      for (let [k, v] of liveCatalog.entries()) {
-        if (k.includes(cleanQuery) || cleanQuery.includes(k)) {
-          matchedItem = v;
-          break;
-        }
-      }
-    }
-    // B) BUSQUEDA POR PALABRA CLAVE EN TITULO
-    if (!matchedItem) {
-      for (let [k, v] of liveCatalog.entries()) {
-        if (v.title.toUpperCase().includes(cleanQuery)) {
-          matchedItem = v;
-          break;
-        }
-      }
-    }
-  } else {
-    // C) BUSQUEDA SI INGRESÓ UNA URL DE GLOMAX.CL
-    try {
-      const urlObj = new URL(inputVal.startsWith('http') ? inputVal : 'https://' + inputVal);
-      const parts = urlObj.pathname.split('/').filter(p => p.length > 0);
-      const slug = parts.length > 0 ? parts[parts.length - 1] : '';
-
-      for (let [k, v] of liveCatalog.entries()) {
-        if (v.handle === slug || inputVal.includes(v.handle) || v.url === inputVal) {
-          matchedItem = v;
-          break;
-        }
-      }
-    } catch(err) {
-      console.warn('URL parsing error:', err);
-    }
-  }
-
-  if (matchedItem) {
-    extractedSku = matchedItem.sku;
-    extractedTitle = matchedItem.title;
-    extractedPrice = matchedItem.price;
-    extractedFotoUrl = matchedItem.image || '';
-    extractedCategory = matchedItem.category || extractedCategory;
-    extractedBrand = matchedItem.brand || extractedBrand;
-    if (matchedItem.bodyText) {
-      if (matchedItem.bodyText.includes('mm') || matchedItem.bodyText.includes('cm') || matchedItem.bodyText.includes('X')) {
-        const dimMatch = matchedItem.bodyText.match(/(\\d+\\s*x\\s*\\d+\\s*(x\\s*\\d+)?\\s*(mm|cm)?)/i);
-        if (dimMatch) extractedDimensions = dimMatch[1];
-      }
-      if (matchedItem.bodyText.includes('Acero') || matchedItem.bodyText.includes('Aluminio') || matchedItem.bodyText.includes('Plástico')) {
-        extractedMaterial = matchedItem.bodyText.substring(0, 60);
-      }
-    }
-  } else if (isUrl) {
-    // WEB SCRAPING DIRECTO HTML SI ES URL NO ENCONTRADA EN JSON
-    try {
-      let targetUrl = inputVal;
-      if (!targetUrl.startsWith('http')) targetUrl = 'https://' + targetUrl;
-
-      const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
-      const response = await fetch(proxyUrl);
-      if (response.ok) {
-        const json = await response.json();
-        if (json && json.contents) {
-          const parser = new DOMParser();
-          const doc = parser.parseFromString(json.contents, 'text/html');
-
-          const ogTitle = doc.querySelector('meta[property="og:title"]')?.content || doc.title;
-          const ogImage = doc.querySelector('meta[property="og:image"]')?.content;
-          const ogPrice = doc.querySelector('meta[property="product:price:amount"]')?.content;
-
-          if (ogTitle) extractedTitle = ogTitle.trim().replace(/\\s*–\\s*Glomax.*$/i, '');
-          if (ogImage) extractedFotoUrl = ogImage;
-          if (ogPrice) extractedPrice = parseFloat(ogPrice);
-          extractedSku = cleanQuery.match(/[A-Z0-9-]{3,12}/)?.[0] || ('GLX-' + Math.floor(1000 + Math.random() * 9000));
-        }
-      }
-    } catch(err) {
-      console.warn('CORS scrape fallback:', err);
-    }
-  } else {
-    // Si se buscó un SKU que no está en Glomax.cl ni en el sistema
-    extractedSku = cleanQuery;
-    const existing = ftProductsMap.get(cleanQuery);
-    if (existing) {
-      extractedTitle = existing.descripcion;
-      extractedPrice = existing.precioPromedio;
-      extractedCategory = existing.categoria || extractedCategory;
-      extractedBrand = existing.marca || extractedBrand;
-    } else {
-      extractedTitle = `Producto Glomax SKU ${cleanQuery}`;
-    }
-  }
-
-  // Foto de respaldo si no se obtuvo
-  if (!extractedFotoUrl) {
-    const photoFromMap = getFtProductPhoto(extractedSku);
-    if (photoFromMap) extractedFotoUrl = photoFromMap;
-  }
-
-  loader.style.display = 'none';
-
-  lastExtractedUrlData = {
-    sku: extractedSku,
-    descripcion: extractedTitle,
-    categoria: extractedCategory,
-    marca: extractedBrand,
-    precio: extractedPrice,
-    fotoUrl: extractedFotoUrl,
-    dimensiones: extractedDimensions,
-    material: extractedMaterial,
-    urlOriginal: inputVal
-  };
-
-  document.getElementById('ftImportSku').value = lastExtractedUrlData.sku;
-  document.getElementById('ftImportNombre').value = lastExtractedUrlData.descripcion;
-  document.getElementById('ftImportPrecio').value = lastExtractedUrlData.precio;
-  document.getElementById('ftImportFotoUrl').value = lastExtractedUrlData.fotoUrl;
-  document.getElementById('ftImportCategoria').value = lastExtractedUrlData.categoria;
-  document.getElementById('ftImportMarca').value = lastExtractedUrlData.marca;
-  document.getElementById('ftImportDimensiones').value = lastExtractedUrlData.dimensiones;
-  document.getElementById('ftImportMaterial').value = lastExtractedUrlData.material;
-
-  updateImportPhotoPreview(lastExtractedUrlData.fotoUrl);
-
-  previewArea.style.display = 'block';
-  applyBtn.style.display = 'inline-flex';
-
-  showToast(`✅ Producto escrapeado de www.glomax.cl: ${extractedSku}`);
-}
-
-function applyFtUrlImport() {
-  if (!lastExtractedUrlData) return;
-
-  const sku = document.getElementById('ftImportSku').value.trim().toUpperCase();
-  const desc = document.getElementById('ftImportNombre').value.trim();
-  const precio = parseFloat(document.getElementById('ftImportPrecio').value) || 0;
-  const fotoUrl = document.getElementById('ftImportFotoUrl').value.trim();
-  const cat = document.getElementById('ftImportCategoria').value.trim();
-  const marca = document.getElementById('ftImportMarca').value.trim();
-  const dim = document.getElementById('ftImportDimensiones').value.trim();
-  const mat = document.getElementById('ftImportMaterial').value.trim();
-
-  if (!sku || !desc) {
-    showToast('El SKU y Nombre son obligatorios ⚠️');
-    return;
-  }
-
-  const existing = ftProductsMap.get(sku) || {
-    sku: sku,
-    descripcion: desc,
-    cantTotal: 10,
-    netoTotal: precio * 10,
-    utilidadTotal: precio * 4,
-    margenPct: 40,
-    precioPromedio: precio,
-    costoUnitario: Math.round(precio * 0.6)
-  };
-
-  existing.descripcion = desc;
-  existing.categoria = cat;
-  existing.marca = marca;
-  existing.precioPromedio = precio;
-
-  ftProductsMap.set(sku, existing);
-
-  if (fotoUrl && typeof productImagesMap !== 'undefined') {
-    productImagesMap.set(sku, { url: fotoUrl, desc: desc });
-  }
-
-  saveFtSpecsForSku(sku, {
-    fotoUrl: fotoUrl,
-    dimensiones: dim,
-    material: mat,
-    notas: `Información y fotografía escrapeada en vivo desde ${lastExtractedUrlData.urlOriginal}. Verificada por Glomax BI.`
-  });
-
-  closeFtUrlModal();
-  showToast(`🎉 Ficha Técnica cargada con foto oficial para SKU ${sku}!`);
-
-  currentFtSelectedSku = sku;
-  renderFichaTecnicaView();
-}
 
 async function refreshCotizacionesLive(silent = false) {
   if (isCotizSyncing) return;
@@ -3828,20 +3603,7 @@ function closeFtUrlModal() {
   if (modal) modal.classList.remove('show');
 }
 
-function updateImportPhotoPreview(url) {
-  const previewBox = document.getElementById('ftImportPhotoPreview');
-  if (!previewBox) return;
-  if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
-    previewBox.innerHTML = `
-      <div style="background: rgba(6, 10, 19, 0.9); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 10px; padding: 10px; display: inline-block;">
-        <img src="${url}" alt="Foto Producto" style="max-height: 150px; border-radius: 6px; display: block;" onerror="this.parentElement.innerHTML='<span style=\\'color:#f87171; font-size:0.75rem;\\'>⚠️ Imagen no disponible en esa URL</span>';" />
-        <span style="font-size: 0.72rem; color: #38bdf8; font-weight: 700; margin-top: 4px; display: block;">📷 Fotografía Detectada en www.glomax.cl</span>
-      </div>
-    `;
-  } else {
-    previewBox.innerHTML = '';
-  }
-}
+
 
 async function processFtUrlImport(e) {
   e.preventDefault();
@@ -4275,4 +4037,311 @@ function getProductsMap() {
   });
 
   return map;
+}
+
+
+// ==========================================================================
+// MÓDULO WEB SCRAPER & IMPORTADOR URL DE GLOMAX.CL
+// ==========================================================================
+
+function openFtUrlModal() {
+  const modal = document.getElementById('ftUrlModal');
+  const input = document.getElementById('ftUrlInput');
+  const loader = document.getElementById('ftUrlLoader');
+  const previewArea = document.getElementById('ftUrlPreviewArea');
+  const applyBtn = document.getElementById('ftApplyUrlBtn');
+
+  if (input) input.value = '';
+  if (loader) loader.style.display = 'none';
+  if (previewArea) previewArea.style.display = 'none';
+  if (applyBtn) applyBtn.style.display = 'none';
+
+  if (modal) {
+    modal.classList.add('show');
+    modal.style.display = 'flex';
+  }
+}
+
+function closeFtUrlModal() {
+  const modal = document.getElementById('ftUrlModal');
+  if (modal) {
+    modal.classList.remove('show');
+    modal.style.display = 'none';
+  }
+}
+
+function updateImportPhotoPreview(url) {
+  const container = document.getElementById('ftImportPhotoPreview');
+  if (!container) return;
+
+  const cleanUrl = (url || '').trim();
+  if (cleanUrl) {
+    container.innerHTML = `<img src="${cleanUrl}" style="max-height: 140px; max-width: 100%; border-radius: 8px; border: 1px solid rgba(56, 189, 248, 0.4); box-shadow: 0 4px 12px rgba(0,0,0,0.4);" onerror="this.parentElement.innerHTML='<span style=\'color:#f87171; font-size:0.8rem;\'>⚠️ Foto no accesible en esa URL</span>';" />`;
+  } else {
+    container.innerHTML = '';
+  }
+}
+
+async function processFtUrlImport(e) {
+  if (e && e.preventDefault) e.preventDefault();
+
+  const inputVal = (document.getElementById('ftUrlInput')?.value || '').trim();
+  if (!inputVal) {
+    if (typeof showToast === 'function') showToast('Ingresa un SKU o URL de www.glomax.cl');
+    return;
+  }
+
+  const loader = document.getElementById('ftUrlLoader');
+  const previewArea = document.getElementById('ftUrlPreviewArea');
+  const applyBtn = document.getElementById('ftApplyUrlBtn');
+
+  if (loader) loader.style.display = 'block';
+  if (previewArea) previewArea.style.display = 'none';
+  if (applyBtn) applyBtn.style.display = 'none';
+
+  let extractedData = {
+    sku: '',
+    title: '',
+    price: 9990,
+    image: '',
+    category: 'Equipamiento Comercial',
+    brand: 'Glomax S.A.',
+    dimensions: '445 x 366 x 68 mm',
+    material: 'Espuma Viscoelástica / Polímeros Glomax',
+    bodyText: ''
+  };
+
+  // 1. Extraer Handle si es URL de Glomax.cl
+  let handle = '';
+  if (inputVal.includes('glomax.cl') || inputVal.startsWith('http')) {
+    try {
+      const urlObj = new URL(inputVal.startsWith('http') ? inputVal : 'https://' + inputVal);
+      const parts = urlObj.pathname.split('/').filter(p => p.length > 0);
+      if (parts.length > 0) {
+        handle = parts[parts.length - 1].replace(/\.json$/i, '');
+      }
+    } catch(err) {
+      console.warn('Error parsing URL:', err);
+    }
+  }
+
+  let foundProduct = null;
+
+  // 2. Método A: Petición directa a Shopify JSON Endpoint (https://glomax.cl/products/{handle}.json)
+  if (handle) {
+    const shopifyJsonUrls = [
+      `/api/proxy?spreadsheet_id=&gid=&_=${Date.now()}&url=` + encodeURIComponent(`https://glomax.cl/products/${handle}.json`),
+      `https://glomax.cl/products/${handle}.json`,
+      `https://api.allorigins.win/raw?url=` + encodeURIComponent(`https://glomax.cl/products/${handle}.json`),
+      `https://corsproxy.io/?` + encodeURIComponent(`https://glomax.cl/products/${handle}.json`)
+    ];
+
+    for (const fetchUrl of shopifyJsonUrls) {
+      try {
+        const resp = await fetch(fetchUrl, { signal: AbortSignal.timeout(6000) });
+        if (resp.ok) {
+          const text = await resp.text();
+          let json = null;
+          try { json = JSON.parse(text); } catch(e) {}
+          if (json && json.product) {
+            foundProduct = json.product;
+            break;
+          }
+        }
+      } catch(e) {
+        console.warn(`Intento de scraping Shopify falló para ${fetchUrl}:`, e);
+      }
+    }
+  }
+
+  // 3. Método B: Búsqueda en catálogo vivo completo (fetchGlomaxLiveCatalog)
+  if (!foundProduct) {
+    const liveCatalog = await fetchGlomaxLiveCatalog();
+    const cleanSearch = inputVal.toUpperCase().trim();
+
+    // Búsqueda por SKU
+    if (liveCatalog && liveCatalog.has(cleanSearch)) {
+      const item = liveCatalog.get(cleanSearch);
+      foundProduct = {
+        title: item.title,
+        vendor: item.brand,
+        product_type: item.category,
+        variants: [{ sku: item.sku, price: item.price }],
+        images: item.image ? [{ src: item.image }] : [],
+        body_html: item.bodyText
+      };
+    } else if (liveCatalog) {
+      for (const [k, item] of liveCatalog.entries()) {
+        if (handle && (item.handle === handle || item.url?.includes(handle))) {
+          foundProduct = {
+            title: item.title,
+            vendor: item.brand,
+            product_type: item.category,
+            variants: [{ sku: item.sku, price: item.price }],
+            images: item.image ? [{ src: item.image }] : [],
+            body_html: item.bodyText
+          };
+          break;
+        }
+        if (k.includes(cleanSearch) || item.title.toUpperCase().includes(cleanSearch)) {
+          foundProduct = {
+            title: item.title,
+            vendor: item.brand,
+            product_type: item.category,
+            variants: [{ sku: item.sku, price: item.price }],
+            images: item.image ? [{ src: item.image }] : [],
+            body_html: item.bodyText
+          };
+          break;
+        }
+      }
+    }
+  }
+
+  // 4. Si encontramos el producto Shopify
+  if (foundProduct) {
+    extractedData.title = foundProduct.title || extractedData.title;
+    extractedData.brand = foundProduct.vendor || extractedData.brand;
+    extractedData.category = foundProduct.product_type || extractedData.category;
+
+    if (foundProduct.variants && foundProduct.variants.length > 0) {
+      const v0 = foundProduct.variants[0];
+      extractedData.sku = v0.sku ? String(v0.sku).toUpperCase() : (handle ? handle.toUpperCase() : 'GLX-' + Math.floor(1000 + Math.random() * 9000));
+      extractedData.price = parseFloat(v0.price) || extractedData.price;
+    } else {
+      extractedData.sku = handle ? handle.toUpperCase() : 'GLX-' + Math.floor(1000 + Math.random() * 9000);
+    }
+
+    if (foundProduct.images && foundProduct.images.length > 0) {
+      extractedData.image = foundProduct.images[0].src || '';
+    }
+
+    if (foundProduct.body_html) {
+      const cleanDesc = foundProduct.body_html.replace(/<[^>]*>?/gm, ' ').trim();
+      extractedData.bodyText = cleanDesc;
+
+      // Extraer dimensiones de la descripción
+      const dimMatch = cleanDesc.match(/(\d+(?:\.\d+)?\s*(?:x|\*)\s*\d+(?:\.\d+)?(?:\s*(?:x|\*)\s*\d+(?:\.\d+)?)?\s*(?:mm|cm|m)?)/i);
+      if (dimMatch) {
+        extractedData.dimensions = dimMatch[1].replace(/\*/g, ' x ');
+      }
+      if (cleanDesc.includes('Acero') || cleanDesc.includes('Aluminio') || cleanDesc.includes('Espuma') || cleanDesc.includes('Polímero')) {
+        extractedData.material = cleanDesc.substring(0, 60);
+      }
+    }
+  } else {
+    // Fallback si no se encontró en Shopify: extraer de la URL / SKU ingresado
+    extractedData.sku = (handle || inputVal).toUpperCase().replace(/[^A-Z0-9-]/g, '').substring(0, 15) || 'GLX-001';
+    extractedData.title = handle ? handle.replace(/-/g, ' ').replace(/\w/g, l => l.toUpperCase()) : ('Producto ' + extractedData.sku);
+  }
+
+  // Ocultar Loader y llenar campos de Previsualización
+  if (loader) loader.style.display = 'none';
+
+  const inSku = document.getElementById('ftImportSku');
+  const inPrecio = document.getElementById('ftImportPrecio');
+  const inNombre = document.getElementById('ftImportNombre');
+  const inFotoUrl = document.getElementById('ftImportFotoUrl');
+  const inCategoria = document.getElementById('ftImportCategoria');
+  const inMarca = document.getElementById('ftImportMarca');
+  const inDimensiones = document.getElementById('ftImportDimensiones');
+  const inMaterial = document.getElementById('ftImportMaterial');
+
+  if (inSku) inSku.value = extractedData.sku;
+  if (inPrecio) inPrecio.value = extractedData.price;
+  if (inNombre) inNombre.value = extractedData.title;
+  if (inFotoUrl) inFotoUrl.value = extractedData.image;
+  if (inCategoria) inCategoria.value = extractedData.category;
+  if (inMarca) inMarca.value = extractedData.brand;
+  if (inDimensiones) inDimensiones.value = extractedData.dimensions;
+  if (inMaterial) inMaterial.value = extractedData.material;
+
+  updateImportPhotoPreview(extractedData.image);
+
+  if (previewArea) previewArea.style.display = 'block';
+  if (applyBtn) applyBtn.style.display = 'inline-flex';
+
+  if (typeof showToast === 'function') {
+    showToast(`✅ Información escrapeada exitosamente para ${extractedData.sku}`);
+  }
+}
+
+function applyFtUrlImport() {
+  const sku = (document.getElementById('ftImportSku')?.value || '').trim().toUpperCase();
+  const nombre = (document.getElementById('ftImportNombre')?.value || '').trim();
+  const precio = parseFloat(document.getElementById('ftImportPrecio')?.value) || 9990;
+  const fotoUrl = (document.getElementById('ftImportFotoUrl')?.value || '').trim();
+  const categoria = (document.getElementById('ftImportCategoria')?.value || '').trim() || 'Equipamiento Comercial';
+  const marca = (document.getElementById('ftImportMarca')?.value || '').trim() || 'Glomax S.A.';
+  const dimensiones = (document.getElementById('ftImportDimensiones')?.value || '').trim() || '445 x 366 x 68 mm';
+  const material = (document.getElementById('ftImportMaterial')?.value || '').trim() || 'Espuma Viscoelástica / Polímeros Glomax';
+
+  if (!sku || !nombre) {
+    if (typeof showToast === 'function') showToast('Por favor verifica el SKU y Nombre del producto');
+    return;
+  }
+
+  // 1. Guardar en ftProductsMap
+  const prodObj = {
+    sku: sku,
+    codigo: sku,
+    descripcion: nombre,
+    cantTotal: 10,
+    netoTotal: precio * 10,
+    utilidadTotal: Math.round(precio * 4),
+    margenPct: 40,
+    precioPromedio: precio,
+    costoUnitario: Math.round(precio * 0.6),
+    categoria: categoria,
+    marca: marca,
+    familia: categoria
+  };
+
+  ftProductsMap.set(sku, prodObj);
+
+  // 2. Guardar foto e imágenes asociadas
+  if (fotoUrl && typeof productImagesMap !== 'undefined') {
+    productImagesMap.set(sku, { url: fotoUrl, desc: nombre });
+  }
+
+  // 3. Guardar especificaciones personalizadas en localStorage
+  const specsObj = {
+    fotoUrl: fotoUrl,
+    dimensiones: dimensiones,
+    pesoNeto: '1.2 kg',
+    pesoBruto: '1.5 kg',
+    volumen: '0.012 m³',
+    cajasPallet: '48 cajas',
+    hsCode: '9404.90.00',
+    origen: 'Chile / Glomax Certified',
+    material: material,
+    acabado: 'Textil Ergonómico Lavable Premium',
+    tempRango: '-10°C a +60°C',
+    certificaciones: 'SEC · CE · RoHS · ISO 9001:2015',
+    gradoIP: 'IP54 Hermético',
+    electrico: 'N/A (Ergonomía Pasiva High-Density)',
+    garantia: '12 Meses Garantía Oficial Glomax',
+    notas: 'Producto inspeccionado y certificado bajo norma ISO 9001:2015 / NCh. Apto para licitaciones públicas y privadas.',
+    bom: [
+      { parte: 'Núcleo Viscoelástico Ergonómico High-Density', cant: 1, participacion: '65%' },
+      { parte: 'Funda Respirable Hipoalergénica Antideslizante', cant: 1, participacion: '25%' },
+      { parte: 'Cierre Reforzado & Embalaje de Protección', cant: 1, participacion: '10%' }
+    ]
+  };
+
+  if (typeof saveFtSpecsForSku === 'function') {
+    saveFtSpecsForSku(sku, specsObj);
+  }
+
+  closeFtUrlModal();
+
+  // 4. Seleccionar y renderizar inmediatamente la nueva Ficha Técnica
+  if (typeof renderFichaTecnicaView === 'function') {
+    renderFichaTecnicaView();
+  }
+  selectFtProductSku(sku);
+
+  if (typeof showToast === 'function') {
+    showToast(`🎉 ¡Ficha Técnica de ${sku} cargada y renderizada con éxito!`);
+  }
 }

@@ -158,11 +158,10 @@ async function runDiag() {
 
   addStep('Diagnóstico completo', 'ok', 
     'Revisa los resultados arriba.\n\n' +
-    '• Si Proxy Local falla → el servidor Python no responde (reinicia server.py)\n' +
-    '• Si CSV Directo falla → el Spreadsheet tiene restricciones o hay bloqueo CORS\n' +
-    '• Si JSONP falla → el Spreadsheet no es público o Google bloquea\n' +
-    '• Si todo falla → problema de red o Spreadsheet privado\n\n' +
-    'SOLUCIÓN RECOMENDADA: Abre el dashboard desde http://localhost:8000 (NO desde file://)'
+    '• En Netlify: /api/proxy funciona automáticamente gracias a Netlify Serverless Functions (netlify/functions/proxy.mjs).\n' +
+    '• En Local: si /api/proxy falla, ejecuta "python server.py" en lugar de "python -m http.server".\n' +
+    '• Si CSV Directo falla: es normal en navegadores debido a la política de seguridad CORS de Google Sheets.\n' +
+    '• Si JSONP falla: verifica que tu Google Sheet tenga permiso "Cualquier persona con el enlace puede ver".'
   );
 }
 

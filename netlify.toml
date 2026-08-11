@@ -1,0 +1,28 @@
+[build]
+  publish = "."
+  functions = "netlify/functions"
+
+# Redirecciones Proxy de Netlify para evitar bloqueos CORS
+[[redirects]]
+  from = "/api/proxy"
+  to = "/.netlify/functions/proxy"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/csv"
+  to = "/.netlify/functions/proxy"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/glomax-products"
+  to = "/.netlify/functions/glomax-products"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/glomax"
+  to = "/.netlify/functions/glomax-products"
+  status = 200
+  force = true
