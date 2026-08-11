@@ -28,76 +28,134 @@ let currentSortAsc = true;
 
 // ---------- BASE DE DATOS LOCAL INDEXEDDB (Carga 0ms) ----------
 const GlomaxDB = {
-  dbName: 'GlomaxVentasDB',
-  dbVersion: 1,
+  dbName: 'GlomaxVentasDB_v2',
+  dbVersion: 2,
   db: null,
+
   async init() {
-    if (this.db) return this.db;
+    if (this.db && this.db.objectStoreNames.contains('rows')) return this.db;
+
     return new Promise((resolve, reject) => {
-      const req = indexedDB.open(this.dbName, this.dbVersion);
-      req.onupgradeneeded = (e) => {
-        const db = e.target.result;
-        if (!db.objectStoreNames.contains('rows')) {
-          db.createObjectStore('rows', { keyPath: '_row' });
-        }
-        if (!db.objectStoreNames.contains('sync_queue')) {
-          db.createObjectStore('sync_queue', { keyPath: 'id', autoIncrement: true });
-        }
-      };
-      req.onsuccess = (e) => {
-        this.db = e.target.result;
-        resolve(this.db);
-      };
-      req.onerror = (e) => reject(e.target.error);
+      try {
+        const req = indexedDB.open(this.dbName, this.dbVersion);
+
+        req.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains('rows')) {
+            db.createObjectStore('rows', { keyPath: '_row' });
+          }
+          if (!db.objectStoreNames.contains('sync_queue')) {
+            db.createObjectStore('sync_queue', { keyPath: 'id', autoIncrement: true });
+          }
+        };
+
+        req.onsuccess = (e) => {
+          const db = e.target.result;
+          // Si la base de datos antigua no posee el store 'rows' o 'sync_queue'
+          if (!db.objectStoreNames.contains('rows') || !db.objectStoreNames.contains('sync_queue')) {
+            db.close();
+            this.db = null;
+            // Eliminar base de datos corrupta/antigua y volver a crear
+            const delReq = indexedDB.deleteDatabase(this.dbName);
+            delReq.onsuccess = () => {
+              const retryReq = indexedDB.open(this.dbName, 3);
+              retryReq.onupgradeneeded = (evt) => {
+                const newDb = evt.target.result;
+                if (!newDb.objectStoreNames.contains('rows')) newDb.createObjectStore('rows', { keyPath: '_row' });
+                if (!newDb.objectStoreNames.contains('sync_queue')) newDb.createObjectStore('sync_queue', { keyPath: 'id', autoIncrement: true });
+              };
+              retryReq.onsuccess = (evt) => {
+                this.db = evt.target.result;
+                resolve(this.db);
+              };
+              retryReq.onerror = () => resolve(null);
+            };
+            delReq.onerror = () => resolve(null);
+            return;
+          }
+
+          this.db = db;
+          resolve(this.db);
+        };
+
+        req.onerror = () => resolve(null);
+      } catch (err) {
+        console.warn('IndexedDB no soportado o deshabilitado:', err);
+        resolve(null);
+      }
     });
   },
+
   async getRows() {
     try {
       const db = await this.init();
+      if (!db || !db.objectStoreNames.contains('rows')) return [];
+
       return new Promise((resolve) => {
-        const tx = db.transaction('rows', 'readonly');
-        const req = tx.objectStore('rows').getAll();
-        req.onsuccess = () => resolve(req.result || []);
-        req.onerror = () => resolve([]);
+        try {
+          const tx = db.transaction('rows', 'readonly');
+          const req = tx.objectStore('rows').getAll();
+          req.onsuccess = () => resolve(req.result || []);
+          req.onerror = () => resolve([]);
+        } catch (txErr) {
+          console.warn('IndexedDB getRows transaction error:', txErr);
+          resolve([]);
+        }
       });
     } catch (e) {
       return [];
     }
   },
+
   async setRows(data) {
     try {
       const db = await this.init();
+      if (!db || !db.objectStoreNames.contains('rows')) return;
+
       const tx = db.transaction('rows', 'readwrite');
       const store = tx.objectStore('rows');
       store.clear();
-      data.forEach(r => { if (r && r._row) store.put(r); });
+      if (Array.isArray(data)) {
+        data.forEach(r => { if (r && r._row) store.put(r); });
+      }
     } catch (e) {
-      console.warn('DB setRows error', e);
+      console.warn('IndexedDB setRows error:', e);
     }
   },
+
   async addPendingMutation(mut) {
     try {
       const db = await this.init();
+      if (!db || !db.objectStoreNames.contains('sync_queue')) return;
       const tx = db.transaction('sync_queue', 'readwrite');
       tx.objectStore('sync_queue').add(mut);
     } catch (e) {}
   },
+
   async getPendingMutations() {
     try {
       const db = await this.init();
+      if (!db || !db.objectStoreNames.contains('sync_queue')) return [];
+
       return new Promise((resolve) => {
-        const tx = db.transaction('sync_queue', 'readonly');
-        const req = tx.objectStore('sync_queue').getAll();
-        req.onsuccess = () => resolve(req.result || []);
-        req.onerror = () => resolve([]);
+        try {
+          const tx = db.transaction('sync_queue', 'readonly');
+          const req = tx.objectStore('sync_queue').getAll();
+          req.onsuccess = () => resolve(req.result || []);
+          req.onerror = () => resolve([]);
+        } catch(e) {
+          resolve([]);
+        }
       });
     } catch (e) {
       return [];
     }
   },
+
   async removePendingMutation(id) {
     try {
       const db = await this.init();
+      if (!db || !db.objectStoreNames.contains('sync_queue')) return;
       const tx = db.transaction('sync_queue', 'readwrite');
       tx.objectStore('sync_queue').delete(id);
     } catch (e) {}

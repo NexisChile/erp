@@ -127,7 +127,7 @@ async function runDiag() {
   // 5. Test IndexedDB caché
   const dbStep = addStep('IndexedDB Caché Local', 'pending', 'Verificando...');
   try {
-    const req = indexedDB.open('GlomaxVentasDB', 1);
+    const req = indexedDB.open('GlomaxVentasDB_v2', 2);
     req.onsuccess = (e) => {
       const db = e.target.result;
       try {
@@ -168,7 +168,7 @@ async function runDiag() {
 async function clearCache() {
   try {
     await new Promise((res, rej) => {
-      const req = indexedDB.deleteDatabase('GlomaxVentasDB');
+      const req = indexedDB.deleteDatabase('GlomaxVentasDB_v2'); indexedDB.deleteDatabase('GlomaxVentasDB');
       req.onsuccess = () => res();
       req.onerror = (e) => rej(e.target.error);
     });
