@@ -32,6 +32,14 @@ function parseFlexibleDate(val) {
   if (val instanceof Date) return isNaN(val.getTime()) ? new Date() : val;
   
   const str = String(val).trim();
+  if (str.startsWith('Date(')) {
+    const m = str.match(/\d+/g);
+    if (m && m.length >= 3) {
+      const d = new Date(parseInt(m[0], 10), parseInt(m[1], 10), parseInt(m[2], 10));
+      if (!isNaN(d.getTime())) return d;
+    }
+  }
+
   if (str.includes('/')) {
     const parts = str.split('/');
     if (parts.length === 3) {
@@ -40,9 +48,16 @@ function parseFlexibleDate(val) {
       let p3 = parseInt(parts[2], 10);
       if (p3 < 100) p3 += 2000;
       
-      let month = (p1 > 12) ? p2 - 1 : p1 - 1;
-      let day = (p1 > 12) ? p1 : p2;
-      const d = new Date(p3, month, day);
+      let day = p1;
+      let month = p2 - 1;
+      let year = p3;
+
+      if (month < 0 || month > 11) {
+        month = p1 - 1;
+        day = p2;
+      }
+
+      const d = new Date(year, month, day);
       if (!isNaN(d.getTime())) return d;
     }
   }
@@ -4520,7 +4535,7 @@ function fetchGVizViaJSONP(spreadsheetId, gid, timeoutMs = 8000) {
           if (colName) {
             let val = '';
             if (row.c && row.c[j]) {
-              val = row.c[j].f !== undefined && row.c[j].f !== null ? row.c[j].f : (row.c[j].v !== null ? row.c[j].v : '');
+              val = (row.c[j].v !== undefined && row.c[j].v !== null) ? row.c[j].v : (row.c[j].f !== undefined && row.c[j].f !== null ? row.c[j].f : '');
             }
             obj[colName] = val;
           }
