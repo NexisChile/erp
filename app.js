@@ -35,7 +35,10 @@ function parseFlexibleDate(val) {
   if (str.startsWith('Date(')) {
     const m = str.match(/\d+/g);
     if (m && m.length >= 3) {
-      const d = new Date(parseInt(m[0], 10), parseInt(m[1], 10), parseInt(m[2], 10));
+      const year = parseInt(m[0], 10);
+      const month = parseInt(m[1], 10);
+      const day = parseInt(m[2], 10);
+      const d = new Date(year, month, day, 12, 0, 0);
       if (!isNaN(d.getTime())) return d;
     }
   }
@@ -48,22 +51,38 @@ function parseFlexibleDate(val) {
       let p3 = parseInt(parts[2], 10);
       if (p3 < 100) p3 += 2000;
       
-      let day = p1;
-      let month = p2 - 1;
-      let year = p3;
+      let day, month, year = p3;
 
-      if (month < 0 || month > 11) {
+      if (p2 <= 12 && p1 <= 31) {
+        day = p1;
+        month = p2 - 1;
+      } else if (p1 <= 12 && p2 <= 31) {
         month = p1 - 1;
         day = p2;
+      } else {
+        day = p1;
+        month = p2 - 1;
       }
 
-      const d = new Date(year, month, day);
+      const d = new Date(year, month, day, 12, 0, 0);
+      if (!isNaN(d.getTime())) return d;
+    }
+  }
+
+  if (str.includes('-')) {
+    const parts = str.split('-');
+    if (parts.length === 3) {
+      const year = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const day = parseInt(parts[2], 10);
+      const d = new Date(year, month, day, 12, 0, 0);
       if (!isNaN(d.getTime())) return d;
     }
   }
 
   const d = new Date(str);
-  return isNaN(d.getTime()) ? new Date() : d;
+  if (!isNaN(d.getTime())) return d;
+  return new Date();
 }
 
 function normalizeDataRows(rawRows) {
@@ -80,7 +99,10 @@ function normalizeDataRows(rawRows) {
     const tipo = norm['TIPO'] || norm['TIPODOC'] || 'Factura';
     const rawFecha = norm['FECHA'] || norm['DATE'] || norm['FECHA FACTURA'];
     const parsedDate = parseFlexibleDate(rawFecha);
-    const fechaISO = parsedDate.toISOString().slice(0, 10);
+    const yyyy = parsedDate.getFullYear();
+    const mm = String(parsedDate.getMonth() + 1).padStart(2, '0');
+    const dd = String(parsedDate.getDate()).padStart(2, '0');
+    const fechaISO = `${yyyy}-${mm}-${dd}`;
 
     const codigo = norm['CODIGO'] || norm['COD'] || norm['SKU'] || 'SKU-00' + (i + 1);
     const descripcion = norm['DESCRIPCION'] || norm['PRODUCTO'] || norm['NOMBRE'] || 'Producto Glomax';
@@ -1532,12 +1554,11 @@ function renderSummaryCards() {
   // Encontrar fecha de referencia en los datos o usar la fecha actual
   let refDate = now;
   if (rows && rows.length > 0) {
-    const validDates = rows.map(r => new Date(r['FECHA'])).filter(d => !isNaN(d.getTime()));
+    const validDates = rows.map(r => new Date(r['FECHA'] + 'T12:00:00')).filter(d => !isNaN(d.getTime()));
     if (validDates.length > 0) {
-      const maxDatasetDate = new Date(Math.max(...validDates));
-      if (maxDatasetDate.getFullYear() > now.getFullYear() || (maxDatasetDate.getFullYear() === now.getFullYear() && maxDatasetDate.getMonth() > now.getMonth())) {
-        refDate = maxDatasetDate;
-      }
+      const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+      const pastOrToday = validDates.filter(d => d <= todayEnd);
+      refDate = pastOrToday.length > 0 ? new Date(Math.max(...pastOrToday)) : new Date(Math.max(...validDates));
     }
   }
 
