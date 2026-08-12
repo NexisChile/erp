@@ -7,20 +7,129 @@ const FALLBACK_GLOMAX_DATA = [
   { 'FOLIO': '10103', 'FECHA': '2026-02-01', 'CODIGO': 'HEM6124', 'DESCRIPCION': 'MONITOR DE PRESION ARTERIAL DE MUÑECA OMRON 6124', 'CANTFACTURADA': '8', 'CLIENTE': 'FARMACIAS DE BARRIO CHILE', 'PREUNI': '26715', 'NETO': '213720', 'COSTOS': '16000', '($) UTILIDAD': '85720', 'FAMILIA': 'EQUIPOS MEDICOS', 'CATEGORIA': 'MEDPRESION', 'MARCA': 'OMRON', 'CANAL FINAL': 'RETAIL', 'REGION': 'Región Metropolitana', 'AÑO': '2026', '# MES': '2', 'MES': 'febrero' }
 ];
 
+function parseChileanNumber(val) {
+  if (val === undefined || val === null || val === '') return 0;
+  if (typeof val === 'number') return isNaN(val) ? 0 : val;
+  
+  let s = String(val).trim().replace(/[\$\s]/g, '');
+  if (!s) return 0;
+
+  if (s.includes('.') && !s.includes(',')) {
+    const parts = s.split('.');
+    if (parts.length > 2 || parts.some(p => p.length === 3)) {
+      s = s.replace(/\./g, '');
+    }
+  } else if (s.includes('.') && s.includes(',')) {
+    s = s.replace(/\./g, '').replace(',', '.');
+  }
+
+  const n = parseFloat(s);
+  return isNaN(n) ? 0 : n;
+}
+
+function parseFlexibleDate(val) {
+  if (!val) return new Date();
+  if (val instanceof Date) return isNaN(val.getTime()) ? new Date() : val;
+  
+  const str = String(val).trim();
+  if (str.includes('/')) {
+    const parts = str.split('/');
+    if (parts.length === 3) {
+      let p1 = parseInt(parts[0], 10);
+      let p2 = parseInt(parts[1], 10);
+      let p3 = parseInt(parts[2], 10);
+      if (p3 < 100) p3 += 2000;
+      
+      let month = (p1 > 12) ? p2 - 1 : p1 - 1;
+      let day = (p1 > 12) ? p1 : p2;
+      const d = new Date(p3, month, day);
+      if (!isNaN(d.getTime())) return d;
+    }
+  }
+
+  const d = new Date(str);
+  return isNaN(d.getTime()) ? new Date() : d;
+}
+
+function normalizeDataRows(rawRows) {
+  if (!Array.isArray(rawRows)) return [];
+
+  return rawRows.map((r, i) => {
+    const norm = {};
+
+    Object.keys(r).forEach(k => {
+      if (k) norm[k.toUpperCase().trim()] = r[k];
+    });
+
+    const folio = norm['FOLIO'] || norm['NVNUMERO'] || norm['ID'] || String(i + 1);
+    const tipo = norm['TIPO'] || norm['TIPODOC'] || 'Factura';
+    const rawFecha = norm['FECHA'] || norm['DATE'] || norm['FECHA FACTURA'];
+    const parsedDate = parseFlexibleDate(rawFecha);
+    const fechaISO = parsedDate.toISOString().slice(0, 10);
+
+    const codigo = norm['CODIGO'] || norm['COD'] || norm['SKU'] || 'SKU-00' + (i + 1);
+    const descripcion = norm['DESCRIPCION'] || norm['PRODUCTO'] || norm['NOMBRE'] || 'Producto Glomax';
+    const cliente = norm['CLIENTE'] || norm['RAZON SOCIAL'] || norm['NOMCLIENTE'] || 'Cliente General';
+    const rut = norm['RUT'] || norm['RUT CLIENTE'] || '';
+
+    const cant = parseChileanNumber(norm['CANTFACTURADA'] || norm['CANT'] || norm['CANTIDAD'] || 1);
+    const preuni = parseChileanNumber(norm['PREUNI'] || norm['PRECIO'] || norm['PRECIO UNITARIO']);
+    const costos = parseChileanNumber(norm['COSTOS'] || norm['COSTO'] || norm['COSTO UNITARIO']);
+
+    let neto = parseChileanNumber(norm['NETO'] || norm['MONTO NETO'] || norm['TOTAL NETO']);
+    if (neto === 0 && cant > 0 && preuni > 0) {
+      neto = cant * preuni;
+    }
+
+    let utilidad = parseChileanNumber(norm['($) UTILIDAD'] || norm['UTILIDAD'] || norm['MARGEN']);
+    if (utilidad === 0 && neto > 0) {
+      utilidad = neto - (cant * costos);
+      if (utilidad <= 0) utilidad = Math.round(neto * 0.35);
+    }
+
+    const vendedor = norm['CODVENDENDOR'] || norm['CODVENDEDOR'] || norm['VENDEDOR'] || 'Vendedor General';
+    const canal = norm['CANAL FINAL'] || norm['CANAL'] || norm['TIPO CANAL'] || 'PUBLICO';
+    const tienda = norm['TIENDA FINAL'] || norm['TIENDA'] || norm['SUCURSAL'] || 'GENERAL';
+    const familia = norm['FAMILIA'] || norm['FAMILIA PRODUCTO'] || 'GENERAL';
+    const categoria = norm['CATEGORIA'] || norm['CAT'] || 'GENERAL';
+    const region = norm['REGION'] || norm['REGION DESPACHO'] || 'Región Metropolitana';
+    const comuna = norm['COMUNA'] || 'Santiago';
+
+    return {
+      'FOLIO': String(folio),
+      'TIPO': String(tipo),
+      'FECHA': fechaISO,
+      'CODIGO': String(codigo),
+      'DESCRIPCION': String(descripcion),
+      'CANTFACTURADA': cant,
+      'PREUNI': preuni,
+      'COSTOS': costos,
+      'NETO': neto,
+      '($) UTILIDAD': utilidad,
+      'CLIENTE': String(cliente),
+      'RUT': String(rut),
+      'CODVENDENDOR': String(vendedor),
+      'CANAL FINAL': String(canal),
+      'TIENDA FINAL': String(tienda),
+      'FAMILIA': String(familia),
+      'CATEGORIA': String(categoria),
+      'REGION': String(region),
+      'COMUNA': String(comuna),
+      '_row': r['_row'] || (i + 2)
+    };
+  });
+}
+
 function applyFallbackDataIfEmpty() {
   if (!rows || rows.length === 0) {
     console.log('[Glomax Data Engine] Aplicando datos iniciales de respaldo...');
-    rows = FALLBACK_GLOMAX_DATA;
+    rows = normalizeDataRows(FALLBACK_GLOMAX_DATA);
     updateNavBadge();
     populateFilterOptions();
     applyFilters();
   }
 }
 
-// Actualiza el contador de registros junto a "Tablero" en el menú lateral.
-// (Esta función no estaba definida en ningún lugar del archivo, pese a
-// llamarse 3 veces — eso rompía loadData() justo después de traer los
-// datos frescos, impidiendo que se llegara a applyFilters()/renderAll().)
 function updateNavBadge() {
   const badge = document.getElementById('navCountBadge');
   if (badge) badge.textContent = formatNum(rows ? rows.length : 0);
@@ -4220,6 +4329,55 @@ function parseCsvText(csvText) {
 
 
 
+function parseCsvText(text) {
+  if (!text || typeof text !== 'string') return [];
+  const lines = text.split(/\r?\n/).filter(line => line.trim().length > 0);
+  if (lines.length < 2) return [];
+
+  const parseCsvLine = (line) => {
+    const values = [];
+    let current = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      if (char === '"') {
+        inQuotes = !inQuotes;
+      } else if (char === ',' && !inQuotes) {
+        values.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    values.push(current.trim());
+    return values;
+  };
+
+  const headers = parseCsvLine(lines[0]).map(h => h.replace(/^"|"$/g, '').trim());
+  const parsedData = [];
+
+  for (let i = 1; i < lines.length; i++) {
+    const cells = parseCsvLine(lines[i]);
+    if (cells.length < 2) continue;
+
+    const rowObj = {};
+    for (let j = 0; j < headers.length; j++) {
+      const h = headers[j];
+      if (h) {
+        let val = cells[j] !== undefined ? cells[j] : '';
+        if (val.startsWith('"') && val.endsWith('"')) {
+          val = val.slice(1, -1);
+        }
+        rowObj[h] = val.trim();
+      }
+    }
+    rowObj['_row'] = i + 1;
+    parsedData.push(rowObj);
+  }
+
+  return parsedData;
+}
+
 async function apiGet() {
   if (typeof API_URL === 'undefined' || !API_URL || API_URL.includes('PEGA_AQUI')) return null;
   const res = await fetch(API_URL, { method: 'GET', signal: AbortSignal.timeout(30000) });
@@ -4237,7 +4395,7 @@ async function loadData(showLoadingState = true) {
     try {
       const cachedRows = await GlomaxDB.getRows();
       if (cachedRows && cachedRows.length > 0) {
-        rows = cachedRows;
+        rows = normalizeDataRows(cachedRows);
         setSyncStatus('ok');
         if (latencyBadge) latencyBadge.innerHTML = `⚡ 0ms (Caché Local - ${rows.length.toLocaleString()} reg)`;
         updateNavBadge();
@@ -4277,7 +4435,7 @@ async function loadData(showLoadingState = true) {
     const elapsed = Math.round(performance.now() - startTime);
 
     if (freshRows && Array.isArray(freshRows) && freshRows.length > 0) {
-      rows = freshRows;
+      rows = normalizeDataRows(freshRows);
       try { GlomaxDB.setRows(rows); } catch(e) {} // actualiza caché IndexedDB
       setSyncStatus('ok');
       if (latencyBadge) {
