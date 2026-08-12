@@ -1297,6 +1297,7 @@ function renderTicker() {
     `DOCUMENTOS ${formatNum(folios)}`
   ];
   const track = document.getElementById('tickerTrack');
+  if (!track) return;
   const html = items.map(i => `<span>${i}</span>`).join('<span style="opacity:0.4"> // </span>');
   track.innerHTML = html + '<span style="opacity:0.4"> // </span>' + html;
 }
@@ -1794,7 +1795,8 @@ async function deleteCurrentRow() {
 }
 
 // ---------- Refresh manual y automático ----------
-document.getElementById('refreshBtn').addEventListener('click', () => loadData(true));
+const refreshBtnEl = document.getElementById('refreshBtn');
+if (refreshBtnEl) refreshBtnEl.addEventListener('click', () => loadData(true));
 
 function startAutoRefresh() {
   if (refreshTimer) clearInterval(refreshTimer);
