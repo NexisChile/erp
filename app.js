@@ -17,6 +17,15 @@ function applyFallbackDataIfEmpty() {
   }
 }
 
+// Actualiza el contador de registros junto a "Tablero" en el menú lateral.
+// (Esta función no estaba definida en ningún lugar del archivo, pese a
+// llamarse 3 veces — eso rompía loadData() justo después de traer los
+// datos frescos, impidiendo que se llegara a applyFilters()/renderAll().)
+function updateNavBadge() {
+  const badge = document.getElementById('navCountBadge');
+  if (badge) badge.textContent = formatNum(rows ? rows.length : 0);
+}
+
 // ---------- Estado ----------
 let rows = [];          // datos crudos desde el Sheet
 let filtered = [];       // luego de aplicar filtros
