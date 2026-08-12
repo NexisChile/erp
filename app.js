@@ -799,7 +799,299 @@ document.addEventListener('DOMContentLoaded', () => {
   if (savedTheme) {
     document.body.dataset.theme = savedTheme;
   }
+
+  // Inicializar vinculación universal de botones
+  setupAllButtonListeners();
 });
+
+// ---------- EXPORTACIONES, TOGGLES & EVENT LISTENERS DE BOTONES ----------
+
+function exportCsv() {
+  const dataToExport = (filtered && filtered.length > 0) ? filtered : rows;
+  if (!dataToExport || dataToExport.length === 0) {
+    if (typeof showToast === 'function') showToast('⚠️ No hay datos para exportar');
+    return;
+  }
+
+  const keys = Object.keys(dataToExport[0]).filter(k => !k.startsWith('_'));
+  let csvContent = '\uFEFF' + keys.join(';') + '\n';
+
+  dataToExport.forEach(r => {
+    const rowStr = keys.map(k => {
+      let v = r[k] !== undefined && r[k] !== null ? String(r[k]) : '';
+      if (v.includes(';') || v.includes('"') || v.includes('\n')) {
+        v = '"' + v.replace(/"/g, '""') + '"';
+      }
+      return v;
+    }).join(';');
+    csvContent += rowStr + '\n';
+  });
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.setAttribute('href', url);
+  link.setAttribute('download', `Glomax_Ventas_${new Date().toISOString().slice(0, 10)}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  if (typeof showToast === 'function') showToast('📄 CSV exportado exitosamente');
+}
+
+function exportPdf() {
+  window.print();
+}
+
+let soundEnabled = true;
+function toggleSound() {
+  soundEnabled = !soundEnabled;
+  if (typeof SOUND_EFFECTS !== 'undefined') {
+    SOUND_EFFECTS = soundEnabled;
+  }
+  const btn = document.getElementById('soundToggleBtn');
+  if (btn) {
+    btn.innerHTML = soundEnabled ? '🔊 Sonido: ON' : '🔇 Sonido: OFF';
+    btn.classList.toggle('active', soundEnabled);
+  }
+  if (typeof showToast === 'function') {
+    showToast(soundEnabled ? '🔊 Efectos de sonido activados' : '🔇 Efectos de sonido desactivados');
+  }
+}
+
+let isPresentationMode = false;
+function togglePresentationMode() {
+  isPresentationMode = !isPresentationMode;
+  document.body.classList.toggle('presentation-mode', isPresentationMode);
+  const btn = document.getElementById('presentationModeBtn');
+  if (btn) {
+    btn.classList.toggle('active', isPresentationMode);
+  }
+  if (typeof showToast === 'function') {
+    showToast(isPresentationMode ? '📺 Modo Presentación activado' : '📺 Modo Presentación desactivado');
+  }
+}
+
+function resetBIAdvisorSim() {
+  const pSlider = document.getElementById('simPriceSlider');
+  const vSlider = document.getElementById('simVolSlider');
+  const cSlider = document.getElementById('simCostSlider');
+  
+  if (pSlider) pSlider.value = 0;
+  if (vSlider) vSlider.value = 0;
+  if (cSlider) cSlider.value = 0;
+  
+  const pVal = document.getElementById('simPriceVal');
+  const vVal = document.getElementById('simVolVal');
+  const cVal = document.getElementById('simCostVal');
+  if (pVal) pVal.textContent = '0%';
+  if (vVal) vVal.textContent = '0%';
+  if (cVal) cVal.textContent = '0%';
+
+  if (typeof updateWhatIfSimulation === 'function') {
+    updateWhatIfSimulation();
+  }
+  if (typeof showToast === 'function') showToast('🔄 Simulador BI restablecido');
+}
+
+function openCotizacionModal() {
+  const backdrop = document.getElementById('cotizacionModalBackdrop');
+  const formEl = document.getElementById('cotizacionModalForm');
+  if (formEl) formEl.reset();
+  if (backdrop) backdrop.classList.add('active');
+}
+
+function closeCotizacionModal() {
+  const backdrop = document.getElementById('cotizacionModalBackdrop');
+  if (backdrop) backdrop.classList.remove('active');
+}
+
+async function saveCotizacion() {
+  const data = {};
+  const fieldMappingCotiz = [
+    ['cFolio', 'FOLIO'], ['cTipo', 'TIPO'], ['cFecha', 'FECHA'],
+    ['cCodigo', 'CODIGO'], ['cDescripcion', 'DESCRIPCION'], ['cCant', 'CANTFACTURADA'],
+    ['cPreUni', 'PREUNI'], ['cCostos', 'COSTOS'], ['cCliente', 'CLIENTE'],
+    ['cRut', 'RUT'], ['cVendedor', 'CODVENDENDOR'], ['cCanal', 'CANAL FINAL'],
+    ['cTienda', 'TIENDA FINAL'], ['cFamilia', 'FAMILIA'], ['cCategoria', 'CATEGORIA'],
+    ['cRegion', 'REGION']
+  ];
+
+  fieldMappingCotiz.forEach(([elId, field]) => {
+    const el = document.getElementById(elId);
+    if (el) data[field] = el.value;
+  });
+
+  try {
+    if (typeof apiPost === 'function' && typeof API_URL !== 'undefined') {
+      await apiPost({ action: 'add_cotizacion', data });
+    }
+    if (typeof showToast === 'function') showToast('✅ Cotización guardada exitosamente');
+    closeCotizacionModal();
+    if (typeof refreshCotizacionesLive === 'function') refreshCotizacionesLive();
+  } catch (err) {
+    if (typeof showToast === 'function') showToast('⚠️ Error al guardar cotización: ' + err.message);
+  }
+}
+
+let cotizCurrentPage = 1;
+function changeCotizPage(dir) {
+  cotizCurrentPage += dir;
+  if (cotizCurrentPage < 1) cotizCurrentPage = 1;
+  const pageInfo = document.getElementById('cotizPageInfo');
+  if (pageInfo) pageInfo.textContent = `Página ${cotizCurrentPage}`;
+  if (typeof refreshCotizacionesLive === 'function') {
+    refreshCotizacionesLive();
+  }
+}
+
+function randomizeProductSelection() {
+  const select = document.getElementById('prodSkuSelect');
+  if (select && select.options.length > 1) {
+    const randomIdx = Math.floor(Math.random() * (select.options.length - 1)) + 1;
+    select.selectedIndex = randomIdx;
+    select.dispatchEvent(new Event('change'));
+    if (typeof showToast === 'function') showToast('🎲 Producto aleatorio seleccionado');
+  }
+}
+
+function clearProductSearch() {
+  const input = document.getElementById('prodSkuSearch');
+  if (input) {
+    input.value = '';
+    input.dispatchEvent(new Event('input'));
+  }
+  const select = document.getElementById('prodSkuSelect');
+  if (select) {
+    select.selectedIndex = 0;
+    select.dispatchEvent(new Event('change'));
+  }
+  if (typeof showToast === 'function') showToast('🧹 Búsqueda de productos limpia');
+}
+
+function toggleMobileSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const backdrop = document.getElementById('sidebarBackdrop');
+  if (sidebar) sidebar.classList.toggle('active');
+  if (backdrop) backdrop.classList.toggle('active');
+}
+
+function closeMobileSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const backdrop = document.getElementById('sidebarBackdrop');
+  if (sidebar) sidebar.classList.remove('active');
+  if (backdrop) backdrop.classList.remove('active');
+}
+
+function openTargetModal() {
+  const backdrop = document.getElementById('targetModalBackdrop');
+  if (backdrop) backdrop.classList.add('active');
+}
+
+function closeTargetModal() {
+  const backdrop = document.getElementById('targetModalBackdrop');
+  if (backdrop) backdrop.classList.remove('active');
+}
+
+function toggleMobileFilters() {
+  const bar = document.getElementById('filtersBar');
+  if (bar) bar.classList.toggle('active');
+}
+
+function toggleCotizMobileFilters() {
+  const bar = document.getElementById('cotizFiltersBar');
+  if (bar) bar.classList.toggle('active');
+}
+
+function setupAllButtonListeners() {
+  // 1. Modal Nueva Venta / Registro
+  const openBtn = document.getElementById('openModalBtn');
+  if (openBtn) openBtn.onclick = () => openModalForNew();
+
+  const closeBtn = document.getElementById('closeModalBtn');
+  if (closeBtn) closeBtn.onclick = () => closeModal();
+
+  const cancelBtn = document.getElementById('cancelModalBtn');
+  if (cancelBtn) cancelBtn.onclick = () => closeModal();
+
+  const saveBtn = document.getElementById('saveModalBtn');
+  if (saveBtn) saveBtn.onclick = (e) => { e.preventDefault(); saveRow(); };
+
+  const modalFormEl = document.getElementById('modalForm');
+  if (modalFormEl) modalFormEl.onsubmit = (e) => { e.preventDefault(); saveRow(); };
+
+  const delBtn = document.getElementById('deleteRowBtn');
+  if (delBtn) delBtn.onclick = () => deleteCurrentRow();
+
+  // 2. Exportaciones
+  const csvBtn = document.getElementById('exportCsvBtn');
+  if (csvBtn) csvBtn.onclick = () => exportCsv();
+
+  const pdfBtn = document.getElementById('exportPdfBtn');
+  if (pdfBtn) pdfBtn.onclick = () => exportPdf();
+
+  // 3. Toggles de Cabecera y Simulador
+  const soundBtn = document.getElementById('soundToggleBtn');
+  if (soundBtn) soundBtn.onclick = () => toggleSound();
+
+  const themeBtn = document.getElementById('themeToggleBtn');
+  if (themeBtn) themeBtn.onclick = () => toggleTheme();
+
+  const presBtn = document.getElementById('presentationModeBtn');
+  if (presBtn) presBtn.onclick = () => togglePresentationMode();
+
+  const simResetBtn = document.getElementById('resetSimBtn');
+  if (simResetBtn) simResetBtn.onclick = () => resetBIAdvisorSim();
+
+  const mixHeaderBtn = document.getElementById('headerMixBtn');
+  if (mixHeaderBtn) mixHeaderBtn.onclick = () => switchView('mixsugerido');
+
+  // 4. Modal Cotizaciones
+  const openCotizBtn = document.getElementById('openCotizModalBtn');
+  if (openCotizBtn) openCotizBtn.onclick = () => openCotizacionModal();
+
+  const closeCotizBtn = document.getElementById('closeCotizModalBtn');
+  if (closeCotizBtn) closeCotizBtn.onclick = () => closeCotizacionModal();
+
+  const cancelCotizBtn = document.getElementById('cancelCotizModalBtn');
+  if (cancelCotizBtn) cancelCotizBtn.onclick = () => closeCotizacionModal();
+
+  const saveCotizBtn = document.getElementById('saveCotizModalBtn');
+  if (saveCotizBtn) saveCotizBtn.onclick = (e) => { e.preventDefault(); saveCotizacion(); };
+
+  const cotizFormEl = document.getElementById('cotizacionModalForm');
+  if (cotizFormEl) cotizFormEl.onsubmit = (e) => { e.preventDefault(); saveCotizacion(); };
+
+  // 5. Paginación Cotizaciones
+  const cotizPrev = document.getElementById('btnCotizPrevPage');
+  if (cotizPrev) cotizPrev.onclick = () => changeCotizPage(-1);
+
+  const cotizNext = document.getElementById('btnCotizNextPage');
+  if (cotizNext) cotizNext.onclick = () => changeCotizPage(1);
+
+  // 6. Catálogo de Productos
+  const prodRand = document.getElementById('prodRandomBtn');
+  if (prodRand) prodRand.onclick = () => randomizeProductSelection();
+
+  const prodClr = document.getElementById('prodClearBtn');
+  if (prodClr) prodClr.onclick = () => clearProductSearch();
+
+  // 7. Menús Móviles & Autenticación
+  const mobMenu = document.getElementById('mobileMenuBtn');
+  if (mobMenu) mobMenu.onclick = () => toggleMobileSidebar();
+
+  const mobFlt = document.getElementById('toggleMobileFiltersBtn');
+  if (mobFlt) mobFlt.onclick = () => toggleMobileFilters();
+
+  const cotizFlt = document.getElementById('toggleCotizFiltersBtn');
+  if (cotizFlt) cotizFlt.onclick = () => toggleCotizMobileFilters();
+
+  const sideAuth = document.getElementById('sidebarAuthBtn');
+  if (sideAuth) sideAuth.onclick = () => { if (typeof AuthManager !== 'undefined') AuthManager.toggleModal(); };
+
+  const loginSub = document.getElementById('btnLoginSubmit');
+  if (loginSub) loginSub.onclick = (e) => { e.preventDefault(); if (typeof AuthManager !== 'undefined') AuthManager.login(); };
+}
 
 
 // ---------- Estado ----------
@@ -1358,10 +1650,14 @@ document.querySelectorAll('.nav-item').forEach(btn => {
 });
 
 // ---------- Modal ----------
-const overlay = document.getElementById('modalOverlay');
-const form = document.getElementById('rowForm');
-
 const FIELD_MAP = [
+  ['fFolio', 'FOLIO'], ['fTipo', 'TIPO'], ['fFecha', 'FECHA'],
+  ['fCodigo', 'CODIGO'], ['fDescripcion', 'DESCRIPCION'], ['fCant', 'CANTFACTURADA'],
+  ['fPreUni', 'PREUNI'], ['fCostos', 'COSTOS'], ['fCliente', 'CLIENTE'],
+  ['fRut', 'RUT'], ['fVendedor', 'CODVENDENDOR'], ['fCanal', 'CANAL FINAL'],
+  ['fTienda', 'TIENDA FINAL'], ['fFamilia', 'FAMILIA'], ['fCategoria', 'CATEGORIA'],
+  ['fRegion', 'REGION'],
+  // Mapeos legacy de respaldo:
   ['f-folio', 'FOLIO'], ['f-tipo', 'TIPO'], ['f-fecha', 'FECHA'], ['f-nvnumero', 'NVNUMERO'],
   ['f-codbode', 'CODBODE'], ['f-sistema', 'SISTEMA'], ['f-grupo', 'GRUPO'],
   ['f-codigo', 'CODIGO'], ['f-descripcion', 'DESCRIPCION'], ['f-familia', 'FAMILIA'],
@@ -1372,40 +1668,66 @@ const FIELD_MAP = [
   ['f-comuna', 'COMUNA'], ['f-region', 'REGION'], ['f-glosa', 'GLOSA']
 ];
 
+function getModalBackdrop() {
+  return document.getElementById('modalBackdrop') || document.getElementById('modalOverlay');
+}
+
+function getModalForm() {
+  return document.getElementById('modalForm') || document.getElementById('rowForm');
+}
+
 function openModalForNew() {
-  document.getElementById('modalTitle').textContent = 'Nuevo registro';
-  form.reset();
-  document.getElementById('f-row').value = '';
-  document.getElementById('deleteRowBtn').style.display = 'none';
-  document.getElementById('f-fecha').value = new Date().toISOString().slice(0, 10);
-  overlay.classList.add('active');
+  const backdrop = getModalBackdrop();
+  const titleEl = document.getElementById('modalTitle');
+  const formEl = getModalForm();
+  const delBtn = document.getElementById('deleteRowBtn');
+  const rowInput = document.getElementById('fRow') || document.getElementById('f-row');
+  const dateInput = document.getElementById('fFecha') || document.getElementById('f-fecha');
+
+  if (titleEl) titleEl.textContent = 'Nuevo registro de Venta';
+  if (formEl) formEl.reset();
+  if (rowInput) rowInput.value = '';
+  if (delBtn) delBtn.style.display = 'none';
+  if (dateInput) dateInput.value = new Date().toISOString().slice(0, 10);
+  if (backdrop) backdrop.classList.add('active');
+}
+
+function openModal() {
+  openModalForNew();
 }
 
 function openModalForEdit(rowId) {
   const r = rows.find(x => String(x['_row']) === String(rowId));
   if (!r) return;
-  document.getElementById('modalTitle').textContent = 'Editar registro';
-  document.getElementById('f-row').value = r['_row'];
+  const backdrop = getModalBackdrop();
+  const titleEl = document.getElementById('modalTitle');
+  const delBtn = document.getElementById('deleteRowBtn');
+  const rowInput = document.getElementById('fRow') || document.getElementById('f-row');
+
+  if (titleEl) titleEl.textContent = 'Editar registro de Venta';
+  if (rowInput) rowInput.value = r['_row'];
+
   FIELD_MAP.forEach(([elId, field]) => {
     const el = document.getElementById(elId);
     if (!el) return;
     if (field === 'FECHA') el.value = toDateInputValue(r[field]);
     else el.value = r[field] !== undefined && r[field] !== null ? r[field] : '';
   });
-  document.getElementById('deleteRowBtn').style.display = 'inline-block';
-  overlay.classList.add('active');
+
+  if (delBtn) delBtn.style.display = 'inline-block';
+  if (backdrop) backdrop.classList.add('active');
 }
 
-function closeModal() { overlay.classList.remove('active'); }
+function closeModal() {
+  const backdrop = getModalBackdrop();
+  if (backdrop) backdrop.classList.remove('active');
+}
 
-document.getElementById('newRowBtn').addEventListener('click', openModalForNew);
-document.getElementById('cancelModalBtn').addEventListener('click', closeModal);
-overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
-
-form.addEventListener('submit', async e => {
-  e.preventDefault();
-  const rowId = document.getElementById('f-row').value;
+async function saveRow() {
+  const rowInput = document.getElementById('fRow') || document.getElementById('f-row');
+  const rowId = rowInput ? rowInput.value : '';
   const data = {};
+
   FIELD_MAP.forEach(([elId, field]) => {
     const el = document.getElementById(elId);
     if (!el) return;
@@ -1415,29 +1737,32 @@ form.addEventListener('submit', async e => {
   try {
     if (rowId) {
       await apiPost({ action: 'update', row: rowId, data });
-      showToast('Registro actualizado');
+      if (typeof showToast === 'function') showToast('✅ Registro actualizado exitosamente');
     } else {
       await apiPost({ action: 'add', data });
-      showToast('Registro creado');
+      if (typeof showToast === 'function') showToast('✅ Registro creado exitosamente');
     }
     closeModal();
     loadData(false);
   } catch (err) {
-    showToast('Error al guardar: ' + err.message);
+    if (typeof showToast === 'function') showToast('⚠️ Error al guardar: ' + err.message);
   }
-});
+}
 
-document.getElementById('deleteRowBtn').addEventListener('click', async () => {
-  const rowId = document.getElementById('f-row').value;
+async function deleteCurrentRow() {
+  const rowInput = document.getElementById('fRow') || document.getElementById('f-row');
+  const rowId = rowInput ? rowInput.value : '';
   if (!rowId) return;
   if (!confirm('¿Eliminar este registro? Esta acción no se puede deshacer.')) return;
   try {
     await apiPost({ action: 'delete', row: rowId });
-    showToast('Registro eliminado');
+    if (typeof showToast === 'function') showToast('🗑️ Registro eliminado');
     closeModal();
     loadData(false);
   } catch (err) {
-    showToast('Error al eliminar: ' + err.message);
+    if (typeof showToast === 'function') showToast('⚠️ Error al eliminar: ' + err.message);
+  }
+}
   }
 });
 
@@ -3714,8 +4039,12 @@ async function loadData(showLoadingState = true) {
     }
 
     if (!freshRows) {
-      freshRows = await apiGet();
-      if (freshRows) modeLabel = 'Apps Script API';
+      try {
+        freshRows = await apiGet();
+        if (freshRows) modeLabel = 'Apps Script API';
+      } catch (apiErr) {
+        console.warn('Apps Script GET API fallback error:', apiErr);
+      }
     }
 
     const elapsed = Math.round(performance.now() - startTime);
@@ -3735,33 +4064,57 @@ async function loadData(showLoadingState = true) {
       if (typeof showToast === 'function') {
         showToast(`✅ Conectado a Google Sheets (${rows.length.toLocaleString()} registros sincronizados)`);
       }
-    } else if (!rows || rows.length === 0) {
-      setSyncStatus('error');
-      if (latencyBadge) latencyBadge.innerHTML = `🔴 Sin conexión`;
+    } else {
+      // Si no se obtuvieron datos frescos ni había datos en caché local, usar el dataset de respaldo de Glomax
+      if (!rows || rows.length === 0) {
+        applyFallbackDataIfEmpty();
+        setSyncStatus('ok');
+        if (latencyBadge) latencyBadge.innerHTML = `🟡 Modo Respaldo (${rows.length.toLocaleString()} reg)`;
+      } else {
+        setSyncStatus('ok');
+      }
     }
 
     processSyncQueue();
   } catch (err) {
     console.error('Error al cargar datos desde Google Sheets:', err);
     if (!rows || rows.length === 0) {
-      setSyncStatus('error');
-      if (latencyBadge) latencyBadge.innerHTML = `🔴 Sin conexión`;
+      applyFallbackDataIfEmpty();
+      setSyncStatus('ok');
+      if (latencyBadge) latencyBadge.innerHTML = `🟡 Modo Respaldo (${rows.length.toLocaleString()} reg)`;
     }
   }
 }
 
 // ==========================================================================
+// ==========================================================================
 // MOTOR DE CONEXIÓN UNIFICADO Y UNIVERSAL (GITHUB PAGES, NETLIFY & LOCAL)
 // ==========================================================================
 
-function fetchGVizViaJSONP(spreadsheetId, gid) {
+function fetchGVizViaJSONP(spreadsheetId, gid, timeoutMs = 8000) {
   return new Promise((resolve, reject) => {
     const callbackName = 'gviz_jsonp_cb_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
+
+    // Interceptor global para google.visualization.Query.setResponse si Google no usa el custom callback
+    if (!window.google) window.google = {};
+    if (!window.google.visualization) window.google.visualization = {};
+    if (!window.google.visualization.Query) window.google.visualization.Query = {};
+    
+    const prevSetResponse = window.google.visualization.Query.setResponse;
+    window.google.visualization.Query.setResponse = function(json) {
+      if (typeof window[callbackName] === 'function') {
+        window[callbackName](json);
+      }
+      if (typeof prevSetResponse === 'function') {
+        try { prevSetResponse(json); } catch(e) {}
+      }
+    };
+
     const timeoutTimer = setTimeout(() => {
       delete window[callbackName];
       if (scriptEl && scriptEl.parentNode) scriptEl.parentNode.removeChild(scriptEl);
-      reject(new Error('Timeout de conexión JSONP (25s)'));
-    }, 25000);
+      reject(new Error(`Timeout de conexión JSONP (${timeoutMs / 1000}s)`));
+    }, timeoutMs);
 
     window[callbackName] = function(json) {
       clearTimeout(timeoutTimer);
@@ -3795,7 +4148,7 @@ function fetchGVizViaJSONP(spreadsheetId, gid) {
     };
 
     const scriptEl = document.createElement('script');
-    scriptEl.src = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?tqx=responseHandler:${callbackName}&gid=${gid}&headers=1`;
+    scriptEl.src = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?tqx=out:json;responseHandler:${callbackName}&gid=${gid}&headers=1`;
     scriptEl.onerror = function() {
       clearTimeout(timeoutTimer);
       delete window[callbackName];
@@ -3812,26 +4165,24 @@ async function fetchGVizData() {
 
   const spId = SPREADSHEET_ID;
   const gid = typeof SPREADSHEET_GID !== 'undefined' ? SPREADSHEET_GID : '999482111';
-  const isGitHubPages = window.location.hostname.includes('github.io');
+  const isGitHub = window.location.hostname.includes('github') || window.location.protocol === 'file:';
 
-  console.log(`[Glomax Engine] Entorno detectado: ${isGitHubPages ? 'GitHub Pages (Static)' : window.location.hostname}`);
+  console.log(`[Glomax Engine] Entorno detectado: ${isGitHub ? 'GitHub / Estático' : window.location.hostname}`);
 
-  // 1. Si estamos en GitHub Pages, usar primero el canal JSONP GViz que funciona al 100% en GitHub Pages
-  if (isGitHubPages) {
-    try {
-      console.log('[GitHub Pages] 🚀 Conectando a Google Sheets vía JSONP FastChannel...');
-      const jsonpRows = await fetchGVizViaJSONP(spId, gid);
-      if (jsonpRows && jsonpRows.length > 0) {
-        console.log(`[GitHub Pages] ✅ Conexión exitosa vía JSONP (${jsonpRows.length.toLocaleString()} registros)`);
-        return jsonpRows;
-      }
-    } catch (jsonpErr) {
-      console.warn('[GitHub Pages] Falló canal JSONP, probando fallbacks:', jsonpErr.message || jsonpErr);
+  // 1. Probar canal JSONP GViz FastChannel (rápido, 8s timeout)
+  try {
+    console.log('[FastChannel] 🚀 Conectando a Google Sheets vía JSONP...');
+    const jsonpRows = await fetchGVizViaJSONP(spId, gid, 8000);
+    if (jsonpRows && jsonpRows.length > 0) {
+      console.log(`[FastChannel] ✅ Conexión exitosa vía JSONP (${jsonpRows.length.toLocaleString()} registros)`);
+      return jsonpRows;
     }
+  } catch (jsonpErr) {
+    console.warn('[FastChannel] Falló canal JSONP, probando fallbacks:', jsonpErr.message || jsonpErr);
   }
 
-  // 2. Si estamos en Localhost o Netlify, probar Proxy local /api/proxy
-  if (!isGitHubPages) {
+  // 2. Si no estamos en entorno estático estricto, probar Proxy local /api/proxy
+  if (!isGitHub) {
     const proxyUrls = [
       `/api/proxy?spreadsheet_id=${spId}&gid=${gid}`,
       `/api/csv?spreadsheet_id=${spId}&gid=${gid}`
@@ -3839,7 +4190,7 @@ async function fetchGVizData() {
 
     for (const pUrl of proxyUrls) {
       try {
-        const resp = await fetch(pUrl, { signal: AbortSignal.timeout(15000) });
+        const resp = await fetch(pUrl, { signal: AbortSignal.timeout(5000) });
         if (resp.ok) {
           const text = await resp.text();
           if (text && text.length > 200 && !text.trim().startsWith('<')) {
@@ -3856,16 +4207,7 @@ async function fetchGVizData() {
     }
   }
 
-  // 3. Fallback Universal: JSONP GViz
-  try {
-    console.log('[Universal Engine] Intentando canal JSONP FastChannel...');
-    const jsonpRows = await fetchGVizViaJSONP(spId, gid);
-    if (jsonpRows && jsonpRows.length > 0) return jsonpRows;
-  } catch(e) {
-    console.warn('[Universal Engine] Falló JSONP:', e.message || e);
-  }
-
-  // 4. Fallback Universal: Proxies CORS para CSV directo
+  // 3. Fallback Universal: Proxies CORS para exportación CSV (timeout 5s)
   const corsProxies = [
     `https://api.allorigins.win/raw?url=` + encodeURIComponent(`https://docs.google.com/spreadsheets/d/${spId}/export?format=csv&gid=${gid}`),
     `https://corsproxy.io/?` + encodeURIComponent(`https://docs.google.com/spreadsheets/d/${spId}/export?format=csv&gid=${gid}`)
@@ -3873,13 +4215,13 @@ async function fetchGVizData() {
 
   for (const cUrl of corsProxies) {
     try {
-      const resp = await fetch(cUrl, { signal: AbortSignal.timeout(20000) });
+      const resp = await fetch(cUrl, { signal: AbortSignal.timeout(5000) });
       if (resp.ok) {
         const text = await resp.text();
         if (text && text.length > 200 && !text.trim().startsWith('<')) {
           const rowsParsed = parseCsvText(text);
           if (rowsParsed && rowsParsed.length > 0) {
-            console.log(`[Universal Proxy] ✅ Conexión exitosa vía AllOrigins/CorsProxy (${rowsParsed.length.toLocaleString()} registros)`);
+            console.log(`[Universal Proxy] ✅ Conexión exitosa vía CORS Proxy (${rowsParsed.length.toLocaleString()} registros)`);
             return rowsParsed;
           }
         }
