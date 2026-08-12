@@ -1572,46 +1572,39 @@ function renderSummaryCards() {
     return true;
   });
 
-  // 1. VENTAS DE HOY / DÍA
-  const rowsHoy = baseRows.filter(r => {
-    const d = new Date(r['FECHA']);
-    if (isNaN(d.getTime())) return false;
-    return d.getFullYear() === refDate.getFullYear() &&
-           d.getMonth() === refDate.getMonth() &&
-           d.getDate() === refDate.getDate();
-  });
-  const targetDayRows = rowsHoy.length > 0 ? rowsHoy : (baseRows.length > 0 ? [baseRows[baseRows.length - 1]] : []);
+  const refYyyy = refDate.getFullYear();
+  const refMm = String(refDate.getMonth() + 1).padStart(2, '0');
+  const refDd = String(refDate.getDate()).padStart(2, '0');
 
-  const totalHoy = targetDayRows.reduce((a, r) => a + (Number(r['NETO']) || 0), 0);
-  const docsHoy = new Set(targetDayRows.map(r => r['FOLIO'])).size;
-  const cantHoy = targetDayRows.reduce((a, r) => a + (Number(r['CANTFACTURADA']) || 0), 0);
+  const refDateISO = `${refYyyy}-${refMm}-${refDd}`;
+  const refMonthISO = `${refYyyy}-${refMm}`;
+  const refYearISO = `${refYyyy}`;
+
+  // 1. VENTAS DE HOY / DÍA (fecha exacta refDateISO)
+  const rowsHoy = baseRows.filter(r => r['FECHA'] === refDateISO);
+
+  const totalHoy = rowsHoy.reduce((a, r) => a + (Number(r['NETO']) || 0), 0);
+  const docsHoy = new Set(rowsHoy.map(r => r['FOLIO'])).size;
+  const cantHoy = rowsHoy.reduce((a, r) => a + (Number(r['CANTFACTURADA']) || 0), 0);
 
   // 2. VENTAS ACUMULADAS DEL MES (MTD)
-  const rowsMes = baseRows.filter(r => {
-    const d = new Date(r['FECHA']);
-    if (isNaN(d.getTime())) return false;
-    return d.getFullYear() === refDate.getFullYear() && d.getMonth() === refDate.getMonth();
-  });
-  const totalMes = rowsMes.length > 0 ? rowsMes.reduce((a, r) => a + (Number(r['NETO']) || 0), 0) : baseRows.reduce((a, r) => a + (Number(r['NETO']) || 0), 0);
-  const docsMes = new Set((rowsMes.length > 0 ? rowsMes : baseRows).map(r => r['FOLIO'])).size;
-  const cantMes = (rowsMes.length > 0 ? rowsMes : baseRows).reduce((a, r) => a + (Number(r['CANTFACTURADA']) || 0), 0);
+  const rowsMes = baseRows.filter(r => r['FECHA'] && r['FECHA'].startsWith(refMonthISO));
+  const totalMes = rowsMes.reduce((a, r) => a + (Number(r['NETO']) || 0), 0);
+  const docsMes = new Set(rowsMes.map(r => r['FOLIO'])).size;
+  const cantMes = rowsMes.reduce((a, r) => a + (Number(r['CANTFACTURADA']) || 0), 0);
 
-  // 3. VENTAS ACUMULADAS DEL AÑO (YTD)
-  const rowsAnio = baseRows.filter(r => {
-    const d = new Date(r['FECHA']);
-    if (isNaN(d.getTime())) return false;
-    return d.getFullYear() === refDate.getFullYear();
-  });
-  const totalAnio = rowsAnio.length > 0 ? rowsAnio.reduce((a, r) => a + (Number(r['NETO']) || 0), 0) : baseRows.reduce((a, r) => a + (Number(r['NETO']) || 0), 0);
-  const docsAnio = new Set((rowsAnio.length > 0 ? rowsAnio : baseRows).map(r => r['FOLIO'])).size;
-  const cantAnio = (rowsAnio.length > 0 ? rowsAnio : baseRows).reduce((a, r) => a + (Number(r['CANTFACTURADA']) || 0), 0);
+  // 3. VENTAS ACUMULADAS DEL AÑO (YTD) - Usar dataset completo 'rows' de todo el año
+  const rowsAnio = baseRows.filter(r => r['FECHA'] && r['FECHA'].startsWith(refYearISO));
+  const totalAnio = rowsAnio.reduce((a, r) => a + (Number(r['NETO']) || 0), 0);
+  const docsAnio = new Set(rowsAnio.map(r => r['FOLIO'])).size;
+  const cantAnio = rowsAnio.reduce((a, r) => a + (Number(r['CANTFACTURADA']) || 0), 0);
 
   // 4. PROYECCIONES AI FORECAST
   const currentDay = refDate.getDate();
   const daysInMonth = new Date(refDate.getFullYear(), refDate.getMonth() + 1, 0).getDate();
   const currentDayOfYear = Math.floor((refDate - new Date(refDate.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
 
-  const projHoy = Math.round((totalHoy > 0 ? totalHoy : (totalMes / (currentDay || 1))) * 1.15);
+  const projHoy = Math.round(totalHoy * 1.15);
   const projMes = currentDay > 0 ? Math.round((totalMes / currentDay) * daysInMonth) : Math.round(totalMes * 1.10);
   const projAnio = currentDayOfYear > 0 ? Math.round((totalAnio / currentDayOfYear) * 365) : Math.round(totalAnio * 1.20);
 
@@ -1624,9 +1617,9 @@ function renderSummaryCards() {
   const elTodaySub = document.getElementById('todaySub');
   const elTodayComp = document.getElementById('todayCompare');
 
-  if (elTodayVal) elTodayVal.textContent = formatCLP(totalHoy > 0 ? totalHoy : (totalMes > 0 ? Math.round(totalMes / (currentDay || 1)) : 0));
+  if (elTodayVal) elTodayVal.textContent = formatCLP(totalHoy);
   if (elTodayDate) elTodayDate.textContent = diaNombre;
-  if (elTodaySub) elTodaySub.textContent = `${formatNum(docsHoy || 1)} documentos · ${formatNum(cantHoy || 1)} unidades`;
+  if (elTodaySub) elTodaySub.textContent = `${formatNum(docsHoy)} documentos · ${formatNum(cantHoy)} unidades`;
   if (elTodayComp) elTodayComp.textContent = '🟢 En vivo';
 
   // RENDER CARD 2: MES (MTD)
