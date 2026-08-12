@@ -1792,8 +1792,6 @@ async function deleteCurrentRow() {
     if (typeof showToast === 'function') showToast('⚠️ Error al eliminar: ' + err.message);
   }
 }
-  }
-});
 
 // ---------- Refresh manual y automático ----------
 document.getElementById('refreshBtn').addEventListener('click', () => loadData(true));
