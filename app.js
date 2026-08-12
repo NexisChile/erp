@@ -1093,6 +1093,9 @@ function setupAllButtonListeners() {
   const cotizFlt = document.getElementById('toggleCotizFiltersBtn');
   if (cotizFlt) cotizFlt.onclick = () => toggleCotizMobileFilters();
 
+  // 8. Filtros de Periodo de Fecha (Hoy, 7 Días, Este Mes, Este Año, Todo)
+  setupDatePresetListeners();
+
   const sideAuth = document.getElementById('sidebarAuthBtn');
   if (sideAuth) sideAuth.onclick = () => { if (typeof AuthManager !== 'undefined') AuthManager.openLoginModal(); };
 
@@ -1126,6 +1129,69 @@ function setupAllButtonListeners() {
 
       if (typeof AuthManager !== 'undefined') {
         AuthManager.login(email, pass, canal);
+      }
+    };
+  });
+}
+
+function setupDatePresetListeners() {
+  const container = document.getElementById('datePresets');
+  if (!container) return;
+
+  const presetBtns = container.querySelectorAll('.preset-btn');
+  presetBtns.forEach(btn => {
+    btn.onclick = (e) => {
+      e.preventDefault();
+      
+      presetBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const preset = btn.dataset.preset;
+      const elDesde = document.getElementById('fltDesde');
+      const elHasta = document.getElementById('fltHasta');
+      
+      if (!elDesde || !elHasta) return;
+
+      let now = new Date();
+      if (rows && rows.length > 0) {
+        const validDates = rows.map(r => new Date(r['FECHA'])).filter(d => !isNaN(d.getTime()));
+        if (validDates.length > 0) {
+          const maxDatasetDate = new Date(Math.max(...validDates));
+          if (maxDatasetDate.getFullYear() > now.getFullYear()) {
+            now = maxDatasetDate;
+          }
+        }
+      }
+
+      const formatDate = (d) => d.toISOString().slice(0, 10);
+
+      if (preset === 'today') {
+        elDesde.value = formatDate(now);
+        elHasta.value = formatDate(now);
+      } else if (preset === '7days') {
+        const past = new Date(now);
+        past.setDate(past.getDate() - 7);
+        elDesde.value = formatDate(past);
+        elHasta.value = formatDate(now);
+      } else if (preset === 'thisMonth') {
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        elDesde.value = formatDate(startOfMonth);
+        elHasta.value = formatDate(endOfMonth);
+      } else if (preset === 'thisYear') {
+        const startOfYear = new Date(now.getFullYear(), 0, 1);
+        const endOfYear = new Date(now.getFullYear(), 11, 31);
+        elDesde.value = formatDate(startOfYear);
+        elHasta.value = formatDate(endOfYear);
+      } else if (preset === 'all') {
+        elDesde.value = '';
+        elHasta.value = '';
+      }
+
+      applyFilters();
+
+      if (typeof showToast === 'function') {
+        showToast(`📅 Periodo aplicado: ${btn.textContent.trim()}`);
       }
     };
   });
@@ -1276,11 +1342,22 @@ function applyFilters() {
 });
 document.getElementById('clearFiltersBtn').addEventListener('click', () => {
   ['fltDesde', 'fltHasta', 'fltCanal', 'fltTienda', 'fltVendedor', 'fltFamilia', 'fltRegion'].forEach(id => {
-    document.getElementById(id).value = '';
+    const el = document.getElementById(id);
+    if (el) el.value = '';
   });
   const sb = document.getElementById('searchBox');
   if (sb) sb.value = '';
+
+  const container = document.getElementById('datePresets');
+  if (container) {
+    const presetBtns = container.querySelectorAll('.preset-btn');
+    presetBtns.forEach(b => b.classList.remove('active'));
+    const allBtn = container.querySelector('[data-preset="all"]');
+    if (allBtn) allBtn.classList.add('active');
+  }
+
   applyFilters();
+  if (typeof showToast === 'function') showToast('🧹 Todos los filtros fueron limpiados');
 });
 
 // ---------- Render orquestador ----------
