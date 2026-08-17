@@ -4759,41 +4759,243 @@ function closeCotizacionModal() {
     backdrop.style.opacity = '0';
     backdrop.style.pointerEvents = 'none';
   }
+  const d1 = document.getElementById('cotizRutSuggestions');
+  const d2 = document.getElementById('cotizClientSuggestions');
+  const badge = document.getElementById('cotizClientMatchBadge');
+  if (d1) d1.style.display = 'none';
+  if (d2) d2.style.display = 'none';
+  if (badge) badge.style.display = 'none';
 }
 
+// Cerrar sugerencias al hacer clic fuera
+document.addEventListener('click', (e) => {
+  const d1 = document.getElementById('cotizRutSuggestions');
+  const d2 = document.getElementById('cotizClientSuggestions');
+  const inRut = document.getElementById('cRut');
+  const inCli = document.getElementById('cCliente');
+
+  if (d1 && inRut && !d1.contains(e.target) && e.target !== inRut) {
+    d1.style.display = 'none';
+  }
+  if (d2 && inCli && !d2.contains(e.target) && e.target !== inCli) {
+    d2.style.display = 'none';
+  }
+});
+
 /**
- * Pobla el datalist de clientes para autocompletar
+ * Limpia y normaliza un RUT chileno (sin puntos, guiones ni espacios en mayúsculas)
  */
-function populateCotizClientDatalist() {
-  const datalist = document.getElementById('cotizClientDatalist');
-  if (!datalist) return;
-
-  const allClients = new Set();
-  (rows || []).forEach(r => { if (r['CLIENTE']) allClients.add(r['CLIENTE'].trim()); });
-  (cotizacionesRows || []).forEach(r => { if (r['CLIENTE']) allClients.add(r['CLIENTE'].trim()); });
-
-  datalist.innerHTML = Array.from(allClients).sort().map(c => `<option value="${c}"></option>`).join('');
+function cleanRutStr(raw) {
+  return String(raw || '').replace(/[\.\-\s]/g, '').toUpperCase();
 }
 
 /**
- * Busca datos del cliente al ingresar RUT o Nombre
+ * Formatea un RUT chileno limpio a formato XX.XXX.XXX-X
+ */
+function formatChileanRut(raw) {
+  const clean = cleanRutStr(raw);
+  if (!clean || clean.length < 2) return raw || '';
+  const cuerpo = clean.slice(0, -1);
+  const dv = clean.slice(-1);
+  const formattedCuerpo = cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return `${formattedCuerpo}-${dv}`;
+}
+
+/**
+ * Genera base de datos consolidada y deduplicada de clientes
+ */
+function getCotizClientDatabase() {
+  const clientMap = new Map();
+
+  const processRow = (r) => {
+    const nombre = (r['CLIENTE'] || '').trim();
+    if (!nombre) return;
+    const rut = (r['RUT'] || '').trim();
+    const rutClean = cleanRutStr(rut);
+    const comuna = (r['COMUNA'] || '').trim();
+    const region = (r['REGION'] || '').trim();
+    const email = (r['EMAIL'] || '').trim();
+
+    const key = rutClean || nombre.toUpperCase();
+    if (!clientMap.has(key)) {
+      clientMap.set(key, {
+        cliente: nombre,
+        rut: rut || (rutClean ? formatChileanRut(rutClean) : ''),
+        rutClean: rutClean,
+        comuna: comuna,
+        region: region,
+        email: email,
+        txCount: 0
+      });
+    }
+    const item = clientMap.get(key);
+    item.txCount++;
+    if (!item.rut && rut) item.rut = rut;
+    if (!item.rutClean && rutClean) item.rutClean = rutClean;
+    if (!item.comuna && comuna) item.comuna = comuna;
+    if (!item.region && region) item.region = region;
+    if (!item.email && email) item.email = email;
+  };
+
+  (rows || []).forEach(processRow);
+  (cotizacionesRows || []).forEach(processRow);
+
+  return Array.from(clientMap.values());
+}
+
+/**
+ * Predicción en tiempo real al ingresar el RUT
+ */
+function onCotizRutInput(val) {
+  const raw = String(val || '').trim();
+  const q = cleanRutStr(raw);
+  const dropdown = document.getElementById('cotizRutSuggestions');
+  const matchBadge = document.getElementById('cotizClientMatchBadge');
+
+  if (!dropdown) return;
+
+  if (!q || q.length < 2) {
+    dropdown.style.display = 'none';
+    if (matchBadge) matchBadge.style.display = 'none';
+    return;
+  }
+
+  const clientDb = getCotizClientDatabase();
+
+  // 1. Verificar coincidencia exacta por RUT
+  const exactMatch = clientDb.find(c => c.rutClean === q);
+  if (exactMatch) {
+    selectCotizClientPrediction(exactMatch, false);
+    if (matchBadge) matchBadge.style.display = 'inline-flex';
+    dropdown.style.display = 'none';
+    return;
+  } else {
+    if (matchBadge) matchBadge.style.display = 'none';
+  }
+
+  // 2. Filtrar candidatos predictivos
+  const candidates = clientDb.filter(c => {
+    return (c.rutClean && c.rutClean.includes(q)) || (c.cliente && c.cliente.toUpperCase().includes(raw.toUpperCase()));
+  }).slice(0, 6);
+
+  if (candidates.length === 0) {
+    dropdown.innerHTML = `
+      <div style="padding: 10px 12px; font-size: 0.78rem; color: #94a3b8;">
+        Sin coincidencias previas para RUT <strong>${raw}</strong>. Se registrará como cliente nuevo.
+      </div>
+    `;
+    dropdown.style.display = 'block';
+    return;
+  }
+
+  // 3. Renderizar opciones de predicción
+  dropdown.innerHTML = candidates.map(c => {
+    const loc = [c.comuna, c.region].filter(Boolean).join(', ');
+    const safeClientJson = JSON.stringify(c).replace(/"/g, '&quot;');
+    return `
+      <div class="cotiz-pred-item" onclick="selectCotizClientPrediction(${safeClientJson}, true)">
+        <div>
+          <div class="cotiz-pred-name">${c.cliente}</div>
+          <div class="cotiz-pred-loc">${loc ? '📍 ' + loc : 'Cliente Registrado'}</div>
+        </div>
+        <div style="text-align: right;">
+          <span class="cotiz-pred-rut">${c.rut || formatChileanRut(c.rutClean)}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  dropdown.style.display = 'block';
+}
+
+/**
+ * Predicción en tiempo real al ingresar la Razón Social / Nombre
+ */
+function onCotizClientNameInput(val) {
+  const raw = String(val || '').trim();
+  const q = raw.toUpperCase();
+  const dropdown = document.getElementById('cotizClientSuggestions');
+  const matchBadge = document.getElementById('cotizClientMatchBadge');
+
+  if (!dropdown) return;
+
+  if (!q || q.length < 2) {
+    dropdown.style.display = 'none';
+    if (matchBadge) matchBadge.style.display = 'none';
+    return;
+  }
+
+  const clientDb = getCotizClientDatabase();
+
+  // 1. Verificar coincidencia exacta
+  const exactMatch = clientDb.find(c => c.cliente.toUpperCase() === q);
+  if (exactMatch) {
+    selectCotizClientPrediction(exactMatch, false);
+    if (matchBadge) matchBadge.style.display = 'inline-flex';
+    dropdown.style.display = 'none';
+    return;
+  }
+
+  // 2. Filtrar predicciones
+  const candidates = clientDb.filter(c => c.cliente.toUpperCase().includes(q)).slice(0, 6);
+  if (candidates.length === 0) {
+    dropdown.style.display = 'none';
+    return;
+  }
+
+  dropdown.innerHTML = candidates.map(c => {
+    const loc = [c.comuna, c.region].filter(Boolean).join(', ');
+    const safeClientJson = JSON.stringify(c).replace(/"/g, '&quot;');
+    return `
+      <div class="cotiz-pred-item" onclick="selectCotizClientPrediction(${safeClientJson}, true)">
+        <div>
+          <div class="cotiz-pred-name">${c.cliente}</div>
+          <div class="cotiz-pred-loc">${loc ? '📍 ' + loc : ''}</div>
+        </div>
+        <div style="text-align: right;">
+          <span class="cotiz-pred-rut">${c.rut || formatChileanRut(c.rutClean)}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  dropdown.style.display = 'block';
+}
+
+/**
+ * Selecciona una predicción y autocompleta todos los campos del cliente
+ */
+function selectCotizClientPrediction(client, shouldCloseDropdowns = true) {
+  if (!client) return;
+
+  const inRut = document.getElementById('cRut');
+  const inCli = document.getElementById('cCliente');
+  const inCom = document.getElementById('cComuna');
+  const inReg = document.getElementById('cRegion');
+  const inEml = document.getElementById('cEmail');
+  const matchBadge = document.getElementById('cotizClientMatchBadge');
+
+  if (inRut) inRut.value = client.rut || (client.rutClean ? formatChileanRut(client.rutClean) : inRut.value);
+  if (inCli) inCli.value = client.cliente;
+  if (inCom && client.comuna) inCom.value = client.comuna;
+  if (inReg && client.region) inReg.value = client.region;
+  if (inEml && client.email) inEml.value = client.email;
+
+  if (matchBadge) matchBadge.style.display = 'inline-flex';
+
+  if (shouldCloseDropdowns) {
+    const d1 = document.getElementById('cotizRutSuggestions');
+    const d2 = document.getElementById('cotizClientSuggestions');
+    if (d1) d1.style.display = 'none';
+    if (d2) d2.style.display = 'none';
+  }
+}
+
+/**
+ * Alias de compatibilidad
  */
 function lookupClientByRut(val) {
-  const q = String(val || '').trim().toLowerCase();
-  if (!q || q.length < 3) return;
-
-  const match = (rows || []).find(r => (r['RUT'] && r['RUT'].toLowerCase().includes(q)) || (r['CLIENTE'] && r['CLIENTE'].toLowerCase().includes(q)));
-  if (match) {
-    const cCli = document.getElementById('cCliente');
-    const cRut = document.getElementById('cRut');
-    const cCom = document.getElementById('cComuna');
-    const cReg = document.getElementById('cRegion');
-
-    if (cCli && (!cCli.value || cCli.value.length < 3)) cCli.value = match['CLIENTE'] || '';
-    if (cRut && !cRut.value) cRut.value = match['RUT'] || '';
-    if (cCom && !cCom.value) cCom.value = match['COMUNA'] || '';
-    if (cReg && !cReg.value) cReg.value = match['REGION'] || '';
-  }
+  onCotizRutInput(val);
 }
 
 /**
