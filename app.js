@@ -879,6 +879,16 @@ function switchView(viewName) {
   if (btn) btn.classList.add('active');
   if (targetView) targetView.classList.add('active');
 
+  // Control de visualización de la barra de filtros global de Ventas
+  const globalFiltersBar = document.getElementById('filtersBar');
+  if (globalFiltersBar) {
+    if (viewName === 'tablero' || viewName === 'tabla' || viewName === 'bistudio') {
+      globalFiltersBar.style.display = '';
+    } else {
+      globalFiltersBar.style.display = 'none';
+    }
+  }
+
   // Ejecutar renderizador del módulo activado
   if (viewName === 'tablero') {
     if (typeof renderKPIs === 'function') renderKPIs();
@@ -2701,6 +2711,46 @@ let chartCotizRespInstance = null;
 let cotizListenersAttached = false;
 
 /**
+ * Parser de fecha robusto para Google Sheets (GViz Date(Y,M,D), DD/MM/YYYY, YYYY-MM-DD)
+ */
+function parseCotizDate(raw) {
+  if (!raw) return null;
+  if (raw instanceof Date && !isNaN(raw.getTime())) return raw;
+  const str = String(raw).trim();
+  if (!str) return null;
+
+  // 1. Formato GViz: Date(YYYY, M, D) (M es 0-indexed en GViz)
+  const gvizMatch = str.match(/Date\((\d+),\s*(\d+),\s*(\d+)/i);
+  if (gvizMatch) {
+    const y = parseInt(gvizMatch[1], 10);
+    const m = parseInt(gvizMatch[2], 10);
+    const d = parseInt(gvizMatch[3], 10);
+    return new Date(y, m, d);
+  }
+
+  // 2. Formato DD/MM/YYYY o DD-MM-YYYY
+  const dmyMatch = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+  if (dmyMatch) {
+    const d = parseInt(dmyMatch[1], 10);
+    const m = parseInt(dmyMatch[2], 10) - 1;
+    const y = parseInt(dmyMatch[3], 10);
+    return new Date(y, m, d);
+  }
+
+  // 3. Formato YYYY-MM-DD
+  const ymdMatch = str.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+  if (ymdMatch) {
+    const y = parseInt(ymdMatch[1], 10);
+    const m = parseInt(ymdMatch[2], 10) - 1;
+    const d = parseInt(ymdMatch[3], 10);
+    return new Date(y, m, d);
+  }
+
+  const dt = new Date(str);
+  return isNaN(dt.getTime()) ? null : dt;
+}
+
+/**
  * Normaliza las filas crudas desde Google Sheets (GViz JSONP o CSV Proxy)
  */
 function normalizeCotizacionesRows(rawRows) {
@@ -2764,7 +2814,7 @@ function normalizeCotizacionesRows(rawRows) {
     }
     let costo = typeof costoRaw === 'number' ? costoRaw : parseFloat(String(costoRaw).replace(/\./g, '').replace(/,/g, '.')) || 0;
 
-    let fechaObj = typeof parseRowDate === 'function' ? parseRowDate(fechaRaw) : null;
+    let fechaObj = parseCotizDate(fechaRaw);
     let fechaStr = fechaObj ? fechaObj.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' }) : String(fechaRaw || '');
 
     if (!sku && !cliente && !numCot && total === 0) continue;
@@ -2939,6 +2989,83 @@ async function refreshCotizacionesLive(silent = false) {
 }
 
 /**
+ * Establece rangos de fechas predefinidos para Cotizaciones
+ */
+function setCotizDatePreset(preset) {
+  const fDesde = document.getElementById('fltCotizDesde');
+  const fHasta = document.getElementById('fltCotizHasta');
+  const container = document.getElementById('cotizDatePresets');
+  if (container) {
+    container.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+    const btn = container.querySelector(`[data-preset="${preset}"]`);
+    if (btn) btn.classList.add('active');
+  }
+
+  const now = new Date();
+  let dStart = null;
+  let dEnd = null;
+
+  if (preset === 'today') {
+    dStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+    dEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+  } else if (preset === '7days') {
+    dStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    dEnd = now;
+  } else if (preset === 'thisMonth') {
+    dStart = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
+    dEnd = now;
+  } else if (preset === 'thisYear') {
+    dStart = new Date(now.getFullYear(), 0, 1, 0, 0, 0);
+    dEnd = now;
+  } else if (preset === 'all') {
+    dStart = null;
+    dEnd = null;
+  }
+
+  const toInputDate = (d) => {
+    if (!d) return '';
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
+  if (fDesde) fDesde.value = toInputDate(dStart);
+  if (fHasta) fHasta.value = toInputDate(dEnd);
+
+  applyCotizacionesFilters();
+}
+
+/**
+ * Limpia todos los filtros activos de Cotizaciones
+ */
+function clearCotizFilters() {
+  const fDesde = document.getElementById('fltCotizDesde');
+  const fHasta = document.getElementById('fltCotizHasta');
+  const fVend = document.getElementById('fltCotizVendedor');
+  const fEstado = document.getElementById('fltCotizEstado');
+  const fTipo = document.getElementById('fltCotizTipo');
+  const fSearch = document.getElementById('cotizSearchBox');
+
+  if (fDesde) fDesde.value = '';
+  if (fHasta) fHasta.value = '';
+  if (fVend) fVend.value = '';
+  if (fEstado) fEstado.value = '';
+  if (fTipo) fTipo.value = '';
+  if (fSearch) fSearch.value = '';
+
+  const container = document.getElementById('cotizDatePresets');
+  if (container) {
+    container.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+    const allBtn = container.querySelector('[data-preset="all"]');
+    if (allBtn) allBtn.classList.add('active');
+  }
+
+  applyCotizacionesFilters();
+  if (typeof showToast === 'function') showToast('🧹 Filtros de cotizaciones restablecidos');
+}
+
+/**
  * Llena dinámicamente las opciones de los filtros nativos de Cotizaciones
  */
 function populateCotizFilterOptions() {
@@ -2985,42 +3112,47 @@ function populateCotizFilterOptions() {
 }
 
 /**
- * Aplica los filtros seleccionados a las cotizaciones y actualiza vistas
+ * Aplica los filtros seleccionados a las cotizaciones y actualiza vistas en tiempo real
  */
 function applyCotizacionesFilters() {
-  if (!cotizacionesRows) return;
+  if (!cotizacionesRows || !Array.isArray(cotizacionesRows)) return;
 
   const fDesde = document.getElementById('fltCotizDesde')?.value;
   const fHasta = document.getElementById('fltCotizHasta')?.value;
-  const fVend = document.getElementById('fltCotizVendedor')?.value;
-  const fEstado = document.getElementById('fltCotizEstado')?.value;
-  const fTipo = document.getElementById('fltCotizTipo')?.value;
+  const fVend = (document.getElementById('fltCotizVendedor')?.value || '').trim();
+  const fEstado = (document.getElementById('fltCotizEstado')?.value || '').trim().toLowerCase();
+  const fTipo = (document.getElementById('fltCotizTipo')?.value || '').trim().toLowerCase();
   const fSearch = (document.getElementById('cotizSearchBox')?.value || '').trim().toLowerCase();
 
   const dDesde = fDesde ? new Date(fDesde + 'T00:00:00') : null;
   const dHasta = fHasta ? new Date(fHasta + 'T23:59:59') : null;
 
   filteredCotizacionesRows = cotizacionesRows.filter(r => {
-    // Filtro Fechas
+    // 1. Filtro de Rango de Fechas
     if (dDesde && r.fechaObj && r.fechaObj < dDesde) return false;
     if (dHasta && r.fechaObj && r.fechaObj > dHasta) return false;
 
-    // Filtro Vendedor
+    // 2. Filtro Vendedor (Código numérico)
     if (fVend && r.vendedor !== fVend) return false;
 
-    // Filtro Estado
+    // 3. Filtro Estado (Columna X / Columna Q)
     if (fEstado) {
-      const matchEstado = (r.estadoFinal && r.estadoFinal.toLowerCase() === fEstado.toLowerCase()) ||
-                          (r.estado && r.estado.toLowerCase() === fEstado.toLowerCase());
-      if (!matchEstado) return false;
+      const stFinal = (r.estadoFinal || '').toLowerCase();
+      const stGen = (r.estado || '').toLowerCase();
+      if (stFinal !== fEstado && stGen !== fEstado && !stFinal.includes(fEstado) && !stGen.includes(fEstado)) {
+        return false;
+      }
     }
 
-    // Filtro Tipo Solicitud
-    if (fTipo && r.tipo.toLowerCase() !== fTipo.toLowerCase()) return false;
+    // 4. Filtro Tipo Solicitud (Estándar, Cyber, Promoción, Especial)
+    if (fTipo) {
+      const tipoLow = (r.tipo || '').toLowerCase();
+      if (tipoLow !== fTipo && !tipoLow.includes(fTipo)) return false;
+    }
 
-    // Filtro Búsqueda Texto
+    // 5. Filtro Búsqueda de Texto en Vivo
     if (fSearch) {
-      const searchStr = `${r.numCot} ${r.cliente} ${r.rut} ${r.sku} ${r.producto} ${r.vendedor} ${r.nv} ${r.fa} ${r.responsable}`.toLowerCase();
+      const searchStr = `${r.numCot} ${r.cliente} ${r.rut} ${r.sku} ${r.producto} ${r.vendedor} ${r.nv} ${r.fa} ${r.responsable} ${r.observaciones}`.toLowerCase();
       if (!searchStr.includes(fSearch)) return false;
     }
 
@@ -3645,25 +3777,20 @@ function setupCotizacionesEventListeners() {
   if (cotizListenersAttached) return;
   cotizListenersAttached = true;
 
-  const fDesde = document.getElementById('fltCotizDesde');
-  const fHasta = document.getElementById('fltCotizHasta');
-  const fVend = document.getElementById('fltCotizVendedor');
-  const fEstado = document.getElementById('fltCotizEstado');
-  const fTipo = document.getElementById('fltCotizTipo');
+  ['fltCotizDesde', 'fltCotizHasta', 'fltCotizVendedor', 'fltCotizEstado', 'fltCotizTipo'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('change', () => applyCotizacionesFilters());
+      el.addEventListener('input', () => applyCotizacionesFilters());
+    }
+  });
+
   const fSearch = document.getElementById('cotizSearchBox');
-
   let searchTimer = null;
-
-  if (fDesde) fDesde.addEventListener('change', () => applyCotizacionesFilters());
-  if (fHasta) fHasta.addEventListener('change', () => applyCotizacionesFilters());
-  if (fVend) fVend.addEventListener('change', () => applyCotizacionesFilters());
-  if (fEstado) fEstado.addEventListener('change', () => applyCotizacionesFilters());
-  if (fTipo) fTipo.addEventListener('change', () => applyCotizacionesFilters());
-
   if (fSearch) {
     fSearch.addEventListener('input', () => {
       clearTimeout(searchTimer);
-      searchTimer = setTimeout(() => applyCotizacionesFilters(), 250);
+      searchTimer = setTimeout(() => applyCotizacionesFilters(), 200);
     });
   }
 

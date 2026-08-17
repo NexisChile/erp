@@ -1170,16 +1170,25 @@
         <!-- VISTA: COTIZACIONES (DASHBOARD MAYORISTAS) -->
         <div class="view" id="view-cotizaciones">
           <!-- BARRA DE FILTROS NATIVA DE COTIZACIONES -->
-          <div class="ax-card filters-bar" style="margin-bottom: 1.5rem;">
-            <div class="filters-bar__header" style="margin-bottom: 0.75rem;">
-              <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <span class="section-badge-dot" style="background: #3b82f6;"></span>
-                <h2 class="dashboard-section-title" style="margin: 0; font-size: 1.15rem;">Medición & Análisis de Cotizaciones (Pestaña Mayoristas)</h2>
+          <div class="ax-card filters-bar" id="cotizFiltersBar" style="margin-bottom: 1.5rem;">
+            <div class="filters-bar__header" style="margin-bottom: 0.85rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;">
+              <div class="date-presets" id="cotizDatePresets">
+                <span class="presets-label">Periodo:</span>
+                <button type="button" class="preset-btn" data-preset="today" onclick="setCotizDatePreset('today')">Hoy</button>
+                <button type="button" class="preset-btn" data-preset="7days" onclick="setCotizDatePreset('7days')">7 Días</button>
+                <button type="button" class="preset-btn" data-preset="thisMonth" onclick="setCotizDatePreset('thisMonth')">Este Mes</button>
+                <button type="button" class="preset-btn" data-preset="thisYear" onclick="setCotizDatePreset('thisYear')">Este Año</button>
+                <button type="button" class="preset-btn active" data-preset="all" onclick="setCotizDatePreset('all')">Todo</button>
               </div>
+
               <div class="filter-actions-group">
                 <button type="button" class="btn-secondary btn-sm mobile-filter-toggle-btn" id="toggleCotizFiltersBtn" onclick="toggleCotizMobileFilters()">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
                   <span>Filtros ▾</span>
+                </button>
+                <button type="button" class="btn-secondary btn-sm" id="clearCotizFiltersBtn" onclick="clearCotizFilters()">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                  <span>Limpiar Filtros</span>
                 </button>
                 <button type="button" class="btn-secondary btn-sm" onclick="refreshCotizacionesLive()" title="Sincronizar datos de Google Sheets en vivo">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
@@ -1194,27 +1203,27 @@
             <div class="filter-controls">
               <div class="filter-group">
                 <label for="fltCotizDesde">Desde</label>
-                <input type="date" id="fltCotizDesde" class="filter-input" />
+                <input type="date" id="fltCotizDesde" class="filter-input" onchange="applyCotizacionesFilters()" />
               </div>
               <div class="filter-group">
                 <label for="fltCotizHasta">Hasta</label>
-                <input type="date" id="fltCotizHasta" class="filter-input" />
+                <input type="date" id="fltCotizHasta" class="filter-input" onchange="applyCotizacionesFilters()" />
               </div>
               <div class="filter-group">
                 <label for="fltCotizVendedor">Cod. Vendedor</label>
-                <select id="fltCotizVendedor" class="filter-select"><option value="">Todos</option></select>
+                <select id="fltCotizVendedor" class="filter-select" onchange="applyCotizacionesFilters()"><option value="">Todos los Vendedores</option></select>
               </div>
               <div class="filter-group">
                 <label for="fltCotizEstado">Estado</label>
-                <select id="fltCotizEstado" class="filter-select"><option value="">Todos</option></select>
+                <select id="fltCotizEstado" class="filter-select" onchange="applyCotizacionesFilters()"><option value="">Todos los Estados</option></select>
               </div>
               <div class="filter-group">
                 <label for="fltCotizTipo">Tipo Solicitud</label>
-                <select id="fltCotizTipo" class="filter-select"><option value="">Todos</option></select>
+                <select id="fltCotizTipo" class="filter-select" onchange="applyCotizacionesFilters()"><option value="">Todos los Tipos</option></select>
               </div>
-              <div class="filter-group" style="flex: 2; min-width: 220px;">
+              <div class="filter-group" style="flex: 2; min-width: 240px;">
                 <label for="cotizSearchBox">Buscar</label>
-                <input type="text" id="cotizSearchBox" class="filter-input" placeholder="Buscar por Nº Cot, Cliente, RUT, SKU..." />
+                <input type="text" id="cotizSearchBox" class="filter-input" placeholder="Buscar por Nº Cot, Cliente, RUT, SKU, Vendedor..." />
               </div>
             </div>
           </div>
