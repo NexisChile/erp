@@ -2099,6 +2099,14 @@ function startAutoRefresh() {
 // ---------- Init ----------
 loadData(true);
 startAutoRefresh();
+if (typeof fetchCotizacionesData === 'function') {
+  fetchCotizacionesData().then(loaded => {
+    if (loaded && loaded.length > 0) {
+      cotizacionesRows = loaded;
+      populateCotizFilterOptions();
+    }
+  }).catch(() => {});
+}
 
 
 
@@ -5362,6 +5370,7 @@ async function loadData(showLoadingState = true) {
 
 function fetchGVizViaJSONP(spreadsheetId, gid, timeoutMs = 8000) {
   return new Promise((resolve, reject) => {
+    let scriptEl = null;
     const callbackName = 'gviz_jsonp_cb_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
 
     // Interceptor global para google.visualization.Query.setResponse si Google no usa el custom callback
@@ -5397,6 +5406,7 @@ function fetchGVizViaJSONP(spreadsheetId, gid, timeoutMs = 8000) {
 
       const rawCols = json.table.cols || [];
       const cols = rawCols.map(c => c ? (c.label || c.id || '').toUpperCase().trim() : '');
+      const colIds = rawCols.map(c => c ? (c.id || '').toUpperCase().trim() : '');
 
       const parsedRows = json.table.rows.map((row, i) => {
         const obj = {};
@@ -5407,9 +5417,8 @@ function fetchGVizViaJSONP(spreadsheetId, gid, timeoutMs = 8000) {
             val = (row.c[j].v !== undefined && row.c[j].v !== null) ? row.c[j].v : (row.c[j].f !== undefined && row.c[j].f !== null ? row.c[j].f : '');
             fVal = (row.c[j].f !== undefined && row.c[j].f !== null) ? row.c[j].f : '';
           }
-          if (colName) {
-            obj[colName] = val;
-          }
+          if (colName) obj[colName] = val;
+          if (colIds[j]) obj[colIds[j]] = val;
           obj['_col_' + j] = val;
           if (fVal) obj['_fcol_' + j] = fVal;
         });
@@ -5420,12 +5429,12 @@ function fetchGVizViaJSONP(spreadsheetId, gid, timeoutMs = 8000) {
       resolve(parsedRows);
     };
 
-    const scriptEl = document.createElement('script');
-    scriptEl.src = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?tqx=out:json;responseHandler:${callbackName}&gid=${gid}&headers=1`;
+    scriptEl = document.createElement('script');
+    scriptEl.src = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?tqx=out:json;responseHandler:${callbackName}&gid=${gid}`;
     scriptEl.onerror = function() {
       clearTimeout(timeoutTimer);
       delete window[callbackName];
-      if (scriptEl.parentNode) scriptEl.parentNode.removeChild(scriptEl);
+      if (scriptEl && scriptEl.parentNode) scriptEl.parentNode.removeChild(scriptEl);
       reject(new Error('Error al cargar script JSONP de Google Sheets'));
     };
 
