@@ -18,7 +18,55 @@ SPREADSHEET_GID = "999482111"
 
 CACHE_DIR = os.path.join(DIRECTORY, ".cache")
 os.makedirs(CACHE_DIR, exist_ok=True)
-CSV_CACHE_FILE = os.path.join(CACHE_DIR, "ventas_cache.csv")
+
+GIDS = {
+    "999482111": "ventas_cache.csv",
+    "2001859242": "mayoristas_cache.csv",
+    "1736518601": "imagenes_cache.csv"
+}
+
+MEMORY_CSV_CACHES = {}
+
+# Cargar caché existente en disco AL INICIAR SERVIDOR
+for gid, filename in GIDS.items():
+    cache_path = os.path.join(CACHE_DIR, filename)
+    if os.path.exists(cache_path):
+        try:
+            with open(cache_path, 'rb') as f:
+                MEMORY_CSV_CACHES[gid] = f.read()
+            print(f"[Server Startup] Cache local CSV cargada para GID {gid} ({len(MEMORY_CSV_CACHES[gid]):,} bytes)")
+        except Exception as e:
+            print(f"[Server Startup] Error leyendo cache disco ({gid}): {e}")
+
+def update_csv_cache_bg(gid="999482111"):
+    filename = GIDS.get(gid, f"cache_{gid}.csv")
+    cache_file = os.path.join(CACHE_DIR, filename)
+    url = f"https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/export?format=csv&gid={gid}&_={int(time.time()*1000)}"
+    try:
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            data = resp.read()
+            if len(data) > 200 and (b',' in data or b';' in data):
+                MEMORY_CSV_CACHES[gid] = data
+                with open(cache_file, 'wb') as f:
+                    f.write(data)
+                print(f"[BG Sync] Sincronizados {len(data):,} bytes para GID {gid} desde Google Sheets")
+                return data
+    except Exception as e:
+        print(f"[BG Sync] Reintento en segundo plano ({gid}): {e}")
+    return None
+
+# Hilo de sincronización en segundo plano (cada 3 minutos para todas las hojas)
+def bg_thread():
+    while True:
+        for gid in GIDS.keys():
+            update_csv_cache_bg(gid)
+            time.sleep(2)
+        time.sleep(180)
+
+t = threading.Thread(target=bg_thread, daemon=True)
+t.start()
+
 
 MIME_TYPES = {
     '.html': 'text/html; charset=utf-8',
@@ -31,42 +79,6 @@ MIME_TYPES = {
     '.svg':  'image/svg+xml',
 }
 
-MEMORY_CSV_CACHE = None
-
-# Cargar caché existente en disco AL INICIAR SERVIDOR
-if os.path.exists(CSV_CACHE_FILE):
-    try:
-        with open(CSV_CACHE_FILE, 'rb') as f:
-            MEMORY_CSV_CACHE = f.read()
-        print(f"[Server Startup] Cache local CSV cargada ({len(MEMORY_CSV_CACHE):,} bytes)")
-    except Exception as e:
-        print(f"[Server Startup] Error leyendo cache disco: {e}")
-
-def update_csv_cache_bg():
-    global MEMORY_CSV_CACHE
-    url = f"https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/export?format=csv&gid={SPREADSHEET_GID}&_={int(time.time()*1000)}"
-    try:
-        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-        with urllib.request.urlopen(req, timeout=60) as resp:
-            data = resp.read()
-            if len(data) > 1000 and (b',' in data or b';' in data):
-                MEMORY_CSV_CACHE = data
-                with open(CSV_CACHE_FILE, 'wb') as f:
-                    f.write(data)
-                print(f"[BG Sync] Sincronizados {len(data):,} bytes desde Google Sheets")
-    except Exception as e:
-        print(f"[BG Sync] Reintento en segundo plano: {e}")
-
-# Hilo de sincronización en segundo plano (cada 3 minutos)
-def bg_thread():
-    while True:
-        update_csv_cache_bg()
-        time.sleep(180)
-
-t = threading.Thread(target=bg_thread, daemon=True)
-t.start()
-
-
 class Handler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
         pass # Silenciar logs repetitivos
@@ -75,9 +87,11 @@ class Handler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         path = parsed.path
 
-        # Endpoint /api/proxy (Respuesta instantánea < 10ms)
+        # Endpoint /api/proxy o /api/csv (Respuesta instantánea < 10ms)
         if path in ['/api/proxy', '/api/csv']:
-            self._proxy_csv()
+            query_params = parse_qs(parsed.query)
+            gid = query_params.get('gid', [SPREADSHEET_GID])[0]
+            self._proxy_csv(gid)
             return
 
         # Endpoint /api/glomax-products
@@ -112,13 +126,21 @@ class Handler(BaseHTTPRequestHandler):
         except Exception as e:
             self.send_error(500, str(e))
 
-    def _proxy_csv(self):
-        global MEMORY_CSV_CACHE
-        data = MEMORY_CSV_CACHE
+    def _proxy_csv(self, gid="999482111"):
+        data = MEMORY_CSV_CACHES.get(gid)
+        filename = GIDS.get(gid, f"cache_{gid}.csv")
+        cache_file = os.path.join(CACHE_DIR, filename)
 
-        if not data and os.path.exists(CSV_CACHE_FILE):
-            with open(CSV_CACHE_FILE, 'rb') as f:
-                data = f.read()
+        if not data and os.path.exists(cache_file):
+            try:
+                with open(cache_file, 'rb') as f:
+                    data = f.read()
+                    MEMORY_CSV_CACHES[gid] = data
+            except Exception:
+                pass
+
+        if not data:
+            data = update_csv_cache_bg(gid)
 
         if data:
             try:
@@ -157,3 +179,4 @@ def run_server():
 
 if __name__ == '__main__':
     run_server()
+

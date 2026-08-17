@@ -29,7 +29,8 @@
 
 <script>
 const SPREADSHEET_ID = "16bU5xUuPDvI6xIpuBabK9j_EiUFgcgMTq1T0S2LeVgQ";
-const SPREADSHEET_GID = "999482111";
+const SPREADSHEET_GID = "999482111"; // Ventas
+const SPREADSHEET_COTIZACIONES_GID = "2001859242"; // Mayoristas (Cotizaciones)
 
 function addStep(title, status, detail) {
   const div = document.createElement('div');
@@ -111,17 +112,48 @@ async function runDiag() {
     });
     if (result && result.table && result.table.rows) {
       jsonpStep.className = 'step ok';
-      jsonpStep.querySelector('.label').textContent = '✅ JSONP GViz Google Sheets';
-      jsonpStep.querySelector('.detail').textContent = `Filas: ${result.table.rows.length}\nColumnas: ${result.table.cols ? result.table.cols.length : '?'}`;
+      jsonpStep.querySelector('.label').textContent = '✅ JSONP GViz Google Sheets (Ventas)';
+      jsonpStep.querySelector('.detail').textContent = `Filas: ${result.table.rows.length.toLocaleString()}\nColumnas: ${result.table.cols ? result.table.cols.length : '?'}`;
     } else {
       jsonpStep.className = 'step fail';
-      jsonpStep.querySelector('.label').textContent = '❌ JSONP GViz - Sin datos';
+      jsonpStep.querySelector('.label').textContent = '❌ JSONP GViz (Ventas) - Sin datos';
       jsonpStep.querySelector('.detail').textContent = JSON.stringify(result).substring(0, 200);
     }
   } catch(e) {
     jsonpStep.className = 'step fail';
-    jsonpStep.querySelector('.label').textContent = '❌ JSONP GViz Google Sheets';
+    jsonpStep.querySelector('.label').textContent = '❌ JSONP GViz Google Sheets (Ventas)';
     jsonpStep.querySelector('.detail').textContent = `Error: ${e.message}`;
+  }
+
+  // 5. Test JSONP GViz Mayoristas (Cotizaciones GID: 2001859242)
+  const cotizStep = addStep('JSONP GViz Mayoristas (Cotizaciones)', 'pending', 'Probando pestaña Mayoristas (timeout 15s)...');
+  try {
+    const resultCotiz = await new Promise((resolve, reject) => {
+      const cb = 'diag_cotiz_' + Date.now();
+      const timer = setTimeout(() => { delete window[cb]; reject(new Error('Timeout 15s')); }, 15000);
+      window[cb] = (json) => {
+        clearTimeout(timer);
+        delete window[cb];
+        resolve(json);
+      };
+      const s = document.createElement('script');
+      s.src = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=responseHandler:${cb}&gid=${SPREADSHEET_COTIZACIONES_GID}&headers=1`;
+      s.onerror = () => { clearTimeout(timer); reject(new Error('Script load error')); };
+      document.head.appendChild(s);
+    });
+    if (resultCotiz && resultCotiz.table && resultCotiz.table.rows) {
+      cotizStep.className = 'step ok';
+      cotizStep.querySelector('.label').textContent = '✅ Pestaña Mayoristas Conectada (Cotizaciones)';
+      cotizStep.querySelector('.detail').textContent = `Filas: ${resultCotiz.table.rows.length.toLocaleString()}\nColumnas: ${resultCotiz.table.cols ? resultCotiz.table.cols.length : '?'}`;
+    } else {
+      cotizStep.className = 'step fail';
+      cotizStep.querySelector('.label').textContent = '❌ Pestaña Mayoristas - Sin datos';
+      cotizStep.querySelector('.detail').textContent = JSON.stringify(resultCotiz).substring(0, 200);
+    }
+  } catch(e) {
+    cotizStep.className = 'step fail';
+    cotizStep.querySelector('.label').textContent = '❌ Pestaña Mayoristas (Cotizaciones)';
+    cotizStep.querySelector('.detail').textContent = `Error: ${e.message}`;
   }
 
   // 5. Test IndexedDB caché

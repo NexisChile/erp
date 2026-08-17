@@ -894,7 +894,13 @@ function switchView(viewName) {
   } else if (viewName === 'fichatecnica') {
     if (typeof renderFichaTecnicaView === 'function') renderFichaTecnicaView();
   } else if (viewName === 'cotizaciones') {
-    if (typeof fetchCotizacionesData === 'function') fetchCotizacionesData();
+    if (typeof refreshCotizacionesLive === 'function') {
+      if (!cotizacionesRows || cotizacionesRows.length === 0) {
+        refreshCotizacionesLive();
+      } else {
+        if (typeof applyCotizacionesFilters === 'function') applyCotizacionesFilters();
+      }
+    }
   }
 
   if (typeof AudioSynth !== 'undefined' && AudioSynth.play) {
@@ -1047,56 +1053,7 @@ function resetBIAdvisorSim() {
   if (typeof showToast === 'function') showToast('🔄 Simulador BI restablecido');
 }
 
-function openCotizacionModal() {
-  const backdrop = document.getElementById('cotizacionModalBackdrop');
-  const formEl = document.getElementById('cotizacionModalForm');
-  if (formEl) formEl.reset();
-  if (backdrop) backdrop.classList.add('active');
-}
 
-function closeCotizacionModal() {
-  const backdrop = document.getElementById('cotizacionModalBackdrop');
-  if (backdrop) backdrop.classList.remove('active');
-}
-
-async function saveCotizacion() {
-  const data = {};
-  const fieldMappingCotiz = [
-    ['cFolio', 'FOLIO'], ['cTipo', 'TIPO'], ['cFecha', 'FECHA'],
-    ['cCodigo', 'CODIGO'], ['cDescripcion', 'DESCRIPCION'], ['cCant', 'CANTFACTURADA'],
-    ['cPreUni', 'PREUNI'], ['cCostos', 'COSTOS'], ['cCliente', 'CLIENTE'],
-    ['cRut', 'RUT'], ['cVendedor', 'CODVENDENDOR'], ['cCanal', 'CANAL FINAL'],
-    ['cTienda', 'TIENDA FINAL'], ['cFamilia', 'FAMILIA'], ['cCategoria', 'CATEGORIA'],
-    ['cRegion', 'REGION']
-  ];
-
-  fieldMappingCotiz.forEach(([elId, field]) => {
-    const el = document.getElementById(elId);
-    if (el) data[field] = el.value;
-  });
-
-  try {
-    if (typeof apiPost === 'function' && typeof API_URL !== 'undefined') {
-      await apiPost({ action: 'add_cotizacion', data });
-    }
-    if (typeof showToast === 'function') showToast('✅ Cotización guardada exitosamente');
-    closeCotizacionModal();
-    if (typeof refreshCotizacionesLive === 'function') refreshCotizacionesLive();
-  } catch (err) {
-    if (typeof showToast === 'function') showToast('⚠️ Error al guardar cotización: ' + err.message);
-  }
-}
-
-let cotizCurrentPage = 1;
-function changeCotizPage(dir) {
-  cotizCurrentPage += dir;
-  if (cotizCurrentPage < 1) cotizCurrentPage = 1;
-  const pageInfo = document.getElementById('cotizPageInfo');
-  if (pageInfo) pageInfo.textContent = `Página ${cotizCurrentPage}`;
-  if (typeof refreshCotizacionesLive === 'function') {
-    refreshCotizacionesLive();
-  }
-}
 
 function randomizeProductSelection() {
   const select = document.getElementById('prodSkuSelect');
@@ -2721,6 +2678,221 @@ function renderComprasBIAdvisor() {
 
 
 
+// ==========================================================================
+// MÓDULO DE COTIZACIONES (DASHBOARD MAYORISTAS - GID: 2001859242)
+// ==========================================================================
+
+let cotizacionesRows = [];
+let filteredCotizacionesRows = [];
+let isCotizSyncing = false;
+let cotizCurrentPage = 1;
+const COTIZ_PAGE_SIZE = 50;
+let chartCotizEvolInstance = null;
+let chartCotizEstadoInstance = null;
+let chartCotizRespInstance = null;
+let cotizListenersAttached = false;
+
+/**
+ * Normaliza las filas crudas desde Google Sheets (GViz JSONP o CSV Proxy)
+ */
+function normalizeCotizacionesRows(rawRows) {
+  if (!rawRows || !Array.isArray(rawRows)) return [];
+  const normalized = [];
+
+  for (let i = 0; i < rawRows.length; i++) {
+    const r = rawRows[i];
+    if (!r) continue;
+
+    const colVal = (colName, colIdx) => {
+      if (r[colName] !== undefined && r[colName] !== null && String(r[colName]).trim() !== '') {
+        return r[colName];
+      }
+      if (colIdx !== undefined && r['_col_' + colIdx] !== undefined && r['_col_' + colIdx] !== null) {
+        return r['_col_' + colIdx];
+      }
+      return '';
+    };
+
+    const colFormatted = (colIdx) => {
+      if (colIdx !== undefined && r['_fcol_' + colIdx] !== undefined && r['_fcol_' + colIdx] !== null) {
+        return r['_fcol_' + colIdx];
+      }
+      return '';
+    };
+
+    let tipo = String(colVal('Tipo Solicitud', 1) || colVal('TIPO SOLICITUD', 1) || colVal('TIPO', 1) || 'Estándar').trim();
+    let rut = String(colFormatted(2) || colVal('Rut', 2) || colVal('RUT', 2) || '').trim();
+    let cliente = String(colVal('Cliente', 3) || colVal('CLIENTE', 3) || '').trim();
+    let contacto = String(colVal('Whatsapp / Mail', 4) || colVal('WHATSAPP / MAIL', 4) || '').trim();
+    let vendedor = String(colFormatted(5) || colVal('Cod. Vendedor', 5) || colVal('COD. VENDEDOR', 5) || colVal('CODVENDENDOR', 5) || '').replace(/\.0$/, '').trim();
+    let numCot = String(colFormatted(6) || colVal('(#) Cot', 6) || colVal('(#) COT', 6) || colVal('FOLIO', 6) || '').replace(/\.0$/, '').trim();
+    let sku = String(colVal('SKU', 7) || colVal('CODIGO', 7) || '').trim().toUpperCase();
+    let producto = String(colVal('Producto', 8) || colVal('PRODUCTO', 8) || colVal('DESCRIPCION', 8) || '').trim();
+    
+    let cantRaw = colVal('Cantidad', 9) || colVal('CANTIDAD', 9) || colVal('CANTFACTURADA', 9) || 0;
+    let preUniRaw = colVal('Precio', 10) || colVal('PRECIO', 10) || colVal('PREUNI', 10) || 0;
+    let totalRaw = colVal('Total', 11) || colVal('TOTAL', 11) || colVal('NETO', 11) || 0;
+    
+    let fechaRaw = colFormatted(13) || colVal('Fecha Solicitud', 13) || colVal('FECHA SOLICITUD', 13) || colVal('FECHA', 13) || '';
+    let responsable = String(colVal('Responsable', 14) || colVal('RESPONSABLE', 14) || '').trim();
+    let estado = String(colVal('Estado', 16) || colVal('ESTADO', 16) || '').trim();
+    let obs = String(colVal('Observaciones', 17) || colVal('OBSERVACIONES', 17) || '').trim();
+    let transporte = String(colVal('Transporte', 18) || colVal('TRANSPORTE', 18) || '').trim();
+    let nv = String(colFormatted(19) || colVal('NV', 19) || colVal('NVNUMERO', 19) || '').replace(/\.0$/, '').trim();
+    let fa = String(colFormatted(20) || colVal('FA', 20) || '').replace(/\.0$/, '').trim();
+    let estadoNv = String(colVal('Estado NV', 21) || colVal('ESTADO NV', 21) || '').trim();
+    let mes = String(colFormatted(22) || colVal('MES', 22) || '').replace(/\.0$/, '').trim();
+    let estadoFinal = String(colVal('Cliente_X', 23) || colVal('_col_23', 23) || colVal('ESTADO FINAL', 23) || estado || 'Pendiente').trim();
+    let costoRaw = colVal('Costo', 29) || colVal('COSTO', 29) || colVal('COSTOS', 29) || 0;
+    let mesT = String(colVal('Mes T', 30) || colVal('MES T', 30) || '').trim();
+    let anio = String(colFormatted(31) || colVal('Año', 31) || colVal('AÑO', 31) || '').replace(/\.0$/, '').trim();
+
+    // Conversiones numéricas seguras
+    let cantidad = typeof cantRaw === 'number' ? cantRaw : parseFloat(String(cantRaw).replace(/\./g, '').replace(/,/g, '.')) || 0;
+    let precio = typeof preUniRaw === 'number' ? preUniRaw : parseFloat(String(preUniRaw).replace(/\./g, '').replace(/,/g, '.')) || 0;
+    let total = typeof totalRaw === 'number' ? totalRaw : parseFloat(String(totalRaw).replace(/\./g, '').replace(/,/g, '.')) || 0;
+    if (total === 0 && cantidad > 0 && precio > 0) {
+      total = cantidad * precio;
+    }
+    let costo = typeof costoRaw === 'number' ? costoRaw : parseFloat(String(costoRaw).replace(/\./g, '').replace(/,/g, '.')) || 0;
+
+    let fechaObj = typeof parseRowDate === 'function' ? parseRowDate(fechaRaw) : null;
+    let fechaStr = fechaObj ? fechaObj.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' }) : String(fechaRaw || '');
+
+    if (!sku && !cliente && !numCot && total === 0) continue;
+
+    normalized.push({
+      tipo: tipo || 'Estándar',
+      rut,
+      cliente: cliente || 'Cliente Mayorista',
+      contacto,
+      vendedor: vendedor || '131',
+      numCot: numCot || `COT-${i+1}`,
+      sku: sku || 'SKU-GENERAL',
+      producto: producto || 'Producto Cotizado',
+      cantidad: Math.max(0, cantidad),
+      precio: Math.max(0, precio),
+      total: Math.max(0, total),
+      costo: Math.max(0, costo),
+      fecha: fechaStr,
+      fechaObj: fechaObj,
+      responsable: responsable || 'Denisse',
+      estado: estado || 'Enviada Cliente',
+      observaciones: obs,
+      transporte,
+      nv,
+      fa,
+      estadoNv,
+      mes,
+      estadoFinal: estadoFinal || estado || 'Enviada Cliente',
+      mesT,
+      anio,
+      _row: i + 2
+    });
+  }
+
+  return normalized;
+}
+
+/**
+ * Conexión Multi-canal a Google Sheets pestaña Mayoristas (GID: 2001859242)
+ */
+async function fetchCotizacionesData() {
+  const spId = typeof SPREADSHEET_ID !== 'undefined' ? SPREADSHEET_ID : "16bU5xUuPDvI6xIpuBabK9j_EiUFgcgMTq1T0S2LeVgQ";
+  const cotizGid = typeof SPREADSHEET_COTIZACIONES_GID !== 'undefined' ? SPREADSHEET_COTIZACIONES_GID : "2001859242";
+  const isGitHub = window.location.hostname.includes('github') || window.location.protocol === 'file:';
+
+  console.log(`[Cotizaciones Engine] 🚀 Conectando a pestaña Mayoristas (GID: ${cotizGid})...`);
+
+  // 1. Intentar FastChannel JSONP (Rápido, 8s timeout)
+  try {
+    if (typeof fetchGVizViaJSONP === 'function') {
+      const gvizRows = await fetchGVizViaJSONP(spId, cotizGid, 8000);
+      if (gvizRows && gvizRows.length > 0) {
+        console.log(`[Cotizaciones FastChannel] ✅ ${gvizRows.length.toLocaleString()} filas sincronizadas vía JSONP`);
+        const parsed = normalizeCotizacionesRows(gvizRows);
+        try { localStorage.setItem('glomax_cotizaciones_cache', JSON.stringify(parsed.slice(0, 2000))); } catch(e) {}
+        return parsed;
+      }
+    }
+  } catch (jsonpErr) {
+    console.warn('[Cotizaciones FastChannel] Falló JSONP, probando proxy local:', jsonpErr.message || jsonpErr);
+  }
+
+  // 2. Intentar Proxy Local / Netlify Function (/api/proxy?spreadsheet_id=...&gid=2001859242)
+  if (!isGitHub) {
+    const proxyUrls = [
+      `/api/proxy?spreadsheet_id=${spId}&gid=${cotizGid}`,
+      `/api/csv?spreadsheet_id=${spId}&gid=${cotizGid}`
+    ];
+
+    for (const pUrl of proxyUrls) {
+      try {
+        const resp = await fetch(pUrl, { signal: AbortSignal.timeout(6000) });
+        if (resp.ok) {
+          const text = await resp.text();
+          if (text && text.length > 200 && !text.trim().startsWith('<')) {
+            if (typeof parseCsvText === 'function') {
+              const rowsParsed = parseCsvText(text);
+              if (rowsParsed && rowsParsed.length > 0) {
+                console.log(`[Cotizaciones Proxy Local] ✅ ${rowsParsed.length.toLocaleString()} filas sincronizadas`);
+                const parsed = normalizeCotizacionesRows(rowsParsed);
+                try { localStorage.setItem('glomax_cotizaciones_cache', JSON.stringify(parsed.slice(0, 2000))); } catch(e) {}
+                return parsed;
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.warn(`[Cotizaciones Proxy Local] Falló ${pUrl}:`, err.message || err);
+      }
+    }
+  }
+
+  // 3. Fallback Universal: CORS Proxies
+  const corsProxies = [
+    `https://api.allorigins.win/raw?url=` + encodeURIComponent(`https://docs.google.com/spreadsheets/d/${spId}/export?format=csv&gid=${cotizGid}`),
+    `https://corsproxy.io/?` + encodeURIComponent(`https://docs.google.com/spreadsheets/d/${spId}/export?format=csv&gid=${cotizGid}`)
+  ];
+
+  for (const cUrl of corsProxies) {
+    try {
+      const resp = await fetch(cUrl, { signal: AbortSignal.timeout(6000) });
+      if (resp.ok) {
+        const text = await resp.text();
+        if (text && text.length > 200 && !text.trim().startsWith('<')) {
+          if (typeof parseCsvText === 'function') {
+            const rowsParsed = parseCsvText(text);
+            if (rowsParsed && rowsParsed.length > 0) {
+              console.log(`[Cotizaciones Universal Proxy] ✅ ${rowsParsed.length.toLocaleString()} filas sincronizadas`);
+              const parsed = normalizeCotizacionesRows(rowsParsed);
+              try { localStorage.setItem('glomax_cotizaciones_cache', JSON.stringify(parsed.slice(0, 2000))); } catch(e) {}
+              return parsed;
+            }
+          }
+        }
+      }
+    } catch(e) {}
+  }
+
+  // 4. Intentar caché local almacenada
+  try {
+    const cachedStr = localStorage.getItem('glomax_cotizaciones_cache');
+    if (cachedStr) {
+      const cachedData = JSON.parse(cachedStr);
+      if (cachedData && cachedData.length > 0) {
+        console.log(`[Cotizaciones Cache] 📦 Cargados ${cachedData.length.toLocaleString()} registros desde caché local`);
+        return cachedData;
+      }
+    }
+  } catch(e) {}
+
+  return [];
+}
+
+/**
+ * Sincronización en vivo de cotizaciones
+ */
 async function refreshCotizacionesLive(silent = false) {
   if (isCotizSyncing) return;
   isCotizSyncing = true;
@@ -2736,9 +2908,19 @@ async function refreshCotizacionesLive(silent = false) {
       cotizacionesRows = loaded;
       populateCotizFilterOptions();
       applyCotizacionesFilters();
+      if (!silent && typeof showToast === 'function') {
+        showToast(`✅ Pestaña Mayoristas sincronizada (${cotizacionesRows.length.toLocaleString('es-CL')} cotizaciones)`);
+      }
+    } else {
+      if (!silent && typeof showToast === 'function') {
+        showToast('⚠️ No se recibieron datos desde la pestaña Mayoristas');
+      }
     }
   } catch (err) {
-    console.warn('Auto-sync error:', err);
+    console.warn('[Cotizaciones Sync Error]:', err);
+    if (!silent && typeof showToast === 'function') {
+      showToast('⚠️ Error al sincronizar cotizaciones: ' + err.message);
+    }
   } finally {
     isCotizSyncing = false;
     if (syncPill) {
@@ -2748,6 +2930,661 @@ async function refreshCotizacionesLive(silent = false) {
   }
 }
 
+/**
+ * Llena dinámicamente las opciones de los filtros nativos de Cotizaciones
+ */
+function populateCotizFilterOptions() {
+  const selVend = document.getElementById('fltCotizVendedor');
+  const selEstado = document.getElementById('fltCotizEstado');
+  const selTipo = document.getElementById('fltCotizTipo');
+
+  if (!cotizacionesRows || cotizacionesRows.length === 0) return;
+
+  const curVend = selVend ? selVend.value : '';
+  const curEstado = selEstado ? selEstado.value : '';
+  const curTipo = selTipo ? selTipo.value : '';
+
+  const vendedores = new Set();
+  const estados = new Set();
+  const tipos = new Set();
+
+  cotizacionesRows.forEach(r => {
+    if (r.vendedor) vendedores.add(r.vendedor);
+    if (r.estadoFinal) estados.add(r.estadoFinal);
+    else if (r.estado) estados.add(r.estado);
+    if (r.tipo) tipos.add(r.tipo);
+  });
+
+  if (selVend) {
+    const sortedVend = Array.from(vendedores).sort((a, b) => a.localeCompare(b, 'es', { numeric: true }));
+    selVend.innerHTML = '<option value="">Todos los Vendedores</option>' +
+      sortedVend.map(v => `<option value="${v}" ${v === curVend ? 'selected' : ''}>Cod. ${v}</option>`).join('');
+  }
+
+  if (selEstado) {
+    const sortedEstados = Array.from(estados).sort();
+    selEstado.innerHTML = '<option value="">Todos los Estados</option>' +
+      sortedEstados.map(e => `<option value="${e}" ${e === curEstado ? 'selected' : ''}>${e}</option>`).join('');
+  }
+
+  if (selTipo) {
+    const sortedTipos = Array.from(tipos).sort();
+    selTipo.innerHTML = '<option value="">Todos los Tipos</option>' +
+      sortedTipos.map(t => `<option value="${t}" ${t === curTipo ? 'selected' : ''}>${t}</option>`).join('');
+  }
+
+  setupCotizacionesEventListeners();
+}
+
+/**
+ * Aplica los filtros seleccionados a las cotizaciones y actualiza vistas
+ */
+function applyCotizacionesFilters() {
+  if (!cotizacionesRows) return;
+
+  const fDesde = document.getElementById('fltCotizDesde')?.value;
+  const fHasta = document.getElementById('fltCotizHasta')?.value;
+  const fVend = document.getElementById('fltCotizVendedor')?.value;
+  const fEstado = document.getElementById('fltCotizEstado')?.value;
+  const fTipo = document.getElementById('fltCotizTipo')?.value;
+  const fSearch = (document.getElementById('cotizSearchBox')?.value || '').trim().toLowerCase();
+
+  const dDesde = fDesde ? new Date(fDesde + 'T00:00:00') : null;
+  const dHasta = fHasta ? new Date(fHasta + 'T23:59:59') : null;
+
+  filteredCotizacionesRows = cotizacionesRows.filter(r => {
+    // Filtro Fechas
+    if (dDesde && r.fechaObj && r.fechaObj < dDesde) return false;
+    if (dHasta && r.fechaObj && r.fechaObj > dHasta) return false;
+
+    // Filtro Vendedor
+    if (fVend && r.vendedor !== fVend) return false;
+
+    // Filtro Estado
+    if (fEstado) {
+      const matchEstado = (r.estadoFinal && r.estadoFinal.toLowerCase() === fEstado.toLowerCase()) ||
+                          (r.estado && r.estado.toLowerCase() === fEstado.toLowerCase());
+      if (!matchEstado) return false;
+    }
+
+    // Filtro Tipo Solicitud
+    if (fTipo && r.tipo.toLowerCase() !== fTipo.toLowerCase()) return false;
+
+    // Filtro Búsqueda Texto
+    if (fSearch) {
+      const searchStr = `${r.numCot} ${r.cliente} ${r.rut} ${r.sku} ${r.producto} ${r.vendedor} ${r.nv} ${r.fa} ${r.responsable}`.toLowerCase();
+      if (!searchStr.includes(fSearch)) return false;
+    }
+
+    return true;
+  });
+
+  cotizCurrentPage = 1;
+  renderCotizacionesHeroCards(filteredCotizacionesRows);
+  renderCotizacionesCharts(filteredCotizacionesRows);
+  renderCotizacionesTopProducts(filteredCotizacionesRows);
+  renderCotizacionesTable(filteredCotizacionesRows);
+}
+
+/**
+ * Renderiza Hero Cards por Tipo de Solicitud (Columna B) y Desglose por Estado (Columna X)
+ */
+function renderCotizacionesHeroCards(data) {
+  const container = document.getElementById('cotizTipoCardsContainer');
+  const subEl = document.getElementById('cotizTipoCardsSubtitle');
+  if (!container) return;
+
+  if (!data || data.length === 0) {
+    container.innerHTML = `
+      <div class="ax-card" style="grid-column: 1 / -1; padding: 2rem; text-align: center; color: var(--ax-text-tertiary);">
+        No se encontraron cotizaciones con los filtros seleccionados.
+      </div>
+    `;
+    if (subEl) subEl.textContent = '0 cotizaciones encontradas';
+    return;
+  }
+
+  // Agrupar por Tipo de Solicitud (Columna B)
+  const byTipo = new Map();
+  let grandTotalMonto = 0;
+  let grandAceptadasMonto = 0;
+  let grandAceptadasCnt = 0;
+
+  data.forEach(r => {
+    const t = r.tipo || 'Estándar';
+    if (!byTipo.has(t)) {
+      byTipo.set(t, {
+        tipo: t,
+        totalMonto: 0,
+        count: 0,
+        unidades: 0,
+        aceptadasCnt: 0,
+        aceptadasMonto: 0,
+        enviadasCnt: 0,
+        enviadasMonto: 0,
+        perdidasCnt: 0,
+        perdidasMonto: 0,
+        otrasCnt: 0,
+        otrasMonto: 0
+      });
+    }
+
+    const item = byTipo.get(t);
+    item.count += 1;
+    item.unidades += (r.cantidad || 0);
+    item.totalMonto += (r.total || 0);
+    grandTotalMonto += (r.total || 0);
+
+    const stLow = (r.estadoFinal || r.estado || '').toLowerCase();
+    if (stLow.includes('aceptada')) {
+      item.aceptadasCnt += 1;
+      item.aceptadasMonto += (r.total || 0);
+      grandAceptadasCnt += 1;
+      grandAceptadasMonto += (r.total || 0);
+    } else if (stLow.includes('perdida')) {
+      item.perdidasCnt += 1;
+      item.perdidasMonto += (r.total || 0);
+    } else if (stLow.includes('enviada') || stLow.includes('proceso') || stLow.includes('preparación') || stLow.includes('preparacion')) {
+      item.enviadasCnt += 1;
+      item.enviadasMonto += (r.total || 0);
+    } else {
+      item.otrasCnt += 1;
+      item.otrasMonto += (r.total || 0);
+    }
+  });
+
+  const grandWinRate = data.length > 0 ? (grandAceptadasCnt / data.length * 100).toFixed(1) : '0';
+  if (subEl) {
+    subEl.textContent = `Total Cotizado: ${formatCLP(grandTotalMonto)} | ${data.length.toLocaleString('es-CL')} solicitudes | Tasa de Cierre Global: ${grandWinRate}%`;
+  }
+
+  // Ordenar tipos por monto total descendente
+  const sortedTipos = Array.from(byTipo.values()).sort((a, b) => b.totalMonto - a.totalMonto);
+
+  const tipoIcons = {
+    'Estándar': '📋',
+    'Promoción': '🔥',
+    'Cyber': '⚡',
+    'Especial': '💎'
+  };
+
+  container.innerHTML = sortedTipos.map(item => {
+    const winRate = item.count > 0 ? ((item.aceptadasCnt / item.count) * 100).toFixed(1) : '0';
+    const icon = tipoIcons[item.tipo] || '📑';
+
+    return `
+      <div class="cotiz-tipo-card">
+        <div class="cotiz-tipo-card-header">
+          <span class="cotiz-tipo-badge">
+            <span>${icon}</span>
+            <span>${item.tipo}</span>
+          </span>
+          <span class="badge ${Number(winRate) >= 50 ? 'badge-green' : 'badge-blue'}">${winRate}% Aprobación</span>
+        </div>
+
+        <div class="cotiz-tipo-monto">${formatCLP(item.totalMonto)}</div>
+        <div style="font-size: 0.8rem; color: var(--ax-text-tertiary); margin-top: -0.5rem; margin-bottom: 0.85rem;">
+          ${item.count.toLocaleString('es-CL')} solicitudes (${Math.round(item.unidades).toLocaleString('es-CL')} un.)
+        </div>
+
+        <div class="cotiz-counters-grid">
+          <div class="cotiz-counter-box">
+            <span class="cotiz-counter-lbl" style="color: #34d399;">✅ Aceptadas</span>
+            <span style="font-size: 0.95rem; font-weight: 800; color: #ffffff;">${item.aceptadasCnt.toLocaleString('es-CL')} <small style="font-size: 0.72rem; color: #34d399;">(${formatCLP(item.aceptadasMonto)})</small></span>
+          </div>
+
+          <div class="cotiz-counter-box">
+            <span class="cotiz-counter-lbl" style="color: #fbbf24;">⏳ En Proceso</span>
+            <span style="font-size: 0.95rem; font-weight: 800; color: #ffffff;">${item.enviadasCnt.toLocaleString('es-CL')} <small style="font-size: 0.72rem; color: #fbbf24;">(${formatCLP(item.enviadasMonto)})</small></span>
+          </div>
+
+          <div class="cotiz-counter-box">
+            <span class="cotiz-counter-lbl" style="color: #f87171;">❌ Perdidas</span>
+            <span style="font-size: 0.95rem; font-weight: 800; color: #ffffff;">${item.perdidasCnt.toLocaleString('es-CL')} <small style="font-size: 0.72rem; color: #f87171;">(${formatCLP(item.perdidasMonto)})</small></span>
+          </div>
+
+          <div class="cotiz-counter-box">
+            <span class="cotiz-counter-lbl" style="color: #a78bfa;">📦 Pend / Stock</span>
+            <span style="font-size: 0.95rem; font-weight: 800; color: #ffffff;">${item.otrasCnt.toLocaleString('es-CL')} <small style="font-size: 0.72rem; color: #a78bfa;">solic.</small></span>
+          </div>
+        </div>
+
+        <!-- Barra de Progreso Visual de Conversión -->
+        <div style="margin-top: 0.85rem;">
+          <div style="display:flex; justify-content:space-between; font-size:0.72rem; color:var(--ax-text-tertiary); margin-bottom:3px;">
+            <span>Tasa de Conversión</span>
+            <strong style="color:${Number(winRate)>=50?'#34d399':'#60a5fa'};">${winRate}%</strong>
+          </div>
+          <div style="height: 5px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden;">
+            <div style="width: ${Math.min(100, Math.max(0, Number(winRate)))}%; height: 100%; background: linear-gradient(90deg, #3b82f6, #10b981); border-radius: 4px;"></div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+/**
+ * Renderiza los Gráficos BI de Cotizaciones (Evolución Mensual, Estado y Ranking de Vendedores)
+ */
+function renderCotizacionesCharts(data) {
+  if (typeof Chart === 'undefined') return;
+
+  const ctxEvol = document.getElementById('chartCotizEvolucion')?.getContext('2d');
+  const ctxEstado = document.getElementById('chartCotizEstado')?.getContext('2d');
+  const ctxResp = document.getElementById('chartCotizResponsables')?.getContext('2d');
+
+  // --- 1. Gráfico de Evolución Mensual ($) ---
+  if (ctxEvol) {
+    if (chartCotizEvolInstance) chartCotizEvolInstance.destroy();
+
+    const monthLabels = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    const aceptadasByMonth = new Array(12).fill(0);
+    const enviadasByMonth = new Array(12).fill(0);
+    const perdidasByMonth = new Array(12).fill(0);
+
+    data.forEach(r => {
+      if (r.fechaObj) {
+        const m = r.fechaObj.getMonth();
+        if (m >= 0 && m < 12) {
+          const stLow = (r.estadoFinal || r.estado || '').toLowerCase();
+          if (stLow.includes('aceptada')) {
+            aceptadasByMonth[m] += (r.total || 0);
+          } else if (stLow.includes('perdida')) {
+            perdidasByMonth[m] += (r.total || 0);
+          } else {
+            enviadasByMonth[m] += (r.total || 0);
+          }
+        }
+      }
+    });
+
+    chartCotizEvolInstance = new Chart(ctxEvol, {
+      type: 'bar',
+      data: {
+        labels: monthLabels,
+        datasets: [
+          {
+            label: 'Aceptadas ($)',
+            data: aceptadasByMonth,
+            backgroundColor: 'rgba(16, 185, 129, 0.85)',
+            borderColor: '#10b981',
+            borderRadius: 6
+          },
+          {
+            label: 'Enviadas / Proceso ($)',
+            data: enviadasByMonth,
+            backgroundColor: 'rgba(251, 191, 36, 0.85)',
+            borderColor: '#fbbf24',
+            borderRadius: 6
+          },
+          {
+            label: 'Perdidas ($)',
+            data: perdidasByMonth,
+            backgroundColor: 'rgba(239, 68, 68, 0.85)',
+            borderColor: '#ef4444',
+            borderRadius: 6
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: { color: '#cbd5e1', font: { family: "'Plus Jakarta Sans', sans-serif", size: 11 } }
+          },
+          tooltip: {
+            callbacks: {
+              label: function(ctx) {
+                return `${ctx.dataset.label}: ${formatCLP(ctx.raw)}`;
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            stacked: true,
+            grid: { color: 'rgba(255,255,255,0.05)' },
+            ticks: { color: '#94a3b8' }
+          },
+          y: {
+            stacked: true,
+            grid: { color: 'rgba(255,255,255,0.05)' },
+            ticks: {
+              color: '#94a3b8',
+              callback: function(val) {
+                if (val >= 1000000) return '$' + (val / 1000000).toFixed(0) + 'M';
+                if (val >= 1000) return '$' + (val / 1000).toFixed(0) + 'k';
+                return '$' + val;
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // --- 2. Gráfico de Distribución de Estado (Doughnut) ---
+  if (ctxEstado) {
+    if (chartCotizEstadoInstance) chartCotizEstadoInstance.destroy();
+
+    const estadoMap = new Map();
+    data.forEach(r => {
+      const st = r.estadoFinal || r.estado || 'Otros';
+      estadoMap.set(st, (estadoMap.get(st) || 0) + (r.total || 0));
+    });
+
+    const sortedEstados = Array.from(estadoMap.entries()).sort((a, b) => b[1] - a[1]);
+    const labels = sortedEstados.map(e => e[0]);
+    const values = sortedEstados.map(e => e[1]);
+
+    const colorPalette = [
+      '#10b981', '#3b82f6', '#fbbf24', '#f87171', '#a855f7', '#06b6d4', '#ec4899', '#64748b'
+    ];
+
+    chartCotizEstadoInstance = new Chart(ctxEstado, {
+      type: 'doughnut',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: values,
+          backgroundColor: colorPalette.slice(0, labels.length),
+          borderWidth: 2,
+          borderColor: '#0f172a'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '68%',
+        plugins: {
+          legend: {
+            position: 'right',
+            labels: { color: '#cbd5e1', font: { family: "'Plus Jakarta Sans', sans-serif", size: 11 }, boxWidth: 12 }
+          },
+          tooltip: {
+            callbacks: {
+              label: function(ctx) {
+                const total = values.reduce((a, b) => a + b, 0);
+                const pct = total > 0 ? ((ctx.raw / total) * 100).toFixed(1) : 0;
+                return `${ctx.label}: ${formatCLP(ctx.raw)} (${pct}%)`;
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // --- 3. Gráfico Top Vendedores por Monto Cotizado ---
+  if (ctxResp) {
+    if (chartCotizRespInstance) chartCotizRespInstance.destroy();
+
+    const vendMap = new Map();
+    data.forEach(r => {
+      const v = r.vendedor ? `Cod. ${r.vendedor}` : (r.responsable || 'General');
+      if (!vendMap.has(v)) {
+        vendMap.set(v, { vendedor: v, total: 0, aceptadas: 0, count: 0 });
+      }
+      const item = vendMap.get(v);
+      item.total += (r.total || 0);
+      item.count += 1;
+      const stLow = (r.estadoFinal || r.estado || '').toLowerCase();
+      if (stLow.includes('aceptada')) item.aceptadas += 1;
+    });
+
+    const sortedVend = Array.from(vendMap.values()).sort((a, b) => b.total - a.total).slice(0, 8);
+    const labels = sortedVend.map(v => v.vendedor);
+    const totals = sortedVend.map(v => v.total);
+
+    chartCotizRespInstance = new Chart(ctxResp, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Total Cotizado ($)',
+          data: totals,
+          backgroundColor: 'rgba(59, 130, 246, 0.85)',
+          borderColor: '#3b82f6',
+          borderRadius: 6
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function(ctx) {
+                const item = sortedVend[ctx.dataIndex];
+                const winRate = item && item.count > 0 ? ((item.aceptadas / item.count) * 100).toFixed(1) : 0;
+                return `Monto: ${formatCLP(ctx.raw)} | Cierre: ${winRate}% (${item.count} cotiz)`;
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { color: 'rgba(255,255,255,0.05)' },
+            ticks: {
+              color: '#94a3b8',
+              callback: function(val) {
+                if (val >= 1000000) return '$' + (val / 1000000).toFixed(0) + 'M';
+                return '$' + val;
+              }
+            }
+          },
+          y: {
+            grid: { display: false },
+            ticks: { color: '#cbd5e1' }
+          }
+        }
+      }
+    });
+  }
+}
+
+/**
+ * Renderiza Top 10 SKUs en Solicitudes de Cotización
+ */
+function renderCotizacionesTopProducts(data) {
+  const container = document.getElementById('cotizTopProductsList');
+  if (!container) return;
+
+  if (!data || data.length === 0) {
+    container.innerHTML = '<div style="padding: 1rem; color: var(--ax-text-tertiary); text-align: center;">No hay productos cotizados</div>';
+    return;
+  }
+
+  const skuMap = new Map();
+  data.forEach(r => {
+    const sku = r.sku || 'SKU-GENERAL';
+    if (!skuMap.has(sku)) {
+      skuMap.set(sku, {
+        sku: sku,
+        descripcion: r.producto || 'Producto Cotizado',
+        cantidad: 0,
+        total: 0,
+        solicitudes: 0
+      });
+    }
+    const item = skuMap.get(sku);
+    item.cantidad += (r.cantidad || 0);
+    item.total += (r.total || 0);
+    item.solicitudes += 1;
+  });
+
+  const top10 = Array.from(skuMap.values()).sort((a, b) => b.total - a.total).slice(0, 10);
+  const maxTotal = top10.length > 0 ? top10[0].total : 1;
+
+  container.innerHTML = top10.map((p, idx) => {
+    const pct = Math.min(100, Math.max(5, (p.total / maxTotal) * 100));
+    let rankBadge = `<span class="badge badge-blue">#${idx + 1}</span>`;
+    if (idx === 0) rankBadge = `<span class="badge badge-amber" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24;">🥇 1°</span>`;
+    if (idx === 1) rankBadge = `<span class="badge" style="background: rgba(203, 213, 225, 0.2); color: #e2e8f0;">🥈 2°</span>`;
+    if (idx === 2) rankBadge = `<span class="badge" style="background: rgba(217, 119, 6, 0.2); color: #f59e0b;">🥉 3°</span>`;
+
+    const imgObj = typeof productImagesMap !== 'undefined' ? productImagesMap.get(p.sku) : null;
+    const imgThumb = imgObj && imgObj.url ?
+      `<img src="${imgObj.url}" alt="${p.sku}" style="width: 32px; height: 32px; object-fit: contain; border-radius: 6px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08);" onerror="this.style.display='none'" />` :
+      `<div style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.04); border-radius: 6px; font-size: 0.8rem;">📦</div>`;
+
+    return `
+      <div class="compras-breakdown-item" style="padding: 0.65rem 0.85rem; border-bottom: 1px solid rgba(255,255,255,0.04); display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;">
+        <div style="display: flex; align-items: center; gap: 0.65rem; min-width: 0; flex: 1;">
+          ${rankBadge}
+          ${imgThumb}
+          <div style="min-width: 0; flex: 1;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span class="sku-badge-pill" style="font-size: 0.75rem; padding: 1px 6px;">${p.sku}</span>
+              <span style="font-size: 0.82rem; font-weight: 700; color: var(--ax-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${p.descripcion}">${p.descripcion}</span>
+            </div>
+            <div style="font-size: 0.72rem; color: var(--ax-text-tertiary); margin-top: 2px;">
+              ${Math.round(p.cantidad).toLocaleString('es-CL')} un. cotizadas en ${p.solicitudes} solicitudes
+            </div>
+          </div>
+        </div>
+
+        <div style="text-align: right; min-width: 110px;">
+          <strong style="color: #60a5fa; font-size: 0.88rem;">${formatCLP(p.total)}</strong>
+          <div style="width: 100%; height: 4px; background: rgba(255,255,255,0.08); border-radius: 3px; margin-top: 4px; overflow: hidden;">
+            <div style="width: ${pct}%; height: 100%; background: linear-gradient(90deg, #3b82f6, #10b981); border-radius: 3px;"></div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+/**
+ * Renderiza la Tabla Paginada de Cotizaciones
+ */
+function renderCotizacionesTable(data) {
+  const tbody = document.getElementById('cotizTableBody');
+  const pageInfo = document.getElementById('cotizPageInfo');
+  const prevBtn = document.getElementById('btnCotizPrevPage');
+  const nextBtn = document.getElementById('btnCotizNextPage');
+  if (!tbody) return;
+
+  if (!data || data.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="12" style="text-align:center; padding: 2.5rem; color:var(--ax-text-tertiary);">No hay cotizaciones para mostrar con los filtros aplicados.</td></tr>`;
+    if (pageInfo) pageInfo.textContent = 'Página 0 de 0 (0 cotizaciones)';
+    if (prevBtn) prevBtn.disabled = true;
+    if (nextBtn) nextBtn.disabled = true;
+    return;
+  }
+
+  const totalPages = Math.ceil(data.length / COTIZ_PAGE_SIZE) || 1;
+  if (cotizCurrentPage < 1) cotizCurrentPage = 1;
+  if (cotizCurrentPage > totalPages) cotizCurrentPage = totalPages;
+
+  if (pageInfo) {
+    pageInfo.textContent = `Página ${cotizCurrentPage} de ${totalPages} (${data.length.toLocaleString('es-CL')} cotizaciones)`;
+  }
+
+  if (prevBtn) prevBtn.disabled = cotizCurrentPage <= 1;
+  if (nextBtn) nextBtn.disabled = cotizCurrentPage >= totalPages;
+
+  const startIdx = (cotizCurrentPage - 1) * COTIZ_PAGE_SIZE;
+  const pageRows = data.slice(startIdx, startIdx + COTIZ_PAGE_SIZE);
+
+  tbody.innerHTML = pageRows.map(r => {
+    const stLow = (r.estadoFinal || r.estado || '').toLowerCase();
+    let statusClass = 'cotiz-status--enviada';
+    let statusIcon = '⏳';
+
+    if (stLow.includes('aceptada')) {
+      statusClass = 'cotiz-status--aceptada';
+      statusIcon = '✅';
+    } else if (stLow.includes('perdida')) {
+      statusClass = 'cotiz-status--perdida';
+      statusIcon = '❌';
+    } else if (stLow.includes('preparación') || stLow.includes('preparacion')) {
+      statusClass = 'cotiz-status--preparacion';
+      statusIcon = '⚙️';
+    } else if (stLow.includes('stock')) {
+      statusClass = 'cotiz-status--pendiente';
+      statusIcon = '📦';
+    }
+
+    const nvFaText = (r.nv || r.fa) ?
+      `<span style="font-size:0.75rem; color:#cbd5e1;">${r.nv ? 'NV:'+r.nv : ''} ${r.fa ? 'FA:'+r.fa : ''}</span>` :
+      `<span style="color:var(--ax-text-tertiary); font-size:0.75rem;">—</span>`;
+
+    return `
+      <tr>
+        <td style="text-align:left;"><span class="tag-pill" style="font-size:0.75rem;">${r.tipo}</span></td>
+        <td style="text-align:left;"><span class="sku-badge-pill" style="font-weight:700;">#${r.numCot}</span></td>
+        <td style="text-align:center; font-size:0.8rem; color:var(--ax-text-secondary);">${r.fecha || '—'}</td>
+        <td style="text-align:left;"><strong style="color:var(--ax-text-primary); font-size:0.83rem;">${r.cliente}</strong></td>
+        <td style="text-align:left; font-size:0.78rem; color:var(--ax-text-secondary);">${r.rut || '—'}</td>
+        <td style="text-align:left;"><span class="sku-badge-pill" style="background:rgba(59,130,246,0.15); color:#60a5fa; border-color:rgba(59,130,246,0.3);">${r.sku}</span></td>
+        <td style="text-align:left; max-width:240px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${r.producto}"><span style="font-size:0.82rem;">${r.producto}</span></td>
+        <td style="text-align:center; font-weight:700;" class="num-cell">${Math.round(r.cantidad).toLocaleString('es-CL')}</td>
+        <td style="text-align:right; font-weight:800; color:#60a5fa;" class="num-cell">${formatCLP(r.total)}</td>
+        <td style="text-align:center;"><span class="tag-pill" style="font-size:0.72rem;">${r.vendedor}</span></td>
+        <td style="text-align:center;">${nvFaText}</td>
+        <td style="text-align:center;">
+          <span class="cotiz-status-pill ${statusClass}">
+            <span>${statusIcon}</span>
+            <span>${r.estadoFinal || r.estado}</span>
+          </span>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+/**
+ * Cambio de página en la tabla de cotizaciones
+ */
+function changeCotizPage(dir) {
+  cotizCurrentPage += dir;
+  renderCotizacionesTable(filteredCotizacionesRows || cotizacionesRows);
+}
+
+/**
+ * Vinculación de Event Listeners de Filtros y Búsqueda
+ */
+function setupCotizacionesEventListeners() {
+  if (cotizListenersAttached) return;
+  cotizListenersAttached = true;
+
+  const fDesde = document.getElementById('fltCotizDesde');
+  const fHasta = document.getElementById('fltCotizHasta');
+  const fVend = document.getElementById('fltCotizVendedor');
+  const fEstado = document.getElementById('fltCotizEstado');
+  const fTipo = document.getElementById('fltCotizTipo');
+  const fSearch = document.getElementById('cotizSearchBox');
+
+  let searchTimer = null;
+
+  if (fDesde) fDesde.addEventListener('change', () => applyCotizacionesFilters());
+  if (fHasta) fHasta.addEventListener('change', () => applyCotizacionesFilters());
+  if (fVend) fVend.addEventListener('change', () => applyCotizacionesFilters());
+  if (fEstado) fEstado.addEventListener('change', () => applyCotizacionesFilters());
+  if (fTipo) fTipo.addEventListener('change', () => applyCotizacionesFilters());
+
+  if (fSearch) {
+    fSearch.addEventListener('input', () => {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => applyCotizacionesFilters(), 250);
+    });
+  }
+
+  // Pre-cargar imágenes para thumbnails en cotizaciones
+  if (typeof fetchProductImagesMap === 'function') {
+    fetchProductImagesMap();
+  }
+}
+
+/**
+ * Gestión del Modal de Cotizaciones y Emisión
+ */
 function openCotizacionModal() {
   const backdrop = document.getElementById('cotizacionModalBackdrop');
   if (!backdrop) return;
@@ -2770,19 +3607,7 @@ function openCotizacionModal() {
   const fechaEl = document.getElementById('cFecha');
   if (fechaEl) fechaEl.value = today;
 
-  // Validez 15 días
-  const venc = new Date();
-  venc.setDate(venc.getDate() + 15);
-  const vencEl = document.getElementById('cVencimiento');
-  if (vencEl) vencEl.value = venc.toISOString().split('T')[0];
-
-  // Limpiar items y agregar 1 fila inicial
-  const body = document.getElementById('cotizItemsBody');
-  if (body) {
-    body.innerHTML = '';
-    addCotizItemRow();
-  }
-
+  backdrop.classList.add('active');
   backdrop.style.display = 'flex';
   backdrop.style.opacity = '1';
   backdrop.style.pointerEvents = 'auto';
@@ -2791,9 +3616,38 @@ function openCotizacionModal() {
 function closeCotizacionModal() {
   const backdrop = document.getElementById('cotizacionModalBackdrop');
   if (backdrop) {
+    backdrop.classList.remove('active');
     backdrop.style.display = 'none';
     backdrop.style.opacity = '0';
     backdrop.style.pointerEvents = 'none';
+  }
+}
+
+async function saveCotizacion() {
+  const data = {};
+  const fieldMappingCotiz = [
+    ['cFolio', 'FOLIO'], ['cTipo', 'TIPO'], ['cFecha', 'FECHA'],
+    ['cCodigo', 'CODIGO'], ['cDescripcion', 'DESCRIPCION'], ['cCant', 'CANTFACTURADA'],
+    ['cPreUni', 'PREUNI'], ['cCostos', 'COSTOS'], ['cCliente', 'CLIENTE'],
+    ['cRut', 'RUT'], ['cVendedor', 'CODVENDENDOR'], ['cCanal', 'CANAL FINAL'],
+    ['cTienda', 'TIENDA FINAL'], ['cFamilia', 'FAMILIA'], ['cCategoria', 'CATEGORIA'],
+    ['cRegion', 'REGION']
+  ];
+
+  fieldMappingCotiz.forEach(([elId, field]) => {
+    const el = document.getElementById(elId);
+    if (el) data[field] = el.value;
+  });
+
+  try {
+    if (typeof apiPost === 'function' && typeof API_URL !== 'undefined') {
+      await apiPost({ action: 'add_cotizacion', data });
+    }
+    if (typeof showToast === 'function') showToast('✅ Cotización guardada exitosamente');
+    closeCotizacionModal();
+    if (typeof refreshCotizacionesLive === 'function') refreshCotizacionesLive();
+  } catch (err) {
+    if (typeof showToast === 'function') showToast('⚠️ Error al guardar cotización: ' + err.message);
   }
 }
 
@@ -2814,8 +3668,8 @@ function lookupProductBySku(skuInput) {
     return;
   }
 
-  let item = productImagesMap.get(sku);
-  if (!item) {
+  let item = typeof productImagesMap !== 'undefined' ? productImagesMap.get(sku) : null;
+  if (!item && typeof productImagesMap !== 'undefined') {
     for (let [k, v] of productImagesMap.entries()) {
       if (k.startsWith(sku) || sku.startsWith(k)) {
         item = v;
@@ -2847,6 +3701,7 @@ function lookupProductBySku(skuInput) {
     }
   }
 }
+
 
 async function fetchProductImagesMap() {
   if (productImagesMap.size > 0) return;
@@ -4546,13 +5401,17 @@ function fetchGVizViaJSONP(spreadsheetId, gid, timeoutMs = 8000) {
       const parsedRows = json.table.rows.map((row, i) => {
         const obj = {};
         cols.forEach((colName, j) => {
+          let val = '';
+          let fVal = '';
+          if (row.c && row.c[j]) {
+            val = (row.c[j].v !== undefined && row.c[j].v !== null) ? row.c[j].v : (row.c[j].f !== undefined && row.c[j].f !== null ? row.c[j].f : '');
+            fVal = (row.c[j].f !== undefined && row.c[j].f !== null) ? row.c[j].f : '';
+          }
           if (colName) {
-            let val = '';
-            if (row.c && row.c[j]) {
-              val = (row.c[j].v !== undefined && row.c[j].v !== null) ? row.c[j].v : (row.c[j].f !== undefined && row.c[j].f !== null ? row.c[j].f : '');
-            }
             obj[colName] = val;
           }
+          obj['_col_' + j] = val;
+          if (fVal) obj['_fcol_' + j] = fVal;
         });
         obj['_row'] = i + 2;
         return obj;
