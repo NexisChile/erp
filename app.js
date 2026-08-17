@@ -4687,8 +4687,27 @@ function setupCotizacionesEventListeners() {
   }
 }
 
+// ==========================================================================
+// MÓDULO EMISIÓN DE COTIZACIONES MULTI-PRODUCTO
+// ==========================================================================
+
+let cotizModalRows = [];
+let cotizRowIdCounter = 0;
+
 /**
- * Gestión del Modal de Cotizaciones y Emisión
+ * Genera un nuevo folio correlativo para cotizaciones
+ */
+function generateNewCotizFolio() {
+  const folioEl = document.getElementById('cFolio');
+  const badgeEl = document.getElementById('cotizModalFolioBadge');
+  const rnd = Math.floor(Math.random() * 9000 + 1000);
+  const newFolio = `COT-2026-${rnd}`;
+  if (folioEl) folioEl.value = newFolio;
+  if (badgeEl) badgeEl.textContent = newFolio;
+}
+
+/**
+ * Abre el modal de Emisión de Cotizaciones
  */
 function openCotizacionModal() {
   const backdrop = document.getElementById('cotizacionModalBackdrop');
@@ -4697,20 +4716,31 @@ function openCotizacionModal() {
   const form = document.getElementById('cotizacionModalForm');
   if (form) form.reset();
 
-  const titleEl = document.getElementById('cotizModalTitle');
-  if (titleEl) titleEl.textContent = '📑 Nueva Cotización';
-
   // Generar Folio Automático
-  const folioEl = document.getElementById('cFolio');
-  if (folioEl) {
-    const nextNum = Math.floor(Math.random() * 9000 + 1000);
-    folioEl.value = `COT-2026-${nextNum}`;
-  }
+  generateNewCotizFolio();
 
   // Fecha Emisión por defecto hoy
   const today = new Date().toISOString().split('T')[0];
   const fechaEl = document.getElementById('cFecha');
   if (fechaEl) fechaEl.value = today;
+
+  // Vendedor por defecto del usuario autenticado si existe
+  const vendEl = document.getElementById('cVendedor');
+  if (vendEl && typeof AuthManager !== 'undefined' && AuthManager.currentUser && AuthManager.currentUser.name) {
+    vendEl.value = AuthManager.currentUser.name;
+  }
+
+  // Poblar datalist de clientes históricos
+  populateCotizClientDatalist();
+
+  // Asegurar que las imágenes de productos estén sincronizadas
+  if (typeof fetchProductImagesMap === 'function') {
+    fetchProductImagesMap();
+  }
+
+  // Inicializar filas de productos con 1 fila limpia
+  clearCotizProductRows();
+  addCotizProductRow();
 
   backdrop.classList.add('active');
   backdrop.style.display = 'flex';
@@ -4718,6 +4748,9 @@ function openCotizacionModal() {
   backdrop.style.pointerEvents = 'auto';
 }
 
+/**
+ * Cierra el modal de Cotizaciones
+ */
 function closeCotizacionModal() {
   const backdrop = document.getElementById('cotizacionModalBackdrop');
   if (backdrop) {
@@ -4728,83 +4761,545 @@ function closeCotizacionModal() {
   }
 }
 
-async function saveCotizacion() {
-  const data = {};
-  const fieldMappingCotiz = [
-    ['cFolio', 'FOLIO'], ['cTipo', 'TIPO'], ['cFecha', 'FECHA'],
-    ['cCodigo', 'CODIGO'], ['cDescripcion', 'DESCRIPCION'], ['cCant', 'CANTFACTURADA'],
-    ['cPreUni', 'PREUNI'], ['cCostos', 'COSTOS'], ['cCliente', 'CLIENTE'],
-    ['cRut', 'RUT'], ['cVendedor', 'CODVENDENDOR'], ['cCanal', 'CANAL FINAL'],
-    ['cTienda', 'TIENDA FINAL'], ['cFamilia', 'FAMILIA'], ['cCategoria', 'CATEGORIA'],
-    ['cRegion', 'REGION']
-  ];
+/**
+ * Pobla el datalist de clientes para autocompletar
+ */
+function populateCotizClientDatalist() {
+  const datalist = document.getElementById('cotizClientDatalist');
+  if (!datalist) return;
 
-  fieldMappingCotiz.forEach(([elId, field]) => {
-    const el = document.getElementById(elId);
-    if (el) data[field] = el.value;
-  });
+  const allClients = new Set();
+  (rows || []).forEach(r => { if (r['CLIENTE']) allClients.add(r['CLIENTE'].trim()); });
+  (cotizacionesRows || []).forEach(r => { if (r['CLIENTE']) allClients.add(r['CLIENTE'].trim()); });
 
-  try {
-    if (typeof apiPost === 'function' && typeof API_URL !== 'undefined') {
-      await apiPost({ action: 'add_cotizacion', data });
-    }
-    if (typeof showToast === 'function') showToast('✅ Cotización guardada exitosamente');
-    closeCotizacionModal();
-    if (typeof refreshCotizacionesLive === 'function') refreshCotizacionesLive();
-  } catch (err) {
-    if (typeof showToast === 'function') showToast('⚠️ Error al guardar cotización: ' + err.message);
+  datalist.innerHTML = Array.from(allClients).sort().map(c => `<option value="${c}"></option>`).join('');
+}
+
+/**
+ * Busca datos del cliente al ingresar RUT o Nombre
+ */
+function lookupClientByRut(val) {
+  const q = String(val || '').trim().toLowerCase();
+  if (!q || q.length < 3) return;
+
+  const match = (rows || []).find(r => (r['RUT'] && r['RUT'].toLowerCase().includes(q)) || (r['CLIENTE'] && r['CLIENTE'].toLowerCase().includes(q)));
+  if (match) {
+    const cCli = document.getElementById('cCliente');
+    const cRut = document.getElementById('cRut');
+    const cCom = document.getElementById('cComuna');
+    const cReg = document.getElementById('cRegion');
+
+    if (cCli && (!cCli.value || cCli.value.length < 3)) cCli.value = match['CLIENTE'] || '';
+    if (cRut && !cRut.value) cRut.value = match['RUT'] || '';
+    if (cCom && !cCom.value) cCom.value = match['COMUNA'] || '';
+    if (cReg && !cReg.value) cReg.value = match['REGION'] || '';
   }
 }
 
-function lookupProductBySku(skuInput) {
-  const sku = String(skuInput || '').trim().toUpperCase();
-  const container = document.getElementById('cotizImageContainer');
-  const descInput = document.getElementById('cDescripcion');
+/**
+ * Agrega una nueva fila de producto a la cotización
+ */
+function addCotizProductRow(initialData = null) {
+  const tbody = document.getElementById('cotizItemsTableBody');
+  if (!tbody) return;
+
+  cotizRowIdCounter++;
+  const rowId = cotizRowIdCounter;
+
+  const data = initialData || {
+    sku: '',
+    desc: '',
+    cant: 1,
+    precio: 0,
+    costo: 0,
+    imgUrl: ''
+  };
+
+  const tr = document.createElement('tr');
+  tr.id = `cotizRow_${rowId}`;
+  tr.className = 'cotiz-item-row';
+  tr.dataset.rowId = rowId;
+
+  tr.innerHTML = `
+    <td style="text-align: center; font-weight: 700; color: #94a3b8;" class="item-index-col"></td>
+    <td style="text-align: center;">
+      <img src="${data.imgUrl || 'https://via.placeholder.com/32?text=SKU'}" id="itemThumb_${rowId}" class="cotiz-item-thumb" alt="SKU" onerror="this.onerror=null; this.src='https://via.placeholder.com/32?text=SKU';" />
+    </td>
+    <td>
+      <input type="text" class="cotiz-item-input" id="itemSku_${rowId}" value="${data.sku}" placeholder="Ej: ARM012" oninput="onCotizItemSkuInput(${rowId}, this.value)" style="text-transform: uppercase; font-family: monospace; font-weight: 700;" required />
+    </td>
+    <td>
+      <input type="text" class="cotiz-item-input" id="itemDesc_${rowId}" value="${data.desc}" placeholder="Descripción detallada del producto" required />
+    </td>
+    <td>
+      <input type="number" class="cotiz-item-input" id="itemCant_${rowId}" value="${data.cant}" min="0.1" step="any" style="text-align: right; font-weight: 700;" oninput="recalcCotizTotals()" required />
+    </td>
+    <td>
+      <input type="number" class="cotiz-item-input" id="itemPrecio_${rowId}" value="${data.precio}" min="0" step="any" style="text-align: right; font-weight: 700; color: #38bdf8;" oninput="recalcCotizTotals()" required />
+    </td>
+    <td>
+      <input type="number" class="cotiz-item-input" id="itemCosto_${rowId}" value="${data.costo}" min="0" step="any" style="text-align: right; color: #fda4af;" oninput="recalcCotizTotals()" placeholder="0" />
+    </td>
+    <td style="text-align: right; font-weight: 800; font-family: monospace; color: #f8fafc;" id="itemSubtotal_${rowId}">
+      $0
+    </td>
+    <td style="text-align: center;">
+      <span class="margin-pill" id="itemMargin_${rowId}" style="font-size: 0.72rem; padding: 2px 6px;">0%</span>
+    </td>
+    <td style="text-align: center;">
+      <button type="button" class="mini-action-btn" onclick="removeCotizProductRow(${rowId})" title="Eliminar este producto" style="color: #f87171;">🗑️</button>
+    </td>
+  `;
+
+  tbody.appendChild(tr);
+
+  // Si trae SKU, resolver imagen y datos
+  if (data.sku) {
+    onCotizItemSkuInput(rowId, data.sku);
+  }
+
+  updateCotizRowIndices();
+  recalcCotizTotals();
+}
+
+/**
+ * Elimina una fila de producto
+ */
+function removeCotizProductRow(rowId) {
+  const row = document.getElementById(`cotizRow_${rowId}`);
+  if (row) row.remove();
+
+  const tbody = document.getElementById('cotizItemsTableBody');
+  if (tbody && tbody.children.length === 0) {
+    addCotizProductRow();
+  } else {
+    updateCotizRowIndices();
+    recalcCotizTotals();
+  }
+}
+
+/**
+ * Limpia todas las filas de productos
+ */
+function clearCotizProductRows() {
+  const tbody = document.getElementById('cotizItemsTableBody');
+  if (tbody) tbody.innerHTML = '';
+  cotizModalRows = [];
+}
+
+/**
+ * Actualiza los números correlativos de las filas
+ */
+function updateCotizRowIndices() {
+  const tbody = document.getElementById('cotizItemsTableBody');
+  const countLabel = document.getElementById('cotizItemsCountLabel');
+  if (!tbody) return;
+
+  const rowsList = tbody.querySelectorAll('.cotiz-item-row');
+  rowsList.forEach((r, idx) => {
+    const idxCol = r.querySelector('.item-index-col');
+    if (idxCol) idxCol.textContent = idx + 1;
+  });
+
+  if (countLabel) {
+    countLabel.textContent = `${rowsList.length} ${rowsList.length === 1 ? 'producto' : 'productos'} en cotización`;
+  }
+}
+
+/**
+ * Autocompleta descripción, costo, precio e imagen al escribir SKU
+ */
+function onCotizItemSkuInput(rowId, skuRaw) {
+  const sku = String(skuRaw || '').trim().toUpperCase();
+  const descEl = document.getElementById(`itemDesc_${rowId}`);
+  const precioEl = document.getElementById(`itemPrecio_${rowId}`);
+  const costoEl = document.getElementById(`itemCosto_${rowId}`);
+  const thumbEl = document.getElementById(`itemThumb_${rowId}`);
 
   if (!sku) {
-    if (container) {
-      container.innerHTML = `
-        <div class="cotiz-image-placeholder">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-          <span>Ingresa un SKU para cargar la imagen</span>
-        </div>
-      `;
-    }
+    if (thumbEl) thumbEl.src = 'https://via.placeholder.com/32?text=SKU';
     return;
   }
 
-  let item = typeof productImagesMap !== 'undefined' ? productImagesMap.get(sku) : null;
-  if (!item && typeof productImagesMap !== 'undefined') {
-    for (let [k, v] of productImagesMap.entries()) {
-      if (k.startsWith(sku) || sku.startsWith(k)) {
-        item = v;
-        break;
-      }
-    }
+  // 1. Buscar en mapa de imágenes
+  let imgObj = typeof productImagesMap !== 'undefined' ? productImagesMap.get(sku) : null;
+  if (imgObj && imgObj.url && thumbEl) {
+    thumbEl.src = imgObj.url;
+  } else {
+    if (thumbEl) thumbEl.src = `https://via.placeholder.com/32?text=${sku.slice(0, 3)}`;
   }
 
-  if (item && item.url) {
-    if (container) {
-      container.innerHTML = `
-        <div style="display: flex; flex-direction: column; align-items: center;">
-          <img src="${item.url}" alt="${sku}" class="cotiz-sku-img" onerror="this.onerror=null; this.src='https://via.placeholder.com/180?text=No+Disponible';" />
-          <span class="cotiz-sku-caption">SKU: ${sku}${item.desc ? ' — ' + item.desc.slice(0, 40) : ''}</span>
-        </div>
-      `;
+  // 2. Buscar en catálogo histórico para precios y costos sugeridos
+  const histMatch = (rows || []).find(r => (r['CODIGO'] || '').trim().toUpperCase() === sku);
+  if (histMatch) {
+    if (descEl && (!descEl.value || descEl.value.length < 3)) {
+      descEl.value = histMatch['DESCRIPCION'] || imgObj?.desc || sku;
     }
-    if (descInput && item.desc && (!descInput.value || descInput.value === 'Nombre o descripción detallada' || descInput.value === 'Producto Cotizado')) {
-      descInput.value = item.desc;
+    if (precioEl && (Number(precioEl.value) === 0 || !precioEl.value)) {
+      precioEl.value = Number(histMatch['PREUNI']) || 0;
     }
-  } else {
-    if (container) {
-      container.innerHTML = `
-        <div class="cotiz-image-placeholder" style="color: #fbbf24;">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          <span>Sin imagen para SKU: <strong>${sku}</strong></span>
-        </div>
-      `;
+    if (costoEl && (Number(costoEl.value) === 0 || !costoEl.value)) {
+      costoEl.value = Number(histMatch['COSTOS']) || 0;
     }
+  } else if (imgObj && imgObj.desc && descEl && !descEl.value) {
+    descEl.value = imgObj.desc;
   }
+
+  recalcCotizTotals();
+}
+
+/**
+ * Recalcula totales, descuentos, IVA, márgenes y subtotales en vivo
+ */
+function recalcCotizTotals() {
+  const tbody = document.getElementById('cotizItemsTableBody');
+  if (!tbody) return;
+
+  const rowsList = tbody.querySelectorAll('.cotiz-item-row');
+  let grandNeto = 0;
+  let grandCosto = 0;
+
+  rowsList.forEach(r => {
+    const rowId = r.dataset.rowId;
+    const cant = parseFloat(document.getElementById(`itemCant_${rowId}`)?.value) || 0;
+    const precio = parseFloat(document.getElementById(`itemPrecio_${rowId}`)?.value) || 0;
+    const costo = parseFloat(document.getElementById(`itemCosto_${rowId}`)?.value) || 0;
+
+    const lineNeto = cant * precio;
+    const lineCosto = cant * costo;
+    const lineUtil = lineNeto - lineCosto;
+    const lineMargen = lineNeto > 0 ? (lineUtil / lineNeto) * 100 : 0;
+
+    grandNeto += lineNeto;
+    grandCosto += lineCosto;
+
+    const subEl = document.getElementById(`itemSubtotal_${rowId}`);
+    const margEl = document.getElementById(`itemMargin_${rowId}`);
+
+    if (subEl) subEl.textContent = typeof formatCLP === 'function' ? formatCLP(lineNeto) : `$${Math.round(lineNeto).toLocaleString('es-CL')}`;
+    if (margEl) {
+      margEl.textContent = lineMargen.toFixed(1) + '%';
+      margEl.style.color = lineMargen >= 30 ? '#34d399' : (lineMargen >= 15 ? '#fbbf24' : '#f87171');
+      margEl.style.background = lineMargen >= 30 ? 'rgba(16, 185, 129, 0.2)' : (lineMargen >= 15 ? 'rgba(245, 158, 11, 0.2)' : 'rgba(244, 63, 94, 0.2)');
+    }
+  });
+
+  const discountPct = Math.min(99, Math.max(0, parseFloat(document.getElementById('cotizDiscountPct')?.value) || 0));
+  const discountAmount = grandNeto * (discountPct / 100);
+  const netoFinal = Math.max(0, grandNeto - discountAmount);
+  const iva = netoFinal * 0.19;
+  const totalBruto = netoFinal + iva;
+  const totalUtilidad = netoFinal - grandCosto;
+  const margenGlobal = netoFinal > 0 ? (totalUtilidad / netoFinal) * 100 : 0;
+
+  const fmt = (v) => typeof formatCLP === 'function' ? formatCLP(v) : `$${Math.round(v).toLocaleString('es-CL')}`;
+
+  const elSubNeto = document.getElementById('cotizSubtotalNeto');
+  const elDescMonto = document.getElementById('cotizDiscountAmount');
+  const elNetoFin = document.getElementById('cotizNetoFinal');
+  const elIva = document.getElementById('cotizIva');
+  const elTotalBruto = document.getElementById('cotizTotalBruto');
+  const elTotalUtil = document.getElementById('cotizTotalUtilidad');
+  const elMarginPill = document.getElementById('cotizGlobalMarginPill');
+
+  if (elSubNeto) elSubNeto.textContent = fmt(grandNeto);
+  if (elDescMonto) elDescMonto.textContent = discountAmount > 0 ? `-${fmt(discountAmount)}` : '$0';
+  if (elNetoFin) elNetoFin.textContent = fmt(netoFinal);
+  if (elIva) elIva.textContent = fmt(iva);
+  if (elTotalBruto) elTotalBruto.textContent = fmt(totalBruto);
+  if (elTotalUtil) elTotalUtil.textContent = fmt(totalUtilidad);
+  if (elMarginPill) {
+    elMarginPill.textContent = `Margen: ${margenGlobal.toFixed(1)}%`;
+    elMarginPill.style.color = margenGlobal >= 30 ? '#34d399' : (margenGlobal >= 15 ? '#fbbf24' : '#f87171');
+  }
+}
+
+/**
+ * Guarda la cotización con todos sus productos en Google Sheets / local state
+ */
+async function saveCotizacion() {
+  const folio = document.getElementById('cFolio')?.value?.trim() || `COT-2026-${Math.floor(Math.random()*9000+1000)}`;
+  const fecha = document.getElementById('cFecha')?.value || new Date().toISOString().split('T')[0];
+  const validez = document.getElementById('cValidez')?.value || '30 Días';
+  const vendedor = document.getElementById('cVendedor')?.value?.trim() || 'Vendedor General';
+  const canal = document.getElementById('cCanal')?.value || 'Mayoristas';
+  const estado = document.getElementById('cEstado')?.value || 'En Seguimiento';
+  const cliente = document.getElementById('cCliente')?.value?.trim();
+  const rut = document.getElementById('cRut')?.value?.trim() || '';
+  const email = document.getElementById('cEmail')?.value?.trim() || '';
+  const comuna = document.getElementById('cComuna')?.value?.trim() || '';
+  const region = document.getElementById('cRegion')?.value?.trim() || 'RM';
+  const formaPago = document.getElementById('cFormaPago')?.value || 'Crédito 30 Días';
+  const plazoEntrega = document.getElementById('cPlazoEntrega')?.value || '24 a 48 Horas Hábiles';
+  const observaciones = document.getElementById('cObservaciones')?.value?.trim() || '';
+
+  if (!cliente) {
+    if (typeof showToast === 'function') showToast('⚠️ Por favor ingresa el nombre o razón social del cliente');
+    return;
+  }
+
+  const tbody = document.getElementById('cotizItemsTableBody');
+  const rowsList = tbody ? tbody.querySelectorAll('.cotiz-item-row') : [];
+  const items = [];
+
+  rowsList.forEach(r => {
+    const rowId = r.dataset.rowId;
+    const sku = document.getElementById(`itemSku_${rowId}`)?.value?.trim().toUpperCase();
+    const desc = document.getElementById(`itemDesc_${rowId}`)?.value?.trim();
+    const cant = parseFloat(document.getElementById(`itemCant_${rowId}`)?.value) || 0;
+    const precio = parseFloat(document.getElementById(`itemPrecio_${rowId}`)?.value) || 0;
+    const costo = parseFloat(document.getElementById(`itemCosto_${rowId}`)?.value) || 0;
+
+    if (sku && cant > 0) {
+      items.push({ sku, desc: desc || sku, cant, precio, costo });
+    }
+  });
+
+  if (items.length === 0) {
+    if (typeof showToast === 'function') showToast('⚠️ Debes ingresar al menos 1 producto con cantidad válida');
+    return;
+  }
+
+  // Generar filas para el Google Sheet
+  const newCotizRows = items.map(it => {
+    const neto = it.cant * it.precio;
+    const costoTot = it.cant * it.costo;
+    const util = neto - costoTot;
+
+    return {
+      FOLIO: folio,
+      TIPO: 'Cotización',
+      FECHA: fecha,
+      CODIGO: it.sku,
+      DESCRIPCION: it.desc,
+      CANTFACTURADA: it.cant,
+      PREUNI: it.precio,
+      COSTOS: it.costo,
+      NETO: neto,
+      '($) UTILIDAD': util,
+      CLIENTE: cliente,
+      RUT: rut,
+      CODVENDENDOR: vendedor,
+      'CANAL FINAL': canal,
+      REGION: region,
+      COMUNA: comuna,
+      EMAIL: email,
+      ESTADO: estado,
+      VALIDEZ: validez,
+      PAGO: formaPago,
+      ENTREGA: plazoEntrega,
+      GLOSA: `${formaPago} · ${plazoEntrega} · ${observaciones}`
+    };
+  });
+
+  // Guardar en el estado local de cotizaciones
+  if (typeof cotizacionesRows !== 'undefined') {
+    cotizacionesRows.unshift(...newCotizRows);
+    try {
+      localStorage.setItem('glomax_cotizaciones_cache', JSON.stringify(cotizacionesRows));
+    } catch(e) {}
+  }
+
+  // Enviar a la API de Google Apps Script si está disponible
+  try {
+    if (typeof apiPost === 'function' && typeof API_URL !== 'undefined' && API_URL) {
+      for (const rowData of newCotizRows) {
+        await apiPost({ action: 'add_cotizacion', data: rowData });
+      }
+    }
+  } catch(err) {
+    console.warn('[Cotizaciones] Error al sincronizar con Google Sheets:', err);
+  }
+
+  if (typeof showToast === 'function') {
+    showToast(`✅ Cotización ${folio} con ${items.length} productos guardada exitosamente`);
+  }
+
+  closeCotizacionModal();
+
+  // Re-aplicar filtros y actualizar tablero de cotizaciones
+  if (typeof applyCotizacionesFilters === 'function') {
+    applyCotizacionesFilters();
+  }
+}
+
+/**
+ * Genera la vista de impresión / PDF oficial de la Cotización Comercial
+ */
+function printCotizacionDocument() {
+  const folio = document.getElementById('cFolio')?.value?.trim() || 'COT-2026-0001';
+  const fecha = document.getElementById('cFecha')?.value || new Date().toISOString().split('T')[0];
+  const validez = document.getElementById('cValidez')?.value || '30 Días';
+  const vendedor = document.getElementById('cVendedor')?.value?.trim() || 'Ejecutivo Glomax';
+  const canal = document.getElementById('cCanal')?.value || 'Mayoristas';
+  const cliente = document.getElementById('cCliente')?.value?.trim() || 'Cliente';
+  const rut = document.getElementById('cRut')?.value?.trim() || 'S/RUT';
+  const email = document.getElementById('cEmail')?.value?.trim() || '';
+  const comuna = document.getElementById('cComuna')?.value?.trim() || '';
+  const region = document.getElementById('cRegion')?.value?.trim() || 'RM';
+  const formaPago = document.getElementById('cFormaPago')?.value || 'Crédito 30 Días';
+  const plazoEntrega = document.getElementById('cPlazoEntrega')?.value || '24 a 48 Horas Hábiles';
+  const observaciones = document.getElementById('cObservaciones')?.value?.trim() || 'Cotización emitida conforme a listas de precios mayoristas.';
+
+  const tbody = document.getElementById('cotizItemsTableBody');
+  const rowsList = tbody ? tbody.querySelectorAll('.cotiz-item-row') : [];
+  const items = [];
+
+  rowsList.forEach(r => {
+    const rowId = r.dataset.rowId;
+    const sku = document.getElementById(`itemSku_${rowId}`)?.value?.trim().toUpperCase();
+    const desc = document.getElementById(`itemDesc_${rowId}`)?.value?.trim();
+    const cant = parseFloat(document.getElementById(`itemCant_${rowId}`)?.value) || 0;
+    const precio = parseFloat(document.getElementById(`itemPrecio_${rowId}`)?.value) || 0;
+
+    if (sku && cant > 0) {
+      items.push({ sku, desc: desc || sku, cant, precio, subtotal: cant * precio });
+    }
+  });
+
+  const subtotalNeto = items.reduce((a, it) => a + it.subtotal, 0);
+  const discountPct = parseFloat(document.getElementById('cotizDiscountPct')?.value) || 0;
+  const discountAmount = subtotalNeto * (discountPct / 100);
+  const netoFinal = subtotalNeto - discountAmount;
+  const iva = netoFinal * 0.19;
+  const totalBruto = netoFinal + iva;
+
+  const fmt = (v) => `$${Math.round(v).toLocaleString('es-CL')}`;
+
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) {
+    if (typeof showToast === 'function') showToast('⚠️ Permite las ventanas emergentes para imprimir la cotización');
+    return;
+  }
+
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+      <meta charset="UTF-8">
+      <title>Cotización ${folio} - ${cliente}</title>
+      <style>
+        @page { size: A4; margin: 15mm; }
+        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b; margin: 0; padding: 20px; font-size: 13px; line-height: 1.5; }
+        .header-table { width: 100%; border-bottom: 2px solid #0284c7; padding-bottom: 12px; margin-bottom: 20px; }
+        .logo-title { font-size: 24px; font-weight: 900; color: #0f172a; letter-spacing: -0.5px; }
+        .logo-sub { font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 700; letter-spacing: 1px; }
+        .doc-badge { background: #0284c7; color: #ffffff; padding: 6px 14px; border-radius: 6px; font-weight: 800; font-size: 14px; display: inline-block; }
+        .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-bottom: 20px; }
+        .meta-title { font-size: 11px; font-weight: 800; color: #0284c7; text-transform: uppercase; margin-bottom: 6px; }
+        .meta-row { margin-bottom: 4px; }
+        .items-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        .items-table th { background: #0f172a; color: #ffffff; padding: 8px 10px; font-size: 11px; text-transform: uppercase; text-align: left; }
+        .items-table td { padding: 8px 10px; border-bottom: 1px solid #e2e8f0; font-size: 12px; }
+        .totals-table { width: 320px; margin-left: auto; border-collapse: collapse; margin-bottom: 20px; }
+        .totals-table td { padding: 5px 8px; }
+        .totals-table .grand-total { font-size: 16px; font-weight: 800; color: #0284c7; border-top: 2px solid #0f172a; padding-top: 8px; }
+        .terms-box { background: #f1f5f9; border-left: 4px solid #0284c7; padding: 12px; font-size: 11px; color: #475569; border-radius: 0 6px 6px 0; }
+        .footer { text-align: center; font-size: 10px; color: #94a3b8; margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 10px; }
+      </style>
+    </head>
+    <body>
+      <table class="header-table">
+        <tr>
+          <td>
+            <div class="logo-title">GLOMAX S.A.</div>
+            <div class="logo-sub">Soluciones Eléctricas & Materiales Industriales</div>
+            <div style="font-size: 11px; color: #64748b; margin-top: 4px;">RUT: 76.543.210-K · Casa Matriz: Santiago, Chile · www.glomax.cl</div>
+          </td>
+          <td style="text-align: right; vertical-align: top;">
+            <div class="doc-badge">COTIZACIÓN COMERCIAL</div>
+            <div style="font-size: 16px; font-weight: 800; margin-top: 6px; color: #0f172a;">${folio}</div>
+            <div style="font-size: 11px; color: #64748b;">Fecha: ${fecha}</div>
+          </td>
+        </tr>
+      </table>
+
+      <div class="meta-grid">
+        <div>
+          <div class="meta-title">Datos del Cliente</div>
+          <div class="meta-row"><strong>Razón Social:</strong> ${cliente}</div>
+          <div class="meta-row"><strong>RUT / DNI:</strong> ${rut}</div>
+          ${email ? `<div class="meta-row"><strong>Email:</strong> ${email}</div>` : ''}
+          <div class="meta-row"><strong>Ciudad / Región:</strong> ${comuna ? comuna + ' · ' : ''}${region}</div>
+        </div>
+        <div>
+          <div class="meta-title">Condiciones Comerciales</div>
+          <div class="meta-row"><strong>Ejecutivo:</strong> ${vendedor}</div>
+          <div class="meta-row"><strong>Canal:</strong> ${canal}</div>
+          <div class="meta-row"><strong>Validez Oferta:</strong> ${validez}</div>
+          <div class="meta-row"><strong>Forma de Pago:</strong> ${formaPago}</div>
+          <div class="meta-row"><strong>Plazo Entrega:</strong> ${plazoEntrega}</div>
+        </div>
+      </div>
+
+      <table class="items-table">
+        <thead>
+          <tr>
+            <th style="width: 30px; text-align: center;">#</th>
+            <th style="width: 110px;">SKU / Código</th>
+            <th>Descripción del Producto</th>
+            <th style="text-align: right; width: 60px;">Cant.</th>
+            <th style="text-align: right; width: 100px;">Precio Unit.</th>
+            <th style="text-align: right; width: 110px;">Subtotal Neto</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${items.map((it, idx) => `
+            <tr>
+              <td style="text-align: center; color: #64748b;">${idx + 1}</td>
+              <td style="font-weight: 700; font-family: monospace;">${it.sku}</td>
+              <td>${it.desc}</td>
+              <td style="text-align: right; font-weight: 700;">${it.cant}</td>
+              <td style="text-align: right;">${fmt(it.precio)}</td>
+              <td style="text-align: right; font-weight: 700;">${fmt(it.subtotal)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+
+      <table class="totals-table">
+        <tr>
+          <td>Subtotal Neto:</td>
+          <td style="text-align: right; font-weight: 700;">${fmt(subtotalNeto)}</td>
+        </tr>
+        ${discountAmount > 0 ? `
+          <tr>
+            <td style="color: #e11d48;">Descuento (${discountPct}%):</td>
+            <td style="text-align: right; color: #e11d48; font-weight: 700;">-${fmt(discountAmount)}</td>
+          </tr>
+          <tr>
+            <td>Neto con Descuento:</td>
+            <td style="text-align: right; font-weight: 700;">${fmt(netoFinal)}</td>
+          </tr>
+        ` : ''}
+        <tr>
+          <td>IVA (19%):</td>
+          <td style="text-align: right; font-weight: 700;">${fmt(iva)}</td>
+        </tr>
+        <tr class="grand-total">
+          <td>TOTAL (CLP):</td>
+          <td style="text-align: right;">${fmt(totalBruto)}</td>
+        </tr>
+      </table>
+
+      <div class="terms-box">
+        <strong>Términos & Condiciones:</strong><br/>
+        • Los precios expresados en esta cotización tienen una validez de ${validez} a partir de su emisión.<br/>
+        • Forma de pago: ${formaPago}. Plazo de entrega estimado: ${plazoEntrega}.<br/>
+        ${observaciones ? `• <strong>Observaciones:</strong> ${observaciones}` : ''}
+      </div>
+
+      <div class="footer">
+        Documento comercial generado automáticamente por Glomax S.A. Analytics Engine · ${new Date().toLocaleDateString('es-CL')}
+      </div>
+
+      <script>
+        window.onload = function() { window.print(); }
+      </script>
+    </body>
+    </html>
+  `);
+  printWindow.document.close();
 }
 
 

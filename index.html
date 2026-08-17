@@ -1953,114 +1953,250 @@
     </div>
   </div>
 
-  <!-- MODAL FORM NUEVA COTIZACIÓN (ESTRUCTURA IDÉNTICA A REGISTRO DE VENTA) -->
+  <!-- MODAL MULTI-PRODUCTO: EMISIÓN DE COTIZACIÓN COMERCIAL GLOMAX -->
   <div class="modal-backdrop" id="cotizacionModalBackdrop">
-    <div class="modal-content">
-      <div class="modal-header">
-        <div>
-          <h3 id="cotizModalTitle">Nueva Cotización</h3>
-          <p class="modal-subtitle">Completa los campos requeridos para registrar la cotización en Google Sheets.</p>
+    <div class="modal-content cotiz-modal-wide">
+      <div class="modal-header" style="padding-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: 1.25rem;">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <div class="modal-icon-badge" style="background: rgba(96, 165, 250, 0.15); color: #60a5fa; padding: 8px 12px; border-radius: 10px; border: 1px solid rgba(96, 165, 250, 0.3); font-weight: 800; font-size: 1.2rem;">
+            📑
+          </div>
+          <div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <h3 id="cotizModalTitle" style="margin: 0; font-size: 1.2rem; font-weight: 800;">Emisión de Cotización Comercial</h3>
+              <span class="folio-live-badge" id="cotizModalFolioBadge">COT-2026-0001</span>
+            </div>
+            <p class="modal-subtitle" style="margin: 3px 0 0 0; font-size: 0.82rem;">Registra cotizaciones con múltiples productos, cálculo de márgenes e IVA en tiempo real.</p>
+          </div>
         </div>
         <button type="button" class="btn-secondary modal-close-icon" id="closeCotizModalBtn" onclick="closeCotizacionModal()" title="Cerrar modal">✕</button>
       </div>
-      <form id="cotizacionModalForm">
-        <div class="cotiz-modal-top-grid">
-          <!-- COLUMNA IZQUIERDA: FORMULARIO PRINCIPAL -->
-          <div class="cotiz-modal-form-col">
-            <div class="form-section-title">Información del Documento</div>
-            <div class="form-grid">
-              <div class="form-group">
-                <label for="cFolio">Folio *</label>
-                <input type="text" id="cFolio" placeholder="Ej: 10452" required />
-              </div>
-              <div class="form-group">
-                <label for="cTipo">Tipo Documento *</label>
-                <input type="text" id="cTipo" value="Cotización" required />
-              </div>
-              <div class="form-group">
-                <label for="cFecha">Fecha *</label>
-                <input type="date" id="cFecha" required />
+
+      <form id="cotizacionModalForm" onsubmit="event.preventDefault(); saveCotizacion();">
+        
+        <!-- SECCIÓN 1: CABECERA Y DATOS DEL DOCUMENTO -->
+        <div class="modal-section-card">
+          <div class="form-section-title">
+            <span class="section-num">1</span>
+            <span>Datos del Documento & Condiciones</span>
+          </div>
+          <div class="cotiz-form-grid-3">
+            <div class="form-group">
+              <label for="cFolio">N° Folio Cotización *</label>
+              <div style="display: flex; gap: 4px;">
+                <input type="text" id="cFolio" class="filter-input" style="font-weight: 800; font-family: monospace;" placeholder="COT-2026-XXXX" required />
+                <button type="button" class="btn-secondary btn-sm" onclick="generateNewCotizFolio()" title="Generar nuevo número correlativo" style="padding: 0 8px;">🎲</button>
               </div>
             </div>
+            <div class="form-group">
+              <label for="cFecha">Fecha Emisión *</label>
+              <input type="date" id="cFecha" class="filter-input" required />
+            </div>
+            <div class="form-group">
+              <label for="cValidez">Validez de la Oferta</label>
+              <select id="cValidez" class="filter-select">
+                <option value="15 Días">15 Días Corridos</option>
+                <option value="30 Días" selected>30 Días Corridos</option>
+                <option value="60 Días">60 Días Corridos</option>
+                <option value="Inmediata (Stock)">Hasta agotar stock</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="cVendedor">Ejecutivo / Vendedor *</label>
+              <input type="text" id="cVendedor" class="filter-input" placeholder="Ej: VEND-01 / Nombre Ejecutivo" required />
+            </div>
+            <div class="form-group">
+              <label for="cCanal">Canal de Venta</label>
+              <select id="cCanal" class="filter-select">
+                <option value="Mayoristas" selected>Mayoristas</option>
+                <option value="Distribución">Distribución</option>
+                <option value="Corporativo / B2B">Corporativo / B2B</option>
+                <option value="Retail">Retail</option>
+                <option value="E-Commerce">E-Commerce</option>
+                <option value="Público">Público</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="cEstado">Estado Inicial</label>
+              <select id="cEstado" class="filter-select">
+                <option value="En Seguimiento" selected>En Seguimiento</option>
+                <option value="Emitida">Emitida</option>
+                <option value="Aprobada">Aprobada</option>
+                <option value="Pendiente">Pendiente</option>
+              </select>
+            </div>
+          </div>
+        </div>
 
-            <div class="form-section-title">Detalle del Producto & Precio</div>
+        <!-- SECCIÓN 2: DATOS DEL CLIENTE -->
+        <div class="modal-section-card" style="margin-top: 1rem;">
+          <div class="form-section-title">
+            <span class="section-num">2</span>
+            <span>Datos del Cliente / Razón Social</span>
+          </div>
+          <div class="cotiz-form-grid-3">
+            <div class="form-group">
+              <label for="cRut">RUT / DNI Cliente</label>
+              <input type="text" id="cRut" class="filter-input" placeholder="76.123.456-7" oninput="lookupClientByRut(this.value)" />
+            </div>
+            <div class="form-group" style="grid-column: span 2;">
+              <label for="cCliente">Razón Social / Nombre Cliente *</label>
+              <input type="text" id="cCliente" class="filter-input" style="font-weight: 700;" placeholder="Escribe el nombre o razón social del cliente" list="cotizClientDatalist" required />
+              <datalist id="cotizClientDatalist"></datalist>
+            </div>
+            <div class="form-group">
+              <label for="cEmail">Email de Contacto</label>
+              <input type="email" id="cEmail" class="filter-input" placeholder="contacto@cliente.cl" />
+            </div>
+            <div class="form-group">
+              <label for="cComuna">Comuna / Ciudad</label>
+              <input type="text" id="cComuna" class="filter-input" placeholder="Ej: Santiago / Las Condes" />
+            </div>
+            <div class="form-group">
+              <label for="cRegion">Región</label>
+              <input type="text" id="cRegion" class="filter-input" placeholder="Ej: RM" />
+            </div>
+          </div>
+        </div>
+
+        <!-- SECCIÓN 3: ARTÍCULOS Y MULTI-PRODUCTOS -->
+        <div class="modal-section-card" style="margin-top: 1rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem; flex-wrap: wrap; gap: 0.5rem;">
+            <div class="form-section-title" style="margin-bottom: 0; border: none; padding: 0;">
+              <span class="section-num">3</span>
+              <span>Líneas de Productos & Precios Cotizados</span>
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+              <button type="button" class="btn-secondary btn-sm" onclick="addCotizProductRow()" style="background: rgba(96, 165, 250, 0.15); color: #60a5fa; border: 1px solid rgba(96, 165, 250, 0.4); font-weight: 700;">
+                + Agregar Producto
+              </button>
+              <button type="button" class="btn-secondary btn-sm" onclick="clearCotizProductRows()" title="Limpiar lista de productos">
+                Limpiar Items
+              </button>
+            </div>
+          </div>
+
+          <!-- TABLA DINÁMICA DE ITEMS -->
+          <div class="cotiz-items-table-wrap">
+            <table class="cotiz-items-table" id="cotizItemsTable">
+              <thead>
+                <tr>
+                  <th style="width: 34px; text-align: center;">#</th>
+                  <th style="width: 44px; text-align: center;">Foto</th>
+                  <th style="width: 140px; text-align: left;">SKU / Código</th>
+                  <th style="text-align: left;">Descripción del Producto</th>
+                  <th style="width: 85px; text-align: right;">Cantidad</th>
+                  <th style="width: 115px; text-align: right;">Precio Unit. ($)</th>
+                  <th style="width: 110px; text-align: right;">Costo Unit. ($)</th>
+                  <th style="width: 125px; text-align: right;">Subtotal Neto ($)</th>
+                  <th style="width: 80px; text-align: center;">Margen</th>
+                  <th style="width: 40px; text-align: center;"></th>
+                </tr>
+              </thead>
+              <tbody id="cotizItemsTableBody">
+                <!-- Filas dinámicas generadas por JS -->
+              </tbody>
+            </table>
+          </div>
+
+          <div style="margin-top: 0.75rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+            <button type="button" class="btn-secondary btn-sm" onclick="addCotizProductRow()" style="font-weight: 700;">
+              ➕ Agregar otra línea de producto
+            </button>
+            <span style="font-size: 0.8rem; color: #94a3b8;" id="cotizItemsCountLabel">1 producto en cotización</span>
+          </div>
+        </div>
+
+        <!-- SECCIÓN 4: RESUMEN FINANCIERO Y CONDICIONES GLOBALES -->
+        <div class="cotiz-modal-bottom-grid" style="margin-top: 1rem;">
+          <!-- CONDICIONES Y NOTAS -->
+          <div class="modal-section-card">
+            <div class="form-section-title">
+              <span class="section-num">4</span>
+              <span>Condiciones Comerciales & Observaciones</span>
+            </div>
             <div class="form-grid">
               <div class="form-group">
-                <label for="cCodigo">Código Producto (SKU) *</label>
-                <input type="text" id="cCodigo" placeholder="Ej: ARM012" oninput="lookupProductBySku(this.value)" required />
+                <label for="cFormaPago">Forma de Pago</label>
+                <select id="cFormaPago" class="filter-select">
+                  <option value="Contado / Transferencia">Contado / Transferencia Anticipada</option>
+                  <option value="Crédito 30 Días" selected>Crédito a 30 Días</option>
+                  <option value="Crédito 60 Días">Crédito a 60 Días</option>
+                  <option value="Contra Entrega">Pago Contra Entrega</option>
+                  <option value="Cheque a Fecha">Cheque a Fecha</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="cPlazoEntrega">Tiempo Estimado de Entrega</label>
+                <select id="cPlazoEntrega" class="filter-select">
+                  <option value="Inmediato / Retiro en Bodega">Inmediato / Retiro en Bodega</option>
+                  <option value="24 a 48 Horas Hábiles" selected>24 a 48 Horas Hábiles</option>
+                  <option value="3 a 5 Días Hábiles">3 a 5 Días Hábiles</option>
+                  <option value="A convenir">A convenir con el cliente</option>
+                </select>
               </div>
               <div class="form-group full">
-                <label for="cDescripcion">Descripción *</label>
-                <input type="text" id="cDescripcion" placeholder="Nombre o descripción detallada" required />
-              </div>
-              <div class="form-group">
-                <label for="cCant">Cant Facturada *</label>
-                <input type="number" id="cCant" value="1" step="any" required />
-              </div>
-              <div class="form-group">
-                <label for="cPreUni">Precio Unitario ($) *</label>
-                <input type="number" id="cPreUni" value="0" step="any" required />
-              </div>
-              <div class="form-group">
-                <label for="cCostos">Costo Unitario ($)</label>
-                <input type="number" id="cCostos" value="0" step="any" placeholder="0" />
+                <label for="cObservaciones">Notas / Glosa Comercial</label>
+                <textarea id="cObservaciones" class="filter-input" rows="2" placeholder="Observaciones especiales, condiciones de flete, embalaje o despacho..."></textarea>
               </div>
             </div>
           </div>
 
-          <!-- COLUMNA DERECHA: VISTA PREVIA DE IMAGEN SKU (HOJA IMAGENES COL C) -->
-          <div class="cotiz-modal-img-col">
-            <div class="form-section-title">Imagen del Producto</div>
-            <div class="cotiz-image-preview-card" id="cotizImagePreviewBox">
-              <div id="cotizImageContainer">
-                <div class="cotiz-image-placeholder">
-                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                  <span>Ingresa un SKU para cargar la imagen</span>
-                </div>
+          <!-- TOTALES Y LIQUIDACIÓN EN TIEMPO REAL -->
+          <div class="modal-section-card cotiz-totals-box">
+            <div class="form-section-title" style="color: #60a5fa; border-bottom: 1px solid rgba(96,165,250,0.2);">
+              <span>Totales de Cotización</span>
+            </div>
+            
+            <div class="totals-row">
+              <span>Subtotal Neto:</span>
+              <span class="totals-val font-bold" id="cotizSubtotalNeto">$0</span>
+            </div>
+
+            <div class="totals-row" style="align-items: center;">
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span>Descuento:</span>
+                <input type="number" id="cotizDiscountPct" value="0" min="0" max="99" step="1" style="width: 55px; height: 26px; font-size: 0.78rem; text-align: center; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15); border-radius: 4px; color: #f8fafc;" oninput="recalcCotizTotals()" />
+                <span>%</span>
               </div>
+              <span class="totals-val" style="color: #fda4af;" id="cotizDiscountAmount">-$0</span>
+            </div>
+
+            <div class="totals-row">
+              <span>Neto Final:</span>
+              <span class="totals-val font-bold" style="color: #38bdf8;" id="cotizNetoFinal">$0</span>
+            </div>
+
+            <div class="totals-row">
+              <span>IVA (19%):</span>
+              <span class="totals-val" id="cotizIva">$0</span>
+            </div>
+
+            <div class="totals-row total-highlight">
+              <span style="font-size: 1.05rem; font-weight: 800;">TOTAL FINAL:</span>
+              <span class="totals-val font-bold" style="font-size: 1.25rem; color: #34d399;" id="cotizTotalBruto">$0</span>
+            </div>
+
+            <div class="totals-margin-badge" id="cotizMarginBadgeWrap">
+              <span>Utilidad Proyectada: <strong id="cotizTotalUtilidad">$0</strong></span>
+              <span class="margin-pill" id="cotizGlobalMarginPill">Margen: 0%</span>
             </div>
           </div>
         </div>
 
-        <div class="form-section-title">Cliente & Clasificación Comercial</div>
-        <div class="form-grid">
-          <div class="form-group full">
-            <label for="cCliente">Nombre Cliente *</label>
-            <input type="text" id="cCliente" placeholder="Razón social o Nombre del cliente" required />
+        <!-- ACCIONES FINALES -->
+        <div class="modal-actions" style="margin-top: 1.25rem; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+          <button type="button" class="btn-secondary" id="cancelCotizModalBtn" onclick="closeCotizacionModal()">
+            Cancelar
+          </button>
+          <div style="display: flex; gap: 0.75rem;">
+            <button type="button" class="btn-secondary" onclick="printCotizacionDocument()" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4);" title="Imprimir o Exportar Cotización en PDF">
+              📄 Imprimir / PDF
+            </button>
+            <button type="submit" class="btn-primary" id="saveCotizModalBtn" style="min-width: 170px;">
+              💾 Guardar Cotización
+            </button>
           </div>
-          <div class="form-group">
-            <label for="cRut">RUT</label>
-            <input type="text" id="cRut" placeholder="76.123.456-7" />
-          </div>
-          <div class="form-group">
-            <label for="cVendedor">Vendedor</label>
-            <input type="text" id="cVendedor" placeholder="Ej: VEND-01" />
-          </div>
-          <div class="form-group">
-            <label for="cCanal">Canal Final</label>
-            <input type="text" id="cCanal" placeholder="Ej: Distribución" />
-          </div>
-          <div class="form-group">
-            <label for="cTienda">Tienda Final</label>
-            <input type="text" id="cTienda" placeholder="Ej: Casa Matriz" />
-          </div>
-          <div class="form-group">
-            <label for="cFamilia">Familia</label>
-            <input type="text" id="cFamilia" placeholder="Ej: Abarrotes" />
-          </div>
-          <div class="form-group">
-            <label for="cCategoria">Categoría</label>
-            <input type="text" id="cCategoria" placeholder="Ej: Bebidas" />
-          </div>
-          <div class="form-group">
-            <label for="cRegion">Región</label>
-            <input type="text" id="cRegion" placeholder="Ej: RM" />
-          </div>
-        </div>
-
-        <div class="modal-actions">
-          <button type="button" class="btn-secondary" id="cancelCotizModalBtn" onclick="closeCotizacionModal()">Cancelar</button>
-          <button type="submit" class="btn-primary" id="saveCotizModalBtn">Guardar Cotización</button>
         </div>
       </form>
     </div>
