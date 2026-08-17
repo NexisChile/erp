@@ -2939,6 +2939,9 @@ async function fetchCotizacionesData() {
     if (cachedStr) {
       const cachedData = JSON.parse(cachedStr);
       if (cachedData && cachedData.length > 0) {
+        cachedData.forEach(r => {
+          r.fechaObj = parseCotizDate(r.fechaObj || r.fecha);
+        });
         console.log(`[Cotizaciones Cache] 📦 Cargados ${cachedData.length.toLocaleString()} registros desde caché local`);
         return cachedData;
       }
@@ -3129,8 +3132,12 @@ function applyCotizacionesFilters() {
 
   filteredCotizacionesRows = cotizacionesRows.filter(r => {
     // 1. Filtro de Rango de Fechas
-    if (dDesde && r.fechaObj && r.fechaObj < dDesde) return false;
-    if (dHasta && r.fechaObj && r.fechaObj > dHasta) return false;
+    if (dDesde || dHasta) {
+      let rowDate = (r.fechaObj instanceof Date && !isNaN(r.fechaObj.getTime())) ? r.fechaObj : parseCotizDate(r.fechaObj || r.fecha);
+      if (!rowDate) return false; // Si hay filtro de fecha activo y la fila no tiene fecha válida, se excluye
+      if (dDesde && rowDate < dDesde) return false;
+      if (dHasta && rowDate > dHasta) return false;
+    }
 
     // 2. Filtro Vendedor (Código numérico)
     if (fVend && r.vendedor !== fVend) return false;
@@ -3176,13 +3183,50 @@ function renderCotizacionesHeroCards(data) {
   if (!container) return;
 
   if (!data || data.length === 0) {
+    if (summaryStrip) {
+      summaryStrip.innerHTML = `
+        <div class="cotiz-summary-card">
+          <div class="cotiz-summary-icon" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa;">💰</div>
+          <div>
+            <div class="cotiz-summary-lbl">Cartera Total Cotizada</div>
+            <div class="cotiz-summary-val" style="color: #60a5fa;">$0</div>
+            <div class="cotiz-summary-sub">0 solicitudes en este periodo</div>
+          </div>
+        </div>
+        <div class="cotiz-summary-card">
+          <div class="cotiz-summary-icon" style="background: rgba(16, 185, 129, 0.15); color: #34d399;">🏆</div>
+          <div>
+            <div class="cotiz-summary-lbl">Negocios Ganados</div>
+            <div class="cotiz-summary-val" style="color: #34d399;">$0</div>
+            <div class="cotiz-summary-sub" style="color: #34d399;">0 cotizaciones aceptadas</div>
+          </div>
+        </div>
+        <div class="cotiz-summary-card">
+          <div class="cotiz-summary-icon" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24;">⏳</div>
+          <div>
+            <div class="cotiz-summary-lbl">En Seguimiento Activo</div>
+            <div class="cotiz-summary-val" style="color: #fbbf24;">$0</div>
+            <div class="cotiz-summary-sub" style="color: #fbbf24;">0 solicitudes en proceso</div>
+          </div>
+        </div>
+        <div class="cotiz-summary-card">
+          <div class="cotiz-summary-icon" style="background: rgba(139, 92, 246, 0.15); color: #a78bfa;">📈</div>
+          <div>
+            <div class="cotiz-summary-lbl">Tasa Global de Conversión</div>
+            <div class="cotiz-summary-val" style="color: #a78bfa;">0.0%</div>
+            <div class="cotiz-summary-sub">Efectividad de cierre comercial</div>
+          </div>
+        </div>
+      `;
+    }
     container.innerHTML = `
-      <div class="ax-card" style="grid-column: 1 / -1; padding: 2.5rem; text-align: center; color: var(--ax-text-tertiary);">
-        No se encontraron cotizaciones con los filtros seleccionados.
+      <div class="ax-card" style="grid-column: 1 / -1; padding: 3rem 2rem; text-align: center; color: var(--ax-text-tertiary); background: rgba(255,255,255,0.02); border: 1px dashed rgba(255,255,255,0.1); border-radius: 16px;">
+        <div style="font-size: 2.8rem; margin-bottom: 0.65rem;">📅</div>
+        <div style="font-size: 1.15rem; font-weight: 700; color: var(--ax-text-primary); margin-bottom: 0.35rem;">No se registraron cotizaciones para el periodo o filtros seleccionados</div>
+        <div style="font-size: 0.88rem; color: var(--ax-text-secondary);">Prueba seleccionando "Todo", "Este Año" o ajustando los filtros de búsqueda.</div>
       </div>
     `;
-    if (summaryStrip) summaryStrip.innerHTML = '';
-    if (subEl) subEl.textContent = '0 cotizaciones encontradas';
+    if (subEl) subEl.textContent = '0 solicitudes encontradas | Cartera: $0';
     return;
   }
 
