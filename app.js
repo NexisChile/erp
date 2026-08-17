@@ -3039,15 +3039,17 @@ function applyCotizacionesFilters() {
  */
 function renderCotizacionesHeroCards(data) {
   const container = document.getElementById('cotizTipoCardsContainer');
+  const summaryStrip = document.getElementById('cotizSummaryStrip');
   const subEl = document.getElementById('cotizTipoCardsSubtitle');
   if (!container) return;
 
   if (!data || data.length === 0) {
     container.innerHTML = `
-      <div class="ax-card" style="grid-column: 1 / -1; padding: 2rem; text-align: center; color: var(--ax-text-tertiary);">
+      <div class="ax-card" style="grid-column: 1 / -1; padding: 2.5rem; text-align: center; color: var(--ax-text-tertiary);">
         No se encontraron cotizaciones con los filtros seleccionados.
       </div>
     `;
+    if (summaryStrip) summaryStrip.innerHTML = '';
     if (subEl) subEl.textContent = '0 cotizaciones encontradas';
     return;
   }
@@ -3055,8 +3057,13 @@ function renderCotizacionesHeroCards(data) {
   // Agrupar por Tipo de Solicitud (Columna B)
   const byTipo = new Map();
   let grandTotalMonto = 0;
+  let grandTotalUnidades = 0;
   let grandAceptadasMonto = 0;
   let grandAceptadasCnt = 0;
+  let grandEnviadasMonto = 0;
+  let grandEnviadasCnt = 0;
+  let grandPerdidasMonto = 0;
+  let grandPerdidasCnt = 0;
 
   data.forEach(r => {
     const t = r.tipo || 'Estándar';
@@ -3082,6 +3089,7 @@ function renderCotizacionesHeroCards(data) {
     item.unidades += (r.cantidad || 0);
     item.totalMonto += (r.total || 0);
     grandTotalMonto += (r.total || 0);
+    grandTotalUnidades += (r.cantidad || 0);
 
     const stLow = (r.estadoFinal || r.estado || '').toLowerCase();
     if (stLow.includes('aceptada')) {
@@ -3092,22 +3100,77 @@ function renderCotizacionesHeroCards(data) {
     } else if (stLow.includes('perdida')) {
       item.perdidasCnt += 1;
       item.perdidasMonto += (r.total || 0);
+      grandPerdidasCnt += 1;
+      grandPerdidasMonto += (r.total || 0);
     } else if (stLow.includes('enviada') || stLow.includes('proceso') || stLow.includes('preparación') || stLow.includes('preparacion')) {
       item.enviadasCnt += 1;
       item.enviadasMonto += (r.total || 0);
+      grandEnviadasCnt += 1;
+      grandEnviadasMonto += (r.total || 0);
     } else {
       item.otrasCnt += 1;
       item.otrasMonto += (r.total || 0);
     }
   });
 
-  const grandWinRate = data.length > 0 ? (grandAceptadasCnt / data.length * 100).toFixed(1) : '0';
+  const grandWinRate = data.length > 0 ? ((grandAceptadasCnt / data.length) * 100).toFixed(1) : '0';
   if (subEl) {
-    subEl.textContent = `Total Cotizado: ${formatCLP(grandTotalMonto)} | ${data.length.toLocaleString('es-CL')} solicitudes | Tasa de Cierre Global: ${grandWinRate}%`;
+    subEl.textContent = `Desglose de ${data.length.toLocaleString('es-CL')} solicitudes (${Math.round(grandTotalUnidades).toLocaleString('es-CL')} un.) | Cartera: ${formatCLP(grandTotalMonto)}`;
   }
 
-  // Ordenar tipos por monto total descendente
-  const sortedTipos = Array.from(byTipo.values()).sort((a, b) => b.totalMonto - a.totalMonto);
+  // 1. RENDERIZAR SUMMARY STRIP SUPERIOR
+  if (summaryStrip) {
+    summaryStrip.innerHTML = `
+      <div class="cotiz-summary-card">
+        <div class="cotiz-summary-icon" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa;">💰</div>
+        <div>
+          <div class="cotiz-summary-lbl">Cartera Total Cotizada</div>
+          <div class="cotiz-summary-val" style="color: #60a5fa;">${formatCLP(grandTotalMonto)}</div>
+          <div style="font-size: 0.76rem; color: #94a3b8;">${data.length.toLocaleString('es-CL')} solicitudes totales</div>
+        </div>
+      </div>
+
+      <div class="cotiz-summary-card">
+        <div class="cotiz-summary-icon" style="background: rgba(16, 185, 129, 0.15); color: #34d399;">🏆</div>
+        <div>
+          <div class="cotiz-summary-lbl">Negocios Ganados</div>
+          <div class="cotiz-summary-val" style="color: #34d399;">${formatCLP(grandAceptadasMonto)}</div>
+          <div style="font-size: 0.76rem; color: #34d399; font-weight: 700;">${grandAceptadasCnt.toLocaleString('es-CL')} cotizaciones aceptadas</div>
+        </div>
+      </div>
+
+      <div class="cotiz-summary-card">
+        <div class="cotiz-summary-icon" style="background: rgba(251, 191, 36, 0.15); color: #fbbf24;">⏳</div>
+        <div>
+          <div class="cotiz-summary-lbl">En Seguimiento Activo</div>
+          <div class="cotiz-summary-val" style="color: #fbbf24;">${formatCLP(grandEnviadasMonto)}</div>
+          <div style="font-size: 0.76rem; color: #fbbf24; font-weight: 700;">${grandEnviadasCnt.toLocaleString('es-CL')} solicitudes en proceso</div>
+        </div>
+      </div>
+
+      <div class="cotiz-summary-card">
+        <div class="cotiz-summary-icon" style="background: rgba(168, 85, 247, 0.15); color: #c084fc;">📈</div>
+        <div>
+          <div class="cotiz-summary-lbl">Tasa Global de Conversión</div>
+          <div class="cotiz-summary-val" style="color: #c084fc;">${grandWinRate}%</div>
+          <div style="font-size: 0.76rem; color: #94a3b8;">Efectividad de cierre comercial</div>
+        </div>
+      </div>
+    `;
+  }
+
+  // Tipos esperados en orden
+  const expectedOrder = ['Estándar', 'Cyber', 'Promoción', 'Especial'];
+  const sortedTipos = [];
+  
+  expectedOrder.forEach(t => {
+    if (byTipo.has(t)) {
+      sortedTipos.push(byTipo.get(t));
+      byTipo.delete(t);
+    }
+  });
+  // Agregar cualquier otro tipo adicional al final
+  byTipo.forEach(val => sortedTipos.push(val));
 
   const tipoIcons = {
     'Estándar': '📋',
@@ -3116,55 +3179,75 @@ function renderCotizacionesHeroCards(data) {
     'Especial': '💎'
   };
 
+  const tipoClasses = {
+    'Estándar': 'cotiz-tipo-card--estandar',
+    'Promoción': 'cotiz-tipo-card--promocion',
+    'Cyber': 'cotiz-tipo-card--cyber',
+    'Especial': 'cotiz-tipo-card--especial'
+  };
+
   container.innerHTML = sortedTipos.map(item => {
     const winRate = item.count > 0 ? ((item.aceptadasCnt / item.count) * 100).toFixed(1) : '0';
     const icon = tipoIcons[item.tipo] || '📑';
+    const cardClass = tipoClasses[item.tipo] || '';
+    const isHighWin = Number(winRate) >= 40;
 
     return `
-      <div class="cotiz-tipo-card">
+      <div class="cotiz-tipo-card ${cardClass}">
+        <!-- Cabecera de Tarjeta -->
         <div class="cotiz-tipo-card-header">
           <span class="cotiz-tipo-badge">
-            <span>${icon}</span>
+            <span class="cotiz-tipo-badge-icon">${icon}</span>
             <span>${item.tipo}</span>
           </span>
-          <span class="badge ${Number(winRate) >= 50 ? 'badge-green' : 'badge-blue'}">${winRate}% Aprobación</span>
+          <span class="cotiz-win-badge" style="background: ${isHighWin ? 'rgba(16, 185, 129, 0.2)' : 'rgba(59, 130, 246, 0.2)'}; color: ${isHighWin ? '#34d399' : '#60a5fa'}; border: 1px solid ${isHighWin ? 'rgba(16, 185, 129, 0.4)' : 'rgba(59, 130, 246, 0.4)'};">
+            ${winRate}% Aprobación
+          </span>
         </div>
 
+        <!-- Monto Principal -->
         <div class="cotiz-tipo-monto">${formatCLP(item.totalMonto)}</div>
-        <div style="font-size: 0.8rem; color: var(--ax-text-tertiary); margin-top: -0.5rem; margin-bottom: 0.85rem;">
-          ${item.count.toLocaleString('es-CL')} solicitudes (${Math.round(item.unidades).toLocaleString('es-CL')} un.)
+        <div class="cotiz-tipo-subtitle">
+          <span>📦 <strong>${item.count.toLocaleString('es-CL')}</strong> solicitudes</span>
+          <span>•</span>
+          <span><strong>${Math.round(item.unidades).toLocaleString('es-CL')}</strong> un.</span>
         </div>
 
+        <!-- Cuadrícula 2x2 de Contadores con Alta Legibilidad -->
         <div class="cotiz-counters-grid">
-          <div class="cotiz-counter-box">
+          <div class="cotiz-counter-box" style="border-left: 3px solid #10b981;">
             <span class="cotiz-counter-lbl" style="color: #34d399;">✅ Aceptadas</span>
-            <span style="font-size: 0.95rem; font-weight: 800; color: #ffffff;">${item.aceptadasCnt.toLocaleString('es-CL')} <small style="font-size: 0.72rem; color: #34d399;">(${formatCLP(item.aceptadasMonto)})</small></span>
+            <span class="cotiz-counter-main-num">${item.aceptadasCnt.toLocaleString('es-CL')}</span>
+            <span class="cotiz-counter-money" style="color: #34d399;">${formatCLP(item.aceptadasMonto)}</span>
           </div>
 
-          <div class="cotiz-counter-box">
+          <div class="cotiz-counter-box" style="border-left: 3px solid #f59e0b;">
             <span class="cotiz-counter-lbl" style="color: #fbbf24;">⏳ En Proceso</span>
-            <span style="font-size: 0.95rem; font-weight: 800; color: #ffffff;">${item.enviadasCnt.toLocaleString('es-CL')} <small style="font-size: 0.72rem; color: #fbbf24;">(${formatCLP(item.enviadasMonto)})</small></span>
+            <span class="cotiz-counter-main-num">${item.enviadasCnt.toLocaleString('es-CL')}</span>
+            <span class="cotiz-counter-money" style="color: #fbbf24;">${formatCLP(item.enviadasMonto)}</span>
           </div>
 
-          <div class="cotiz-counter-box">
+          <div class="cotiz-counter-box" style="border-left: 3px solid #ef4444;">
             <span class="cotiz-counter-lbl" style="color: #f87171;">❌ Perdidas</span>
-            <span style="font-size: 0.95rem; font-weight: 800; color: #ffffff;">${item.perdidasCnt.toLocaleString('es-CL')} <small style="font-size: 0.72rem; color: #f87171;">(${formatCLP(item.perdidasMonto)})</small></span>
+            <span class="cotiz-counter-main-num">${item.perdidasCnt.toLocaleString('es-CL')}</span>
+            <span class="cotiz-counter-money" style="color: #f87171;">${formatCLP(item.perdidasMonto)}</span>
           </div>
 
-          <div class="cotiz-counter-box">
-            <span class="cotiz-counter-lbl" style="color: #a78bfa;">📦 Pend / Stock</span>
-            <span style="font-size: 0.95rem; font-weight: 800; color: #ffffff;">${item.otrasCnt.toLocaleString('es-CL')} <small style="font-size: 0.72rem; color: #a78bfa;">solic.</small></span>
+          <div class="cotiz-counter-box" style="border-left: 3px solid #a855f7;">
+            <span class="cotiz-counter-lbl" style="color: #c084fc;">📦 Pend / Stock</span>
+            <span class="cotiz-counter-main-num">${item.otrasCnt.toLocaleString('es-CL')}</span>
+            <span class="cotiz-counter-money" style="color: #c084fc;">${formatCLP(item.otrasMonto)}</span>
           </div>
         </div>
 
-        <!-- Barra de Progreso Visual de Conversión -->
-        <div style="margin-top: 0.85rem;">
-          <div style="display:flex; justify-content:space-between; font-size:0.72rem; color:var(--ax-text-tertiary); margin-bottom:3px;">
-            <span>Tasa de Conversión</span>
-            <strong style="color:${Number(winRate)>=50?'#34d399':'#60a5fa'};">${winRate}%</strong>
+        <!-- Barra de Conversión con Mayor Grosor e Iluminación -->
+        <div class="cotiz-progress-section">
+          <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.78rem; margin-bottom:4px;">
+            <span style="color: #94a3b8; font-weight: 600;">Efectividad de Cierre</span>
+            <strong style="color:${isHighWin ? '#34d399' : '#60a5fa'}; font-size:0.85rem;">${winRate}%</strong>
           </div>
-          <div style="height: 5px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden;">
-            <div style="width: ${Math.min(100, Math.max(0, Number(winRate)))}%; height: 100%; background: linear-gradient(90deg, #3b82f6, #10b981); border-radius: 4px;"></div>
+          <div class="cotiz-progress-bar-wrap">
+            <div class="cotiz-progress-bar-fill" style="width: ${Math.min(100, Math.max(0, Number(winRate)))}%; background: ${isHighWin ? 'linear-gradient(90deg, #10b981, #34d399)' : 'linear-gradient(90deg, #3b82f6, #60a5fa)'}; box-shadow: 0 0 10px ${isHighWin ? 'rgba(16, 185, 129, 0.4)' : 'rgba(59, 130, 246, 0.4)'};"></div>
           </div>
         </div>
       </div>
@@ -3438,29 +3521,29 @@ function renderCotizacionesTopProducts(data) {
 
     const imgObj = typeof productImagesMap !== 'undefined' ? productImagesMap.get(p.sku) : null;
     const imgThumb = imgObj && imgObj.url ?
-      `<img src="${imgObj.url}" alt="${p.sku}" style="width: 32px; height: 32px; object-fit: contain; border-radius: 6px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08);" onerror="this.style.display='none'" />` :
-      `<div style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.04); border-radius: 6px; font-size: 0.8rem;">📦</div>`;
+      `<img src="${imgObj.url}" alt="${p.sku}" style="width: 38px; height: 38px; object-fit: contain; border-radius: 8px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1);" onerror="this.style.display='none'" />` :
+      `<div style="width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); border-radius: 8px; font-size: 1rem;">📦</div>`;
 
     return `
-      <div class="compras-breakdown-item" style="padding: 0.65rem 0.85rem; border-bottom: 1px solid rgba(255,255,255,0.04); display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;">
-        <div style="display: flex; align-items: center; gap: 0.65rem; min-width: 0; flex: 1;">
+      <div class="compras-breakdown-item" style="padding: 0.85rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
+        <div style="display: flex; align-items: center; gap: 0.85rem; min-width: 0; flex: 1;">
           ${rankBadge}
           ${imgThumb}
           <div style="min-width: 0; flex: 1;">
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <span class="sku-badge-pill" style="font-size: 0.75rem; padding: 1px 6px;">${p.sku}</span>
-              <span style="font-size: 0.82rem; font-weight: 700; color: var(--ax-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${p.descripcion}">${p.descripcion}</span>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="sku-badge-pill" style="font-size: 0.82rem; padding: 2px 8px; font-weight: 800;">${p.sku}</span>
+              <span style="font-size: 0.92rem; font-weight: 700; color: var(--ax-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${p.descripcion}">${p.descripcion}</span>
             </div>
-            <div style="font-size: 0.72rem; color: var(--ax-text-tertiary); margin-top: 2px;">
-              ${Math.round(p.cantidad).toLocaleString('es-CL')} un. cotizadas en ${p.solicitudes} solicitudes
+            <div style="font-size: 0.8rem; color: var(--ax-text-tertiary); margin-top: 3px; font-weight: 500;">
+              <strong style="color: #cbd5e1;">${Math.round(p.cantidad).toLocaleString('es-CL')} un.</strong> cotizadas en <strong style="color: #cbd5e1;">${p.solicitudes}</strong> solicitudes
             </div>
           </div>
         </div>
 
-        <div style="text-align: right; min-width: 110px;">
-          <strong style="color: #60a5fa; font-size: 0.88rem;">${formatCLP(p.total)}</strong>
-          <div style="width: 100%; height: 4px; background: rgba(255,255,255,0.08); border-radius: 3px; margin-top: 4px; overflow: hidden;">
-            <div style="width: ${pct}%; height: 100%; background: linear-gradient(90deg, #3b82f6, #10b981); border-radius: 3px;"></div>
+        <div style="text-align: right; min-width: 130px;">
+          <strong style="color: #60a5fa; font-size: 1.05rem; font-weight: 800;">${formatCLP(p.total)}</strong>
+          <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.08); border-radius: 4px; margin-top: 5px; overflow: hidden;">
+            <div style="width: ${pct}%; height: 100%; background: linear-gradient(90deg, #3b82f6, #10b981); border-radius: 4px;"></div>
           </div>
         </div>
       </div>
@@ -3479,7 +3562,7 @@ function renderCotizacionesTable(data) {
   if (!tbody) return;
 
   if (!data || data.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="12" style="text-align:center; padding: 2.5rem; color:var(--ax-text-tertiary);">No hay cotizaciones para mostrar con los filtros aplicados.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="12" style="text-align:center; padding: 3rem; color:var(--ax-text-tertiary); font-size: 1rem;">No hay cotizaciones para mostrar con los filtros aplicados.</td></tr>`;
     if (pageInfo) pageInfo.textContent = 'Página 0 de 0 (0 cotizaciones)';
     if (prevBtn) prevBtn.disabled = true;
     if (nextBtn) nextBtn.disabled = true;
@@ -3491,7 +3574,7 @@ function renderCotizacionesTable(data) {
   if (cotizCurrentPage > totalPages) cotizCurrentPage = totalPages;
 
   if (pageInfo) {
-    pageInfo.textContent = `Página ${cotizCurrentPage} de ${totalPages} (${data.length.toLocaleString('es-CL')} cotizaciones)`;
+    pageInfo.innerHTML = `Página <strong>${cotizCurrentPage}</strong> de <strong>${totalPages}</strong> (<span style="color: #60a5fa; font-weight: 700;">${data.length.toLocaleString('es-CL')}</span> cotizaciones)`;
   }
 
   if (prevBtn) prevBtn.disabled = cotizCurrentPage <= 1;
@@ -3520,24 +3603,24 @@ function renderCotizacionesTable(data) {
     }
 
     const nvFaText = (r.nv || r.fa) ?
-      `<span style="font-size:0.75rem; color:#cbd5e1;">${r.nv ? 'NV:'+r.nv : ''} ${r.fa ? 'FA:'+r.fa : ''}</span>` :
-      `<span style="color:var(--ax-text-tertiary); font-size:0.75rem;">—</span>`;
+      `<span style="font-size:0.82rem; font-weight: 600; color:#e2e8f0;">${r.nv ? 'NV:'+r.nv : ''} ${r.fa ? 'FA:'+r.fa : ''}</span>` :
+      `<span style="color:var(--ax-text-tertiary); font-size:0.8rem;">—</span>`;
 
     return `
-      <tr>
-        <td style="text-align:left;"><span class="tag-pill" style="font-size:0.75rem;">${r.tipo}</span></td>
-        <td style="text-align:left;"><span class="sku-badge-pill" style="font-weight:700;">#${r.numCot}</span></td>
-        <td style="text-align:center; font-size:0.8rem; color:var(--ax-text-secondary);">${r.fecha || '—'}</td>
-        <td style="text-align:left;"><strong style="color:var(--ax-text-primary); font-size:0.83rem;">${r.cliente}</strong></td>
-        <td style="text-align:left; font-size:0.78rem; color:var(--ax-text-secondary);">${r.rut || '—'}</td>
-        <td style="text-align:left;"><span class="sku-badge-pill" style="background:rgba(59,130,246,0.15); color:#60a5fa; border-color:rgba(59,130,246,0.3);">${r.sku}</span></td>
-        <td style="text-align:left; max-width:240px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${r.producto}"><span style="font-size:0.82rem;">${r.producto}</span></td>
-        <td style="text-align:center; font-weight:700;" class="num-cell">${Math.round(r.cantidad).toLocaleString('es-CL')}</td>
-        <td style="text-align:right; font-weight:800; color:#60a5fa;" class="num-cell">${formatCLP(r.total)}</td>
-        <td style="text-align:center;"><span class="tag-pill" style="font-size:0.72rem;">${r.vendedor}</span></td>
+      <tr style="height: 48px;">
+        <td style="text-align:left;"><span class="tag-pill" style="font-size:0.82rem; font-weight:700;">${r.tipo}</span></td>
+        <td style="text-align:left;"><span class="sku-badge-pill" style="font-weight:800; font-size:0.85rem;">#${r.numCot}</span></td>
+        <td style="text-align:center; font-size:0.85rem; color:#cbd5e1;">${r.fecha || '—'}</td>
+        <td style="text-align:left;"><strong style="color:var(--ax-text-primary); font-size:0.9rem;">${r.cliente}</strong></td>
+        <td style="text-align:left; font-size:0.82rem; color:var(--ax-text-secondary);">${r.rut || '—'}</td>
+        <td style="text-align:left;"><span class="sku-badge-pill" style="background:rgba(59,130,246,0.18); color:#60a5fa; border-color:rgba(59,130,246,0.35); font-weight:700; font-size:0.82rem;">${r.sku}</span></td>
+        <td style="text-align:left; max-width:280px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${r.producto}"><span style="font-size:0.88rem; font-weight:500;">${r.producto}</span></td>
+        <td style="text-align:center; font-weight:800; font-size:0.92rem;" class="num-cell">${Math.round(r.cantidad).toLocaleString('es-CL')}</td>
+        <td style="text-align:right; font-weight:900; color:#60a5fa; font-size:0.95rem;" class="num-cell">${formatCLP(r.total)}</td>
+        <td style="text-align:center;"><span class="tag-pill" style="font-size:0.8rem; font-weight:600;">Cod. ${r.vendedor}</span></td>
         <td style="text-align:center;">${nvFaText}</td>
         <td style="text-align:center;">
-          <span class="cotiz-status-pill ${statusClass}">
+          <span class="cotiz-status-pill ${statusClass}" style="font-size: 0.8rem; padding: 4px 10px;">
             <span>${statusIcon}</span>
             <span>${r.estadoFinal || r.estado}</span>
           </span>
