@@ -893,12 +893,20 @@ function switchView(viewName) {
   if (viewName === 'tablero') {
     if (typeof renderKPIs === 'function') renderKPIs();
     if (typeof renderCharts === 'function') renderCharts();
+    if (typeof renderTodayCard === 'function') renderTodayCard();
+    if (typeof renderTicker === 'function') renderTicker();
   } else if (viewName === 'tabla') {
     if (typeof renderTable === 'function') renderTable();
   } else if (viewName === 'compras') {
     if (typeof renderComprasView === 'function') renderComprasView();
+  } else if (viewName === 'productos') {
+    if (typeof renderProductosView === 'function') renderProductosView();
   } else if (viewName === 'bistudio') {
-    if (typeof renderBIEngine === 'function') renderBIEngine();
+    if (typeof renderExecutiveInsights === 'function') renderExecutiveInsights();
+    if (typeof renderPareto8020 === 'function') renderPareto8020();
+    if (typeof renderRFMGrid === 'function') renderRFMGrid();
+    if (typeof updateWhatIfSimulation === 'function') updateWhatIfSimulation();
+    if (typeof renderMonthlyTargetProgress === 'function') renderMonthlyTargetProgress();
   } else if (viewName === 'mixsugerido') {
     if (typeof renderMixSugeridoModule === 'function') renderMixSugeridoModule();
   } else if (viewName === 'fichatecnica') {
@@ -1042,9 +1050,9 @@ function togglePresentationMode() {
 }
 
 function resetBIAdvisorSim() {
-  const pSlider = document.getElementById('simPriceSlider');
-  const vSlider = document.getElementById('simVolSlider');
-  const cSlider = document.getElementById('simCostSlider');
+  const pSlider = document.getElementById('simPriceRange') || document.getElementById('simPriceSlider');
+  const vSlider = document.getElementById('simVolRange') || document.getElementById('simVolSlider');
+  const cSlider = document.getElementById('simCostRange') || document.getElementById('simCostSlider');
   
   if (pSlider) pSlider.value = 0;
   if (vSlider) vSlider.value = 0;
@@ -1065,42 +1073,792 @@ function resetBIAdvisorSim() {
 
 
 
-function randomizeProductSelection() {
+// ==========================================================================
+// MÓDULO DE PRODUCTOS 360 & PROYECCIÓN DE STOCK
+// ==========================================================================
+
+let prodYearlyChartInstance = null;
+let prodProjectionChartInstance = null;
+let currentSelectedProductSku = null;
+let currentProdChartMetric = 'qty'; // 'qty' o 'neto'
+
+/**
+ * Inicializa y renderiza la vista de Productos 360
+ */
+function renderProductosView() {
   const select = document.getElementById('prodSkuSelect');
-  if (select && select.options.length > 1) {
-    const randomIdx = Math.floor(Math.random() * (select.options.length - 1)) + 1;
-    select.selectedIndex = randomIdx;
-    select.dispatchEvent(new Event('change'));
-    if (typeof showToast === 'function') showToast('🎲 Producto aleatorio seleccionado');
+  const searchInput = document.getElementById('prodSkuSearch');
+  const dolarInput = document.getElementById('prodDolarRateInput');
+  const projQtyInput = document.getElementById('prodProjQtyInput');
+  const speedSelect = document.getElementById('prodProjSpeedMode');
+
+  if (!rows || rows.length === 0) return;
+
+  // 1. Obtener lista consolidada de SKUs
+  const skuMap = new Map();
+  rows.forEach(r => {
+    const sku = (r['CODIGO'] || '').trim().toUpperCase();
+    if (!sku) return;
+    if (!skuMap.has(sku)) {
+      skuMap.set(sku, {
+        sku,
+        desc: (r['DESCRIPCION'] || sku).trim(),
+        familia: (r['FAMILIA'] || 'General').trim(),
+        totalVendido: 0
+      });
+    }
+    skuMap.get(sku).totalVendido += Number(r['CANTFACTURADA'] || 0);
+  });
+
+  const sortedSkus = Array.from(skuMap.values()).sort((a, b) => a.sku.localeCompare(b.sku, 'es', { numeric: true }));
+
+  // 2. Poblar selector si está vacío o cambió
+  if (select) {
+    const currentVal = select.value;
+    select.innerHTML = '<option value="">-- Selecciona un Producto --</option>' +
+      sortedSkus.map(p => `<option value="${p.sku}" ${p.sku === currentVal ? 'selected' : ''}>${p.sku} · ${p.desc.slice(0, 45)}</option>`).join('');
+
+    select.onchange = () => {
+      if (select.value) selectProductFor360(select.value);
+    };
   }
+
+  // 3. Configurar Búsqueda con Autocompletado
+  if (searchInput) {
+    const suggestions = document.getElementById('prodSkuSuggestions');
+    searchInput.oninput = () => {
+      const q = searchInput.value.trim().toLowerCase();
+      if (!suggestions) return;
+      if (!q || q.length < 2) {
+        suggestions.style.display = 'none';
+        return;
+      }
+      const matches = sortedSkus.filter(p => p.sku.toLowerCase().includes(q) || p.desc.toLowerCase().includes(q)).slice(0, 10);
+      if (matches.length === 0) {
+        suggestions.innerHTML = '<div style="padding: 10px; color: #94a3b8; font-size: 0.82rem;">No se encontraron productos coincidentes</div>';
+      } else {
+        suggestions.innerHTML = matches.map(m => `
+          <div class="prod-suggestion-item" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: space-between;" onclick="selectProductFor360('${m.sku}')">
+            <span style="font-weight: 700; color: #c084fc; font-family: monospace;">${m.sku}</span>
+            <span style="font-size: 0.8rem; color: #cbd5e1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px;">${m.desc}</span>
+          </div>
+        `).join('');
+      }
+      suggestions.style.display = 'block';
+    };
+
+    searchInput.onblur = () => {
+      setTimeout(() => { if (suggestions) suggestions.style.display = 'none'; }, 250);
+    };
+  }
+
+  // 4. Configurar eventos de calculadora de agotamiento y tipo de cambio
+  if (dolarInput) {
+    dolarInput.oninput = () => {
+      if (currentSelectedProductSku) selectProductFor360(currentSelectedProductSku, true);
+    };
+  }
+
+  if (projQtyInput) {
+    projQtyInput.oninput = () => updateProdExhaustion();
+  }
+
+  if (speedSelect) {
+    speedSelect.onchange = () => updateProdExhaustion();
+  }
+
+  // 5. Si ya hay un SKU seleccionado o default
+  if (!currentSelectedProductSku && sortedSkus.length > 0) {
+    selectProductFor360(sortedSkus[0].sku);
+  } else if (currentSelectedProductSku) {
+    selectProductFor360(currentSelectedProductSku);
+  }
+}
+
+/**
+ * Selecciona un SKU y calcula todas sus métricas 360
+ */
+function selectProductFor360(sku, skipInputUpdate = false) {
+  if (!sku) return;
+  currentSelectedProductSku = sku;
+
+  const select = document.getElementById('prodSkuSelect');
+  const searchInput = document.getElementById('prodSkuSearch');
+  const suggestions = document.getElementById('prodSkuSuggestions');
+  if (suggestions) suggestions.style.display = 'none';
+
+  if (!skipInputUpdate) {
+    if (select && select.value !== sku) select.value = sku;
+    if (searchInput) searchInput.value = sku;
+  }
+
+  const skuRows = (rows || []).filter(r => (r['CODIGO'] || '').trim().toUpperCase() === sku);
+  if (skuRows.length === 0) return;
+
+  const first = skuRows[0];
+  const prodDesc = first['DESCRIPCION'] || sku;
+  const prodFam = first['FAMILIA'] || 'General';
+  const prodCat = first['CATEGORIA'] || first['CANAL FINAL'] || 'Catálogo';
+
+  // 1. Header Badges & Titles
+  const bSku = document.getElementById('prodSkuBadge');
+  const bCat = document.getElementById('prodCategoryBadge');
+  const bFam = document.getElementById('prodFamiliaBadge');
+  const tTitle = document.getElementById('prodTitle');
+  const tSub = document.getElementById('prodSubtitle');
+
+  if (bSku) bSku.textContent = 'SKU: ' + sku;
+  if (bCat) bCat.textContent = prodCat;
+  if (bFam) bFam.textContent = prodFam;
+  if (tTitle) tTitle.textContent = prodDesc;
+  if (tSub) tSub.textContent = `Familia ${prodFam} · ${skuRows.length} transacciones históricas registradas`;
+
+  // 2. Cálculos Financieros
+  const totalQty = skuRows.reduce((a, r) => a + Number(r['CANTFACTURADA'] || 0), 0);
+  const totalNeto = skuRows.reduce((a, r) => a + Number(r['NETO'] || 0), 0);
+  const totalCosto = skuRows.reduce((a, r) => a + (Number(r['COSTOS'] || 0) * Number(r['CANTFACTURADA'] || 0)), 0);
+  const totalUtilidad = skuRows.reduce((a, r) => a + (Number(r['($) UTILIDAD']) || (Number(r['NETO'] || 0) - (Number(r['COSTOS'] || 0) * Number(r['CANTFACTURADA'] || 0)))), 0);
+
+  const avgPrice = totalQty > 0 ? (totalNeto / totalQty) : 0;
+  const avgCost = totalQty > 0 ? (totalCosto / totalQty) : 0;
+  const marginPct = totalNeto > 0 ? ((totalUtilidad / totalNeto) * 100) : 0;
+
+  const dolarRate = parseFloat(document.getElementById('prodDolarRateInput')?.value) || 950;
+  const dolarStatus = document.getElementById('prodDolarStatus');
+  if (dolarStatus) dolarStatus.textContent = `Tipo de Cambio: $1 USD = $${dolarRate.toLocaleString('es-CL')} CLP`;
+
+  const avgPriceUSD = dolarRate > 0 ? (avgPrice / dolarRate) : 0;
+  const avgCostUSD = dolarRate > 0 ? (avgCost / dolarRate) : 0;
+
+  // Update Quick Stats
+  const elAvgPrice = document.getElementById('prodAvgPrice');
+  const elAvgPriceUSD = document.getElementById('prodAvgPriceUSD');
+  const elAvgCost = document.getElementById('prodAvgCost');
+  const elAvgCostUSD = document.getElementById('prodAvgCostUSD');
+  const elMarginPct = document.getElementById('prodMarginPct');
+
+  if (elAvgPrice) elAvgPrice.textContent = typeof formatCLP === 'function' ? formatCLP(avgPrice) : `$${Math.round(avgPrice).toLocaleString('es-CL')}`;
+  if (elAvgPriceUSD) elAvgPriceUSD.textContent = `USD $${avgPriceUSD.toFixed(2)}`;
+  if (elAvgCost) elAvgCost.textContent = typeof formatCLP === 'function' ? formatCLP(avgCost) : `$${Math.round(avgCost).toLocaleString('es-CL')}`;
+  if (elAvgCostUSD) elAvgCostUSD.textContent = `USD $${avgCostUSD.toFixed(2)}`;
+  if (elMarginPct) {
+    elMarginPct.textContent = marginPct.toFixed(1) + '%';
+    elMarginPct.style.color = marginPct >= 30 ? '#34d399' : (marginPct >= 15 ? '#fbbf24' : '#f87171');
+  }
+
+  // 3. Mini KPIs
+  const elKpiQty = document.getElementById('prodKpiTotalQty');
+  const elKpiRev = document.getElementById('prodKpiTotalRevenue');
+  if (elKpiQty) elKpiQty.textContent = Math.round(totalQty).toLocaleString('es-CL') + ' und.';
+  if (elKpiRev) elKpiRev.textContent = (typeof formatCLP === 'function' ? formatCLP(totalNeto) : `$${Math.round(totalNeto).toLocaleString('es-CL')}`) + ' Neto';
+
+  // Análisis por Años y Meses
+  const byYear = new Map();
+  const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+  const monthTotals = new Array(12).fill(0);
+
+  skuRows.forEach(r => {
+    let d = null;
+    if (r['FECHA']) {
+      d = new Date(r['FECHA']);
+      if (isNaN(d.getTime())) d = typeof parseFlexibleDate === 'function' ? parseFlexibleDate(r['FECHA']) : null;
+    }
+    const yr = (d && !isNaN(d.getTime())) ? String(d.getFullYear()) : (r['AÑO'] || '2025');
+    const mo = (d && !isNaN(d.getTime())) ? d.getMonth() : 0;
+
+    if (!byYear.has(yr)) {
+      byYear.set(yr, { year: yr, qty: 0, neto: 0, costo: 0, util: 0, months: new Array(12).fill(0), netoMonths: new Array(12).fill(0) });
+    }
+    const yItem = byYear.get(yr);
+    const q = Number(r['CANTFACTURADA'] || 0);
+    const n = Number(r['NETO'] || 0);
+    const c = Number(r['COSTOS'] || 0) * q;
+    const u = Number(r['($) UTILIDAD']) || (n - c);
+
+    yItem.qty += q;
+    yItem.neto += n;
+    yItem.costo += c;
+    yItem.util += u;
+    yItem.months[mo] += q;
+    yItem.netoMonths[mo] += n;
+    monthTotals[mo] += q;
+  });
+
+  // Mejor Año & Mes Pico
+  let peakYear = '----';
+  let peakYearQty = 0;
+  byYear.forEach(y => {
+    if (y.qty > peakYearQty) {
+      peakYearQty = y.qty;
+      peakYear = y.year;
+    }
+  });
+
+  let peakMonthIdx = 0;
+  let peakMonthQty = 0;
+  monthTotals.forEach((cnt, idx) => {
+    if (cnt > peakMonthQty) {
+      peakMonthQty = cnt;
+      peakMonthIdx = idx;
+    }
+  });
+
+  const elPeakYear = document.getElementById('prodKpiPeakYear');
+  const elPeakYearSub = document.getElementById('prodKpiPeakYearSub');
+  const elPeakMonth = document.getElementById('prodKpiPeakMonth');
+  const elPeakMonthSub = document.getElementById('prodKpiPeakMonthSub');
+
+  if (elPeakYear) elPeakYear.textContent = peakYear;
+  if (elPeakYearSub) elPeakYearSub.textContent = Math.round(peakYearQty).toLocaleString('es-CL') + ' unidades';
+  if (elPeakMonth) elPeakMonth.textContent = monthNames[peakMonthIdx];
+  if (elPeakMonthSub) elPeakMonthSub.textContent = `${Math.round(peakMonthQty).toLocaleString('es-CL')} un. en total histórico`;
+
+  // Velocidad Mensual
+  const distinctMonthsCount = Math.max(1, byYear.size * 12);
+  const monthlySpeed = totalQty / distinctMonthsCount;
+  const elSpeed = document.getElementById('prodKpiMonthlySpeed');
+  if (elSpeed) elSpeed.textContent = Math.round(monthlySpeed).toLocaleString('es-CL') + ' und/mes';
+
+  // 4. Calculadora de Agotamiento de Stock
+  updateProdExhaustion(skuRows, monthlySpeed, avgPrice, avgCost, dolarRate);
+
+  // 5. Gráfico Multianual y Tabla Anual
+  renderProdYearlyAnalytics(byYear, totalNeto);
+
+  // 6. Resumen de Clientes
+  renderProdCustomerBreakdown(skuRows, totalQty);
+}
+
+/**
+ * Calculadora y gráfico de curva de agotamiento
+ */
+function updateProdExhaustion(skuRowsParam, monthlySpeedParam, avgPriceParam, avgCostParam, dolarRateParam) {
+  const qtyInput = document.getElementById('prodProjQtyInput');
+  const speedSelect = document.getElementById('prodProjSpeedMode');
+  if (!qtyInput) return;
+
+  const projQty = Math.max(1, parseFloat(qtyInput.value) || 100);
+  const speedMode = speedSelect ? speedSelect.value : '12m';
+
+  const sku = currentSelectedProductSku;
+  const skuRows = skuRowsParam || (rows || []).filter(r => (r['CODIGO'] || '').trim().toUpperCase() === sku);
+  const totalQty = skuRows.reduce((a, r) => a + Number(r['CANTFACTURADA'] || 0), 0);
+  const totalNeto = skuRows.reduce((a, r) => a + Number(r['NETO'] || 0), 0);
+  const totalCosto = skuRows.reduce((a, r) => a + (Number(r['COSTOS'] || 0) * Number(r['CANTFACTURADA'] || 0)), 0);
+
+  const avgPrice = avgPriceParam || (totalQty > 0 ? totalNeto / totalQty : 0);
+  const avgCost = avgCostParam || (totalQty > 0 ? totalCosto / totalQty : 0);
+  const dolarRate = dolarRateParam || parseFloat(document.getElementById('prodDolarRateInput')?.value) || 950;
+
+  // Calcular ritmo según modo
+  let speed = monthlySpeedParam || (totalQty / 24);
+  if (speedMode === '3m') speed = Math.max(0.5, (totalQty / 24) * 1.2);
+  else if (speedMode === '6m') speed = Math.max(0.5, (totalQty / 24) * 1.1);
+  else if (speedMode === '12m') speed = Math.max(0.5, (totalQty / 12));
+  else speed = Math.max(0.5, totalQty / 36);
+
+  const durationMonths = projQty / speed;
+  const durationDays = Math.round(durationMonths * 30.41);
+
+  const elResultMonths = document.getElementById('prodProjResultMonths');
+  const elResultDays = document.getElementById('prodProjResultDays');
+  const elDepletionDate = document.getElementById('prodProjDepletionDate');
+  const elSpeedLabel = document.getElementById('prodProjSpeedLabel');
+
+  if (elResultMonths) elResultMonths.textContent = durationMonths.toFixed(1) + ' Meses';
+  if (elResultDays) elResultDays.textContent = `≈ ${durationDays.toLocaleString('es-CL')} Días de cobertura comercial`;
+  
+  if (elDepletionDate) {
+    const dTarget = new Date();
+    dTarget.setDate(dTarget.getDate() + durationDays);
+    elDepletionDate.textContent = dTarget.toLocaleDateString('es-CL', { month: 'short', year: 'numeric' }).toUpperCase();
+  }
+
+  if (elSpeedLabel) elSpeedLabel.textContent = `Ritmo: ${Math.round(speed).toLocaleString('es-CL')} u./mes`;
+
+  // Proyecciones Financieras
+  const estRev = projQty * avgPrice;
+  const estCost = projQty * avgCost;
+  const estProfit = estRev - estCost;
+
+  const elEstRev = document.getElementById('prodProjEstRevenue');
+  const elEstRevUSD = document.getElementById('prodProjEstRevenueUSD');
+  const elEstCost = document.getElementById('prodProjEstCost');
+  const elEstCostUSD = document.getElementById('prodProjEstCostUSD');
+  const elEstProfit = document.getElementById('prodProjEstProfit');
+  const elEstProfitUSD = document.getElementById('prodProjEstProfitUSD');
+
+  if (elEstRev) elEstRev.textContent = typeof formatCLP === 'function' ? formatCLP(estRev) : `$${Math.round(estRev).toLocaleString('es-CL')}`;
+  if (elEstRevUSD) elEstRevUSD.textContent = `USD $${(estRev / dolarRate).toFixed(2)}`;
+  if (elEstCost) elEstCost.textContent = typeof formatCLP === 'function' ? formatCLP(estCost) : `$${Math.round(estCost).toLocaleString('es-CL')}`;
+  if (elEstCostUSD) elEstCostUSD.textContent = `USD $${(estCost / dolarRate).toFixed(2)}`;
+  if (elEstProfit) elEstProfit.textContent = typeof formatCLP === 'function' ? formatCLP(estProfit) : `$${Math.round(estProfit).toLocaleString('es-CL')}`;
+  if (elEstProfitUSD) elEstProfitUSD.textContent = `USD $${(estProfit / dolarRate).toFixed(2)}`;
+
+  // Curva de proyección Chart.js
+  renderProdProjectionCurveChart(projQty, speed, durationMonths);
+}
+
+/**
+ * Gráfico de curva de reducción de stock
+ */
+function renderProdProjectionCurveChart(initialQty, monthlySpeed, totalMonths) {
+  const canvas = document.getElementById('prodProjectionChart');
+  if (!canvas || typeof Chart === 'undefined') return;
+
+  const numPoints = Math.min(24, Math.max(3, Math.ceil(totalMonths) + 1));
+  const labels = [];
+  const dataPoints = [];
+
+  const now = new Date();
+  for (let i = 0; i <= numPoints; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    labels.push(d.toLocaleDateString('es-CL', { month: 'short', year: '2-digit' }));
+    const remaining = Math.max(0, Math.round(initialQty - (i * monthlySpeed)));
+    dataPoints.push(remaining);
+    if (remaining === 0) break;
+  }
+
+  if (prodProjectionChartInstance) {
+    prodProjectionChartInstance.destroy();
+    prodProjectionChartInstance = null;
+  }
+
+  prodProjectionChartInstance = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Stock Proyectado (Unidades)',
+        data: dataPoints,
+        borderColor: '#a855f7',
+        backgroundColor: 'rgba(168, 85, 247, 0.15)',
+        fill: true,
+        tension: 0.35,
+        pointBackgroundColor: '#c084fc',
+        pointBorderColor: '#ffffff',
+        pointRadius: 4,
+        borderWidth: 2.5
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => ` ${ctx.parsed.y.toLocaleString('es-CL')} unidades restantes`
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          grid: { color: 'rgba(255,255,255,0.06)' },
+          ticks: { color: '#94a3b8' }
+        },
+        x: {
+          grid: { display: false },
+          ticks: { color: '#94a3b8' }
+        }
+      }
+    }
+  });
+}
+
+/**
+ * Renderiza gráfico multianual y tabla anual del SKU
+ */
+function renderProdYearlyAnalytics(byYearMap, totalNetoGlobal) {
+  const canvas = document.getElementById('prodYearlyChart');
+  const tbody = document.getElementById('prodYearlyTableBody');
+  const monthLabels = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+  const monthFull = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+  const years = Array.from(byYearMap.values()).sort((a, b) => a.year.localeCompare(b.year));
+
+  // Gráfico Multianual Chart.js
+  if (canvas && typeof Chart !== 'undefined') {
+    if (prodYearlyChartInstance) {
+      prodYearlyChartInstance.destroy();
+      prodYearlyChartInstance = null;
+    }
+
+    const palette = ['#38bdf8', '#34d399', '#f59e0b', '#a855f7', '#f43f5e'];
+    const datasets = years.map((y, idx) => {
+      const color = palette[idx % palette.length];
+      const isQty = currentProdChartMetric === 'qty';
+      return {
+        label: `Año ${y.year}`,
+        data: isQty ? y.months : y.netoMonths,
+        borderColor: color,
+        backgroundColor: color + '33',
+        tension: 0.3,
+        borderWidth: 2,
+        pointRadius: 3
+      };
+    });
+
+    prodYearlyChartInstance = new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels: monthLabels,
+        datasets: datasets
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: { color: '#cbd5e1', font: { weight: 'bold' } }
+          },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => {
+                const val = ctx.parsed.y;
+                return currentProdChartMetric === 'qty' ?
+                  ` ${ctx.dataset.label}: ${val.toLocaleString('es-CL')} un.` :
+                  ` ${ctx.dataset.label}: ${typeof formatCLP === 'function' ? formatCLP(val) : '$'+Math.round(val).toLocaleString('es-CL')}`;
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: { color: 'rgba(255,255,255,0.06)' },
+            ticks: {
+              color: '#94a3b8',
+              callback: (v) => currentProdChartMetric === 'qty' ? v.toLocaleString('es-CL') : `$${(v/1000).toFixed(0)}k`
+            }
+          },
+          x: {
+            grid: { color: 'rgba(255,255,255,0.04)' },
+            ticks: { color: '#94a3b8' }
+          }
+        }
+      }
+    });
+  }
+
+  // Tabla Anual
+  if (tbody) {
+    if (years.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: #94a3b8;">No hay registros anuales para este SKU.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = years.map(y => {
+      let maxMonthIdx = 0;
+      let maxMonthVal = 0;
+      y.months.forEach((m, idx) => {
+        if (m > maxMonthVal) {
+          maxMonthVal = m;
+          maxMonthIdx = idx;
+        }
+      });
+
+      const marg = y.neto > 0 ? ((y.util / y.neto) * 100).toFixed(1) : '0.0';
+      const part = totalNetoGlobal > 0 ? ((y.neto / totalNetoGlobal) * 100).toFixed(1) : '0.0';
+
+      return `
+        <tr>
+          <td style="font-weight: 800; color: #f8fafc;">${y.year}</td>
+          <td style="text-align: right; font-weight: 700;">${Math.round(y.qty).toLocaleString('es-CL')} un.</td>
+          <td style="text-align: right; font-weight: 800; color: #38bdf8;">${typeof formatCLP === 'function' ? formatCLP(y.neto) : '$'+Math.round(y.neto).toLocaleString('es-CL')}</td>
+          <td style="text-align: right; color: #fda4af;">${typeof formatCLP === 'function' ? formatCLP(y.costo) : '$'+Math.round(y.costo).toLocaleString('es-CL')}</td>
+          <td style="text-align: right; font-weight: 700; color: #34d399;">${typeof formatCLP === 'function' ? formatCLP(y.util) : '$'+Math.round(y.util).toLocaleString('es-CL')}</td>
+          <td style="text-align: right; font-weight: 800; color: ${Number(marg) >= 30 ? '#34d399' : '#fbbf24'};">${marg}%</td>
+          <td style="text-align: right; font-weight: 700; color: #a855f7;">${part}%</td>
+          <td style="text-align: center; color: #cbd5e1;">${monthFull[maxMonthIdx]}</td>
+        </tr>
+      `;
+    }).join('');
+  }
+}
+
+/**
+ * Renderiza el desglose de clientes que compraron este SKU
+ */
+function renderProdCustomerBreakdown(skuRows, totalSkuQty) {
+  const tbody = document.getElementById('prodTxTableBody');
+  const badge = document.getElementById('prodTxCountBadge');
+  if (!tbody) return;
+
+  const clientMap = new Map();
+  let totalSkuNeto = 0;
+
+  skuRows.forEach(r => {
+    const cl = (r['CLIENTE'] || 'Consumidor Final').trim();
+    const canal = (r['CANAL FINAL'] || r['TIENDA FINAL'] || 'Directo').trim();
+    if (!clientMap.has(cl)) {
+      clientMap.set(cl, {
+        cliente: cl,
+        canal: canal,
+        comprasCount: 0,
+        cantidadTotal: 0,
+        netoTotal: 0,
+        costoTotal: 0,
+        utilidadTotal: 0
+      });
+    }
+    const cItem = clientMap.get(cl);
+    const q = Number(r['CANTFACTURADA'] || 0);
+    const n = Number(r['NETO'] || 0);
+    const c = Number(r['COSTOS'] || 0) * q;
+    const u = Number(r['($) UTILIDAD']) || (n - c);
+
+    cItem.comprasCount += 1;
+    cItem.cantidadTotal += q;
+    cItem.netoTotal += n;
+    cItem.costoTotal += c;
+    cItem.utilidadTotal += u;
+    totalSkuNeto += n;
+  });
+
+  const clientsList = Array.from(clientMap.values()).sort((a, b) => b.netoTotal - a.netoTotal);
+  if (badge) badge.textContent = `${clientsList.length} Clientes`;
+
+  if (clientsList.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #94a3b8;">No se registraron clientes para este SKU.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = clientsList.map(c => {
+    const avgPrice = c.cantidadTotal > 0 ? (c.netoTotal / c.cantidadTotal) : 0;
+    const marg = c.netoTotal > 0 ? ((c.utilidadTotal / c.netoTotal) * 100).toFixed(1) : '0.0';
+    const part = totalSkuNeto > 0 ? ((c.netoTotal / totalSkuNeto) * 100).toFixed(1) : '0.0';
+
+    return `
+      <tr>
+        <td style="text-align: left; font-weight: 700; color: #f8fafc;">${c.cliente}</td>
+        <td style="text-align: left;"><span class="tag-pill" style="font-size: 0.75rem;">${c.canal}</span></td>
+        <td style="text-align: center; font-weight: 700;">${c.comprasCount}</td>
+        <td style="text-align: right; font-weight: 700;">${Math.round(c.cantidadTotal).toLocaleString('es-CL')}</td>
+        <td style="text-align: right;">${typeof formatCLP === 'function' ? formatCLP(avgPrice) : '$'+Math.round(avgPrice).toLocaleString('es-CL')}</td>
+        <td style="text-align: right; font-weight: 800; color: #38bdf8;">${typeof formatCLP === 'function' ? formatCLP(c.netoTotal) : '$'+Math.round(c.netoTotal).toLocaleString('es-CL')}</td>
+        <td style="text-align: right; font-weight: 700; color: #34d399;">${typeof formatCLP === 'function' ? formatCLP(c.utilidadTotal) : '$'+Math.round(c.utilidadTotal).toLocaleString('es-CL')}</td>
+        <td style="text-align: right; font-weight: 700; color: ${Number(marg) >= 30 ? '#34d399' : '#fbbf24'};">${marg}%</td>
+        <td style="text-align: right; font-weight: 700; color: #a855f7;">${part}%</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+/**
+ * Helpers para Productos 360
+ */
+function setProdProjPreset(qty) {
+  const input = document.getElementById('prodProjQtyInput');
+  if (input) {
+    input.value = qty;
+    updateProdExhaustion();
+  }
+}
+
+function setProdChartMetric(metric) {
+  currentProdChartMetric = metric;
+  const btnQty = document.getElementById('prodChartMetricQtyBtn');
+  const btnNeto = document.getElementById('prodChartMetricNetoBtn');
+
+  if (btnQty) btnQty.classList.toggle('active', metric === 'qty');
+  if (btnNeto) btnNeto.classList.toggle('active', metric === 'neto');
+
+  if (currentSelectedProductSku) {
+    selectProductFor360(currentSelectedProductSku, true);
+  }
+}
+
+function randomizeProductSelection() {
+  if (!rows || rows.length === 0) return;
+  const skuList = Array.from(new Set(rows.map(r => (r['CODIGO'] || '').trim().toUpperCase()).filter(Boolean)));
+  if (skuList.length === 0) return;
+  const randSku = skuList[Math.floor(Math.random() * skuList.length)];
+  selectProductFor360(randSku);
+  if (typeof showToast === 'function') showToast(`🎲 SKU Seleccionado: ${randSku}`);
 }
 
 function clearProductSearch() {
-  const input = document.getElementById('prodSkuSearch');
-  if (input) {
-    input.value = '';
-    input.dispatchEvent(new Event('input'));
-  }
-  const select = document.getElementById('prodSkuSelect');
-  if (select) {
-    select.selectedIndex = 0;
-    select.dispatchEvent(new Event('change'));
-  }
-  if (typeof showToast === 'function') showToast('🧹 Búsqueda de productos limpia');
+  const searchInput = document.getElementById('prodSkuSearch');
+  if (searchInput) searchInput.value = '';
+  const suggestions = document.getElementById('prodSkuSuggestions');
+  if (suggestions) suggestions.style.display = 'none';
+  if (typeof showToast === 'function') showToast('✕ Búsqueda de SKU limpiada');
 }
 
-function toggleMobileSidebar() {
-  const sidebar = document.getElementById('sidebar');
-  const backdrop = document.getElementById('sidebarBackdrop');
-  if (sidebar) sidebar.classList.toggle('active');
-  if (backdrop) backdrop.classList.toggle('active');
+// ==========================================================================
+// MÓDULO MIX DE PRODUCTOS SUGERIDO (AI PORTFOLIO ADVISOR)
+// ==========================================================================
+
+let mixCurrentCanal = 'ALL';
+let mixCurrentSort = 'neto';
+let mixSearchFilter = '';
+
+/**
+ * Renderiza el módulo de Mix de Productos Sugerido
+ */
+function renderMixSugeridoModule() {
+  const canalSelect = document.getElementById('mixCanalSegment');
+  const sortSelect = document.getElementById('mixSortSelect');
+  const searchBox = document.getElementById('mixSearchBox');
+  const tbody = document.getElementById('mixSugeridoTableBody');
+
+  if (!rows || rows.length === 0) return;
+
+  // 1. Poblar canales en selector si está vacío
+  if (canalSelect && canalSelect.options.length <= 1) {
+    const canales = Array.from(new Set(rows.map(r => (r['CANAL FINAL'] || '').trim()).filter(Boolean))).sort();
+    canalSelect.innerHTML = '<option value="ALL">🌐 Global (Todos los Canales)</option>' +
+      canales.map(c => `<option value="${c}">🏷️ Canal: ${c}</option>`).join('');
+
+    canalSelect.onchange = () => {
+      mixCurrentCanal = canalSelect.value;
+      updateMixSugeridoView();
+    };
+  }
+
+  if (sortSelect) {
+    sortSelect.onchange = () => {
+      mixCurrentSort = sortSelect.value;
+      updateMixSugeridoView();
+    };
+  }
+
+  if (searchBox) {
+    let timer = null;
+    searchBox.oninput = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        mixSearchFilter = (searchBox.value || '').trim().toLowerCase();
+        updateMixSugeridoView();
+      }, 200);
+    };
+  }
+
+  updateMixSugeridoView();
 }
 
-function closeMobileSidebar() {
-  const sidebar = document.getElementById('sidebar');
-  const backdrop = document.getElementById('sidebarBackdrop');
-  if (sidebar) sidebar.classList.remove('active');
-  if (backdrop) backdrop.classList.remove('active');
+/**
+ * Actualiza la matriz y KPIs del Mix Sugerido
+ */
+function updateMixSugeridoView() {
+  const tbody = document.getElementById('mixSugeridoTableBody');
+  const kpiSkus = document.getElementById('mixKpiSkus');
+  const kpiSkusSub = document.getElementById('mixKpiSkusSub');
+  const kpiRev = document.getElementById('mixKpiRevenue');
+  const kpiRevSub = document.getElementById('mixKpiRevenueSub');
+  const kpiProfit = document.getElementById('mixKpiProfit');
+  const kpiMarginSub = document.getElementById('mixKpiMarginSub');
+
+  let data = (filtered && filtered.length > 0) ? filtered : rows;
+  if (mixCurrentCanal !== 'ALL') {
+    data = data.filter(r => (r['CANAL FINAL'] || '').trim() === mixCurrentCanal);
+  }
+
+  const bySku = new Map();
+  let totalCanalNeto = 0;
+  let totalCanalUtilidad = 0;
+
+  data.forEach(r => {
+    const sku = (r['CODIGO'] || '').trim().toUpperCase();
+    if (!sku) return;
+    if (!bySku.has(sku)) {
+      bySku.set(sku, {
+        sku,
+        desc: (r['DESCRIPCION'] || sku).trim(),
+        familia: (r['FAMILIA'] || 'General').trim(),
+        cant: 0,
+        neto: 0,
+        costo: 0,
+        utilidad: 0
+      });
+    }
+    const item = bySku.get(sku);
+    const q = Number(r['CANTFACTURADA'] || 0);
+    const n = Number(r['NETO'] || 0);
+    const c = Number(r['COSTOS'] || 0) * q;
+    const u = Number(r['($) UTILIDAD']) || (n - c);
+
+    item.cant += q;
+    item.neto += n;
+    item.costo += c;
+    item.utilidad += u;
+
+    totalCanalNeto += n;
+    totalCanalUtilidad += u;
+  });
+
+  let skuList = Array.from(bySku.values()).map(p => {
+    const marg = p.neto > 0 ? (p.utilidad / p.neto) * 100 : 0;
+    const part = totalCanalNeto > 0 ? (p.neto / totalCanalNeto) * 100 : 0;
+    return { ...p, marg, part };
+  });
+
+  // Clasificación Pareto ABC & Mix
+  skuList.sort((a, b) => b.neto - a.neto);
+  let cumNeto = 0;
+  skuList.forEach(p => {
+    cumNeto += p.neto;
+    const cumPct = totalCanalNeto > 0 ? (cumNeto / totalCanalNeto) * 100 : 100;
+    if (cumPct <= 80) p.clasificacion = '⭐ Estrella A';
+    else if (cumPct <= 95) p.clasificacion = p.marg >= 25 ? '💎 Rentable B' : '📦 Volumen B';
+    else p.clasificacion = '🔄 Rotación C';
+  });
+
+  // Filtrar por búsqueda
+  if (mixSearchFilter) {
+    skuList = skuList.filter(p => p.sku.toLowerCase().includes(mixSearchFilter) || p.desc.toLowerCase().includes(mixSearchFilter) || p.familia.toLowerCase().includes(mixSearchFilter));
+  }
+
+  // Ordenar
+  if (mixCurrentSort === 'cant') skuList.sort((a, b) => b.cant - a.cant);
+  else if (mixCurrentSort === 'margin') skuList.sort((a, b) => b.marg - a.marg);
+  else if (mixCurrentSort === 'utilidad') skuList.sort((a, b) => b.utilidad - a.utilidad);
+  else skuList.sort((a, b) => b.neto - a.neto);
+
+  // KPIs
+  const recommendedCount = skuList.filter(p => p.clasificacion.includes('A') || p.clasificacion.includes('Rentable')).length || skuList.length;
+  if (kpiSkus) kpiSkus.textContent = `${recommendedCount} SKUs`;
+  if (kpiSkusSub) kpiSkusSub.textContent = `Catálogo optimizado (${mixCurrentCanal === 'ALL' ? 'Global' : mixCurrentCanal})`;
+  if (kpiRev) kpiRev.textContent = typeof formatCLP === 'function' ? formatCLP(totalCanalNeto) : `$${Math.round(totalCanalNeto).toLocaleString('es-CL')}`;
+  if (kpiRevSub) kpiRevSub.textContent = `Facturación neta acumulada en segmento`;
+  if (kpiProfit) kpiProfit.textContent = typeof formatCLP === 'function' ? formatCLP(totalCanalUtilidad) : `$${Math.round(totalCanalUtilidad).toLocaleString('es-CL')}`;
+  if (kpiMarginSub) {
+    const avgMarg = totalCanalNeto > 0 ? ((totalCanalUtilidad / totalCanalNeto) * 100).toFixed(1) : '0.0';
+    kpiMarginSub.textContent = `Margen promedio del mix: ${avgMarg}%`;
+  }
+
+  // Render Table Body
+  if (tbody) {
+    if (skuList.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: #94a3b8; padding: 2rem;">No se encontraron productos en este canal o filtro.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = skuList.map((p, idx) => {
+      let badgeStyle = 'background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3);';
+      if (p.clasificacion.includes('Rentable')) badgeStyle = 'background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3);';
+      else if (p.clasificacion.includes('Volumen')) badgeStyle = 'background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3);';
+      else if (p.clasificacion.includes('Rotación')) badgeStyle = 'background: rgba(148, 163, 184, 0.15); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.3);';
+
+      return `
+        <tr>
+          <td style="text-align: center; font-weight: 800; color: #94a3b8;">#${idx + 1}</td>
+          <td style="text-align: left;"><span class="sku-badge-pill" style="font-weight: 800; font-size: 0.82rem; cursor: pointer;" onclick="switchView('productos'); selectProductFor360('${p.sku}');" title="Ver análisis 360 de este producto">${p.sku}</span></td>
+          <td style="text-align: left; max-width: 260px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; color: #f8fafc;" title="${p.desc}">${p.desc}</td>
+          <td style="text-align: left;"><span class="tag-pill" style="font-size: 0.75rem;">${p.familia}</span></td>
+          <td style="text-align: center;"><span style="padding: 3px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 700; ${badgeStyle}">${p.clasificacion}</span></td>
+          <td style="text-align: right; font-weight: 700;">${Math.round(p.cant).toLocaleString('es-CL')} un.</td>
+          <td style="text-align: right; font-weight: 800; color: #38bdf8;">${typeof formatCLP === 'function' ? formatCLP(p.neto) : '$'+Math.round(p.neto).toLocaleString('es-CL')}</td>
+          <td style="text-align: right; font-weight: 700; color: #34d399;">${typeof formatCLP === 'function' ? formatCLP(p.utilidad) : '$'+Math.round(p.utilidad).toLocaleString('es-CL')}</td>
+          <td style="text-align: right; font-weight: 800; color: ${p.marg >= 30 ? '#34d399' : '#fbbf24'};">${p.marg.toFixed(1)}%</td>
+          <td style="text-align: right; font-weight: 800; color: #a855f7;">${p.part.toFixed(1)}%</td>
+        </tr>
+      `;
+    }).join('');
+  }
 }
 
 function openTargetModal() {
@@ -1163,6 +1921,15 @@ function setupAllButtonListeners() {
   const simResetBtn = document.getElementById('resetSimBtn');
   if (simResetBtn) simResetBtn.onclick = () => resetBIAdvisorSim();
 
+  ['simPriceRange', 'simCostRange', 'simVolRange'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.oninput = () => {
+        if (typeof updateWhatIfSimulation === 'function') updateWhatIfSimulation();
+      };
+    }
+  });
+
   const mixHeaderBtn = document.getElementById('headerMixBtn');
   if (mixHeaderBtn) mixHeaderBtn.onclick = () => switchView('mixsugerido');
 
@@ -1189,14 +1956,81 @@ function setupAllButtonListeners() {
   const cotizNext = document.getElementById('btnCotizNextPage');
   if (cotizNext) cotizNext.onclick = () => changeCotizPage(1);
 
-  // 6. Catálogo de Productos
+  // 6. Paginación Compras & Stock
+  const compPrev = document.getElementById('btnComprasPrevPage');
+  if (compPrev) compPrev.onclick = () => {
+    if (typeof comprasCurrentPage !== 'undefined' && comprasCurrentPage > 1) {
+      comprasCurrentPage--;
+      if (typeof renderComprasView === 'function') renderComprasView();
+    }
+  };
+
+  const compNext = document.getElementById('btnComprasNextPage');
+  if (compNext) compNext.onclick = () => {
+    if (typeof comprasCurrentPage !== 'undefined') {
+      comprasCurrentPage++;
+      if (typeof renderComprasView === 'function') renderComprasView();
+    }
+  };
+
+  // 7. Navegación Sidebar (.ax-nav__item con data-view)
+  document.querySelectorAll('.ax-nav__item[data-view]').forEach(item => {
+    item.onclick = (e) => {
+      e.preventDefault();
+      const view = item.getAttribute('data-view');
+      if (view && typeof switchView === 'function') switchView(view);
+    };
+  });
+
+  // 8. Barra de Búsqueda Rápida en Cabecera (Header Search Pill)
+  const headerSearch = document.getElementById('headerSearchBtn');
+  if (headerSearch) {
+    headerSearch.onclick = () => {
+      const activeView = document.querySelector('.view.active')?.id || '';
+      if (activeView === 'view-cotizaciones') {
+        const cIn = document.getElementById('fltCotizSearch');
+        if (cIn) { cIn.focus(); cIn.select(); }
+      } else if (activeView === 'view-compras') {
+        const cIn = document.getElementById('comprasSearchBox');
+        if (cIn) { cIn.focus(); cIn.select(); }
+      } else if (activeView === 'view-productos') {
+        const cIn = document.getElementById('prodSkuSearch');
+        if (cIn) { cIn.focus(); cIn.select(); }
+      } else if (activeView === 'view-fichatecnica') {
+        const cIn = document.getElementById('ftSkuSearch');
+        if (cIn) { cIn.focus(); cIn.select(); }
+      } else {
+        const sIn = document.getElementById('searchBox');
+        if (sIn) { sIn.focus(); sIn.select(); }
+      }
+    };
+  }
+
+  // 9. Modal Metas Comerciales
+  const headerTargetBtn = document.getElementById('headerTargetBtn');
+  if (headerTargetBtn) headerTargetBtn.onclick = () => { if (typeof openTargetModal === 'function') openTargetModal(); };
+
+  const closeTargetBtn = document.getElementById('closeTargetModalBtn');
+  if (closeTargetBtn) closeTargetBtn.onclick = () => { if (typeof closeTargetModal === 'function') closeTargetModal(); };
+
+  const cancelTargetBtn = document.getElementById('cancelTargetModalBtn');
+  if (cancelTargetBtn) cancelTargetBtn.onclick = () => { if (typeof closeTargetModal === 'function') closeTargetModal(); };
+
+  const saveTargetBtn = document.getElementById('saveTargetModalBtn');
+  if (saveTargetBtn) saveTargetBtn.onclick = (e) => {
+    e.preventDefault();
+    if (typeof saveTargetSettings === 'function') saveTargetSettings();
+    if (typeof closeTargetModal === 'function') closeTargetModal();
+  };
+
+  // 10. Catálogo de Productos
   const prodRand = document.getElementById('prodRandomBtn');
   if (prodRand) prodRand.onclick = () => randomizeProductSelection();
 
   const prodClr = document.getElementById('prodClearBtn');
   if (prodClr) prodClr.onclick = () => clearProductSearch();
 
-  // 7. Menús Móviles & Autenticación
+  // 11. Menús Móviles & Autenticación
   const mobMenu = document.getElementById('mobileMenuBtn');
   if (mobMenu) mobMenu.onclick = () => toggleMobileSidebar();
 
@@ -1206,7 +2040,7 @@ function setupAllButtonListeners() {
   const cotizFlt = document.getElementById('toggleCotizFiltersBtn');
   if (cotizFlt) cotizFlt.onclick = () => toggleCotizMobileFilters();
 
-  // 8. Filtros de Periodo de Fecha (Hoy, 7 Días, Este Mes, Este Año, Todo)
+  // 12. Filtros de Periodo de Fecha (Hoy, 7 Días, Este Mes, Este Año, Todo)
   setupDatePresetListeners();
 
   const sideAuth = document.getElementById('sidebarAuthBtn');
@@ -2107,6 +2941,15 @@ function startAutoRefresh() {
 }
 
 // ---------- Init ----------
+if (typeof setupAllButtonListeners === 'function') {
+  setupAllButtonListeners();
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    if (typeof setupAllButtonListeners === 'function') setupAllButtonListeners();
+  });
+}
+
 loadData(true);
 startAutoRefresh();
 if (typeof fetchCotizacionesData === 'function') {
