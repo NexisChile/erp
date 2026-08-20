@@ -14870,6 +14870,119 @@ select#comprasStrategySelect {
   border-radius: 50% !important;
 }
 
+/* ==========================================================================
+   DYNAMIC FILTER BAR & ACTIVE CHIPS STYLING (2026)
+   ========================================================================== */
+
+.filters-bar {
+  padding: 1.25rem 1.5rem !important;
+  border-radius: 18px !important;
+  background: rgba(18, 24, 38, 0.88) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35) !important;
+  margin-bottom: 1.5rem !important;
+}
+
+.filters-bar__header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  flex-wrap: wrap !important;
+  gap: 1rem !important;
+  margin-bottom: 1rem !important;
+}
+
+.date-presets {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  flex-wrap: wrap !important;
+}
+
+.presets-label {
+  font-size: 0.78rem !important;
+  font-weight: 700 !important;
+  color: #94a3b8 !important;
+  margin-right: 4px !important;
+}
+
+.preset-btn {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  color: #cbd5e1 !important;
+  padding: 5px 14px !important;
+  border-radius: 20px !important;
+  font-size: 0.78rem !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+}
+
+.preset-btn:hover {
+  background: rgba(59, 130, 246, 0.15) !important;
+  border-color: rgba(59, 130, 246, 0.35) !important;
+  color: #ffffff !important;
+  transform: translateY(-1px) !important;
+}
+
+.preset-btn.active {
+  background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+  border-color: rgba(96, 165, 250, 0.6) !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.45) !important;
+}
+
+/* Active Filter Chips Bar */
+.active-filter-chips-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.active-filter-chip {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.18), rgba(99, 102, 241, 0.12)) !important;
+  border: 1px solid rgba(59, 130, 246, 0.35) !important;
+  color: #e2e8f0 !important;
+  font-size: 0.76rem !important;
+  font-weight: 600 !important;
+  padding: 4px 10px 4px 12px !important;
+  border-radius: 12px !important;
+  animation: viewEnterAnim 0.2s ease-out !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+}
+
+.chip-remove-btn {
+  background: rgba(255, 255, 255, 0.12) !important;
+  border: none !important;
+  color: #f8fafc !important;
+  width: 18px !important;
+  height: 18px !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 0.65rem !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+}
+
+.chip-remove-btn:hover {
+  background: #ef4444 !important;
+  color: #ffffff !important;
+  transform: scale(1.15) !important;
+}
+
+
 
 
 

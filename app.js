@@ -2444,30 +2444,50 @@ function uniqueValues(field) {
   return [...new Set(rows.map(r => r[field]).filter(v => v !== undefined && v !== null && v !== ''))].sort();
 }
 
+function uniqueValues(field) {
+  return [...new Set(rows.map(r => r[field]).filter(v => v !== undefined && v !== null && v !== ''))].sort();
+}
+
+function getDatasetReferenceDate() {
+  if (!rows || rows.length === 0) return new Date();
+  let maxTime = 0;
+  rows.forEach(r => {
+    if (r['FECHA']) {
+      const t = new Date(r['FECHA']).getTime();
+      if (!isNaN(t) && t > maxTime) maxTime = t;
+    }
+  });
+  return maxTime > 0 ? new Date(maxTime) : new Date();
+}
+
 function populateFilterOptions() {
   const map = {
     fltCanal: 'CANAL FINAL',
     fltTienda: 'TIENDA FINAL',
     fltVendedor: 'CODVENDENDOR',
     fltFamilia: 'FAMILIA',
+    fltCategoria: 'CATEGORIA',
     fltRegion: 'REGION'
   };
   Object.entries(map).forEach(([selectId, field]) => {
     const select = document.getElementById(selectId);
+    if (!select) return;
     const current = select.value;
     const opts = uniqueValues(field);
-    select.innerHTML = `<option value="">Todos</option>` + opts.map(o => `<option value="${o}">${o}</option>`).join('');
+    select.innerHTML = `<option value="">Todas</option>` + opts.map(o => `<option value="${o}">${o}</option>`).join('');
     if (opts.includes(current)) select.value = current;
   });
 
   renderCanalSubmenu();
+  setupDatePresetListeners();
 }
 
 // ---------- Sidebar: submenú de Canal ----------
 function renderCanalSubmenu() {
   const submenu = document.getElementById('canalSubmenu');
+  if (!submenu) return;
   const canales = uniqueValues('CANAL FINAL');
-  const canalActivo = document.getElementById('fltCanal').value;
+  const canalActivo = document.getElementById('fltCanal') ? document.getElementById('fltCanal').value : '';
 
   submenu.innerHTML = canales.map(c => `
     <button class="nav-subitem ${c === canalActivo ? 'active' : ''}" data-canal="${c}">${c}</button>
@@ -2475,35 +2495,153 @@ function renderCanalSubmenu() {
 
   submenu.querySelectorAll('.nav-subitem').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.getElementById('fltCanal').value = btn.dataset.canal;
+      const flt = document.getElementById('fltCanal');
+      if (flt) flt.value = btn.dataset.canal;
       applyFilters();
       renderCanalSubmenu();
       // Cambia a la vista de Tablero para ver el resultado del filtro
       document.querySelectorAll('.nav-item[data-view]').forEach(b => b.classList.remove('active'));
       document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-      document.querySelector('.nav-item[data-view="tablero"]').classList.add('active');
-      document.getElementById('view-tablero').classList.add('active');
+      const tabNav = document.querySelector('.nav-item[data-view="tablero"]');
+      if (tabNav) tabNav.classList.add('active');
+      const tabView = document.getElementById('view-tablero');
+      if (tabView) tabView.classList.add('active');
     });
   });
 }
 
-document.getElementById('canalToggle').addEventListener('click', () => {
-  document.getElementById('canalToggle').classList.toggle('expanded');
-  document.getElementById('canalSubmenu').classList.toggle('open');
-});
+const canalToggle = document.getElementById('canalToggle');
+if (canalToggle) {
+  canalToggle.addEventListener('click', () => {
+    canalToggle.classList.toggle('expanded');
+    const sub = document.getElementById('canalSubmenu');
+    if (sub) sub.classList.toggle('open');
+  });
+}
+
+// ---------- Date Presets Handlers (Hoy, 7 Días, Este Mes, Este Año, Todo) ----------
+function setupDatePresetListeners() {
+  const container = document.getElementById('datePresets');
+  if (!container || container._bound) return;
+  container._bound = true;
+
+  container.querySelectorAll('.preset-btn').forEach(btn => {
+    btn.onclick = (e) => {
+      e.preventDefault();
+      container.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      
+      const preset = btn.dataset.preset;
+      applyDatePreset(preset);
+    };
+  });
+}
+
+function applyDatePreset(preset) {
+  const ref = getDatasetReferenceDate();
+  const elDesde = document.getElementById('fltDesde');
+  const elHasta = document.getElementById('fltHasta');
+
+  if (preset === 'today') {
+    const dStr = ref.toISOString().slice(0, 10);
+    if (elDesde) elDesde.value = dStr;
+    if (elHasta) elHasta.value = dStr;
+    currentSalesPeriod = 'semana';
+  } else if (preset === '7days') {
+    const past = new Date(ref);
+    past.setDate(ref.getDate() - 6);
+    if (elDesde) elDesde.value = past.toISOString().slice(0, 10);
+    if (elHasta) elHasta.value = ref.toISOString().slice(0, 10);
+    currentSalesPeriod = 'semana';
+  } else if (preset === 'thisMonth') {
+    const firstDay = new Date(ref.getFullYear(), ref.getMonth(), 1);
+    const lastDay = new Date(ref.getFullYear(), ref.getMonth() + 1, 0);
+    if (elDesde) elDesde.value = firstDay.toISOString().slice(0, 10);
+    if (elHasta) elHasta.value = lastDay.toISOString().slice(0, 10);
+    currentSalesPeriod = 'mes';
+  } else if (preset === 'thisYear') {
+    const firstDay = new Date(ref.getFullYear(), 0, 1);
+    const lastDay = new Date(ref.getFullYear(), 11, 31);
+    if (elDesde) elDesde.value = firstDay.toISOString().slice(0, 10);
+    if (elHasta) elHasta.value = lastDay.toISOString().slice(0, 10);
+    currentSalesPeriod = 'anio';
+  } else if (preset === 'all') {
+    if (elDesde) elDesde.value = '';
+    if (elHasta) elHasta.value = '';
+    currentSalesPeriod = 'mes';
+  }
+
+  // Sincronizar botones de salesPeriodSelector
+  const salesPeriodSelector = document.getElementById('salesPeriodSelector');
+  if (salesPeriodSelector) {
+    salesPeriodSelector.querySelectorAll('.period-pill').forEach(b => {
+      b.classList.toggle('active', b.dataset.period === currentSalesPeriod);
+    });
+  }
+
+  applyFilters();
+}
 
 function getFilters() {
   return {
-    desde: document.getElementById('fltDesde').value,
-    hasta: document.getElementById('fltHasta').value,
-    canal: document.getElementById('fltCanal').value,
-    tienda: document.getElementById('fltTienda').value,
-    vendedor: document.getElementById('fltVendedor').value,
-    familia: document.getElementById('fltFamilia').value,
-    region: document.getElementById('fltRegion').value,
+    desde: document.getElementById('fltDesde') ? document.getElementById('fltDesde').value : '',
+    hasta: document.getElementById('fltHasta') ? document.getElementById('fltHasta').value : '',
+    canal: document.getElementById('fltCanal') ? document.getElementById('fltCanal').value : '',
+    tienda: document.getElementById('fltTienda') ? document.getElementById('fltTienda').value : '',
+    vendedor: document.getElementById('fltVendedor') ? document.getElementById('fltVendedor').value : '',
+    familia: document.getElementById('fltFamilia') ? document.getElementById('fltFamilia').value : '',
+    categoria: document.getElementById('fltCategoria') ? document.getElementById('fltCategoria').value : '',
+    region: document.getElementById('fltRegion') ? document.getElementById('fltRegion').value : '',
     search: (document.getElementById('searchBox') ? document.getElementById('searchBox').value : '').trim().toLowerCase()
   };
 }
+
+function renderActiveFilterChips() {
+  const chipsContainer = document.getElementById('activeFilterChips');
+  if (!chipsContainer) return;
+
+  const f = getFilters();
+  const chips = [];
+
+  if (f.desde && f.hasta) {
+    chips.push({ label: `📅 Rango: ${f.desde} al ${f.hasta}`, clear: () => { document.getElementById('fltDesde').value = ''; document.getElementById('fltHasta').value = ''; } });
+  } else if (f.desde) {
+    chips.push({ label: `📅 Desde: ${f.desde}`, clear: () => { document.getElementById('fltDesde').value = ''; } });
+  } else if (f.hasta) {
+    chips.push({ label: `📅 Hasta: ${f.hasta}`, clear: () => { document.getElementById('fltHasta').value = ''; } });
+  }
+
+  if (f.canal) chips.push({ label: `Canal: ${f.canal}`, clear: () => { document.getElementById('fltCanal').value = ''; } });
+  if (f.tienda) chips.push({ label: `Tienda: ${f.tienda}`, clear: () => { document.getElementById('fltTienda').value = ''; } });
+  if (f.vendedor) chips.push({ label: `Vendedor: ${f.vendedor}`, clear: () => { document.getElementById('fltVendedor').value = ''; } });
+  if (f.familia) chips.push({ label: `Familia: ${f.familia}`, clear: () => { document.getElementById('fltFamilia').value = ''; } });
+  if (f.categoria) chips.push({ label: `Categoría: ${f.categoria}`, clear: () => { document.getElementById('fltCategoria').value = ''; } });
+  if (f.region) chips.push({ label: `Región: ${f.region}`, clear: () => { document.getElementById('fltRegion').value = ''; } });
+  if (f.search) chips.push({ label: `Búsqueda: "${f.search}"`, clear: () => { document.getElementById('searchBox').value = ''; } });
+
+  if (chips.length === 0) {
+    chipsContainer.innerHTML = '';
+    chipsContainer.style.display = 'none';
+    return;
+  }
+
+  chipsContainer.style.display = 'flex';
+  chipsContainer.innerHTML = chips.map((c, idx) => `
+    <span class="active-filter-chip">
+      <span>${c.label}</span>
+      <button type="button" class="chip-remove-btn" onclick="window._clearFilterChip(${idx})" title="Quitar filtro">✕</button>
+    </span>
+  `).join('');
+
+  window._activeChipsList = chips;
+}
+
+window._clearFilterChip = function(idx) {
+  if (window._activeChipsList && window._activeChipsList[idx]) {
+    window._activeChipsList[idx].clear();
+    applyFilters();
+  }
+};
 
 function applyFilters() {
   const f = getFilters();
@@ -2520,6 +2658,7 @@ function applyFilters() {
     if (f.tienda && r['TIENDA FINAL'] !== f.tienda) return false;
     if (f.vendedor && r['CODVENDENDOR'] !== f.vendedor) return false;
     if (f.familia && r['FAMILIA'] !== f.familia) return false;
+    if (f.categoria && r['CATEGORIA'] !== f.categoria) return false;
     if (f.region && r['REGION'] !== f.region) return false;
     if (f.search) {
       const hay = [r['FOLIO'], r['CLIENTE'], r['CODIGO'], r['DESCRIPCION']]
@@ -2528,35 +2667,42 @@ function applyFilters() {
     }
     return true;
   });
+
   currentPage = 1;
   renderAll();
 }
 
-['fltDesde', 'fltHasta', 'fltCanal', 'fltTienda', 'fltVendedor', 'fltFamilia', 'fltRegion'].forEach(id => {
-  document.getElementById(id).addEventListener('change', applyFilters);
+['fltDesde', 'fltHasta', 'fltCanal', 'fltTienda', 'fltVendedor', 'fltFamilia', 'fltCategoria', 'fltRegion'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('change', applyFilters);
 });
-document.getElementById('clearFiltersBtn').addEventListener('click', () => {
-  ['fltDesde', 'fltHasta', 'fltCanal', 'fltTienda', 'fltVendedor', 'fltFamilia', 'fltRegion'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = '';
+
+const clearBtn = document.getElementById('clearFiltersBtn');
+if (clearBtn) {
+  clearBtn.addEventListener('click', () => {
+    ['fltDesde', 'fltHasta', 'fltCanal', 'fltTienda', 'fltVendedor', 'fltFamilia', 'fltCategoria', 'fltRegion'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    const sb = document.getElementById('searchBox');
+    if (sb) sb.value = '';
+
+    const container = document.getElementById('datePresets');
+    if (container) {
+      const presetBtns = container.querySelectorAll('.preset-btn');
+      presetBtns.forEach(b => b.classList.remove('active'));
+      const allBtn = container.querySelector('[data-preset="all"]');
+      if (allBtn) allBtn.classList.add('active');
+    }
+
+    applyFilters();
+    if (typeof showToast === 'function') showToast('🧹 Todos los filtros fueron limpiados');
   });
-  const sb = document.getElementById('searchBox');
-  if (sb) sb.value = '';
-
-  const container = document.getElementById('datePresets');
-  if (container) {
-    const presetBtns = container.querySelectorAll('.preset-btn');
-    presetBtns.forEach(b => b.classList.remove('active'));
-    const allBtn = container.querySelector('[data-preset="all"]');
-    if (allBtn) allBtn.classList.add('active');
-  }
-
-  applyFilters();
-  if (typeof showToast === 'function') showToast('🧹 Todos los filtros fueron limpiados');
-});
+}
 
 // ---------- Render orquestador ----------
 function renderAll() {
+  renderActiveFilterChips();
   renderTicker();
   renderTodayCard();
   renderKPIs();
