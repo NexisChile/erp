@@ -2862,6 +2862,151 @@ function setupChartPeriodListeners() {
   });
 }
 
+/* ==========================================================================
+   SMART CONTINUOUS TIME-SERIES GENERATOR FOR SMOOTH CURVES
+   ========================================================================== */
+function buildTimeSeriesData(period, dataList) {
+  const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+  // Determinar años presentes en el dataset
+  const yearsSet = new Set();
+  dataList.forEach(r => {
+    const y = parseInt(r['AÑO'], 10);
+    if (y && !isNaN(y)) yearsSet.add(y);
+  });
+  const yearsArr = Array.from(yearsSet).sort((a, b) => a - b);
+  const activeYear = yearsArr.length > 0 ? yearsArr[yearsArr.length - 1] : 2026;
+
+  // 1. MODO ANUAL: Traza la curva de los 12 meses continuos del año
+  if (period === 'anio') {
+    const series = [];
+    for (let m = 1; m <= 12; m++) {
+      const mStr = String(m).padStart(2, '0');
+      series.push({
+        key: `${activeYear}-${mStr}`,
+        label: `${monthNames[m - 1]} ${activeYear}`,
+        totalNeto: 0,
+        totalUtil: 0
+      });
+    }
+
+    dataList.forEach(r => {
+      const y = parseInt(r['AÑO'], 10) || activeYear;
+      let m = parseInt(r['# MES'], 10);
+      if (!m || isNaN(m)) {
+        const d = new Date(r['FECHA']);
+        if (!isNaN(d.getTime())) m = d.getMonth() + 1;
+      }
+      if (y === activeYear && m >= 1 && m <= 12) {
+        const item = series[m - 1];
+        if (item) {
+          item.totalNeto += Number(r['NETO']) || 0;
+          item.totalUtil += Number(r['($) UTILIDAD']) || 0;
+        }
+      }
+    });
+
+    return series;
+  }
+
+  // 2. MODO MENSUAL:
+  // Si hay datos de varios meses, grafica todos los meses.
+  // Si solo hay datos de 1 mes (o filtro activo), desglosa por días (1..31) para tener una curva completa.
+  if (period === 'mes') {
+    const monthMap = {};
+    dataList.forEach(r => {
+      let m = parseInt(r['# MES'], 10);
+      const mName = String(r['MES'] || '').trim();
+      const y = String(r['AÑO'] || activeYear).trim();
+      if (!m || isNaN(m)) {
+        const d = new Date(r['FECHA']);
+        if (!isNaN(d.getTime())) m = d.getMonth() + 1;
+      }
+      m = m || 1;
+      const key = `${y}-${String(m).padStart(2, '0')}`;
+      if (!monthMap[key]) {
+        const label = mName ? `${mName.charAt(0).toUpperCase() + mName.slice(1)} ${y}` : `${monthNames[m - 1]} ${y}`;
+        monthMap[key] = { key, label, totalNeto: 0, totalUtil: 0, monthNum: m, year: y };
+      }
+      monthMap[key].totalNeto += Number(r['NETO']) || 0;
+      monthMap[key].totalUtil += Number(r['($) UTILIDAD']) || 0;
+    });
+
+    const monthsFound = Object.values(monthMap);
+
+    if (monthsFound.length > 1) {
+      return monthsFound.sort((a, b) => a.key.localeCompare(b.key));
+    } else {
+      // 1 solo mes presente: generar serie continua por días del mes
+      const singleMonth = monthsFound.length === 1 ? monthsFound[0].monthNum : (new Date().getMonth() + 1);
+      const daysInM = new Date(activeYear, singleMonth, 0).getDate() || 31;
+      const daySeries = [];
+      for (let d = 1; d <= daysInM; d++) {
+        const dStr = String(d).padStart(2, '0');
+        const mStr = String(singleMonth).padStart(2, '0');
+        daySeries.push({
+          key: `${activeYear}-${mStr}-${dStr}`,
+          label: `${d} ${monthNames[singleMonth - 1]}`,
+          totalNeto: 0,
+          totalUtil: 0
+        });
+      }
+
+      dataList.forEach(r => {
+        let day = 0;
+        if (r['FECHA']) {
+          const dt = new Date(r['FECHA'] + 'T12:00:00');
+          if (!isNaN(dt.getTime())) day = dt.getDate();
+        }
+        if (!day && r['DIA']) day = parseInt(r['DIA'], 10);
+        if (day >= 1 && day <= daysInM) {
+          const item = daySeries[day - 1];
+          if (item) {
+            item.totalNeto += Number(r['NETO']) || 0;
+            item.totalUtil += Number(r['($) UTILIDAD']) || 0;
+          }
+        }
+      });
+
+      return daySeries;
+    }
+  }
+
+  // 3. MODO SEMANAL / DIARIO: Serie cronológica continua por fechas
+  if (period === 'semana') {
+    const dayMap = {};
+    dataList.forEach(r => {
+      let dKey = '';
+      let dLabel = '';
+      if (r['FECHA']) {
+        dKey = String(r['FECHA']).slice(0, 10);
+        const dt = new Date(dKey + 'T12:00:00');
+        if (!isNaN(dt.getTime())) {
+          dLabel = dt.toLocaleDateString('es-CL', { weekday: 'short', day: 'numeric', month: 'short' });
+        }
+      }
+      if (!dKey) {
+        dKey = `${activeYear}-01-01`;
+        dLabel = 'Día 1';
+      }
+      if (!dayMap[dKey]) {
+        dayMap[dKey] = { key: dKey, label: dLabel || dKey, totalNeto: 0, totalUtil: 0 };
+      }
+      dayMap[dKey].totalNeto += Number(r['NETO']) || 0;
+      dayMap[dKey].totalUtil += Number(r['($) UTILIDAD']) || 0;
+    });
+
+    const daySorted = Object.values(dayMap).sort((a, b) => a.key.localeCompare(b.key));
+    if (daySorted.length >= 2) {
+      return daySorted;
+    } else {
+      return buildTimeSeriesData('mes', dataList);
+    }
+  }
+
+  return [];
+}
+
 function renderCharts() {
   if (typeof Chart === 'undefined') return;
 
@@ -2870,52 +3015,20 @@ function renderCharts() {
   // 1. TENDENCIA DUAL: VENTAS NETAS VS UTILIDAD (salesChart)
   const mesCanvas = document.getElementById('salesChart') || document.getElementById('chartMes');
   if (mesCanvas) {
-    const timeMap = {};
-
-    filtered.forEach(r => {
-      const anio = String(r['AÑO'] || '2026').trim();
-      const mesNum = parseInt(r['# MES'], 10) || 1;
-      const mesNombre = String(r['MES'] || '').trim();
-      const fechaStr = String(r['FECHA'] || '').slice(0, 10);
-      const neto = Number(r['NETO']) || 0;
-      const util = Number(r['($) UTILIDAD']) || 0;
-
-      let key = '';
-      let label = '';
-
-      if (currentSalesPeriod === 'semana') {
-        // Agrupación diaria/semanal
-        key = fechaStr || (anio + '-' + String(mesNum).padStart(2, '0'));
-        const d = new Date(fechaStr + 'T12:00:00');
-        label = !isNaN(d.getTime()) ? d.toLocaleDateString('es-CL', { day: 'numeric', month: 'short' }) : key;
-      } else if (currentSalesPeriod === 'anio') {
-        // Agrupación anual
-        key = anio;
-        label = 'Año ' + anio;
-      } else {
-        // Agrupación mensual (default)
-        key = anio + '-' + String(mesNum).padStart(2, '0');
-        const mCapital = mesNombre ? mesNombre.charAt(0).toUpperCase() + mesNombre.slice(1) : ('Mes ' + mesNum);
-        label = `${mCapital} ${anio}`;
-      }
-
-      if (!timeMap[key]) {
-        timeMap[key] = { label, totalNeto: 0, totalUtil: 0, order: key };
-      }
-      timeMap[key].totalNeto += neto;
-      timeMap[key].totalUtil += util;
-    });
-
-    const timeSorted = Object.values(timeMap).sort((a, b) => a.order.localeCompare(b.order));
+    const timeSorted = buildTimeSeriesData(currentSalesPeriod, filtered);
 
     const ctx = mesCanvas.getContext('2d');
-    const gradBlue = ctx.createLinearGradient(0, 0, 0, 300);
-    gradBlue.addColorStop(0, 'rgba(59, 130, 246, 0.35)');
+    const gradBlue = ctx.createLinearGradient(0, 0, 0, 320);
+    gradBlue.addColorStop(0, 'rgba(59, 130, 246, 0.45)');
+    gradBlue.addColorStop(0.65, 'rgba(59, 130, 246, 0.12)');
     gradBlue.addColorStop(1, 'rgba(59, 130, 246, 0.0)');
 
-    const gradGreen = ctx.createLinearGradient(0, 0, 0, 300);
-    gradGreen.addColorStop(0, 'rgba(16, 185, 129, 0.25)');
+    const gradGreen = ctx.createLinearGradient(0, 0, 0, 320);
+    gradGreen.addColorStop(0, 'rgba(16, 185, 129, 0.35)');
+    gradGreen.addColorStop(0.65, 'rgba(16, 185, 129, 0.08)');
     gradGreen.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
+
+    const pointRadius = timeSorted.length > 25 ? 2.5 : 4.5;
 
     if (chartSalesInst) chartSalesInst.destroy();
     chartSalesInst = new Chart(ctx, {
@@ -2929,9 +3042,10 @@ function renderCharts() {
             borderColor: '#3b82f6',
             backgroundColor: gradBlue,
             fill: true,
-            tension: 0.38,
-            borderWidth: 3,
-            pointRadius: 4,
+            tension: 0.42,
+            cubicInterpolationMode: 'monotone',
+            borderWidth: 3.2,
+            pointRadius: pointRadius,
             pointHoverRadius: 7,
             pointBackgroundColor: '#60a5fa',
             pointBorderColor: '#0f172a',
@@ -2943,9 +3057,10 @@ function renderCharts() {
             borderColor: '#10b981',
             backgroundColor: gradGreen,
             fill: true,
-            tension: 0.38,
-            borderWidth: 2.5,
-            pointRadius: 4,
+            tension: 0.42,
+            cubicInterpolationMode: 'monotone',
+            borderWidth: 2.8,
+            pointRadius: pointRadius,
             pointHoverRadius: 7,
             pointBackgroundColor: '#34d399',
             pointBorderColor: '#0f172a',
