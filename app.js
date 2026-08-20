@@ -1887,11 +1887,10 @@ function toggleCotizMobileFilters() {
 }
 
 /* ==========================================================================
-   GLOMAX PARALLAX 3D & SPATIAL DEPTH ENGINE (2026 NEXT-GEN ENGINE)
+   GLOMAX PARALLAX 3D & SPATIAL DEPTH ENGINE (NATIVE & SEAMLESS)
    ========================================================================== */
 const GlomaxParallaxEngine = {
   isEnabled: true,
-  mode: 'active', // 'active' | 'disabled'
   targetMouseX: 0,
   targetMouseY: 0,
   currentMouseX: 0,
@@ -1905,15 +1904,10 @@ const GlomaxParallaxEngine = {
   bgMesh: null,
   
   init() {
-    const saved = localStorage.getItem('glomax_parallax_mode');
-    if (saved === 'disabled') {
-      this.setMode('disabled', false);
-    } else {
-      this.setMode('active', false);
-    }
-    
+    // Si el usuario tiene reducción de movimiento activada en su sistema operativo
     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      this.setMode('disabled', false);
+      this.isEnabled = false;
+      return;
     }
     
     this.bgMesh = document.getElementById('parallaxBgMesh');
@@ -1921,9 +1915,8 @@ const GlomaxParallaxEngine = {
     
     this.bindEvents();
     this.refreshCards();
-    this.updateToggleBtnUI();
     this.startLoop();
-    console.log('[ParallaxEngine] 🌌 Motor Parallax 3D & Profundidad Espacial Activado');
+    console.log('[ParallaxEngine] 🌌 Diseño Parallax 3D & Profundidad Espacial Activo');
   },
   
   bindEvents() {
@@ -1947,17 +1940,10 @@ const GlomaxParallaxEngine = {
     if (mainEl) {
       mainEl.addEventListener('scroll', onScroll, { passive: true });
     }
-    
-    const toggleBtn = document.getElementById('parallaxToggleBtn');
-    if (toggleBtn) {
-      toggleBtn.onclick = (e) => {
-        e.preventDefault();
-        this.toggle();
-      };
-    }
   },
   
   refreshCards() {
+    if (!this.isEnabled) return;
     const cardEls = document.querySelectorAll(`
       .hero-kpi-card,
       .mini-kpi-card,
@@ -2021,7 +2007,7 @@ const GlomaxParallaxEngine = {
   },
   
   startLoop() {
-    if (this.isTicking) return;
+    if (this.isTicking || !this.isEnabled) return;
     this.isTicking = true;
     
     const tick = () => {
@@ -2070,56 +2056,6 @@ const GlomaxParallaxEngine = {
     };
     
     requestAnimationFrame(tick);
-  },
-  
-  toggle() {
-    if (this.mode === 'active') {
-      this.setMode('disabled');
-      if (typeof showToast === 'function') showToast('🌌 Modo Parallax 3D: Desactivado');
-    } else {
-      this.setMode('active');
-      if (typeof showToast === 'function') showToast('✨ Modo Parallax 3D: Activado');
-    }
-  },
-  
-  setMode(mode, save = true) {
-    this.mode = mode;
-    this.isEnabled = (mode !== 'disabled');
-    
-    if (save) {
-      localStorage.setItem('glomax_parallax_mode', mode);
-    }
-    
-    if (this.isEnabled) {
-      document.body.classList.remove('parallax-disabled');
-      this.startLoop();
-    } else {
-      document.body.classList.add('parallax-disabled');
-      if (this.bgMesh) this.bgMesh.style.transform = '';
-      this.ambientOrbs.forEach(orb => orb.style.transform = '');
-      this.scrollElements.forEach(el => el.style.transform = '');
-      document.querySelectorAll('.hero-kpi-card, .mini-kpi-card, .proj-card, [data-tilt]').forEach(c => {
-        c.style.transform = '';
-        c.style.setProperty('--glare-opacity', '0');
-      });
-    }
-    
-    this.updateToggleBtnUI();
-  },
-  
-  updateToggleBtnUI() {
-    const btn = document.getElementById('parallaxToggleBtn');
-    if (!btn) return;
-    
-    if (this.isEnabled) {
-      btn.classList.add('is-active');
-      btn.classList.remove('is-off');
-      btn.title = 'Efectos Parallax 3D & Profundidad Espacial (Activo)';
-    } else {
-      btn.classList.remove('is-active');
-      btn.classList.add('is-off');
-      btn.title = 'Efectos Parallax 3D & Profundidad Espacial (Inactivo)';
-    }
   }
 };
 

@@ -14310,72 +14310,7 @@ select#comprasStrategySelect {
   transform: translateZ(10px);
 }
 
-/* Header Parallax Toggle Button */
-.parallax-toggle-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 700;
-  background: rgba(59, 130, 246, 0.14);
-  color: #60a5fa;
-  border: 1px solid rgba(59, 130, 246, 0.35);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  position: relative;
-}
-
-.parallax-toggle-btn:hover {
-  background: rgba(59, 130, 246, 0.25);
-  border-color: #60a5fa;
-  box-shadow: 0 0 16px rgba(59, 130, 246, 0.35);
-  transform: translateY(-1px);
-}
-
-.parallax-toggle-btn.is-active {
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.25), rgba(99, 102, 241, 0.25));
-  border-color: #60a5fa;
-  color: #ffffff;
-}
-
-.parallax-toggle-btn.is-off {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.12);
-  color: #94a3b8;
-}
-
-.parallax-cube-icon {
-  width: 15px;
-  height: 15px;
-  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.parallax-toggle-btn:hover .parallax-cube-icon {
-  transform: rotate(45deg) scale(1.15);
-}
-
-/* Accessibility & Disabled State */
-body.parallax-disabled .hero-kpi-card,
-body.parallax-disabled .mini-kpi-card,
-body.parallax-disabled .proj-card,
-body.parallax-disabled .bi-sim-card,
-body.parallax-disabled [data-tilt],
-body.parallax-disabled [data-parallax-speed],
-body.parallax-disabled .parallax-bg-mesh,
-body.parallax-disabled .parallax-orb,
-body.parallax-disabled .parallax-data-node,
-body.parallax-disabled [data-parallax-layer] {
-  transform: none !important;
-  transition: none !important;
-}
-
-body.parallax-disabled .card-glare {
-  display: none !important;
-}
-
+/* Accessibility & Reduced Motion */
 @media (prefers-reduced-motion: reduce) {
   .parallax-bg-mesh,
   .parallax-orb,
@@ -14392,6 +14327,7 @@ body.parallax-disabled .card-glare {
     display: none !important;
   }
 }
+
 
 
 
