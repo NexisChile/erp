@@ -925,6 +925,11 @@ function switchView(viewName) {
     AudioSynth.play('click');
   }
 
+  // Refrescar tarjetas e interactividad Parallax 3D al cambiar de módulo
+  if (typeof GlomaxParallaxEngine !== 'undefined' && GlomaxParallaxEngine.refreshCards) {
+    setTimeout(() => GlomaxParallaxEngine.refreshCards(), 60);
+  }
+
   closeMobileSidebar();
 }
 
@@ -1881,7 +1886,254 @@ function toggleCotizMobileFilters() {
   if (bar) bar.classList.toggle('active');
 }
 
+/* ==========================================================================
+   GLOMAX PARALLAX 3D & SPATIAL DEPTH ENGINE (2026 NEXT-GEN ENGINE)
+   ========================================================================== */
+const GlomaxParallaxEngine = {
+  isEnabled: true,
+  mode: 'active', // 'active' | 'disabled'
+  targetMouseX: 0,
+  targetMouseY: 0,
+  currentMouseX: 0,
+  currentMouseY: 0,
+  scrollY: 0,
+  targetScrollY: 0,
+  isTicking: false,
+  cards: [],
+  scrollElements: [],
+  ambientOrbs: [],
+  bgMesh: null,
+  
+  init() {
+    const saved = localStorage.getItem('glomax_parallax_mode');
+    if (saved === 'disabled') {
+      this.setMode('disabled', false);
+    } else {
+      this.setMode('active', false);
+    }
+    
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      this.setMode('disabled', false);
+    }
+    
+    this.bgMesh = document.getElementById('parallaxBgMesh');
+    this.ambientOrbs = Array.from(document.querySelectorAll('.parallax-orb, .parallax-data-node'));
+    
+    this.bindEvents();
+    this.refreshCards();
+    this.updateToggleBtnUI();
+    this.startLoop();
+    console.log('[ParallaxEngine] 🌌 Motor Parallax 3D & Profundidad Espacial Activado');
+  },
+  
+  bindEvents() {
+    window.addEventListener('mousemove', (e) => {
+      if (!this.isEnabled) return;
+      this.targetMouseX = (e.clientX / window.innerWidth) * 2 - 1;
+      this.targetMouseY = (e.clientY / window.innerHeight) * 2 - 1;
+      if (!this.isTicking) this.startLoop();
+    }, { passive: true });
+    
+    const onScroll = () => {
+      if (!this.isEnabled) return;
+      const mainEl = document.querySelector('.ax-main');
+      const sY = mainEl ? mainEl.scrollTop : (window.scrollY || document.documentElement.scrollTop || 0);
+      this.targetScrollY = sY;
+      if (!this.isTicking) this.startLoop();
+    };
+    
+    window.addEventListener('scroll', onScroll, { passive: true });
+    const mainEl = document.querySelector('.ax-main');
+    if (mainEl) {
+      mainEl.addEventListener('scroll', onScroll, { passive: true });
+    }
+    
+    const toggleBtn = document.getElementById('parallaxToggleBtn');
+    if (toggleBtn) {
+      toggleBtn.onclick = (e) => {
+        e.preventDefault();
+        this.toggle();
+      };
+    }
+  },
+  
+  refreshCards() {
+    const cardEls = document.querySelectorAll(`
+      .hero-kpi-card,
+      .mini-kpi-card,
+      .proj-card,
+      .bi-sim-card,
+      .bi-insights-briefing,
+      .banner-parallax,
+      .advisor-card,
+      [data-tilt]
+    `);
+    
+    cardEls.forEach(card => {
+      if (!card.querySelector('.card-glare')) {
+        const glare = document.createElement('div');
+        glare.className = 'card-glare';
+        card.appendChild(glare);
+      }
+      this.setupCardTilt(card);
+    });
+    
+    this.scrollElements = Array.from(document.querySelectorAll('[data-parallax-speed]'));
+    this.ambientOrbs = Array.from(document.querySelectorAll('.parallax-orb, .parallax-data-node'));
+    this.bgMesh = document.getElementById('parallaxBgMesh');
+  },
+  
+  setupCardTilt(card) {
+    if (card._tiltBound) return;
+    card._tiltBound = true;
+    
+    let rect = null;
+    
+    card.addEventListener('mouseenter', () => {
+      if (!this.isEnabled) return;
+      rect = card.getBoundingClientRect();
+    });
+    
+    card.addEventListener('mousemove', (e) => {
+      if (!this.isEnabled) return;
+      if (!rect) rect = card.getBoundingClientRect();
+      
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      
+      const px = (x / rect.width);
+      const py = (y / rect.height);
+      
+      const rotX = ((0.5 - py) * 14).toFixed(2);
+      const rotY = ((px - 0.5) * 14).toFixed(2);
+      
+      card.style.transform = `perspective(1000px) rotateX(${rotX}deg) rotateY(${rotY}deg) scale3d(1.02, 1.02, 1.02)`;
+      card.style.setProperty('--glare-x', `${(px * 100).toFixed(1)}%`);
+      card.style.setProperty('--glare-y', `${(py * 100).toFixed(1)}%`);
+      card.style.setProperty('--glare-opacity', '0.24');
+    }, { passive: true });
+    
+    card.addEventListener('mouseleave', () => {
+      card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+      card.style.setProperty('--glare-opacity', '0');
+      rect = null;
+    });
+  },
+  
+  startLoop() {
+    if (this.isTicking) return;
+    this.isTicking = true;
+    
+    const tick = () => {
+      if (!this.isEnabled) {
+        this.isTicking = false;
+        return;
+      }
+      
+      const factor = 0.08;
+      this.currentMouseX += (this.targetMouseX - this.currentMouseX) * factor;
+      this.currentMouseY += (this.targetMouseY - this.currentMouseY) * factor;
+      this.scrollY += (this.targetScrollY - this.scrollY) * 0.1;
+      
+      if (this.bgMesh) {
+        const mx = (this.currentMouseX * 18).toFixed(2);
+        const my = (this.currentMouseY * 18).toFixed(2);
+        this.bgMesh.style.transform = `translate3d(${mx}px, ${my}px, 0)`;
+      }
+      
+      if (this.ambientOrbs && this.ambientOrbs.length > 0) {
+        this.ambientOrbs.forEach(orb => {
+          const depth = parseFloat(orb.getAttribute('data-parallax-depth')) || 0.05;
+          const ox = (this.currentMouseX * depth * 350).toFixed(2);
+          const oy = (this.currentMouseY * depth * 350 + this.scrollY * depth * -0.4).toFixed(2);
+          orb.style.transform = `translate3d(${ox}px, ${oy}px, 0)`;
+        });
+      }
+      
+      if (this.scrollElements && this.scrollElements.length > 0) {
+        this.scrollElements.forEach(el => {
+          const speed = parseFloat(el.getAttribute('data-parallax-speed')) || 0.05;
+          const py = (this.scrollY * speed).toFixed(2);
+          el.style.transform = `translate3d(0, ${py}px, 0)`;
+        });
+      }
+      
+      const dx = Math.abs(this.targetMouseX - this.currentMouseX);
+      const dy = Math.abs(this.targetMouseY - this.currentMouseY);
+      const ds = Math.abs(this.targetScrollY - this.scrollY);
+      
+      if (dx > 0.001 || dy > 0.001 || ds > 0.1) {
+        requestAnimationFrame(tick);
+      } else {
+        this.isTicking = false;
+      }
+    };
+    
+    requestAnimationFrame(tick);
+  },
+  
+  toggle() {
+    if (this.mode === 'active') {
+      this.setMode('disabled');
+      if (typeof showToast === 'function') showToast('🌌 Modo Parallax 3D: Desactivado');
+    } else {
+      this.setMode('active');
+      if (typeof showToast === 'function') showToast('✨ Modo Parallax 3D: Activado');
+    }
+  },
+  
+  setMode(mode, save = true) {
+    this.mode = mode;
+    this.isEnabled = (mode !== 'disabled');
+    
+    if (save) {
+      localStorage.setItem('glomax_parallax_mode', mode);
+    }
+    
+    if (this.isEnabled) {
+      document.body.classList.remove('parallax-disabled');
+      this.startLoop();
+    } else {
+      document.body.classList.add('parallax-disabled');
+      if (this.bgMesh) this.bgMesh.style.transform = '';
+      this.ambientOrbs.forEach(orb => orb.style.transform = '');
+      this.scrollElements.forEach(el => el.style.transform = '');
+      document.querySelectorAll('.hero-kpi-card, .mini-kpi-card, .proj-card, [data-tilt]').forEach(c => {
+        c.style.transform = '';
+        c.style.setProperty('--glare-opacity', '0');
+      });
+    }
+    
+    this.updateToggleBtnUI();
+  },
+  
+  updateToggleBtnUI() {
+    const btn = document.getElementById('parallaxToggleBtn');
+    if (!btn) return;
+    
+    if (this.isEnabled) {
+      btn.classList.add('is-active');
+      btn.classList.remove('is-off');
+      btn.title = 'Efectos Parallax 3D & Profundidad Espacial (Activo)';
+    } else {
+      btn.classList.remove('is-active');
+      btn.classList.add('is-off');
+      btn.title = 'Efectos Parallax 3D & Profundidad Espacial (Inactivo)';
+    }
+  }
+};
+
+// Auto-inicialización segura en carga de documento
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => GlomaxParallaxEngine.init());
+} else {
+  GlomaxParallaxEngine.init();
+}
+
 function setupAllButtonListeners() {
+  // Inicializar Motor Parallax 3D
+  GlomaxParallaxEngine.init();
+
   // 1. Modal Nueva Venta / Registro
   const openBtn = document.getElementById('openModalBtn');
   if (openBtn) openBtn.onclick = () => openModalForNew();

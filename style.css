@@ -14106,6 +14106,294 @@ select#comprasStrategySelect {
   animation: fadeIn 0.2s ease-out;
 }
 
+/* ==========================================================================
+   GLOMAX PARALLAX 3D & SPATIAL DEPTH ENGINE (2026 NEXT-GEN UI)
+   ========================================================================== */
+
+:root {
+  --parallax-tilt-intensity: 1;
+  --parallax-scroll-intensity: 1;
+}
+
+/* --- Parallax Ambient Layer & Deep Space Background --- */
+.ax-ambient {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+  perspective: 1200px;
+}
+
+.parallax-bg-mesh {
+  position: absolute;
+  inset: -15%;
+  background-image: 
+    radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.08) 0%, transparent 60%),
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 100% 100%, 48px 48px, 48px 48px;
+  background-position: center center;
+  mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, #000 30%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, #000 30%, transparent 100%);
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+  transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+[data-ax-theme="light"] .parallax-bg-mesh {
+  background-image: 
+    radial-gradient(circle at 50% 50%, rgba(37, 99, 235, 0.05) 0%, transparent 60%),
+    linear-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
+}
+
+.parallax-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.65;
+  pointer-events: none;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.parallax-orb-1 {
+  width: 520px;
+  height: 520px;
+  top: -100px;
+  right: -50px;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.35) 0%, rgba(37, 99, 235, 0.1) 70%, transparent 100%);
+}
+
+.parallax-orb-2 {
+  width: 480px;
+  height: 480px;
+  bottom: 5%;
+  left: -80px;
+  background: radial-gradient(circle, rgba(129, 140, 248, 0.3) 0%, rgba(99, 102, 241, 0.08) 70%, transparent 100%);
+}
+
+.parallax-orb-3 {
+  width: 380px;
+  height: 380px;
+  top: 35%;
+  left: 40%;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.22) 0%, rgba(6, 182, 212, 0.06) 70%, transparent 100%);
+}
+
+.parallax-orb-4 {
+  width: 340px;
+  height: 340px;
+  bottom: 20%;
+  right: 15%;
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.2) 0%, rgba(244, 63, 94, 0.05) 70%, transparent 100%);
+}
+
+[data-ax-theme="light"] .parallax-orb {
+  opacity: 0.35;
+  filter: blur(95px);
+}
+
+/* Floating Constellation Data Dots */
+.parallax-data-node {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: #60a5fa;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #3b82f6, 0 0 20px #60a5fa;
+  opacity: 0.5;
+  will-change: transform;
+  pointer-events: none;
+}
+
+/* --- 3D Holographic Card Perspective & Tilt System --- */
+.hero-kpi-card,
+.mini-kpi-card,
+.bi-sim-card,
+.bi-insights-briefing,
+.table-card,
+.advisor-card,
+.proj-card,
+.banner-parallax,
+[data-tilt] {
+  transform-style: preserve-3d;
+  perspective: 1000px;
+  position: relative;
+  will-change: transform;
+  transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+/* Card Hover Elevation with 3D Specular Sheen */
+.hero-kpi-card:hover,
+.proj-card:hover,
+.mini-kpi-card:hover,
+.bi-sim-card:hover,
+[data-tilt]:hover {
+  z-index: 10;
+  box-shadow: 0 20px 48px -12px rgba(0, 0, 0, 0.65), 0 0 32px -4px var(--ax-accent-glow) !important;
+  border-color: rgba(96, 165, 250, 0.45) !important;
+}
+
+/* Card Glare (Dynamic Specular Light Reflection) */
+.card-glare {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: radial-gradient(circle 320px at var(--glare-x, 50%) var(--glare-y, 50%), rgba(255, 255, 255, var(--glare-opacity, 0)), transparent 75%);
+  mix-blend-mode: overlay;
+  z-index: 8;
+  transition: opacity 0.25s ease-out;
+}
+
+[data-ax-theme="light"] .card-glare {
+  background: radial-gradient(circle 320px at var(--glare-x, 50%) var(--glare-y, 50%), rgba(255, 255, 255, calc(var(--glare-opacity, 0) * 1.5)), transparent 75%);
+  mix-blend-mode: color-dodge;
+}
+
+/* --- Internal Elements Z-Depth (Holographic Floating Pop) --- */
+.hero-kpi-card .today-value,
+.proj-card .today-value,
+.proj-card .proj-val,
+.mini-kpi-card .mini-kpi-value,
+[data-parallax-layer="value"] {
+  transform: translateZ(28px);
+  transform-style: preserve-3d;
+  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  text-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.hero-kpi-card .today-badge,
+.hero-kpi-card .today-header,
+.proj-card .proj-badge,
+.mini-kpi-card .mini-kpi-icon-wrap,
+[data-parallax-layer="badge"] {
+  transform: translateZ(20px);
+  transform-style: preserve-3d;
+  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.hero-kpi-card .hero-compare-badge,
+.hero-kpi-card .today-sub,
+.proj-card .today-sub,
+.mini-kpi-card .mini-kpi-sub,
+[data-parallax-layer="sub"] {
+  transform: translateZ(15px);
+  transform-style: preserve-3d;
+  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.hero-kpi-card .today-label,
+.mini-kpi-card .mini-kpi-label,
+.proj-card .today-label,
+[data-parallax-layer="label"] {
+  transform: translateZ(12px);
+  transform-style: preserve-3d;
+  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* --- Section Scroll Parallax --- */
+[data-parallax-speed] {
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+  transition: transform 0.12s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.dashboard-section-header {
+  transform-style: preserve-3d;
+}
+
+.dashboard-section-header .section-title-wrap {
+  transform: translateZ(10px);
+}
+
+/* Header Parallax Toggle Button */
+.parallax-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  background: rgba(59, 130, 246, 0.14);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.parallax-toggle-btn:hover {
+  background: rgba(59, 130, 246, 0.25);
+  border-color: #60a5fa;
+  box-shadow: 0 0 16px rgba(59, 130, 246, 0.35);
+  transform: translateY(-1px);
+}
+
+.parallax-toggle-btn.is-active {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.25), rgba(99, 102, 241, 0.25));
+  border-color: #60a5fa;
+  color: #ffffff;
+}
+
+.parallax-toggle-btn.is-off {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #94a3b8;
+}
+
+.parallax-cube-icon {
+  width: 15px;
+  height: 15px;
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.parallax-toggle-btn:hover .parallax-cube-icon {
+  transform: rotate(45deg) scale(1.15);
+}
+
+/* Accessibility & Disabled State */
+body.parallax-disabled .hero-kpi-card,
+body.parallax-disabled .mini-kpi-card,
+body.parallax-disabled .proj-card,
+body.parallax-disabled .bi-sim-card,
+body.parallax-disabled [data-tilt],
+body.parallax-disabled [data-parallax-speed],
+body.parallax-disabled .parallax-bg-mesh,
+body.parallax-disabled .parallax-orb,
+body.parallax-disabled .parallax-data-node,
+body.parallax-disabled [data-parallax-layer] {
+  transform: none !important;
+  transition: none !important;
+}
+
+body.parallax-disabled .card-glare {
+  display: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .parallax-bg-mesh,
+  .parallax-orb,
+  .parallax-data-node,
+  .hero-kpi-card,
+  .mini-kpi-card,
+  .proj-card,
+  [data-tilt],
+  [data-parallax-speed] {
+    transform: none !important;
+    transition: none !important;
+  }
+  .card-glare {
+    display: none !important;
+  }
+}
+
+
 
 
 
