@@ -2343,6 +2343,66 @@ function formatCLP(n) {
 function formatNum(n) {
   return (Number(n) || 0).toLocaleString('es-CL');
 }
+
+/* ==========================================================================
+   GLOMAX COUNTUP MATHEMATICAL EASING ENGINE (60/120 FPS)
+   ========================================================================== */
+function animateValue(el, start, end, duration = 650, isCurrency = true) {
+  if (!el) return;
+  
+  if (start === undefined || start === null) {
+    const raw = String(el.textContent || '').replace(/[^0-9\-]/g, '');
+    start = parseFloat(raw) || 0;
+  }
+  
+  start = Number(start) || 0;
+  end = Number(end) || 0;
+
+  if (start === end) {
+    el.textContent = isCurrency ? formatCLP(end) : formatNum(end);
+    return;
+  }
+
+  const startTime = performance.now();
+  el.classList.add('number-animate-pop');
+  setTimeout(() => el.classList.remove('number-animate-pop'), 380);
+
+  function step(currentTime) {
+    const elapsed = currentTime - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    
+    // Easing: easeOutCubic
+    const ease = 1 - Math.pow(1 - progress, 3);
+    const current = Math.round(start + (end - start) * ease);
+
+    el.textContent = isCurrency ? formatCLP(current) : formatNum(current);
+
+    if (progress < 1) {
+      requestAnimationFrame(step);
+    } else {
+      el.textContent = isCurrency ? formatCLP(end) : formatNum(end);
+    }
+  }
+
+  requestAnimationFrame(step);
+}
+
+// Configuración Global de Chart.js Glassmorphism
+if (typeof Chart !== 'undefined') {
+  Chart.defaults.font.family = "'Inter', -apple-system, BlinkMacSystemFont, sans-serif";
+  if (Chart.defaults.plugins && Chart.defaults.plugins.tooltip) {
+    Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(11, 15, 25, 0.94)';
+    Chart.defaults.plugins.tooltip.titleColor = '#f8fafc';
+    Chart.defaults.plugins.tooltip.bodyColor = '#cbd5e1';
+    Chart.defaults.plugins.tooltip.borderColor = 'rgba(59, 130, 246, 0.4)';
+    Chart.defaults.plugins.tooltip.borderWidth = 1;
+    Chart.defaults.plugins.tooltip.cornerRadius = 10;
+    Chart.defaults.plugins.tooltip.padding = 12;
+    Chart.defaults.plugins.tooltip.boxPadding = 6;
+    Chart.defaults.plugins.tooltip.usePointStyle = true;
+  }
+}
+
 function toDateInputValue(v) {
   if (!v) return '';
   const d = new Date(v);
@@ -2606,7 +2666,10 @@ function renderSummaryCards() {
   const elTodaySub = document.getElementById('todaySub');
   const elTodayComp = document.getElementById('todayCompare');
 
-  if (elTodayVal) elTodayVal.textContent = formatCLP(totalHoy);
+  if (elTodayVal) {
+    animateValue(elTodayVal, elTodayVal._currentVal, totalHoy, 650, true);
+    elTodayVal._currentVal = totalHoy;
+  }
   if (elTodayDate) elTodayDate.textContent = diaNombre;
   if (elTodaySub) elTodaySub.textContent = `${formatNum(docsHoy)} documentos · ${formatNum(cantHoy)} unidades`;
   if (elTodayComp) elTodayComp.textContent = '🟢 En vivo';
@@ -2617,7 +2680,10 @@ function renderSummaryCards() {
   const elMonthSub = document.getElementById('monthSub');
   const elMonthComp = document.getElementById('monthCompare');
 
-  if (elMonthVal) elMonthVal.textContent = formatCLP(totalMes);
+  if (elMonthVal) {
+    animateValue(elMonthVal, elMonthVal._currentVal, totalMes, 650, true);
+    elMonthVal._currentVal = totalMes;
+  }
   if (elMonthDate) elMonthDate.textContent = mesNombre;
   if (elMonthSub) elMonthSub.textContent = `${formatNum(docsMes)} documentos · ${formatNum(cantMes)} unidades`;
   if (elMonthComp) elMonthComp.textContent = '📈 MTD Acumulado';
@@ -2628,7 +2694,10 @@ function renderSummaryCards() {
   const elYearSub = document.getElementById('yearSub');
   const elYearComp = document.getElementById('yearCompare');
 
-  if (elYearVal) elYearVal.textContent = formatCLP(totalAnio);
+  if (elYearVal) {
+    animateValue(elYearVal, elYearVal._currentVal, totalAnio, 650, true);
+    elYearVal._currentVal = totalAnio;
+  }
   if (elYearDate) elYearDate.textContent = `Año ${refDate.getFullYear()}`;
   if (elYearSub) elYearSub.textContent = `${formatNum(docsAnio)} documentos acumulados`;
   if (elYearComp) elYearComp.textContent = '🏆 YTD Acumulado';
@@ -2639,7 +2708,10 @@ function renderSummaryCards() {
   const elTodayProjSub = document.getElementById('todayProjSub');
   const elTodayProjComp = document.getElementById('todayProjCompare');
 
-  if (elTodayProjVal) elTodayProjVal.textContent = formatCLP(projHoy);
+  if (elTodayProjVal) {
+    animateValue(elTodayProjVal, elTodayProjVal._currentVal, projHoy, 650, true);
+    elTodayProjVal._currentVal = projHoy;
+  }
   if (elTodayProjDate) elTodayProjDate.textContent = 'Cierre de Hoy';
   if (elTodayProjSub) elTodayProjSub.textContent = 'Pronóstico basado en ritmo de facturación diario';
   if (elTodayProjComp) elTodayProjComp.textContent = '⚡ Forecast Día';
@@ -2650,7 +2722,10 @@ function renderSummaryCards() {
   const elMonthProjSub = document.getElementById('monthProjSub');
   const elMonthProjComp = document.getElementById('monthProjCompare');
 
-  if (elMonthProjVal) elMonthProjVal.textContent = formatCLP(projMes);
+  if (elMonthProjVal) {
+    animateValue(elMonthProjVal, elMonthProjVal._currentVal, projMes, 650, true);
+    elMonthProjVal._currentVal = projMes;
+  }
   if (elMonthProjDate) elMonthProjDate.textContent = `Cierre de ${mesNombre}`;
   if (elMonthProjSub) elMonthProjSub.textContent = `Extrapolación a ${daysInMonth} días del mes`;
   if (elMonthProjComp) elMonthProjComp.textContent = '📊 Forecast MTD';
@@ -2661,7 +2736,10 @@ function renderSummaryCards() {
   const elYearProjSub = document.getElementById('yearProjSub');
   const elYearProjComp = document.getElementById('yearProjCompare');
 
-  if (elYearProjVal) elYearProjVal.textContent = formatCLP(projAnio);
+  if (elYearProjVal) {
+    animateValue(elYearProjVal, elYearProjVal._currentVal, projAnio, 650, true);
+    elYearProjVal._currentVal = projAnio;
+  }
   if (elYearProjDate) elYearProjDate.textContent = `Cierre Año ${refDate.getFullYear()}`;
   if (elYearProjSub) elYearProjSub.textContent = 'Extrapolación anual completa AI Forecast';
   if (elYearProjComp) elYearProjComp.textContent = '🚀 Forecast YTD';
@@ -2679,20 +2757,35 @@ function renderKPIs() {
 
   // Actualizar KPIs principales
   const elNeto = document.getElementById('kpiNeto');
-  if (elNeto) elNeto.textContent = formatCLP(totalNeto);
+  if (elNeto) {
+    animateValue(elNeto, elNeto._currentVal, totalNeto, 650, true);
+    elNeto._currentVal = totalNeto;
+  }
 
   const elUtilidad = document.getElementById('kpiUtilidad');
-  if (elUtilidad) elUtilidad.textContent = formatCLP(totalUtilidad);
+  if (elUtilidad) {
+    animateValue(elUtilidad, elUtilidad._currentVal, totalUtilidad, 650, true);
+    elUtilidad._currentVal = totalUtilidad;
+  }
 
   const elCant = document.getElementById('kpiCant');
-  if (elCant) elCant.textContent = formatNum(unidades);
+  if (elCant) {
+    animateValue(elCant, elCant._currentVal, unidades, 650, false);
+    elCant._currentVal = unidades;
+  }
 
   const elRows = document.getElementById('kpiRows');
-  if (elRows) elRows.textContent = formatNum(filtered.length);
+  if (elRows) {
+    animateValue(elRows, elRows._currentVal, filtered.length, 650, false);
+    elRows._currentVal = filtered.length;
+  }
 
   // Actualizar Mini KPIs
   const elTicket = document.getElementById('miniTicketVal');
-  if (elTicket) elTicket.textContent = formatCLP(ticketProm);
+  if (elTicket) {
+    animateValue(elTicket, elTicket._currentVal, ticketProm, 650, true);
+    elTicket._currentVal = ticketProm;
+  }
 
   const elMargin = document.getElementById('miniMarginVal');
   if (elMargin) elMargin.textContent = margenPct.toFixed(1) + '%';
