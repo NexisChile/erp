@@ -14489,6 +14489,193 @@ select#comprasStrategySelect {
   box-shadow: 0 16px 36px rgba(0, 0, 0, 0.15) !important;
 }
 
+/* ==========================================================================
+   EXECUTIVE METRICS & KPI CARDS REDESIGN (OBSIDIAN GLASS 2026)
+   ========================================================================== */
+
+/* --- Grid Spacing & Layout --- */
+.mini-kpis-grid {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 1.15rem !important;
+  margin-top: 1.25rem !important;
+}
+
+.kpi-grid {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 1.15rem !important;
+  margin-top: 1.15rem !important;
+  margin-bottom: 1.5rem !important;
+}
+
+@media (max-width: 1200px) {
+  .mini-kpis-grid, .kpi-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .mini-kpis-grid, .kpi-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* --- Card Base Styles --- */
+.mini-kpi-card,
+.kpi-card {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  padding: 1.35rem 1.45rem !important;
+  border-radius: 18px !important;
+  background: rgba(18, 24, 38, 0.85) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35) !important;
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+  min-height: 140px !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+[data-ax-theme="light"] .mini-kpi-card,
+[data-ax-theme="light"] .kpi-card {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-color: #E2E8F0 !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06) !important;
+}
+
+.mini-kpi-card:hover,
+.kpi-card:hover {
+  transform: translateY(-3px) scale(1.01) !important;
+  border-color: rgba(96, 165, 250, 0.45) !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), 0 0 24px rgba(59, 130, 246, 0.18) !important;
+}
+
+/* --- Card Header & Icon Wrappers --- */
+.kpi-card__top,
+.mini-kpi-top {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  margin-bottom: 0.75rem !important;
+  width: 100% !important;
+}
+
+.kpi-card__label,
+.mini-kpi-label {
+  font-size: 0.76rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.6px !important;
+  color: #94a3b8 !important;
+  margin: 0 !important;
+}
+
+[data-ax-theme="light"] .kpi-card__label,
+[data-ax-theme="light"] .mini-kpi-label {
+  color: #64748b !important;
+}
+
+.kpi-icon-badge {
+  width: 38px !important;
+  height: 38px !important;
+  border-radius: 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 1.2rem !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+  flex-shrink: 0 !important;
+}
+
+/* Accent Badge Variations */
+.kpi-icon-badge.theme-blue {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.25), rgba(37, 99, 235, 0.12)) !important;
+  border-color: rgba(59, 130, 246, 0.45) !important;
+  box-shadow: 0 0 16px rgba(59, 130, 246, 0.25) !important;
+}
+
+.kpi-icon-badge.theme-green {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(5, 150, 105, 0.12)) !important;
+  border-color: rgba(16, 185, 129, 0.45) !important;
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.25) !important;
+}
+
+.kpi-icon-badge.theme-purple {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.25), rgba(109, 40, 217, 0.12)) !important;
+  border-color: rgba(139, 92, 246, 0.45) !important;
+  box-shadow: 0 0 16px rgba(139, 92, 246, 0.25) !important;
+}
+
+.kpi-icon-badge.theme-amber {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(217, 119, 6, 0.12)) !important;
+  border-color: rgba(245, 158, 11, 0.45) !important;
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.25) !important;
+}
+
+/* --- Card Values (Large & Stylized) --- */
+.kpi-card__value,
+.mini-kpi-value {
+  font-family: var(--ax-font-display), 'Space Grotesk', 'Inter', sans-serif !important;
+  font-size: 1.55rem !important;
+  font-weight: 800 !important;
+  color: #f8fafc !important;
+  line-height: 1.2 !important;
+  margin-bottom: 0.5rem !important;
+  letter-spacing: -0.5px !important;
+  word-break: break-word !important;
+}
+
+[data-ax-theme="light"] .kpi-card__value,
+[data-ax-theme="light"] .mini-kpi-value {
+  color: #0f172a !important;
+}
+
+.kpi-card__value.accent-blue, .mini-kpi-value.accent-blue {
+  color: #60a5fa !important;
+}
+
+.kpi-card__value.accent-green, .mini-kpi-value.accent-green {
+  color: #34d399 !important;
+}
+
+.kpi-card__value.accent-purple, .mini-kpi-value.accent-purple {
+  color: #c084fc !important;
+}
+
+.kpi-card__value.accent-amber, .mini-kpi-value.accent-amber {
+  color: #fbbf24 !important;
+}
+
+/* --- Card Subtitle Badges --- */
+.kpi-card__sub,
+.mini-kpi-sub {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  font-size: 0.76rem !important;
+  font-weight: 600 !important;
+  color: #94a3b8 !important;
+  margin: 0 !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  padding: 4px 10px !important;
+  border-radius: 8px !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  width: fit-content !important;
+}
+
+[data-ax-theme="light"] .kpi-card__sub,
+[data-ax-theme="light"] .mini-kpi-sub {
+  background: rgba(0, 0, 0, 0.04) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  color: #64748b !important;
+}
+
+
 
 
 

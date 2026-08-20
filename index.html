@@ -655,24 +655,39 @@
           <!-- WIDGET 2: 4 MINI KPIS CLAVE -->
           <div class="mini-kpis-grid" id="miniKpisGrid">
             <div class="ax-card mini-kpi-card gradient-border-card" data-tilt>
-              <span class="mini-kpi-label" data-parallax-layer="label">Ticket Promedio</span>
-              <span class="mini-kpi-value" id="miniTicketVal" data-parallax-layer="value">$0</span>
-              <span class="mini-kpi-sub" data-parallax-layer="sub">Por Factura</span>
+              <div class="mini-kpi-top">
+                <span class="mini-kpi-label" data-parallax-layer="label">Ticket Promedio</span>
+                <div class="kpi-icon-badge theme-blue" data-parallax-layer="badge">🏷️</div>
+              </div>
+              <div class="mini-kpi-value accent-blue" id="miniTicketVal" data-parallax-layer="value">$0</div>
+              <div class="mini-kpi-sub" data-parallax-layer="sub">🧾 Por Factura Emitida</div>
             </div>
+
             <div class="ax-card mini-kpi-card gradient-border-card" data-tilt>
-              <span class="mini-kpi-label" data-parallax-layer="label">Margen Utilidad %</span>
-              <span class="mini-kpi-value" id="miniMarginVal" data-parallax-layer="value">0%</span>
-              <span class="mini-kpi-sub" data-parallax-layer="sub">Global Filtrado</span>
+              <div class="mini-kpi-top">
+                <span class="mini-kpi-label" data-parallax-layer="label">Margen Utilidad %</span>
+                <div class="kpi-icon-badge theme-green" data-parallax-layer="badge">📊</div>
+              </div>
+              <div class="mini-kpi-value accent-green" id="miniMarginVal" data-parallax-layer="value">0%</div>
+              <div class="mini-kpi-sub" data-parallax-layer="sub">🎯 Global Filtrado</div>
             </div>
+
             <div class="ax-card mini-kpi-card gradient-border-card" data-tilt>
-              <span class="mini-kpi-label" data-parallax-layer="label">Top Vendedor</span>
-              <span class="mini-kpi-value" id="miniTopSellerVal" data-parallax-layer="value">--</span>
-              <span class="mini-kpi-sub" id="miniTopSellerSub" data-parallax-layer="sub">$0 Facturado</span>
+              <div class="mini-kpi-top">
+                <span class="mini-kpi-label" data-parallax-layer="label">Top Vendedor</span>
+                <div class="kpi-icon-badge theme-purple" data-parallax-layer="badge">👤</div>
+              </div>
+              <div class="mini-kpi-value accent-purple" id="miniTopSellerVal" data-parallax-layer="value">--</div>
+              <div class="mini-kpi-sub" id="miniTopSellerSub" data-parallax-layer="sub">⭐ $0 Facturado</div>
             </div>
+
             <div class="ax-card mini-kpi-card gradient-border-card" data-tilt>
-              <span class="mini-kpi-label" data-parallax-layer="label">Top Región</span>
-              <span class="mini-kpi-value" id="miniTopRegionVal" data-parallax-layer="value">--</span>
-              <span class="mini-kpi-sub" id="miniTopRegionSub" data-parallax-layer="sub">$0 Facturado</span>
+              <div class="mini-kpi-top">
+                <span class="mini-kpi-label" data-parallax-layer="label">Top Región</span>
+                <div class="kpi-icon-badge theme-amber" data-parallax-layer="badge">📍</div>
+              </div>
+              <div class="mini-kpi-value accent-amber" id="miniTopRegionVal" data-parallax-layer="value">--</div>
+              <div class="mini-kpi-sub" id="miniTopRegionSub" data-parallax-layer="sub">🗺️ $0 Facturado</div>
             </div>
           </div>
 
@@ -681,37 +696,37 @@
             <div class="ax-card kpi-card gradient-border-card" data-tilt>
               <div class="kpi-card__top">
                 <span class="kpi-card__label" data-parallax-layer="label">Total Venta Neta</span>
-                <span class="kpi-card__icon" data-parallax-layer="badge">💰</span>
+                <div class="kpi-icon-badge theme-blue" data-parallax-layer="badge">💰</div>
               </div>
-              <div class="kpi-card__value" id="kpiNeto" data-parallax-layer="value">$0</div>
-              <div class="kpi-card__sub" id="kpiNetoSub" data-parallax-layer="sub">Ventas netas seleccionadas</div>
+              <div class="kpi-card__value accent-blue" id="kpiNeto" data-parallax-layer="value">$0</div>
+              <div class="kpi-card__sub" id="kpiNetoSub" data-parallax-layer="sub">🟢 Facturación seleccionada</div>
             </div>
 
             <div class="ax-card kpi-card gradient-border-card" data-tilt>
               <div class="kpi-card__top">
                 <span class="kpi-card__label" data-parallax-layer="label">Total Utilidad Net</span>
-                <span class="kpi-card__icon" data-parallax-layer="badge">📈</span>
+                <div class="kpi-icon-badge theme-green" data-parallax-layer="badge">📈</div>
               </div>
-              <div class="kpi-card__value" id="kpiUtilidad" data-parallax-layer="value">$0</div>
-              <div class="kpi-card__sub" id="kpiUtilidadSub" data-parallax-layer="sub">Ganancia directa neta</div>
+              <div class="kpi-card__value accent-green" id="kpiUtilidad" data-parallax-layer="value">$0</div>
+              <div class="kpi-card__sub" id="kpiUtilidadSub" data-parallax-layer="sub">✨ Ganancia directa neta</div>
             </div>
 
             <div class="ax-card kpi-card gradient-border-card" data-tilt>
               <div class="kpi-card__top">
                 <span class="kpi-card__label" data-parallax-layer="label">Unidades Facturadas</span>
-                <span class="kpi-card__icon" data-parallax-layer="badge">📦</span>
+                <div class="kpi-icon-badge theme-purple" data-parallax-layer="badge">📦</div>
               </div>
-              <div class="kpi-card__value" id="kpiCant" data-parallax-layer="value">0</div>
-              <div class="kpi-card__sub" id="kpiCantSub" data-parallax-layer="sub">Total unidades físicas</div>
+              <div class="kpi-card__value accent-purple" id="kpiCant" data-parallax-layer="value">0</div>
+              <div class="kpi-card__sub" id="kpiCantSub" data-parallax-layer="sub">📦 Total unidades físicas</div>
             </div>
 
             <div class="ax-card kpi-card gradient-border-card" data-tilt>
               <div class="kpi-card__top">
                 <span class="kpi-card__label" data-parallax-layer="label">Total Registros</span>
-                <span class="kpi-card__icon" data-parallax-layer="badge">📄</span>
+                <div class="kpi-icon-badge theme-amber" data-parallax-layer="badge">📄</div>
               </div>
-              <div class="kpi-card__value" id="kpiRows" data-parallax-layer="value">0</div>
-              <div class="kpi-card__sub" id="kpiRowsSub" data-parallax-layer="sub">Documentos emitidos</div>
+              <div class="kpi-card__value accent-amber" id="kpiRows" data-parallax-layer="value">0</div>
+              <div class="kpi-card__sub" id="kpiRowsSub" data-parallax-layer="sub">📑 Documentos emitidos</div>
             </div>
           </div>
 

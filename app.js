@@ -2808,12 +2808,12 @@ function renderKPIs() {
   const elTopSeller = document.getElementById('miniTopSellerVal');
   const elTopSellerSub = document.getElementById('miniTopSellerSub');
   if (elTopSeller) elTopSeller.textContent = sortedVend.length > 0 ? sortedVend[0][0] : '--';
-  if (elTopSellerSub) elTopSellerSub.textContent = sortedVend.length > 0 ? formatCLP(sortedVend[0][1]) + ' Facturado' : '$0 Facturado';
+  if (elTopSellerSub) elTopSellerSub.textContent = sortedVend.length > 0 ? `⭐ ${formatCLP(sortedVend[0][1])} Facturado` : '⭐ $0 Facturado';
 
   const elTopRegion = document.getElementById('miniTopRegionVal');
   const elTopRegionSub = document.getElementById('miniTopRegionSub');
   if (elTopRegion) elTopRegion.textContent = sortedReg.length > 0 ? sortedReg[0][0] : '--';
-  if (elTopRegionSub) elTopRegionSub.textContent = sortedReg.length > 0 ? formatCLP(sortedReg[0][1]) + ' Facturado' : '$0 Facturado';
+  if (elTopRegionSub) elTopRegionSub.textContent = sortedReg.length > 0 ? `🗺️ ${formatCLP(sortedReg[0][1])} Facturado` : '🗺️ $0 Facturado';
 
   // Fallback si existe kpiGrid
   const grid = document.getElementById('kpiGrid');
