@@ -732,16 +732,20 @@
 
           <!-- GRÁFICOS PRINCIPALES -->
           <div class="charts-grid">
-            <div class="ax-card chart-card wide">
+            <!-- 1. TENDENCIA DUAL VENTAS VS UTILIDAD -->
+            <div class="ax-card chart-card wide gradient-border-card" data-tilt>
               <div class="chart-card-header">
-                <div>
-                  <h3 class="chart-main-title">Evolución de Ventas vs Utilidad</h3>
-                  <p class="chart-subtitle">Tendencia temporal por periodo de facturación</p>
+                <div class="chart-title-group">
+                  <div class="chart-header-badge" data-parallax-layer="badge">📈</div>
+                  <div>
+                    <h3 class="chart-main-title" data-parallax-layer="label">Evolución de Ventas vs Utilidad Neta</h3>
+                    <p class="chart-subtitle">Tendencia temporal comparativa por periodo de facturación</p>
+                  </div>
                 </div>
-                <div class="chart-period-selector" id="salesPeriodSelector">
-                  <button type="button" class="period-pill active" data-period="mes">Mes</button>
-                  <button type="button" class="period-pill" data-period="semana">Semana</button>
-                  <button type="button" class="period-pill" data-period="anio">Año</button>
+                <div class="chart-period-selector" id="salesPeriodSelector" data-parallax-layer="sub">
+                  <button type="button" class="period-pill active" data-period="mes">Mensual</button>
+                  <button type="button" class="period-pill" data-period="semana">Semanal</button>
+                  <button type="button" class="period-pill" data-period="anio">Anual</button>
                 </div>
               </div>
               <div class="chart-container">
@@ -749,23 +753,36 @@
               </div>
             </div>
 
-            <div class="ax-card chart-card">
+            <!-- 2. VENTAS POR CANAL (DOUGHNUT + CENTER METRIC) -->
+            <div class="ax-card chart-card gradient-border-card" data-tilt>
               <div class="chart-card-header">
-                <div>
-                  <h3 class="chart-main-title">Ventas por Canal</h3>
-                  <p class="chart-subtitle">Distribución porcentual de ingresos</p>
+                <div class="chart-title-group">
+                  <div class="chart-header-badge" data-parallax-layer="badge">🍩</div>
+                  <div>
+                    <h3 class="chart-main-title" data-parallax-layer="label">Ventas por Canal</h3>
+                    <p class="chart-subtitle">Distribución porcentual de ingresos</p>
+                  </div>
                 </div>
               </div>
               <div class="chart-container">
                 <canvas id="canalChart"></canvas>
+                <div class="doughnut-center-metric" id="doughnutCenterMetric">
+                  <span class="center-metric-val" id="doughnutCenterVal">$0</span>
+                  <span class="center-metric-lbl">Total Canales</span>
+                </div>
               </div>
+              <div class="chart-legend-wrap" id="canalLegendWrap"></div>
             </div>
 
-            <div class="ax-card chart-card">
+            <!-- 3. TOP FAMILIAS DE PRODUCTOS -->
+            <div class="ax-card chart-card gradient-border-card" data-tilt>
               <div class="chart-card-header">
-                <div>
-                  <h3 class="chart-main-title">Top 5 Familias</h3>
-                  <p class="chart-subtitle">Categorías con mayor facturación</p>
+                <div class="chart-title-group">
+                  <div class="chart-header-badge" data-parallax-layer="badge">🏷️</div>
+                  <div>
+                    <h3 class="chart-main-title" data-parallax-layer="label">Top Familias de Productos</h3>
+                    <p class="chart-subtitle">Categorías con mayor facturación neta</p>
+                  </div>
                 </div>
               </div>
               <div class="chart-container">
@@ -773,11 +790,15 @@
               </div>
             </div>
 
-            <div class="ax-card chart-card">
+            <!-- 4. VENTAS POR TIENDA / SUCURSAL -->
+            <div class="ax-card chart-card gradient-border-card" data-tilt>
               <div class="chart-card-header">
-                <div>
-                  <h3 class="chart-main-title">Ventas por Tienda</h3>
-                  <p class="chart-subtitle">Ranking de locales comerciales</p>
+                <div class="chart-title-group">
+                  <div class="chart-header-badge" data-parallax-layer="badge">🏪</div>
+                  <div>
+                    <h3 class="chart-main-title" data-parallax-layer="label">Ventas por Tienda / Local</h3>
+                    <p class="chart-subtitle">Ranking de facturación por sucursal comercial</p>
+                  </div>
                 </div>
               </div>
               <div class="chart-container">
@@ -785,11 +806,15 @@
               </div>
             </div>
 
-            <div class="ax-card chart-card">
+            <!-- 5. TOP VENDEDORES -->
+            <div class="ax-card chart-card gradient-border-card" data-tilt>
               <div class="chart-card-header">
-                <div>
-                  <h3 class="chart-main-title">Top Vendedores</h3>
-                  <p class="chart-subtitle">Desempeño comercial individual</p>
+                <div class="chart-title-group">
+                  <div class="chart-header-badge" data-parallax-layer="badge">👤</div>
+                  <div>
+                    <h3 class="chart-main-title" data-parallax-layer="label">Top Vendedores</h3>
+                    <p class="chart-subtitle">Desempeño comercial por ejecutivo</p>
+                  </div>
                 </div>
               </div>
               <div class="chart-container">

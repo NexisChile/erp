@@ -14675,6 +14675,202 @@ select#comprasStrategySelect {
   color: #64748b !important;
 }
 
+/* ==========================================================================
+   EXECUTIVE CHARTS LUXURY SUITE (OBSIDIAN GLASS 2026)
+   ========================================================================== */
+
+.charts-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 1.25rem !important;
+  margin-top: 1.5rem !important;
+  margin-bottom: 2rem !important;
+}
+
+.chart-card {
+  padding: 1.5rem !important;
+  border-radius: 18px !important;
+  background: rgba(18, 24, 38, 0.85) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  position: relative !important;
+}
+
+.chart-card.wide {
+  grid-column: 1 / -1 !important;
+}
+
+@media (max-width: 900px) {
+  .charts-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .chart-card.wide {
+    grid-column: 1 !important;
+  }
+}
+
+.chart-card-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  flex-wrap: wrap !important;
+  gap: 0.75rem !important;
+  margin-bottom: 1.25rem !important;
+  padding-bottom: 0.75rem !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+.chart-title-group {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.75rem !important;
+}
+
+.chart-header-badge {
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 10px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 1.15rem !important;
+  background: rgba(59, 130, 246, 0.15) !important;
+  border: 1px solid rgba(59, 130, 246, 0.3) !important;
+}
+
+.chart-main-title {
+  font-size: 1.05rem !important;
+  font-weight: 800 !important;
+  color: #f8fafc !important;
+  margin: 0 !important;
+  letter-spacing: -0.2px !important;
+}
+
+.chart-subtitle {
+  font-size: 0.76rem !important;
+  color: #94a3b8 !important;
+  margin: 3px 0 0 0 !important;
+}
+
+/* Period selector buttons */
+.chart-period-selector {
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  padding: 3px !important;
+  border-radius: 10px !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.period-pill {
+  background: transparent !important;
+  border: none !important;
+  color: #94a3b8 !important;
+  padding: 5px 14px !important;
+  border-radius: 7px !important;
+  font-size: 0.76rem !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.period-pill:hover {
+  color: #f8fafc !important;
+}
+
+.period-pill.active {
+  background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 10px rgba(59, 130, 246, 0.4) !important;
+}
+
+/* Chart Container & Doughnut Center Metric */
+.chart-container {
+  position: relative !important;
+  width: 100% !important;
+  height: 280px !important;
+  flex: 1 !important;
+}
+
+.chart-card.wide .chart-container {
+  height: 330px !important;
+}
+
+.doughnut-center-metric {
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  text-align: center !important;
+  pointer-events: none !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 5 !important;
+}
+
+.center-metric-val {
+  font-family: var(--ax-font-display), 'Space Grotesk', sans-serif !important;
+  font-size: 1.25rem !important;
+  font-weight: 800 !important;
+  color: #f8fafc !important;
+  line-height: 1.1 !important;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.5) !important;
+}
+
+.center-metric-lbl {
+  font-size: 0.7rem !important;
+  font-weight: 700 !important;
+  color: #94a3b8 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  margin-top: 3px !important;
+}
+
+/* Chart Legend Badges */
+.chart-legend-wrap {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-wrap: wrap !important;
+  gap: 0.5rem !important;
+  margin-top: 0.75rem !important;
+}
+
+.legend-chip {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 4px 10px !important;
+  border-radius: 8px !important;
+  font-size: 0.74rem !important;
+  font-weight: 700 !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  color: #cbd5e1 !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+}
+
+.legend-chip:hover {
+  background: rgba(59, 130, 246, 0.15) !important;
+  border-color: rgba(59, 130, 246, 0.35) !important;
+  color: #ffffff !important;
+}
+
+.legend-dot {
+  width: 8px !important;
+  height: 8px !important;
+  border-radius: 50% !important;
+}
+
+
 
 
 

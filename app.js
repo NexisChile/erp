@@ -2827,80 +2827,191 @@ function renderKPIs() {
   }
 }
 
-// ---------- Charts ----------
-let chartMes, chartCanal, chartVendedor, chartFamilia;
-const goldPalette = ['#E8A33D', '#D9694F', '#4FAE8C', '#7CA6C7', '#B57F2C', '#C4C7B8', '#8E7CC3', '#5B9BD5'];
-
-function groupSum(field, valueField) {
-  const map = {};
-  filtered.forEach(r => {
-    const key = r[field] || '(sin dato)';
-    map[key] = (map[key] || 0) + (Number(r[valueField]) || 0);
-  });
-  return map;
-}
-
+// ---------- Charts State & Palette ----------
+let currentSalesPeriod = 'mes';
 let chartSalesInst = null;
 let chartCanalInst = null;
 let chartFamiliaInst = null;
 let chartTiendaInst = null;
 let chartVendedorInst = null;
 
+const luxuryPalette = [
+  '#3b82f6', // Sapphire
+  '#10b981', // Emerald
+  '#f59e0b', // Amber
+  '#8b5cf6', // Indigo/Purple
+  '#06b6d4', // Cyan
+  '#f43f5e', // Rose
+  '#ec4899', // Pink
+  '#64748b'  // Slate
+];
+
+function setupChartPeriodListeners() {
+  const container = document.getElementById('salesPeriodSelector');
+  if (!container || container._bound) return;
+  container._bound = true;
+
+  container.querySelectorAll('.period-pill').forEach(btn => {
+    btn.onclick = (e) => {
+      e.preventDefault();
+      container.querySelectorAll('.period-pill').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentSalesPeriod = btn.dataset.period || 'mes';
+      renderCharts();
+    };
+  });
+}
+
 function renderCharts() {
   if (typeof Chart === 'undefined') return;
 
-  // 1. Tendencia Ventas Mensuales (salesChart / chartMes)
+  setupChartPeriodListeners();
+
+  // 1. TENDENCIA DUAL: VENTAS NETAS VS UTILIDAD (salesChart)
   const mesCanvas = document.getElementById('salesChart') || document.getElementById('chartMes');
   if (mesCanvas) {
-    const mesMap = {};
+    const timeMap = {};
+
     filtered.forEach(r => {
-      const anio = r['AÑO'] || '';
-      const mesNum = r['# MES'] || 0;
-      const mesNombre = r['MES'] || '';
-      const key = anio + '-' + String(mesNum).padStart(2, '0');
-      if (!mesMap[key]) mesMap[key] = { label: (mesNombre ? mesNombre + ' ' : '') + anio, total: 0, order: key };
-      mesMap[key].total += Number(r['NETO']) || 0;
+      const anio = String(r['AÑO'] || '2026').trim();
+      const mesNum = parseInt(r['# MES'], 10) || 1;
+      const mesNombre = String(r['MES'] || '').trim();
+      const fechaStr = String(r['FECHA'] || '').slice(0, 10);
+      const neto = Number(r['NETO']) || 0;
+      const util = Number(r['($) UTILIDAD']) || 0;
+
+      let key = '';
+      let label = '';
+
+      if (currentSalesPeriod === 'semana') {
+        // Agrupación diaria/semanal
+        key = fechaStr || (anio + '-' + String(mesNum).padStart(2, '0'));
+        const d = new Date(fechaStr + 'T12:00:00');
+        label = !isNaN(d.getTime()) ? d.toLocaleDateString('es-CL', { day: 'numeric', month: 'short' }) : key;
+      } else if (currentSalesPeriod === 'anio') {
+        // Agrupación anual
+        key = anio;
+        label = 'Año ' + anio;
+      } else {
+        // Agrupación mensual (default)
+        key = anio + '-' + String(mesNum).padStart(2, '0');
+        const mCapital = mesNombre ? mesNombre.charAt(0).toUpperCase() + mesNombre.slice(1) : ('Mes ' + mesNum);
+        label = `${mCapital} ${anio}`;
+      }
+
+      if (!timeMap[key]) {
+        timeMap[key] = { label, totalNeto: 0, totalUtil: 0, order: key };
+      }
+      timeMap[key].totalNeto += neto;
+      timeMap[key].totalUtil += util;
     });
-    const mesesOrdenados = Object.values(mesMap).sort((a, b) => a.order.localeCompare(b.order));
+
+    const timeSorted = Object.values(timeMap).sort((a, b) => a.order.localeCompare(b.order));
+
+    const ctx = mesCanvas.getContext('2d');
+    const gradBlue = ctx.createLinearGradient(0, 0, 0, 300);
+    gradBlue.addColorStop(0, 'rgba(59, 130, 246, 0.35)');
+    gradBlue.addColorStop(1, 'rgba(59, 130, 246, 0.0)');
+
+    const gradGreen = ctx.createLinearGradient(0, 0, 0, 300);
+    gradGreen.addColorStop(0, 'rgba(16, 185, 129, 0.25)');
+    gradGreen.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
 
     if (chartSalesInst) chartSalesInst.destroy();
-    chartSalesInst = new Chart(mesCanvas.getContext('2d'), {
+    chartSalesInst = new Chart(ctx, {
       type: 'line',
       data: {
-        labels: mesesOrdenados.map(m => m.label),
-        datasets: [{
-          label: 'Ventas Netas ($)',
-          data: mesesOrdenados.map(m => m.total),
-          borderColor: '#3b82f6',
-          backgroundColor: 'rgba(59, 130, 246, 0.15)',
-          fill: true,
-          tension: 0.35,
-          borderWidth: 2,
-          pointRadius: 4,
-          pointBackgroundColor: '#3b82f6'
-        }]
+        labels: timeSorted.map(m => m.label),
+        datasets: [
+          {
+            label: 'Ventas Netas ($)',
+            data: timeSorted.map(m => m.totalNeto),
+            borderColor: '#3b82f6',
+            backgroundColor: gradBlue,
+            fill: true,
+            tension: 0.38,
+            borderWidth: 3,
+            pointRadius: 4,
+            pointHoverRadius: 7,
+            pointBackgroundColor: '#60a5fa',
+            pointBorderColor: '#0f172a',
+            pointBorderWidth: 2
+          },
+          {
+            label: 'Utilidad Neta ($)',
+            data: timeSorted.map(m => m.totalUtil),
+            borderColor: '#10b981',
+            backgroundColor: gradGreen,
+            fill: true,
+            tension: 0.38,
+            borderWidth: 2.5,
+            pointRadius: 4,
+            pointHoverRadius: 7,
+            pointBackgroundColor: '#34d399',
+            pointBorderColor: '#0f172a',
+            pointBorderWidth: 2
+          }
+        ]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
+        interaction: {
+          mode: 'index',
+          intersect: false
+        },
+        plugins: {
+          legend: {
+            display: true,
+            position: 'top',
+            align: 'end',
+            labels: {
+              color: '#cbd5e1',
+              font: { size: 12, weight: '600' },
+              usePointStyle: true,
+              boxWidth: 8
+            }
+          }
+        },
         scales: {
-          x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
-          y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+          x: {
+            ticks: { color: '#94a3b8', font: { size: 11, weight: '500' } },
+            grid: { color: 'rgba(255,255,255,0.04)' }
+          },
+          y: {
+            beginAtZero: true,
+            ticks: {
+              color: '#94a3b8',
+              font: { size: 11, weight: '500' },
+              callback: (v) => '$' + (v >= 1000000 ? (v / 1000000).toFixed(1) + 'M' : (v / 1000).toFixed(0) + 'K')
+            },
+            grid: { color: 'rgba(255,255,255,0.05)' }
+          }
         }
       }
     });
   }
 
-  // 2. Ventas por Canal (canalChart / chartCanal)
+  // 2. VENTAS POR CANAL (DOUGHNUT + CENTER METRIC)
   const canalCanvas = document.getElementById('canalChart') || document.getElementById('chartCanal');
   if (canalCanvas) {
     const canalMap = {};
+    let totalCanal = 0;
+
     filtered.forEach(r => {
-      const c = r['CANAL FINAL'] || 'Otros';
-      canalMap[c] = (canalMap[c] || 0) + (Number(r['NETO']) || 0);
+      const c = r['CANAL FINAL'] || 'Sin Canal';
+      const neto = Number(r['NETO']) || 0;
+      canalMap[c] = (canalMap[c] || 0) + neto;
+      totalCanal += neto;
     });
+
     const sortedCanal = Object.entries(canalMap).sort((a, b) => b[1] - a[1]);
+
+    // Actualizar métrica central
+    const centerVal = document.getElementById('doughnutCenterVal');
+    if (centerVal) {
+      centerVal.textContent = totalCanal >= 1000000 ? '$' + (totalCanal / 1000000).toFixed(1) + 'M' : formatCLP(totalCanal);
+    }
 
     if (chartCanalInst) chartCanalInst.destroy();
     chartCanalInst = new Chart(canalCanvas.getContext('2d'), {
@@ -2909,18 +3020,41 @@ function renderCharts() {
         labels: sortedCanal.map(c => c[0]),
         datasets: [{
           data: sortedCanal.map(c => c[1]),
-          backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#64748b']
+          backgroundColor: luxuryPalette.slice(0, sortedCanal.length),
+          borderColor: 'rgba(18, 24, 38, 0.95)',
+          borderWidth: 3,
+          borderRadius: 6,
+          hoverOffset: 6
         }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { position: 'right', labels: { color: '#cbd5e1' } } }
+        cutout: '74%',
+        plugins: {
+          legend: { display: false }
+        }
       }
     });
+
+    // Renderizar chips de leyenda interactivos
+    const legendWrap = document.getElementById('canalLegendWrap');
+    if (legendWrap) {
+      legendWrap.innerHTML = sortedCanal.map((c, i) => {
+        const color = luxuryPalette[i % luxuryPalette.length];
+        const pct = totalCanal > 0 ? ((c[1] / totalCanal) * 100).toFixed(1) : '0';
+        return `
+          <div class="legend-chip" onclick="document.getElementById('fltCanal').value='${c[0]}'; applyFilters();" title="Filtrar por ${c[0]}">
+            <span class="legend-dot" style="background:${color};"></span>
+            <span>${c[0]}</span>
+            <span style="color:#94a3b8; font-weight:600;">${pct}%</span>
+          </div>
+        `;
+      }).join('');
+    }
   }
 
-  // 3. Ventas por Familia (familiaChart / chartFamilia)
+  // 3. TOP FAMILIAS DE PRODUCTOS (HORIZONTAL BARS)
   const famCanvas = document.getElementById('familiaChart') || document.getElementById('chartFamilia');
   if (famCanvas) {
     const famMap = {};
@@ -2928,7 +3062,8 @@ function renderCharts() {
       const f = r['FAMILIA'] || 'Sin Familia';
       famMap[f] = (famMap[f] || 0) + (Number(r['NETO']) || 0);
     });
-    const sortedFam = Object.entries(famMap).sort((a, b) => b[1] - a[1]).slice(0, 8);
+
+    const sortedFam = Object.entries(famMap).sort((a, b) => b[1] - a[1]).slice(0, 6);
 
     if (chartFamiliaInst) chartFamiliaInst.destroy();
     chartFamiliaInst = new Chart(famCanvas.getContext('2d'), {
@@ -2936,25 +3071,105 @@ function renderCharts() {
       data: {
         labels: sortedFam.map(f => f[0]),
         datasets: [{
-          label: 'Ventas Netas ($)',
+          label: 'Facturación ($)',
           data: sortedFam.map(f => f[1]),
-          backgroundColor: '#8b5cf6',
-          borderRadius: 6
+          backgroundColor: [
+            '#8b5cf6',
+            '#6366f1',
+            '#3b82f6',
+            '#06b6d4',
+            '#10b981',
+            '#f59e0b'
+          ].slice(0, sortedFam.length),
+          borderRadius: 8,
+          borderSkipped: false,
+          barThickness: 16
         }]
       },
       options: {
+        indexAxis: 'y',
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
+        plugins: {
+          legend: { display: false }
+        },
         scales: {
-          x: { ticks: { color: '#94a3b8' }, grid: { display: false } },
-          y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+          x: {
+            beginAtZero: true,
+            ticks: {
+              color: '#94a3b8',
+              font: { size: 10 },
+              callback: (v) => '$' + (v >= 1000000 ? (v / 1000000).toFixed(0) + 'M' : (v / 1000).toFixed(0) + 'K')
+            },
+            grid: { color: 'rgba(255,255,255,0.05)' }
+          },
+          y: {
+            ticks: {
+              color: '#f8fafc',
+              font: { size: 11, weight: '600' }
+            },
+            grid: { display: false }
+          }
         }
       }
     });
   }
 
-  // 4. Ventas por Vendedor (vendedorChart / chartVendedor)
+  // 4. VENTAS POR TIENDA / SUCURSAL (HORIZONTAL BARS)
+  const tiendaCanvas = document.getElementById('tiendaChart');
+  if (tiendaCanvas) {
+    const tiendaMap = {};
+    filtered.forEach(r => {
+      const t = r['TIENDA FINAL'] || r['CLIENTE'] || 'General';
+      tiendaMap[t] = (tiendaMap[t] || 0) + (Number(r['NETO']) || 0);
+    });
+
+    const sortedTienda = Object.entries(tiendaMap).sort((a, b) => b[1] - a[1]).slice(0, 6);
+
+    if (chartTiendaInst) chartTiendaInst.destroy();
+    chartTiendaInst = new Chart(tiendaCanvas.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: sortedTienda.map(t => t[0]),
+        datasets: [{
+          label: 'Ventas por Sucursal ($)',
+          data: sortedTienda.map(t => t[1]),
+          backgroundColor: '#10b981',
+          borderRadius: 8,
+          borderSkipped: false,
+          barThickness: 16
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          x: {
+            beginAtZero: true,
+            ticks: {
+              color: '#94a3b8',
+              font: { size: 10 },
+              callback: (v) => '$' + (v >= 1000000 ? (v / 1000000).toFixed(0) + 'M' : (v / 1000).toFixed(0) + 'K')
+            },
+            grid: { color: 'rgba(255,255,255,0.05)' }
+          },
+          y: {
+            ticks: {
+              color: '#f8fafc',
+              font: { size: 11, weight: '600' }
+            },
+            grid: { display: false }
+          }
+        }
+      }
+    });
+  }
+
+  // 5. TOP VENDEDORES (HORIZONTAL BARS)
   const vendCanvas = document.getElementById('vendedorChart') || document.getElementById('chartVendedor');
   if (vendCanvas) {
     const vendMap = {};
@@ -2962,7 +3177,8 @@ function renderCharts() {
       const v = r['CODVENDENDOR'] || 'Sin Vendedor';
       vendMap[v] = (vendMap[v] || 0) + (Number(r['NETO']) || 0);
     });
-    const sortedVend = Object.entries(vendMap).sort((a, b) => b[1] - a[1]).slice(0, 10);
+
+    const sortedVend = Object.entries(vendMap).sort((a, b) => b[1] - a[1]).slice(0, 6);
 
     if (chartVendedorInst) chartVendedorInst.destroy();
     chartVendedorInst = new Chart(vendCanvas.getContext('2d'), {
@@ -2970,19 +3186,38 @@ function renderCharts() {
       data: {
         labels: sortedVend.map(v => v[0]),
         datasets: [{
-          label: 'Ventas ($)',
+          label: 'Facturación ($)',
           data: sortedVend.map(v => v[1]),
-          backgroundColor: '#10b981',
-          borderRadius: 6
+          backgroundColor: '#f59e0b',
+          borderRadius: 8,
+          borderSkipped: false,
+          barThickness: 16
         }]
       },
       options: {
+        indexAxis: 'y',
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
+        plugins: {
+          legend: { display: false }
+        },
         scales: {
-          x: { ticks: { color: '#94a3b8' }, grid: { display: false } },
-          y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+          x: {
+            beginAtZero: true,
+            ticks: {
+              color: '#94a3b8',
+              font: { size: 10 },
+              callback: (v) => '$' + (v >= 1000000 ? (v / 1000000).toFixed(0) + 'M' : (v / 1000).toFixed(0) + 'K')
+            },
+            grid: { color: 'rgba(255,255,255,0.05)' }
+          },
+          y: {
+            ticks: {
+              color: '#f8fafc',
+              font: { size: 11, weight: '600' }
+            },
+            grid: { display: false }
+          }
         }
       }
     });
