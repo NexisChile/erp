@@ -866,71 +866,110 @@ if (document.readyState === 'loading') {
 // MÓDULO DE NAVEGACIÓN Y CONTROL DE VISTAS (switchView & UI Drawer Helpers)
 // ==========================================================================
 
+let _glomaxRenderRevision = 1;
+const _viewLastRenderedRevision = {};
+
+function invalidateViewCache() {
+  _glomaxRenderRevision++;
+}
+
 function switchView(viewName) {
   if (!viewName) return;
 
-  // Actualizar botones de la barra lateral
-  document.querySelectorAll('.ax-nav__item[data-view]').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  // 1. Activación visual instantánea (60 FPS sin bloqueo de hilo)
+  const navBtns = document.querySelectorAll('.ax-nav__item[data-view]');
+  navBtns.forEach(b => {
+    b.classList.toggle('active', b.dataset.view === viewName);
+  });
 
-  const btn = document.querySelector(`.ax-nav__item[data-view="${viewName}"]`);
-  const targetView = document.getElementById('view-' + viewName);
+  const views = document.querySelectorAll('.view');
+  views.forEach(v => {
+    v.classList.toggle('active', v.id === 'view-' + viewName);
+  });
 
-  if (btn) btn.classList.add('active');
-  if (targetView) targetView.classList.add('active');
-
-  // Control de visualización de la barra de filtros global de Ventas
+  // Control inmediato de la barra de filtros global
   const globalFiltersBar = document.getElementById('filtersBar');
   if (globalFiltersBar) {
-    if (viewName === 'tablero' || viewName === 'tabla' || viewName === 'bistudio') {
-      globalFiltersBar.style.display = '';
-    } else {
-      globalFiltersBar.style.display = 'none';
-    }
+    globalFiltersBar.style.display = (viewName === 'tablero' || viewName === 'tabla' || viewName === 'bistudio') ? '' : 'none';
   }
 
-  // Ejecutar renderizador del módulo activado
-  if (viewName === 'tablero') {
-    if (typeof renderKPIs === 'function') renderKPIs();
-    if (typeof renderCharts === 'function') renderCharts();
-    if (typeof renderTodayCard === 'function') renderTodayCard();
-    if (typeof renderTicker === 'function') renderTicker();
-  } else if (viewName === 'tabla') {
-    if (typeof renderTable === 'function') renderTable();
-  } else if (viewName === 'compras') {
-    if (typeof renderComprasView === 'function') renderComprasView();
-  } else if (viewName === 'productos') {
-    if (typeof renderProductosView === 'function') renderProductosView();
-  } else if (viewName === 'bistudio') {
-    if (typeof renderExecutiveInsights === 'function') renderExecutiveInsights();
-    if (typeof renderPareto8020 === 'function') renderPareto8020();
-    if (typeof renderRFMGrid === 'function') renderRFMGrid();
-    if (typeof updateWhatIfSimulation === 'function') updateWhatIfSimulation();
-    if (typeof renderMonthlyTargetProgress === 'function') renderMonthlyTargetProgress();
-  } else if (viewName === 'mixsugerido') {
-    if (typeof renderMixSugeridoModule === 'function') renderMixSugeridoModule();
-  } else if (viewName === 'fichatecnica') {
-    if (typeof renderFichaTecnicaView === 'function') renderFichaTecnicaView();
-  } else if (viewName === 'cotizaciones') {
-    if (typeof refreshCotizacionesLive === 'function') {
-      if (!cotizacionesRows || cotizacionesRows.length === 0) {
-        refreshCotizacionesLive();
-      } else {
-        if (typeof applyCotizacionesFilters === 'function') applyCotizacionesFilters();
-      }
-    }
-  }
-
-  if (typeof AudioSynth !== 'undefined' && AudioSynth.play) {
-    AudioSynth.play('click');
-  }
-
-  // Refrescar tarjetas e interactividad Parallax 3D al cambiar de módulo
-  if (typeof GlomaxParallaxEngine !== 'undefined' && GlomaxParallaxEngine.refreshCards) {
-    setTimeout(() => GlomaxParallaxEngine.refreshCards(), 60);
-  }
-
+  // Cerrar navegación móvil inmediatamente
   closeMobileSidebar();
+
+  // Sonido no bloqueante
+  if (typeof AudioSynth !== 'undefined' && AudioSynth.play) {
+    try { AudioSynth.play('click'); } catch (e) {}
+  }
+
+  // 2. Renderizado asíncrono diferido en el siguiente frame de animación
+  requestAnimationFrame(() => {
+    const isCached = _viewLastRenderedRevision[viewName] === _glomaxRenderRevision;
+    
+    try {
+      if (viewName === 'tablero') {
+        if (!isCached) {
+          if (typeof renderKPIs === 'function') renderKPIs();
+          if (typeof renderCharts === 'function') renderCharts();
+          if (typeof renderTodayCard === 'function') renderTodayCard();
+          if (typeof renderTicker === 'function') renderTicker();
+          _viewLastRenderedRevision['tablero'] = _glomaxRenderRevision;
+        } else {
+          // Si ya estaba en caché, asegurar ajuste dimensional rápido sin recalcular
+          if (chartSalesInst && typeof chartSalesInst.resize === 'function') chartSalesInst.resize();
+        }
+      } else if (viewName === 'tabla') {
+        if (!isCached) {
+          if (typeof renderTable === 'function') renderTable();
+          _viewLastRenderedRevision['tabla'] = _glomaxRenderRevision;
+        }
+      } else if (viewName === 'compras') {
+        if (!isCached) {
+          if (typeof renderComprasView === 'function') renderComprasView();
+          _viewLastRenderedRevision['compras'] = _glomaxRenderRevision;
+        }
+      } else if (viewName === 'productos') {
+        if (!isCached) {
+          if (typeof renderProductosView === 'function') renderProductosView();
+          _viewLastRenderedRevision['productos'] = _glomaxRenderRevision;
+        }
+      } else if (viewName === 'bistudio') {
+        if (!isCached) {
+          if (typeof renderExecutiveInsights === 'function') renderExecutiveInsights();
+          if (typeof renderPareto8020 === 'function') renderPareto8020();
+          if (typeof renderRFMGrid === 'function') renderRFMGrid();
+          if (typeof updateWhatIfSimulation === 'function') updateWhatIfSimulation();
+          if (typeof renderMonthlyTargetProgress === 'function') renderMonthlyTargetProgress();
+          _viewLastRenderedRevision['bistudio'] = _glomaxRenderRevision;
+        }
+      } else if (viewName === 'mixsugerido') {
+        if (!isCached) {
+          if (typeof renderMixSugeridoModule === 'function') renderMixSugeridoModule();
+          _viewLastRenderedRevision['mixsugerido'] = _glomaxRenderRevision;
+        }
+      } else if (viewName === 'fichatecnica') {
+        if (!isCached) {
+          if (typeof renderFichaTecnicaView === 'function') renderFichaTecnicaView();
+          _viewLastRenderedRevision['fichatecnica'] = _glomaxRenderRevision;
+        }
+      } else if (viewName === 'cotizaciones') {
+        if (typeof refreshCotizacionesLive === 'function') {
+          if (!cotizacionesRows || cotizacionesRows.length === 0) {
+            refreshCotizacionesLive();
+          } else if (!isCached) {
+            if (typeof applyCotizacionesFilters === 'function') applyCotizacionesFilters();
+            _viewLastRenderedRevision['cotizaciones'] = _glomaxRenderRevision;
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('[ViewSwitch Async Render Error]', err);
+    }
+
+    // Refrescar tarjetas de forma suave sin sobrecargar el hilo principal
+    if (typeof GlomaxParallaxEngine !== 'undefined' && GlomaxParallaxEngine.refreshCards) {
+      setTimeout(() => GlomaxParallaxEngine.refreshCards(), 30);
+    }
+  });
 }
 
 function toggleMobileSidebar() {
@@ -1117,11 +1156,12 @@ function renderProductosView() {
 
   const sortedSkus = Array.from(skuMap.values()).sort((a, b) => a.sku.localeCompare(b.sku, 'es', { numeric: true }));
 
-  // 2. Poblar selector si está vacío o cambió
-  if (select) {
+  // 2. Poblar selector si está vacío o cambió la cantidad de filas
+  if (select && (!select.options || select.options.length <= 1 || select._lastRowCount !== rows.length)) {
     const currentVal = select.value;
     select.innerHTML = '<option value="">-- Selecciona un Producto --</option>' +
       sortedSkus.map(p => `<option value="${p.sku}" ${p.sku === currentVal ? 'selected' : ''}>${p.sku} · ${p.desc.slice(0, 45)}</option>`).join('');
+    select._lastRowCount = rows.length;
 
     select.onchange = () => {
       if (select.value) selectProductFor360(select.value);
@@ -1842,7 +1882,8 @@ function updateMixSugeridoView() {
       return;
     }
 
-    tbody.innerHTML = skuList.map((p, idx) => {
+    const displayList = skuList.slice(0, 100);
+    tbody.innerHTML = displayList.map((p, idx) => {
       let badgeStyle = 'background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3);';
       if (p.clasificacion.includes('Rentable')) badgeStyle = 'background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3);';
       else if (p.clasificacion.includes('Volumen')) badgeStyle = 'background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3);';
@@ -1863,6 +1904,16 @@ function updateMixSugeridoView() {
         </tr>
       `;
     }).join('');
+    
+    if (skuList.length > 100) {
+      tbody.innerHTML += `
+        <tr>
+          <td colspan="10" style="text-align: center; color: #94a3b8; font-size: 0.8rem; padding: 1rem; background: rgba(255,255,255,0.02);">
+            Mostrando los 100 productos principales de ${skuList.length} en este segmento. Usa el buscador para filtrar un producto específico.
+          </td>
+        </tr>
+      `;
+    }
   }
 }
 
@@ -2699,6 +2750,7 @@ function applyFilters() {
   });
 
   currentPage = 1;
+  invalidateViewCache();
   renderAll();
 }
 

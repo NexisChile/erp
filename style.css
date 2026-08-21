@@ -15792,15 +15792,20 @@ html, body {
   border: 1px solid rgba(59, 130, 246, 0.4) !important;
 }
 
-/* --- 11. View Transitions --- */
+/* --- 11. View Transitions & Performance Optimization --- */
 .view {
-  animation: elegantFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  display: none !important;
+}
+
+.view.active {
+  display: block !important;
+  animation: elegantFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
 @keyframes elegantFadeIn {
   0% {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(6px);
   }
   100% {
     opacity: 1;
