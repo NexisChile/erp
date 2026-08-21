@@ -1973,11 +1973,26 @@ const GlomaxParallaxEngine = {
     if (card._tiltBound) return;
     card._tiltBound = true;
     
+    // Si es un gráfico (chart-card o contiene canvas), desactivar rotación 3D molesta para máxima estabilidad al interactuar
+    const isChart = card.classList.contains('chart-card') || card.querySelector('canvas');
+    if (isChart && !card.hasAttribute('data-tilt-force')) {
+      card.addEventListener('mouseenter', () => {
+        card.style.transition = 'transform 0.25s ease, box-shadow 0.25s ease';
+        card.style.transform = 'translateY(-2px)';
+      });
+      card.addEventListener('mouseleave', () => {
+        card.style.transform = 'translateY(0)';
+      });
+      return;
+    }
+
     let rect = null;
+    const maxDeg = parseFloat(card.getAttribute('data-tilt-max')) || 3.0; // Inclinación ejecutiva sutil y elegante
     
     card.addEventListener('mouseenter', () => {
       if (!this.isEnabled) return;
       rect = card.getBoundingClientRect();
+      card.style.transition = 'transform 0.15s ease-out';
     });
     
     card.addEventListener('mousemove', (e) => {
@@ -1990,16 +2005,17 @@ const GlomaxParallaxEngine = {
       const px = (x / rect.width);
       const py = (y / rect.height);
       
-      const rotX = ((0.5 - py) * 14).toFixed(2);
-      const rotY = ((px - 0.5) * 14).toFixed(2);
+      const rotX = ((0.5 - py) * maxDeg).toFixed(2);
+      const rotY = ((px - 0.5) * maxDeg).toFixed(2);
       
-      card.style.transform = `perspective(1000px) rotateX(${rotX}deg) rotateY(${rotY}deg) scale3d(1.02, 1.02, 1.02)`;
+      card.style.transform = `perspective(1000px) rotateX(${rotX}deg) rotateY(${rotY}deg) scale3d(1.006, 1.006, 1.006)`;
       card.style.setProperty('--glare-x', `${(px * 100).toFixed(1)}%`);
       card.style.setProperty('--glare-y', `${(py * 100).toFixed(1)}%`);
-      card.style.setProperty('--glare-opacity', '0.24');
+      card.style.setProperty('--glare-opacity', '0.15');
     }, { passive: true });
     
     card.addEventListener('mouseleave', () => {
+      card.style.transition = 'transform 0.4s ease-out';
       card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
       card.style.setProperty('--glare-opacity', '0');
       rect = null;
@@ -3282,10 +3298,10 @@ function renderCharts() {
     gradBlue.addColorStop(0.65, 'rgba(59, 130, 246, 0.12)');
     gradBlue.addColorStop(1, 'rgba(59, 130, 246, 0.0)');
 
-    const gradGreen = ctx.createLinearGradient(0, 0, 0, 320);
-    gradGreen.addColorStop(0, 'rgba(16, 185, 129, 0.35)');
-    gradGreen.addColorStop(0.65, 'rgba(16, 185, 129, 0.08)');
-    gradGreen.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
+    const gradRed = ctx.createLinearGradient(0, 0, 0, 320);
+    gradRed.addColorStop(0, 'rgba(244, 63, 94, 0.40)'); // Tonalidad roja elegante (Rose/Crimson)
+    gradRed.addColorStop(0.65, 'rgba(244, 63, 94, 0.10)');
+    gradRed.addColorStop(1, 'rgba(244, 63, 94, 0.0)');
 
     const pointRadius = timeSorted.length > 25 ? 2.5 : 4.5;
 
@@ -3313,15 +3329,15 @@ function renderCharts() {
           {
             label: `Ventas ${prevY} ($)`,
             data: timeSorted.map(m => m.totalPrev),
-            borderColor: '#10b981',
-            backgroundColor: gradGreen,
+            borderColor: '#f43f5e',
+            backgroundColor: gradRed,
             fill: true,
             tension: 0.42,
             cubicInterpolationMode: 'monotone',
             borderWidth: 2.8,
             pointRadius: pointRadius,
             pointHoverRadius: 7,
-            pointBackgroundColor: '#34d399',
+            pointBackgroundColor: '#fb7185',
             pointBorderColor: '#0f172a',
             pointBorderWidth: 2
           }
