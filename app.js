@@ -988,12 +988,18 @@ function closeMobileSidebar() {
 
 function toggleMobileFilters() {
   const bar = document.getElementById('filtersBar');
-  if (bar) bar.classList.toggle('open');
+  if (bar) {
+    bar.classList.toggle('open');
+    bar.classList.toggle('active');
+  }
 }
 
 function toggleCotizMobileFilters() {
   const bar = document.getElementById('cotizFiltersBar');
-  if (bar) bar.classList.toggle('open');
+  if (bar) {
+    bar.classList.toggle('open');
+    bar.classList.toggle('active');
+  }
 }
 
 function toggleTheme() {
@@ -1927,15 +1933,7 @@ function closeTargetModal() {
   if (backdrop) backdrop.classList.remove('active');
 }
 
-function toggleMobileFilters() {
-  const bar = document.getElementById('filtersBar');
-  if (bar) bar.classList.toggle('active');
-}
 
-function toggleCotizMobileFilters() {
-  const bar = document.getElementById('cotizFiltersBar');
-  if (bar) bar.classList.toggle('active');
-}
 
 /* ==========================================================================
    GLOMAX PARALLAX 3D & SPATIAL DEPTH ENGINE (NATIVE & SEAMLESS)
@@ -2350,197 +2348,6 @@ function setupAllButtonListeners() {
   });
 }
 
-function setupDatePresetListeners() {
-  const container = document.getElementById('datePresets');
-  if (!container) return;
-
-  const presetBtns = container.querySelectorAll('.preset-btn');
-  presetBtns.forEach(btn => {
-    btn.onclick = (e) => {
-      e.preventDefault();
-      
-      presetBtns.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-
-      const preset = btn.dataset.preset;
-      const elDesde = document.getElementById('fltDesde');
-      const elHasta = document.getElementById('fltHasta');
-      
-      if (!elDesde || !elHasta) return;
-
-      let now = new Date();
-      if (rows && rows.length > 0) {
-        const validDates = rows.map(r => new Date(r['FECHA'])).filter(d => !isNaN(d.getTime()));
-        if (validDates.length > 0) {
-          const maxDatasetDate = new Date(Math.max(...validDates));
-          if (maxDatasetDate.getFullYear() > now.getFullYear()) {
-            now = maxDatasetDate;
-          }
-        }
-      }
-
-      const formatDate = (d) => d.toISOString().slice(0, 10);
-
-      if (preset === 'today') {
-        elDesde.value = formatDate(now);
-        elHasta.value = formatDate(now);
-      } else if (preset === '7days') {
-        const past = new Date(now);
-        past.setDate(past.getDate() - 7);
-        elDesde.value = formatDate(past);
-        elHasta.value = formatDate(now);
-      } else if (preset === 'thisMonth') {
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-        elDesde.value = formatDate(startOfMonth);
-        elHasta.value = formatDate(endOfMonth);
-      } else if (preset === 'thisYear') {
-        const startOfYear = new Date(now.getFullYear(), 0, 1);
-        const endOfYear = new Date(now.getFullYear(), 11, 31);
-        elDesde.value = formatDate(startOfYear);
-        elHasta.value = formatDate(endOfYear);
-      } else if (preset === 'all') {
-        elDesde.value = '';
-        elHasta.value = '';
-      }
-
-      applyFilters();
-
-      if (typeof showToast === 'function') {
-        showToast(`📅 Periodo aplicado: ${btn.textContent.trim()}`);
-      }
-    };
-  });
-}
-
-
-// ---------- Estado ----------
-
-// ---------- Utilidades ----------
-function formatCLP(n) {
-  const num = Number(n) || 0;
-  return num.toLocaleString('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 });
-}
-function formatNum(n) {
-  return (Number(n) || 0).toLocaleString('es-CL');
-}
-
-/* ==========================================================================
-   GLOMAX COUNTUP MATHEMATICAL EASING ENGINE (60/120 FPS)
-   ========================================================================== */
-function animateValue(el, start, end, duration = 650, isCurrency = true) {
-  if (!el) return;
-  
-  if (start === undefined || start === null) {
-    const raw = String(el.textContent || '').replace(/[^0-9\-]/g, '');
-    start = parseFloat(raw) || 0;
-  }
-  
-  start = Number(start) || 0;
-  end = Number(end) || 0;
-
-  if (start === end) {
-    el.textContent = isCurrency ? formatCLP(end) : formatNum(end);
-    return;
-  }
-
-  const startTime = performance.now();
-  el.classList.add('number-animate-pop');
-  setTimeout(() => el.classList.remove('number-animate-pop'), 380);
-
-  function step(currentTime) {
-    const elapsed = currentTime - startTime;
-    const progress = Math.min(elapsed / duration, 1);
-    
-    // Easing: easeOutCubic
-    const ease = 1 - Math.pow(1 - progress, 3);
-    const current = Math.round(start + (end - start) * ease);
-
-    el.textContent = isCurrency ? formatCLP(current) : formatNum(current);
-
-    if (progress < 1) {
-      requestAnimationFrame(step);
-    } else {
-      el.textContent = isCurrency ? formatCLP(end) : formatNum(end);
-    }
-  }
-
-  requestAnimationFrame(step);
-}
-
-// Configuración Global de Chart.js Glassmorphism
-if (typeof Chart !== 'undefined') {
-  Chart.defaults.font.family = "'Inter', -apple-system, BlinkMacSystemFont, sans-serif";
-  if (Chart.defaults.plugins && Chart.defaults.plugins.tooltip) {
-    Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(11, 15, 25, 0.94)';
-    Chart.defaults.plugins.tooltip.titleColor = '#f8fafc';
-    Chart.defaults.plugins.tooltip.bodyColor = '#cbd5e1';
-    Chart.defaults.plugins.tooltip.borderColor = 'rgba(59, 130, 246, 0.4)';
-    Chart.defaults.plugins.tooltip.borderWidth = 1;
-    Chart.defaults.plugins.tooltip.cornerRadius = 10;
-    Chart.defaults.plugins.tooltip.padding = 12;
-    Chart.defaults.plugins.tooltip.boxPadding = 6;
-    Chart.defaults.plugins.tooltip.usePointStyle = true;
-  }
-}
-
-function toDateInputValue(v) {
-  if (!v) return '';
-  const d = new Date(v);
-  if (isNaN(d.getTime())) return '';
-  return d.toISOString().slice(0, 10);
-}
-
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2500);
-}
-
-function setSyncStatus(state) {
-  const el = document.getElementById('syncStatus');
-  if (state === 'ok') el.innerHTML = '<span class="dot"></span> Sincronizado';
-  else if (state === 'loading') el.innerHTML = '<span class="dot"></span> Sincronizando…';
-  else el.innerHTML = '<span class="dot" style="background:var(--red)"></span> Sin conexión';
-}
-
-// ---------- API ----------
-
-async function apiPost(payload) {
-  const res = await fetch(API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // evita preflight CORS con Apps Script
-    body: JSON.stringify(payload)
-  });
-  const json = await res.json();
-  if (!json.ok) throw new Error(json.error || 'Error al guardar');
-  return json;
-}
-
-
-
-// ---------- Filtros ----------
-function uniqueValues(field) {
-  return [...new Set(rows.map(r => r[field]).filter(v => v !== undefined && v !== null && v !== ''))].sort();
-}
-
-function uniqueValues(field) {
-  return [...new Set(rows.map(r => r[field]).filter(v => v !== undefined && v !== null && v !== ''))].sort();
-}
-
-function getDatasetReferenceDate() {
-  if (!rows || rows.length === 0) return new Date();
-  let maxTime = 0;
-  rows.forEach(r => {
-    if (r['FECHA']) {
-      const t = new Date(r['FECHA']).getTime();
-      if (!isNaN(t) && t > maxTime) maxTime = t;
-    }
-  });
-  return maxTime > 0 ? new Date(maxTime) : new Date();
-}
-
 function populateFilterOptions() {
   const map = {
     fltCanal: 'CANAL FINAL',
@@ -2616,6 +2423,27 @@ function setupDatePresetListeners() {
       applyDatePreset(preset);
     };
   });
+}
+
+let _cachedDatasetRefDate = null;
+let _cachedDatasetRefRowsCount = 0;
+
+function getDatasetReferenceDate() {
+  if (!rows || rows.length === 0) return new Date();
+  if (_cachedDatasetRefDate && _cachedDatasetRefRowsCount === rows.length) {
+    return _cachedDatasetRefDate;
+  }
+  let maxTime = 0;
+  for (let i = 0; i < rows.length; i++) {
+    const f = rows[i]['FECHA'];
+    if (f) {
+      const t = new Date(f).getTime();
+      if (!isNaN(t) && t > maxTime) maxTime = t;
+    }
+  }
+  _cachedDatasetRefDate = maxTime > 0 ? new Date(maxTime) : new Date();
+  _cachedDatasetRefRowsCount = rows.length;
+  return _cachedDatasetRefDate;
 }
 
 function applyDatePreset(preset) {
@@ -3934,25 +3762,19 @@ function startAutoRefresh() {
   refreshTimer = setInterval(() => loadData(false), REFRESH_INTERVAL_MS);
 }
 
-// ---------- Init ----------
-if (typeof setupAllButtonListeners === 'function') {
-  setupAllButtonListeners();
-}
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
-    if (typeof setupAllButtonListeners === 'function') setupAllButtonListeners();
-  });
+// ---------- Init & Startup Pipeline ----------
+function initApp() {
+  if (typeof setupAllButtonListeners === 'function') {
+    setupAllButtonListeners();
+  }
+  loadData(true);
+  startAutoRefresh();
 }
 
-loadData(true);
-startAutoRefresh();
-if (typeof fetchCotizacionesData === 'function') {
-  fetchCotizacionesData().then(loaded => {
-    if (loaded && loaded.length > 0) {
-      cotizacionesRows = loaded;
-      populateCotizFilterOptions();
-    }
-  }).catch(() => {});
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initApp);
+} else {
+  initApp();
 }
 
 
@@ -7967,47 +7789,6 @@ function applyFtPdfImport() {
 // ==========================================================================
 // MOTOR DE CONEXIÓN ULTRARRÁPIDO CON GOOGLE SHEETS & INDEXEDDB (28.3MB / 186K REGISTROS)
 // ==========================================================================
-
-function parseCsvText(csvText) {
-  if (!csvText || typeof csvText !== 'string') return [];
-
-  const lines = csvText.split(/\r?\n/);
-  if (lines.length < 2) return [];
-
-  // 1. Parsear encabezados
-  const rawHeaders = lines[0].split(',');
-  const headers = rawHeaders.map(h => h.replace(/^["']|["']$/g, '').toUpperCase().replace(/[^A-Z0-9#\s\(\)\$]/g, '').trim());
-
-  const parsedData = [];
-  const totalLines = lines.length;
-
-  for (let i = 1; i < totalLines; i++) {
-    const line = lines[i];
-    if (!line || line.length < 3) continue;
-
-    // Fast split por comas respetando comillas simples
-    const cells = line.split(',');
-    if (cells.length < 3) continue;
-
-    const rowObj = {};
-    for (let j = 0; j < headers.length; j++) {
-      const h = headers[j];
-      if (h) {
-        let val = cells[j] !== undefined ? cells[j] : '';
-        if (val.startsWith('"') && val.endsWith('"')) {
-          val = val.slice(1, -1);
-        }
-        rowObj[h] = val.trim();
-      }
-    }
-    rowObj['_row'] = i + 1;
-    parsedData.push(rowObj);
-  }
-
-  return parsedData;
-}
-
-
 
 function parseCsvText(text) {
   if (!text || typeof text !== 'string') return [];
