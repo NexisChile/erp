@@ -7,6 +7,16 @@ const FALLBACK_GLOMAX_DATA = [
   { 'FOLIO': '10103', 'FECHA': '2026-02-01', 'CODIGO': 'HEM6124', 'DESCRIPCION': 'MONITOR DE PRESION ARTERIAL DE MUÑECA OMRON 6124', 'CANTFACTURADA': '8', 'CLIENTE': 'FARMACIAS DE BARRIO CHILE', 'PREUNI': '26715', 'NETO': '213720', 'COSTOS': '16000', '($) UTILIDAD': '85720', 'FAMILIA': 'EQUIPOS MEDICOS', 'CATEGORIA': 'MEDPRESION', 'MARCA': 'OMRON', 'CANAL FINAL': 'RETAIL', 'REGION': 'Región Metropolitana', 'AÑO': '2026', '# MES': '2', 'MES': 'febrero' }
 ];
 
+function formatCLP(val) {
+  const n = Math.round(Number(val) || 0);
+  return '$' + n.toLocaleString('es-CL');
+}
+
+function formatNum(val) {
+  const n = Number(val) || 0;
+  return n.toLocaleString('es-CL');
+}
+
 function parseChileanNumber(val) {
   if (val === undefined || val === null || val === '') return 0;
   if (typeof val === 'number') return isNaN(val) ? 0 : val;
@@ -2348,6 +2358,18 @@ function setupAllButtonListeners() {
   });
 }
 
+function uniqueValues(field) {
+  if (!rows || !rows.length) return [];
+  const set = new Set();
+  for (let i = 0; i < rows.length; i++) {
+    const val = rows[i][field];
+    if (val !== undefined && val !== null && val !== '') {
+      set.add(String(val).trim());
+    }
+  }
+  return Array.from(set).sort();
+}
+
 function populateFilterOptions() {
   const map = {
     fltCanal: 'CANAL FINAL',
@@ -2381,21 +2403,17 @@ function renderCanalSubmenu() {
     <button class="nav-subitem ${c === canalActivo ? 'active' : ''}" data-canal="${c}">${c}</button>
   `).join('');
 
-  submenu.querySelectorAll('.nav-subitem').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const flt = document.getElementById('fltCanal');
-      if (flt) flt.value = btn.dataset.canal;
-      applyFilters();
-      renderCanalSubmenu();
-      // Cambia a la vista de Tablero para ver el resultado del filtro
-      document.querySelectorAll('.nav-item[data-view]').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-      const tabNav = document.querySelector('.nav-item[data-view="tablero"]');
-      if (tabNav) tabNav.classList.add('active');
-      const tabView = document.getElementById('view-tablero');
-      if (tabView) tabView.classList.add('active');
+  if (submenu.querySelectorAll) {
+    submenu.querySelectorAll('.nav-subitem').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const flt = document.getElementById('fltCanal');
+        if (flt) flt.value = btn.dataset.canal;
+        applyFilters();
+        renderCanalSubmenu();
+        switchView('tablero');
+      });
     });
-  });
+  }
 }
 
 const canalToggle = document.getElementById('canalToggle');
@@ -3759,22 +3777,8 @@ if (refreshBtnEl) refreshBtnEl.addEventListener('click', () => loadData(true));
 
 function startAutoRefresh() {
   if (refreshTimer) clearInterval(refreshTimer);
-  refreshTimer = setInterval(() => loadData(false), REFRESH_INTERVAL_MS);
-}
-
-// ---------- Init & Startup Pipeline ----------
-function initApp() {
-  if (typeof setupAllButtonListeners === 'function') {
-    setupAllButtonListeners();
-  }
-  loadData(true);
-  startAutoRefresh();
-}
-
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initApp);
-} else {
-  initApp();
+  const interval = (typeof REFRESH_INTERVAL_MS !== 'undefined' && REFRESH_INTERVAL_MS) ? REFRESH_INTERVAL_MS : 30000;
+  refreshTimer = setInterval(() => loadData(false), interval);
 }
 
 
@@ -6548,9 +6552,6 @@ async function fetchGlomaxLiveCatalog() {
   return glomaxScrapePromise;
 }
 
-// Iniciar precarga silenciosa del catálogo de www.glomax.cl
-fetchGlomaxLiveCatalog();
-
 function getFtAllStoredSpecs() {
   try {
     const raw = localStorage.getItem(FT_STORAGE_KEY);
@@ -7847,6 +7848,23 @@ async function apiGet() {
   return json.data;
 }
 
+function setSyncStatus(status, customText) {
+  const el = document.getElementById('syncStatus');
+  if (!el) return;
+
+  el.className = 'sync-status-pill';
+  if (status === 'ok') {
+    el.classList.add('synced');
+    el.innerHTML = '<span class="dot" style="background:#10b981;box-shadow:0 0 10px rgba(16,185,129,0.6);"></span> <span>Sincronizado</span>';
+  } else if (status === 'loading') {
+    el.classList.add('syncing');
+    el.innerHTML = '<span class="dot" style="background:#f59e0b;box-shadow:0 0 10px rgba(245,158,11,0.6);"></span> <span>Sincronizando...</span>';
+  } else if (status === 'error') {
+    el.classList.add('error');
+    el.innerHTML = '<span class="dot" style="background:#ef4444;box-shadow:0 0 10px rgba(239,68,68,0.6);"></span> <span>Desconectado</span>';
+  }
+}
+
 async function loadData(showLoadingState = true) {
   const startTime = performance.now();
   const latencyBadge = document.getElementById('latencyBadge');
@@ -8020,28 +8038,18 @@ async function fetchGVizData() {
 
   console.log(`[Glomax Engine] Entorno detectado: ${isGitHub ? 'GitHub / Estático' : window.location.hostname}`);
 
-  // 1. Probar canal JSONP GViz FastChannel (rápido, 8s timeout)
-  try {
-    console.log('[FastChannel] 🚀 Conectando a Google Sheets vía JSONP...');
-    const jsonpRows = await fetchGVizViaJSONP(spId, gid, 8000);
-    if (jsonpRows && jsonpRows.length > 0) {
-      console.log(`[FastChannel] ✅ Conexión exitosa vía JSONP (${jsonpRows.length.toLocaleString()} registros)`);
-      return jsonpRows;
-    }
-  } catch (jsonpErr) {
-    console.warn('[FastChannel] Falló canal JSONP, probando fallbacks:', jsonpErr.message || jsonpErr);
-  }
-
-  // 2. Si no estamos en entorno estático estricto, probar Proxy local /api/proxy
+  // 1. Si no estamos en entorno estático estricto, probar Proxy local primero (Respuesta instantánea 2ms)
   if (!isGitHub) {
     const proxyUrls = [
+      `/api/proxy?gid=${gid}`,
+      `/api/csv?gid=${gid}`,
       `/api/proxy?spreadsheet_id=${spId}&gid=${gid}`,
       `/api/csv?spreadsheet_id=${spId}&gid=${gid}`
     ];
 
     for (const pUrl of proxyUrls) {
       try {
-        const resp = await fetch(pUrl, { signal: AbortSignal.timeout(5000) });
+        const resp = await fetch(pUrl, { signal: AbortSignal.timeout(3500) });
         if (resp.ok) {
           const text = await resp.text();
           if (text && text.length > 200 && !text.trim().startsWith('<')) {
@@ -8056,6 +8064,18 @@ async function fetchGVizData() {
         console.warn(`[Proxy Local] Falló ${pUrl}:`, err.message || err);
       }
     }
+  }
+
+  // 2. Probar canal JSONP GViz FastChannel (rápido, 8s timeout)
+  try {
+    console.log('[FastChannel] 🚀 Conectando a Google Sheets vía JSONP...');
+    const jsonpRows = await fetchGVizViaJSONP(spId, gid, 8000);
+    if (jsonpRows && jsonpRows.length > 0) {
+      console.log(`[FastChannel] ✅ Conexión exitosa vía JSONP (${jsonpRows.length.toLocaleString()} registros)`);
+      return jsonpRows;
+    }
+  } catch (jsonpErr) {
+    console.warn('[FastChannel] Falló canal JSONP, probando fallbacks:', jsonpErr.message || jsonpErr);
   }
 
   // 3. Fallback Universal: Proxies CORS para exportación CSV (timeout 5s)
@@ -8081,4 +8101,30 @@ async function fetchGVizData() {
   }
 
   return null;
+}
+
+// ==========================================================================
+// PUNTO DE INICIO GLOBAL DEL SISTEMA (INIT APP PIPELINE)
+// ==========================================================================
+function initApp() {
+  try {
+    if (typeof setupAllButtonListeners === 'function') {
+      setupAllButtonListeners();
+    }
+  } catch (e) {
+    console.warn('[Init] Button listeners note:', e);
+  }
+
+  try {
+    loadData(true);
+    startAutoRefresh();
+  } catch (e) {
+    console.error('[Init] Error al inicializar datos:', e);
+  }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initApp);
+} else {
+  initApp();
 }
