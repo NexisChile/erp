@@ -1947,11 +1947,17 @@ const GlomaxParallaxEngine = {
     const cardEls = document.querySelectorAll(`
       .hero-kpi-card,
       .mini-kpi-card,
+      .kpi-card,
       .proj-card,
       .bi-sim-card,
       .bi-insights-briefing,
       .banner-parallax,
       .advisor-card,
+      .bi-compras-advisor-card,
+      .cotiz-tipo-card,
+      .mix-card,
+      .mix-advisor-card,
+      .chart-card,
       [data-tilt]
     `);
     
@@ -1973,9 +1979,17 @@ const GlomaxParallaxEngine = {
     if (card._tiltBound) return;
     card._tiltBound = true;
     
-    // Si es un gráfico (chart-card o contiene canvas), desactivar rotación 3D molesta para máxima estabilidad al interactuar
-    const isChart = card.classList.contains('chart-card') || card.querySelector('canvas');
-    if (isChart && !card.hasAttribute('data-tilt-force')) {
+    // Contenedores interactivos (gráficos, simuladores, tablas, asesores): estabilidad total sin rotación 3D molesta
+    const isStableContainer = card.classList.contains('chart-card') ||
+                              card.classList.contains('bi-sim-card') ||
+                              card.classList.contains('bi-compras-advisor-card') ||
+                              card.classList.contains('mix-advisor-card') ||
+                              card.classList.contains('table-card') ||
+                              card.querySelector('canvas') ||
+                              card.querySelector('input[type="range"]') ||
+                              card.querySelector('table');
+                              
+    if (isStableContainer && !card.hasAttribute('data-tilt-force')) {
       card.addEventListener('mouseenter', () => {
         card.style.transition = 'transform 0.25s ease, box-shadow 0.25s ease';
         card.style.transform = 'translateY(-2px)';
@@ -1987,7 +2001,7 @@ const GlomaxParallaxEngine = {
     }
 
     let rect = null;
-    const maxDeg = parseFloat(card.getAttribute('data-tilt-max')) || 3.0; // Inclinación ejecutiva sutil y elegante
+    const maxDeg = parseFloat(card.getAttribute('data-tilt-max')) || 2.8; // Calibración uniforme y elegante para tarjetas KPI
     
     card.addEventListener('mouseenter', () => {
       if (!this.isEnabled) return;
@@ -2008,10 +2022,10 @@ const GlomaxParallaxEngine = {
       const rotX = ((0.5 - py) * maxDeg).toFixed(2);
       const rotY = ((px - 0.5) * maxDeg).toFixed(2);
       
-      card.style.transform = `perspective(1000px) rotateX(${rotX}deg) rotateY(${rotY}deg) scale3d(1.006, 1.006, 1.006)`;
+      card.style.transform = `perspective(1000px) rotateX(${rotX}deg) rotateY(${rotY}deg) scale3d(1.005, 1.005, 1.005)`;
       card.style.setProperty('--glare-x', `${(px * 100).toFixed(1)}%`);
       card.style.setProperty('--glare-y', `${(py * 100).toFixed(1)}%`);
-      card.style.setProperty('--glare-opacity', '0.15');
+      card.style.setProperty('--glare-opacity', '0.12');
     }, { passive: true });
     
     card.addEventListener('mouseleave', () => {
@@ -2032,29 +2046,29 @@ const GlomaxParallaxEngine = {
         return;
       }
       
-      const factor = 0.08;
+      const factor = 0.06;
       this.currentMouseX += (this.targetMouseX - this.currentMouseX) * factor;
       this.currentMouseY += (this.targetMouseY - this.currentMouseY) * factor;
-      this.scrollY += (this.targetScrollY - this.scrollY) * 0.1;
+      this.scrollY += (this.targetScrollY - this.scrollY) * 0.08;
       
       if (this.bgMesh) {
-        const mx = (this.currentMouseX * 18).toFixed(2);
-        const my = (this.currentMouseY * 18).toFixed(2);
+        const mx = (this.currentMouseX * 8).toFixed(2);
+        const my = (this.currentMouseY * 8).toFixed(2);
         this.bgMesh.style.transform = `translate3d(${mx}px, ${my}px, 0)`;
       }
       
       if (this.ambientOrbs && this.ambientOrbs.length > 0) {
         this.ambientOrbs.forEach(orb => {
-          const depth = parseFloat(orb.getAttribute('data-parallax-depth')) || 0.05;
-          const ox = (this.currentMouseX * depth * 350).toFixed(2);
-          const oy = (this.currentMouseY * depth * 350 + this.scrollY * depth * -0.4).toFixed(2);
+          const depth = parseFloat(orb.getAttribute('data-parallax-depth')) || 0.03;
+          const ox = (this.currentMouseX * depth * 140).toFixed(2);
+          const oy = (this.currentMouseY * depth * 140 + this.scrollY * depth * -0.2).toFixed(2);
           orb.style.transform = `translate3d(${ox}px, ${oy}px, 0)`;
         });
       }
       
       if (this.scrollElements && this.scrollElements.length > 0) {
         this.scrollElements.forEach(el => {
-          const speed = parseFloat(el.getAttribute('data-parallax-speed')) || 0.05;
+          const speed = parseFloat(el.getAttribute('data-parallax-speed')) || 0.02;
           const py = (this.scrollY * speed).toFixed(2);
           el.style.transform = `translate3d(0, ${py}px, 0)`;
         });
