@@ -7955,36 +7955,24 @@ async function loadData(showLoadingState = true) {
 // MOTOR DE CONEXIÓN UNIFICADO Y UNIVERSAL (GITHUB PAGES, NETLIFY & LOCAL)
 // ==========================================================================
 
-function fetchGVizViaJSONP(spreadsheetId, gid, timeoutMs = 8000) {
+function fetchGVizViaJSONP(spreadsheetId, gid, timeoutMs = 40000) {
   return new Promise((resolve, reject) => {
     let scriptEl = null;
+    let isHandled = false;
     const callbackName = 'gviz_jsonp_cb_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
 
-    // Interceptor global para google.visualization.Query.setResponse si Google no usa el custom callback
-    if (!window.google) window.google = {};
-    if (!window.google.visualization) window.google.visualization = {};
-    if (!window.google.visualization.Query) window.google.visualization.Query = {};
-    
-    const prevSetResponse = window.google.visualization.Query.setResponse;
-    window.google.visualization.Query.setResponse = function(json) {
-      if (typeof window[callbackName] === 'function') {
-        window[callbackName](json);
-      }
-      if (typeof prevSetResponse === 'function') {
-        try { prevSetResponse(json); } catch(e) {}
+    const cleanup = () => {
+      clearTimeout(timeoutTimer);
+      delete window[callbackName];
+      if (scriptEl && scriptEl.parentNode) {
+        try { scriptEl.parentNode.removeChild(scriptEl); } catch(e) {}
       }
     };
 
-    const timeoutTimer = setTimeout(() => {
-      delete window[callbackName];
-      if (scriptEl && scriptEl.parentNode) scriptEl.parentNode.removeChild(scriptEl);
-      reject(new Error(`Timeout de conexión JSONP (${timeoutMs / 1000}s)`));
-    }, timeoutMs);
-
-    window[callbackName] = function(json) {
-      clearTimeout(timeoutTimer);
-      delete window[callbackName];
-      if (scriptEl && scriptEl.parentNode) scriptEl.parentNode.removeChild(scriptEl);
+    const handleSuccess = (json) => {
+      if (isHandled) return;
+      isHandled = true;
+      cleanup();
 
       if (!json || !json.table || !json.table.rows) {
         reject(new Error('Formato JSONP inválido desde Google Sheets'));
@@ -7992,10 +7980,24 @@ function fetchGVizViaJSONP(spreadsheetId, gid, timeoutMs = 8000) {
       }
 
       const rawCols = json.table.cols || [];
-      const cols = rawCols.map(c => c ? (c.label || c.id || '').toUpperCase().trim() : '');
+      let cols = rawCols.map(c => c ? (c.label || c.id || '').toUpperCase().trim() : '');
       const colIds = rawCols.map(c => c ? (c.id || '').toUpperCase().trim() : '');
+      let dataRows = json.table.rows;
 
-      const parsedRows = json.table.rows.map((row, i) => {
+      // Si cols no contiene nombres legibles pero la fila 0 sí, usar la fila 0 como encabezados
+      const hasValidCols = cols.some(c => c && (c.includes('FOLIO') || c.includes('FECHA') || c.includes('NETO') || c.includes('CODIGO') || c.includes('CLIENTE')));
+      if (!hasValidCols && dataRows.length > 0) {
+        const headerRow = dataRows[0];
+        cols = rawCols.map((c, j) => {
+          if (headerRow.c && headerRow.c[j] && headerRow.c[j].v) {
+            return String(headerRow.c[j].v).toUpperCase().trim();
+          }
+          return c ? (c.label || c.id || '').toUpperCase().trim() : '';
+        });
+        dataRows = dataRows.slice(1);
+      }
+
+      const parsedRows = dataRows.map((row, i) => {
         const obj = {};
         cols.forEach((colName, j) => {
           let val = '';
@@ -8016,12 +8018,32 @@ function fetchGVizViaJSONP(spreadsheetId, gid, timeoutMs = 8000) {
       resolve(parsedRows);
     };
 
+    // Interceptor global para google.visualization.Query.setResponse (que Google Sheets usa nativamente)
+    if (!window.google) window.google = {};
+    if (!window.google.visualization) window.google.visualization = {};
+    if (!window.google.visualization.Query) window.google.visualization.Query = {};
+    
+    const prevSetResponse = window.google.visualization.Query.setResponse;
+    window.google.visualization.Query.setResponse = function(json) {
+      handleSuccess(json);
+      if (typeof prevSetResponse === 'function') {
+        try { prevSetResponse(json); } catch(e) {}
+      }
+    };
+
+    window[callbackName] = function(json) {
+      handleSuccess(json);
+    };
+
+    const timeoutTimer = setTimeout(() => {
+      cleanup();
+      reject(new Error(`Timeout de conexión JSONP (${timeoutMs / 1000}s)`));
+    }, timeoutMs);
+
     scriptEl = document.createElement('script');
-    scriptEl.src = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?tqx=out:json;responseHandler:${callbackName}&gid=${gid}`;
+    scriptEl.src = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?tqx=out:json;responseHandler:${callbackName}&gid=${gid}&headers=1`;
     scriptEl.onerror = function() {
-      clearTimeout(timeoutTimer);
-      delete window[callbackName];
-      if (scriptEl && scriptEl.parentNode) scriptEl.parentNode.removeChild(scriptEl);
+      cleanup();
       reject(new Error('Error al cargar script JSONP de Google Sheets'));
     };
 
@@ -8036,9 +8058,9 @@ async function fetchGVizData() {
   const gid = typeof SPREADSHEET_GID !== 'undefined' ? SPREADSHEET_GID : '999482111';
   const isGitHub = window.location.hostname.includes('github') || window.location.protocol === 'file:';
 
-  console.log(`[Glomax Engine] Entorno detectado: ${isGitHub ? 'GitHub / Estático' : window.location.hostname}`);
+  console.log(`[Glomax Engine] Entorno detectado: ${isGitHub ? 'GitHub Pages / Producción' : window.location.hostname}`);
 
-  // 1. Si no estamos en entorno estático estricto, probar Proxy local primero (Respuesta instantánea 2ms)
+  // 1. Si estamos en servidor local propio, probar Proxy local primero (2ms)
   if (!isGitHub) {
     const proxyUrls = [
       `/api/proxy?gid=${gid}`,
@@ -8066,27 +8088,28 @@ async function fetchGVizData() {
     }
   }
 
-  // 2. Probar canal JSONP GViz FastChannel (rápido, 8s timeout)
+  // 2. Conexión Universal Directa vía JSONP Google Sheets (Ideal para GitHub Pages y Producción)
   try {
-    console.log('[FastChannel] 🚀 Conectando a Google Sheets vía JSONP...');
-    const jsonpRows = await fetchGVizViaJSONP(spId, gid, 8000);
+    console.log('[FastChannel] 🚀 Conectando a Google Sheets en vivo vía JSONP...');
+    const jsonpRows = await fetchGVizViaJSONP(spId, gid, 40000);
     if (jsonpRows && jsonpRows.length > 0) {
-      console.log(`[FastChannel] ✅ Conexión exitosa vía JSONP (${jsonpRows.length.toLocaleString()} registros)`);
+      console.log(`[FastChannel] ✅ Conexión exitosa vía Google Sheets JSONP (${jsonpRows.length.toLocaleString()} registros)`);
       return jsonpRows;
     }
   } catch (jsonpErr) {
-    console.warn('[FastChannel] Falló canal JSONP, probando fallbacks:', jsonpErr.message || jsonpErr);
+    console.warn('[FastChannel] Canal JSONP reintentando fallbacks:', jsonpErr.message || jsonpErr);
   }
 
-  // 3. Fallback Universal: Proxies CORS para exportación CSV (timeout 5s)
+  // 3. Fallback Universal: Proxies CORS para exportación CSV (timeout 15s)
   const corsProxies = [
     `https://api.allorigins.win/raw?url=` + encodeURIComponent(`https://docs.google.com/spreadsheets/d/${spId}/export?format=csv&gid=${gid}`),
-    `https://corsproxy.io/?` + encodeURIComponent(`https://docs.google.com/spreadsheets/d/${spId}/export?format=csv&gid=${gid}`)
+    `https://corsproxy.io/?` + encodeURIComponent(`https://docs.google.com/spreadsheets/d/${spId}/export?format=csv&gid=${gid}`),
+    `https://api.codetabs.com/v1/proxy?quest=` + encodeURIComponent(`https://docs.google.com/spreadsheets/d/${spId}/export?format=csv&gid=${gid}`)
   ];
 
   for (const cUrl of corsProxies) {
     try {
-      const resp = await fetch(cUrl, { signal: AbortSignal.timeout(5000) });
+      const resp = await fetch(cUrl, { signal: AbortSignal.timeout(15000) });
       if (resp.ok) {
         const text = await resp.text();
         if (text && text.length > 200 && !text.trim().startsWith('<')) {
