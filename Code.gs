@@ -61,6 +61,13 @@ function jsonOut_(obj) {
 function parseFecha_(value) {
   if (value instanceof Date) return value;
   if (!value) return null;
+
+  // 'YYYY-MM-DD' se parsea como medianoche UTC; los getters locales del script
+  // retroceden un día en zonas negativas (Chile) y corrompen MES / # MES / AÑO.
+  // Se construye en horario local anclado a mediodía para evitar el desfase.
+  const iso = String(value).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (iso) return new Date(Number(iso[1]), Number(iso[2]) - 1, Number(iso[3]), 12, 0, 0);
+
   const d = new Date(value);
   return isNaN(d.getTime()) ? null : d;
 }
@@ -102,11 +109,19 @@ function buildRowArray_(d) {
   });
 }
 
-function findRowIndex_(sheet, rowNumber) {
-  // El "id" que usa el frontend es el número de fila real en la hoja.
+// El "id" que usa el frontend es el número de fila real en la hoja. Ese número deja de
+// ser válido si otro usuario borra filas por encima mientras el modal está abierto, así
+// que cuando el cliente informa el FOLIO esperado se verifica antes de escribir o borrar.
+function findRowIndex_(sheet, rowNumber, expectedFolio) {
   const lastRow = sheet.getLastRow();
   const n = Number(rowNumber);
   if (!n || n < 2 || n > lastRow) return -1;
+
+  if (expectedFolio !== undefined && expectedFolio !== null && expectedFolio !== '') {
+    const actual = sheet.getRange(n, COL['FOLIO']).getValue();
+    if (String(actual).trim() !== String(expectedFolio).trim()) return -1;
+  }
+
   return n;
 }
 
@@ -195,8 +210,8 @@ function doPost(e) {
       result.row = sheet.getLastRow();
 
     } else if (action === 'update') {
-      const row = findRowIndex_(sheet, body.row);
-      if (row === -1) { result = { ok: false, error: 'Registro no encontrado' }; }
+      const row = findRowIndex_(sheet, body.row, body.expectedFolio);
+      if (row === -1) { result = { ok: false, error: 'El registro cambió de posición o ya no existe. Actualiza la vista e intenta otra vez.' }; }
       else {
         const d = computeDerivedFields_(body.data || {});
         sheet.getRange(row, 1, 1, HEADERS.length).setValues([buildRowArray_(d)]);
@@ -204,31 +219,47 @@ function doPost(e) {
       }
 
     } else if (action === 'delete') {
-      const row = findRowIndex_(sheet, body.row);
-      if (row === -1) { result = { ok: false, error: 'Registro no encontrado' }; }
+      const row = findRowIndex_(sheet, body.row, body.expectedFolio);
+      if (row === -1) { result = { ok: false, error: 'El registro cambió de posición o ya no existe. Actualiza la vista e intenta otra vez.' }; }
       else {
         sheet.deleteRow(row);
         recalcAcumulados_(sheet);
       }
 
     } else if (action === 'batch_sync') {
-      // Permite sincronizar múltiples operaciones en una sola petición
+      // Permite sincronizar múltiples operaciones en una sola petición.
+      // Los índices de fila que envía el cliente corresponden al estado de la hoja
+      // ANTES del lote, así que se aplican en un orden que no los invalide:
+      // primero las actualizaciones, luego los borrados de mayor a menor fila
+      // (borrar la fila N desplaza hacia arriba todas las siguientes), y por
+      // último los agregados, que solo escriben al final.
       const ops = body.operations || [];
-      ops.forEach(function(op) {
-        if (op.action === 'add') {
+      const updates = [], deletes = [], adds = [];
+      ops.forEach(function (op) {
+        if (op.action === 'update') updates.push(op);
+        else if (op.action === 'delete') deletes.push(op);
+        else if (op.action === 'add') adds.push(op);
+      });
+
+      updates.forEach(function (op) {
+        const row = findRowIndex_(sheet, op.row);
+        if (row !== -1) {
           const d = computeDerivedFields_(op.data || {});
-          sheet.appendRow(buildRowArray_(d));
-        } else if (op.action === 'update') {
-          const row = findRowIndex_(sheet, op.row);
-          if (row !== -1) {
-            const d = computeDerivedFields_(op.data || {});
-            sheet.getRange(row, 1, 1, HEADERS.length).setValues([buildRowArray_(d)]);
-          }
-        } else if (op.action === 'delete') {
-          const row = findRowIndex_(sheet, op.row);
-          if (row !== -1) sheet.deleteRow(row);
+          sheet.getRange(row, 1, 1, HEADERS.length).setValues([buildRowArray_(d)]);
         }
       });
+
+      deletes.sort(function (a, b) { return Number(b.row) - Number(a.row); });
+      deletes.forEach(function (op) {
+        const row = findRowIndex_(sheet, op.row);
+        if (row !== -1) sheet.deleteRow(row);
+      });
+
+      adds.forEach(function (op) {
+        const d = computeDerivedFields_(op.data || {});
+        sheet.appendRow(buildRowArray_(d));
+      });
+
       recalcAcumulados_(sheet);
       result.processed = ops.length;
     } else {

@@ -7,6 +7,88 @@ const FALLBACK_GLOMAX_DATA = [
   { 'FOLIO': '10103', 'FECHA': '2026-02-01', 'CODIGO': 'HEM6124', 'DESCRIPCION': 'MONITOR DE PRESION ARTERIAL DE MUÑECA OMRON 6124', 'CANTFACTURADA': '8', 'CLIENTE': 'FARMACIAS DE BARRIO CHILE', 'PREUNI': '26715', 'NETO': '213720', 'COSTOS': '16000', '($) UTILIDAD': '85720', 'FAMILIA': 'EQUIPOS MEDICOS', 'CATEGORIA': 'MEDPRESION', 'MARCA': 'OMRON', 'CANAL FINAL': 'RETAIL', 'REGION': 'Región Metropolitana', 'AÑO': '2026', '# MES': '2', 'MES': 'febrero' }
 ];
 
+const MESES_ES_LARGO = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+
+const TARGET_MONTH_NAMES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+const DEFAULT_MONTHLY_TARGET = 100000000;
+
+// Metas comerciales por mes (índice 0 = enero), persistidas en localStorage.
+let monthlyTargets = (function () {
+  const fallback = new Array(12).fill(DEFAULT_MONTHLY_TARGET);
+  try {
+    const stored = JSON.parse(localStorage.getItem('glomax_monthly_targets') || 'null');
+    if (!Array.isArray(stored)) return fallback;
+    return fallback.map((def, i) => (Number.isFinite(Number(stored[i])) ? Number(stored[i]) : def));
+  } catch (e) {
+    return fallback;
+  }
+})();
+
+// Escapa texto libre proveniente de la planilla antes de interpolarlo en innerHTML.
+function escapeHtml(val) {
+  if (val === undefined || val === null) return '';
+  return String(val)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+let _toastTimer = null;
+function showToast(msg, type) {
+  const el = document.getElementById('toast');
+  if (!el) return;
+  el.textContent = String(msg == null ? '' : msg);
+  el.classList.remove('toast--error', 'toast--warn');
+  if (type === 'error') el.classList.add('toast--error');
+  else if (type === 'warn') el.classList.add('toast--warn');
+  el.classList.add('show');
+  if (_toastTimer) clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.remove('show'), 3800);
+}
+
+// Convierte cualquier representación de fecha al formato YYYY-MM-DD que exige <input type="date">.
+function toDateInputValue(val) {
+  if (!val) return '';
+  const s = String(val).trim();
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+  const d = parseFlexibleDate(s);
+  if (!d || isNaN(d.getTime())) return '';
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+// Formatea una fecha como YYYY-MM-DD en horario local. `toISOString()` convierte a UTC,
+// lo que en Chile adelanta un día a partir de las ~20:00 y corre los presets de mes/año.
+function toLocalISODate(d) {
+  if (!(d instanceof Date) || isNaN(d.getTime())) return '';
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function todayInputValue() {
+  return toLocalISODate(new Date());
+}
+
+async function apiPost(payload) {
+  if (typeof API_URL !== 'string' || !API_URL) {
+    throw new Error('API_URL no está configurada en config.js');
+  }
+  // text/plain evita el preflight CORS; Apps Script lee e.postData.contents igual.
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(30000)
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'La API rechazó la operación');
+  return json;
+}
+
 function formatCLP(val) {
   const n = Math.round(Number(val) || 0);
   return '$' + n.toLocaleString('es-CL');
@@ -128,11 +210,16 @@ function normalizeDataRows(rawRows) {
       neto = cant * preuni;
     }
 
-    let utilidad = parseChileanNumber(norm['($) UTILIDAD'] || norm['UTILIDAD'] || norm['MARGEN']);
-    if (utilidad === 0 && neto > 0) {
-      utilidad = neto - (cant * costos);
-      if (utilidad <= 0) utilidad = Math.round(neto * 0.35);
-    }
+    const costoTotal = cant * costos;
+
+    // Solo se deriva la utilidad si la planilla no trae el campo. Un 0 explícito es un
+    // dato legítimo (venta sin margen) y no debe recalcularse ni sustituirse por una cifra
+    // inventada: hacerlo contamina todos los KPIs de margen.
+    const rawUtilidad = norm['($) UTILIDAD'] !== undefined ? norm['($) UTILIDAD']
+      : (norm['UTILIDAD'] !== undefined ? norm['UTILIDAD'] : norm['MARGEN']);
+    const utilidad = (rawUtilidad === undefined || rawUtilidad === null || rawUtilidad === '')
+      ? neto - costoTotal
+      : parseChileanNumber(rawUtilidad);
 
     const vendedor = norm['CODVENDENDOR'] || norm['CODVENDEDOR'] || norm['VENDEDOR'] || 'Vendedor General';
     const canal = norm['CANAL FINAL'] || norm['CANAL'] || norm['TIPO CANAL'] || 'PUBLICO';
@@ -151,6 +238,7 @@ function normalizeDataRows(rawRows) {
       'CANTFACTURADA': cant,
       'PREUNI': preuni,
       'COSTOS': costos,
+      'COSTO TOTAL NET': costoTotal,
       'NETO': neto,
       '($) UTILIDAD': utilidad,
       'CLIENTE': String(cliente),
@@ -160,8 +248,14 @@ function normalizeDataRows(rawRows) {
       'TIENDA FINAL': String(tienda),
       'FAMILIA': String(familia),
       'CATEGORIA': String(categoria),
+      'MARCA': String(norm['MARCA'] || norm['BRAND'] || 'GENERAL'),
       'REGION': String(region),
       'COMUNA': String(comuna),
+      // Derivados de la fecha ya parseada, no de las columnas de la planilla: éstas
+      // pueden venir vacías o inconsistentes, y la comparativa interanual depende de ellas.
+      'AÑO': yyyy,
+      '# MES': parsedDate.getMonth() + 1,
+      'MES': MESES_ES_LARGO[parsedDate.getMonth()],
       '_row': r['_row'] || (i + 2)
     };
   });
@@ -426,9 +520,9 @@ const CmdPalette = {
       { label: 'Ver Tablero Principal', action: () => switchView('tablero'), type: 'Navegación' },
       { label: 'Ver Tabla de Registros', action: () => switchView('tabla'), type: 'Navegación' },
       { label: '+ Crear Nueva Venta', action: () => openModal(), type: 'Acción' },
-      { label: 'Exportar Reporte a PDF', action: () => exportToPdf(), type: 'Acción' },
-      { label: 'Exportar Datos a CSV', action: () => exportToCsv(), type: 'Acción' },
-      { label: 'Limpiar Filtros Globales', action: () => resetFilters(), type: 'Acción' },
+      { label: 'Exportar Reporte a PDF', action: () => exportPdf(), type: 'Acción' },
+      { label: 'Exportar Datos a CSV', action: () => exportCsv(), type: 'Acción' },
+      { label: 'Limpiar Filtros Globales', action: () => clearAllFilters(), type: 'Acción' },
       { label: 'Cambiar Tema Claro / Oscuro', action: () => toggleTheme(), type: 'Ajustes' },
       { label: 'Alternar Sonido FX', action: () => toggleSound(), type: 'Ajustes' }
     ];
@@ -468,8 +562,8 @@ const CmdPalette = {
     }
     this.results.innerHTML = this.items.map((item, idx) => `
       <div class="cmd-palette-item ${idx === this.selectedIndex ? 'selected' : ''}" data-idx="${idx}">
-        <span>${item.label}</span>
-        <span class="item-type">${item.type}</span>
+        <span>${escapeHtml(item.label)}</span>
+        <span class="item-type">${escapeHtml(item.type)}</span>
       </div>
     `).join('');
 
@@ -638,6 +732,8 @@ const AuthManager = {
       modal.classList.remove('hidden');
       modal.style.display = 'flex';
     }
+    const errBox = document.getElementById('loginErrorMsg');
+    if (errBox) errBox.style.display = 'none';
   },
 
   closeLoginModal() {
@@ -649,16 +745,12 @@ const AuthManager = {
   },
 
   checkSession() {
-    let sessionStr = localStorage.getItem('glomax_auth_session');
+    const sessionStr = localStorage.getItem('glomax_auth_session');
     if (!sessionStr) {
-      const defaultSession = {
-        email: 'admin@glomax.cl',
-        canal: 'Todos',
-        name: 'Administrador BI',
-        loginTime: new Date().toISOString()
-      };
-      localStorage.setItem('glomax_auth_session', JSON.stringify(defaultSession));
-      sessionStr = JSON.stringify(defaultSession);
+      this.currentUser = null;
+      this.renderProfileBadge();
+      this.openLoginModal();
+      return false;
     }
 
     try {
@@ -687,7 +779,7 @@ const AuthManager = {
 
     if (!cleanEmail) {
       const emailInput = document.getElementById('loginEmail');
-      cleanEmail = (emailInput && emailInput.value ? emailInput.value : 'admin@glomax.cl').trim().toLowerCase();
+      cleanEmail = (emailInput && emailInput.value ? emailInput.value : '').trim().toLowerCase();
     }
     if (!cleanPass) {
       const passInput = document.getElementById('loginPassword');
@@ -695,23 +787,22 @@ const AuthManager = {
     }
     if (!selectedCanal) {
       const canalInput = document.getElementById('loginCanal');
-      selectedCanal = (canalInput && canalInput.value ? canalInput.value : 'Todos').trim();
+      selectedCanal = (canalInput && canalInput.value ? canalInput.value : '').trim();
     }
 
-    let acct = this.accounts.find(a => a.email.toLowerCase() === cleanEmail);
-    if (acct) {
-      if (!cleanPass) cleanPass = acct.pass;
-      if (!selectedCanal || acct.canal !== 'Todos') {
-        selectedCanal = acct.canal;
-      }
-    } else {
-      if (!cleanEmail) cleanEmail = 'admin@glomax.cl';
-      if (!selectedCanal) selectedCanal = 'Todos';
+    const acct = this.accounts.find(a => a.email.toLowerCase() === cleanEmail);
+    if (!acct || acct.pass !== cleanPass) {
+      this.showError('Correo o contraseña incorrectos.');
+      return false;
     }
+
+    // Una cuenta atada a un canal no puede elegir otro; solo 'Todos' permite escoger.
+    if (acct.canal !== 'Todos' || !selectedCanal) selectedCanal = acct.canal;
 
     const session = {
-      email: cleanEmail,
+      email: acct.email,
       canal: selectedCanal,
+      name: acct.name,
       loginTime: new Date().toISOString()
     };
 
@@ -984,14 +1075,14 @@ function switchView(viewName) {
 
 function toggleMobileSidebar() {
   const sidebar = document.querySelector('.ax-sidebar');
-  const overlay = document.getElementById('sidebarOverlay');
+  const overlay = document.getElementById('sidebarBackdrop');
   if (sidebar) sidebar.classList.toggle('open');
   if (overlay) overlay.classList.toggle('active');
 }
 
 function closeMobileSidebar() {
   const sidebar = document.querySelector('.ax-sidebar');
-  const overlay = document.getElementById('sidebarOverlay');
+  const overlay = document.getElementById('sidebarBackdrop');
   if (sidebar) sidebar.classList.remove('open');
   if (overlay) overlay.classList.remove('active');
 }
@@ -1012,16 +1103,17 @@ function toggleCotizMobileFilters() {
   }
 }
 
+function syncThemeIcon() {
+  const icon = document.getElementById('themeToggleIcon');
+  if (icon) icon.textContent = (document.body.dataset.theme || 'dark') === 'dark' ? '🌙' : '☀️';
+}
+
 function toggleTheme() {
   const currentTheme = document.body.dataset.theme || 'dark';
   const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
   document.body.dataset.theme = newTheme;
   localStorage.setItem('glomax_theme', newTheme);
-  
-  const icon = document.getElementById('themeToggleIcon');
-  if (icon) {
-    icon.textContent = newTheme === 'dark' ? '🌙' : '☀️';
-  }
+  syncThemeIcon();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -1036,6 +1128,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (savedTheme) {
     document.body.dataset.theme = savedTheme;
   }
+  syncThemeIcon();
 
   // Inicializar vinculación universal de botones
   setupAllButtonListeners();
@@ -1068,12 +1161,13 @@ function exportCsv() {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.setAttribute('href', url);
-  link.setAttribute('download', `Glomax_Ventas_${new Date().toISOString().slice(0, 10)}.csv`);
+  link.setAttribute('download', `Glomax_Ventas_${todayInputValue()}.csv`);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 
-  if (typeof showToast === 'function') showToast('📄 CSV exportado exitosamente');
+  showToast('📄 CSV exportado exitosamente');
 }
 
 function exportPdf() {
@@ -1176,7 +1270,7 @@ function renderProductosView() {
   if (select && (!select.options || select.options.length <= 1 || select._lastRowCount !== rows.length)) {
     const currentVal = select.value;
     select.innerHTML = '<option value="">-- Selecciona un Producto --</option>' +
-      sortedSkus.map(p => `<option value="${p.sku}" ${p.sku === currentVal ? 'selected' : ''}>${p.sku} · ${p.desc.slice(0, 45)}</option>`).join('');
+      sortedSkus.map(p => `<option value="${escapeHtml(p.sku)}" ${p.sku === currentVal ? 'selected' : ''}>${escapeHtml(p.sku)} · ${escapeHtml(p.desc.slice(0, 45))}</option>`).join('');
     select._lastRowCount = rows.length;
 
     select.onchange = () => {
@@ -1199,11 +1293,15 @@ function renderProductosView() {
         suggestions.innerHTML = '<div style="padding: 10px; color: #94a3b8; font-size: 0.82rem;">No se encontraron productos coincidentes</div>';
       } else {
         suggestions.innerHTML = matches.map(m => `
-          <div class="prod-suggestion-item" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: space-between;" onclick="selectProductFor360('${m.sku}')">
-            <span style="font-weight: 700; color: #c084fc; font-family: monospace;">${m.sku}</span>
-            <span style="font-size: 0.8rem; color: #cbd5e1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px;">${m.desc}</span>
+          <div class="prod-suggestion-item" data-sku="${escapeHtml(m.sku)}" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-weight: 700; color: #c084fc; font-family: monospace;">${escapeHtml(m.sku)}</span>
+            <span style="font-size: 0.8rem; color: #cbd5e1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px;">${escapeHtml(m.desc)}</span>
           </div>
         `).join('');
+
+        suggestions.querySelectorAll('.prod-suggestion-item').forEach(el => {
+          el.addEventListener('click', () => selectProductFor360(el.dataset.sku));
+        });
       }
       suggestions.style.display = 'block';
     };
@@ -1317,15 +1415,13 @@ function selectProductFor360(sku, skipInputUpdate = false) {
   const byYear = new Map();
   const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
   const monthTotals = new Array(12).fill(0);
+  const activeMonths = new Set();
 
   skuRows.forEach(r => {
-    let d = null;
-    if (r['FECHA']) {
-      d = new Date(r['FECHA']);
-      if (isNaN(d.getTime())) d = typeof parseFlexibleDate === 'function' ? parseFlexibleDate(r['FECHA']) : null;
-    }
-    const yr = (d && !isNaN(d.getTime())) ? String(d.getFullYear()) : (r['AÑO'] || '2025');
-    const mo = (d && !isNaN(d.getTime())) ? d.getMonth() : 0;
+    const d = parseRowDate(r['FECHA']);
+    const yr = d ? String(d.getFullYear()) : String(r['AÑO'] || new Date().getFullYear());
+    const mo = d ? d.getMonth() : 0;
+    if (d) activeMonths.add(`${yr}-${mo}`);
 
     if (!byYear.has(yr)) {
       byYear.set(yr, { year: yr, qty: 0, neto: 0, costo: 0, util: 0, months: new Array(12).fill(0), netoMonths: new Array(12).fill(0) });
@@ -1334,12 +1430,12 @@ function selectProductFor360(sku, skipInputUpdate = false) {
     const q = Number(r['CANTFACTURADA'] || 0);
     const n = Number(r['NETO'] || 0);
     const c = Number(r['COSTOS'] || 0) * q;
-    const u = Number(r['($) UTILIDAD']) || (n - c);
+    const u = Number(r['($) UTILIDAD']);
 
     yItem.qty += q;
     yItem.neto += n;
     yItem.costo += c;
-    yItem.util += u;
+    yItem.util += Number.isFinite(u) ? u : (n - c);
     yItem.months[mo] += q;
     yItem.netoMonths[mo] += n;
     monthTotals[mo] += q;
@@ -1374,8 +1470,9 @@ function selectProductFor360(sku, skipInputUpdate = false) {
   if (elPeakMonth) elPeakMonth.textContent = monthNames[peakMonthIdx];
   if (elPeakMonthSub) elPeakMonthSub.textContent = `${Math.round(peakMonthQty).toLocaleString('es-CL')} un. en total histórico`;
 
-  // Velocidad Mensual
-  const distinctMonthsCount = Math.max(1, byYear.size * 12);
+  // Velocidad Mensual sobre los meses con ventas reales. Asumir 12 meses por cada año
+  // presente subestima el ritmo de productos nuevos o del año en curso.
+  const distinctMonthsCount = Math.max(1, activeMonths.size);
   const monthlySpeed = totalQty / distinctMonthsCount;
   const elSpeed = document.getElementById('prodKpiMonthlySpeed');
   if (elSpeed) elSpeed.textContent = Math.round(monthlySpeed).toLocaleString('es-CL') + ' und/mes';
@@ -1411,12 +1508,24 @@ function updateProdExhaustion(skuRowsParam, monthlySpeedParam, avgPriceParam, av
   const avgCost = avgCostParam || (totalQty > 0 ? totalCosto / totalQty : 0);
   const dolarRate = dolarRateParam || parseFloat(document.getElementById('prodDolarRateInput')?.value) || 950;
 
-  // Calcular ritmo según modo
-  let speed = monthlySpeedParam || (totalQty / 24);
-  if (speedMode === '3m') speed = Math.max(0.5, (totalQty / 24) * 1.2);
-  else if (speedMode === '6m') speed = Math.max(0.5, (totalQty / 24) * 1.1);
-  else if (speedMode === '12m') speed = Math.max(0.5, (totalQty / 12));
-  else speed = Math.max(0.5, totalQty / 36);
+  // Ritmo según el modo elegido, calculado sobre las ventas reales de esa ventana.
+  // Antes cada modo aplicaba una constante arbitraria al total histórico, así que
+  // "Últimos 3 meses" no reflejaba la coyuntura reciente que el rótulo promete.
+  const windowMonths = { '3m': 3, '6m': 6, '12m': 12 }[speedMode] || null;
+  let speed;
+
+  if (windowMonths) {
+    const refDate = getDatasetReferenceDate();
+    const cutoff = new Date(refDate.getFullYear(), refDate.getMonth() - windowMonths + 1, 1);
+    const windowQty = skuRows.reduce((acc, r) => {
+      const d = parseRowDate(r['FECHA']);
+      return (d && d >= cutoff) ? acc + Number(r['CANTFACTURADA'] || 0) : acc;
+    }, 0);
+    speed = Math.max(0.5, windowQty / windowMonths);
+  } else {
+    // Histórico: usa los meses con ventas efectivas calculados en selectProductFor360.
+    speed = Math.max(0.5, monthlySpeedParam || (totalQty / 12));
+  }
 
   const durationMonths = projQty / speed;
   const durationDays = Math.round(durationMonths * 30.41);
@@ -1908,10 +2017,10 @@ function updateMixSugeridoView() {
       return `
         <tr>
           <td style="text-align: center; font-weight: 800; color: #94a3b8;">#${idx + 1}</td>
-          <td style="text-align: left;"><span class="sku-badge-pill" style="font-weight: 800; font-size: 0.82rem; cursor: pointer;" onclick="switchView('productos'); selectProductFor360('${p.sku}');" title="Ver análisis 360 de este producto">${p.sku}</span></td>
-          <td style="text-align: left; max-width: 260px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; color: #f8fafc;" title="${p.desc}">${p.desc}</td>
-          <td style="text-align: left;"><span class="tag-pill" style="font-size: 0.75rem;">${p.familia}</span></td>
-          <td style="text-align: center;"><span style="padding: 3px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 700; ${badgeStyle}">${p.clasificacion}</span></td>
+          <td style="text-align: left;"><span class="sku-badge-pill js-sku-drill" data-sku="${escapeHtml(p.sku)}" style="font-weight: 800; font-size: 0.82rem; cursor: pointer;" title="Ver análisis 360 de este producto">${escapeHtml(p.sku)}</span></td>
+          <td style="text-align: left; max-width: 260px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; color: #f8fafc;" title="${escapeHtml(p.desc)}">${escapeHtml(p.desc)}</td>
+          <td style="text-align: left;"><span class="tag-pill" style="font-size: 0.75rem;">${escapeHtml(p.familia)}</span></td>
+          <td style="text-align: center;"><span style="padding: 3px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 700; ${badgeStyle}">${escapeHtml(p.clasificacion)}</span></td>
           <td style="text-align: right; font-weight: 700;">${Math.round(p.cant).toLocaleString('es-CL')} un.</td>
           <td style="text-align: right; font-weight: 800; color: #38bdf8;">${typeof formatCLP === 'function' ? formatCLP(p.neto) : '$'+Math.round(p.neto).toLocaleString('es-CL')}</td>
           <td style="text-align: right; font-weight: 700; color: #34d399;">${typeof formatCLP === 'function' ? formatCLP(p.utilidad) : '$'+Math.round(p.utilidad).toLocaleString('es-CL')}</td>
@@ -1930,10 +2039,21 @@ function updateMixSugeridoView() {
         </tr>
       `;
     }
+
+    tbody.querySelectorAll('.js-sku-drill').forEach(el => {
+      el.addEventListener('click', () => {
+        switchView('productos');
+        selectProductFor360(el.dataset.sku);
+      });
+    });
   }
 }
 
 function openTargetModal() {
+  TARGET_MONTH_NAMES.forEach((name, i) => {
+    const input = document.getElementById(`target${name}`);
+    if (input) input.value = monthlyTargets[i];
+  });
   const backdrop = document.getElementById('targetModalBackdrop');
   if (backdrop) backdrop.classList.add('active');
 }
@@ -2169,9 +2289,9 @@ function setupAllButtonListeners() {
   const cancelBtn = document.getElementById('cancelModalBtn');
   if (cancelBtn) cancelBtn.onclick = () => closeModal();
 
-  const saveBtn = document.getElementById('saveModalBtn');
-  if (saveBtn) saveBtn.onclick = (e) => { e.preventDefault(); saveRow(); };
-
+  // El guardado se maneja solo en el submit del formulario. Interceptar el click del
+  // botón con preventDefault cancelaba la validación HTML5 (campos required) antes
+  // de que el navegador llegara a ejecutarla.
   const modalFormEl = document.getElementById('modalForm');
   if (modalFormEl) modalFormEl.onsubmit = (e) => { e.preventDefault(); saveRow(); };
 
@@ -2455,7 +2575,9 @@ function getDatasetReferenceDate() {
   for (let i = 0; i < rows.length; i++) {
     const f = rows[i]['FECHA'];
     if (f) {
-      const t = new Date(f).getTime();
+      // Anclado a mediodía local: 'YYYY-MM-DD' a secas se parsea como medianoche UTC
+      // y los getters locales retroceden un día en zonas horarias negativas.
+      const t = new Date(f + 'T12:00:00').getTime();
       if (!isNaN(t) && t > maxTime) maxTime = t;
     }
   }
@@ -2470,27 +2592,27 @@ function applyDatePreset(preset) {
   const elHasta = document.getElementById('fltHasta');
 
   if (preset === 'today') {
-    const dStr = ref.toISOString().slice(0, 10);
+    const dStr = toLocalISODate(ref);
     if (elDesde) elDesde.value = dStr;
     if (elHasta) elHasta.value = dStr;
     currentSalesPeriod = 'semana';
   } else if (preset === '7days') {
     const past = new Date(ref);
     past.setDate(ref.getDate() - 6);
-    if (elDesde) elDesde.value = past.toISOString().slice(0, 10);
-    if (elHasta) elHasta.value = ref.toISOString().slice(0, 10);
+    if (elDesde) elDesde.value = toLocalISODate(past);
+    if (elHasta) elHasta.value = toLocalISODate(ref);
     currentSalesPeriod = 'semana';
   } else if (preset === 'thisMonth') {
     const firstDay = new Date(ref.getFullYear(), ref.getMonth(), 1);
     const lastDay = new Date(ref.getFullYear(), ref.getMonth() + 1, 0);
-    if (elDesde) elDesde.value = firstDay.toISOString().slice(0, 10);
-    if (elHasta) elHasta.value = lastDay.toISOString().slice(0, 10);
+    if (elDesde) elDesde.value = toLocalISODate(firstDay);
+    if (elHasta) elHasta.value = toLocalISODate(lastDay);
     currentSalesPeriod = 'mes';
   } else if (preset === 'thisYear') {
     const firstDay = new Date(ref.getFullYear(), 0, 1);
     const lastDay = new Date(ref.getFullYear(), 11, 31);
-    if (elDesde) elDesde.value = firstDay.toISOString().slice(0, 10);
-    if (elHasta) elHasta.value = lastDay.toISOString().slice(0, 10);
+    if (elDesde) elDesde.value = toLocalISODate(firstDay);
+    if (elHasta) elHasta.value = toLocalISODate(lastDay);
     currentSalesPeriod = 'anio';
   } else if (preset === 'all') {
     if (elDesde) elDesde.value = '';
@@ -2573,14 +2695,13 @@ window._clearFilterChip = function(idx) {
 function applyFilters() {
   const f = getFilters();
   filtered = rows.filter(r => {
-    if (f.desde) {
-      const d = new Date(r['FECHA']);
-      if (isNaN(d.getTime()) || d < new Date(f.desde)) return false;
-    }
-    if (f.hasta) {
-      const d = new Date(r['FECHA']);
-      if (isNaN(d.getTime()) || d > new Date(f.hasta + 'T23:59:59')) return false;
-    }
+    // FECHA y los filtros son siempre 'YYYY-MM-DD', formato en que el orden alfabético
+    // coincide con el cronológico. Comparar como texto evita el desfase que producía
+    // mezclar parseo UTC (la fecha) con parseo local (el umbral 'hasta').
+    const fecha = r['FECHA'];
+    if (!fecha) return false;
+    if (f.desde && fecha < f.desde) return false;
+    if (f.hasta && fecha > f.hasta) return false;
     if (f.canal && r['CANAL FINAL'] !== f.canal) return false;
     if (f.tienda && r['TIENDA FINAL'] !== f.tienda) return false;
     if (f.vendedor && r['CODVENDENDOR'] !== f.vendedor) return false;
@@ -2605,28 +2726,31 @@ function applyFilters() {
   if (el) el.addEventListener('change', applyFilters);
 });
 
-const clearBtn = document.getElementById('clearFiltersBtn');
-if (clearBtn) {
-  clearBtn.addEventListener('click', () => {
-    ['fltDesde', 'fltHasta', 'fltCanal', 'fltTienda', 'fltVendedor', 'fltFamilia', 'fltCategoria', 'fltRegion'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.value = '';
-    });
-    const sb = document.getElementById('searchBox');
-    if (sb) sb.value = '';
-
-    const container = document.getElementById('datePresets');
-    if (container) {
-      const presetBtns = container.querySelectorAll('.preset-btn');
-      presetBtns.forEach(b => b.classList.remove('active'));
-      const allBtn = container.querySelector('[data-preset="all"]');
-      if (allBtn) allBtn.classList.add('active');
-    }
-
-    applyFilters();
-    if (typeof showToast === 'function') showToast('🧹 Todos los filtros fueron limpiados');
+function clearAllFilters() {
+  ['fltDesde', 'fltHasta', 'fltCanal', 'fltTienda', 'fltVendedor', 'fltFamilia', 'fltCategoria', 'fltRegion'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
   });
+  const sb = document.getElementById('searchBox');
+  if (sb) sb.value = '';
+
+  const container = document.getElementById('datePresets');
+  if (container) {
+    const presetBtns = container.querySelectorAll('.preset-btn');
+    presetBtns.forEach(b => b.classList.remove('active'));
+    const allBtn = container.querySelector('[data-preset="all"]');
+    if (allBtn) allBtn.classList.add('active');
+  }
+
+  // Limpiar el filtro de canal no debe saltarse la restricción de canal de la sesión.
+  if (typeof AuthManager !== 'undefined') AuthManager.applyUserChannelPermissions();
+
+  applyFilters();
+  showToast('🧹 Todos los filtros fueron limpiados');
 }
+
+const clearBtn = document.getElementById('clearFiltersBtn');
+if (clearBtn) clearBtn.addEventListener('click', clearAllFilters);
 
 // ---------- Render orquestador ----------
 function renderAll() {
@@ -3000,18 +3124,22 @@ function setupChartPeriodListeners() {
 /* ==========================================================================
    SMART CONTINUOUS TIME-SERIES GENERATOR FOR YOY SALES COMPARISON
    ========================================================================== */
-function buildTimeSeriesData(period, dataList) {
-  const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-
-  // Determinar año activo y año anterior
+// Año más reciente presente en los datos (y el anterior), para la comparativa interanual.
+function getComparisonYears(dataList) {
   const yearsSet = new Set();
-  dataList.forEach(r => {
+  (dataList || []).forEach(r => {
     const y = parseInt(r['AÑO'], 10);
     if (y && !isNaN(y)) yearsSet.add(y);
   });
   const yearsArr = Array.from(yearsSet).sort((a, b) => a - b);
-  const activeYear = yearsArr.length > 0 ? yearsArr[yearsArr.length - 1] : 2026;
-  const prevYear = activeYear - 1;
+  const activeYear = yearsArr.length > 0 ? yearsArr[yearsArr.length - 1] : new Date().getFullYear();
+  return { activeYear, prevYear: activeYear - 1 };
+}
+
+function buildTimeSeriesData(period, dataList) {
+  const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+  const { activeYear, prevYear } = getComparisonYears(dataList);
 
   // 1. MODO ANUAL: 12 meses continuos comparativos (Año Actual vs Año Anterior)
   if (period === 'anio') {
@@ -3201,8 +3329,7 @@ function renderCharts() {
   const mesCanvas = document.getElementById('salesChart') || document.getElementById('chartMes');
   if (mesCanvas) {
     const timeSorted = buildTimeSeriesData(currentSalesPeriod, filtered);
-    const activeY = 2026;
-    const prevY = 2025;
+    const { activeYear: activeY, prevYear: prevY } = getComparisonYears(filtered);
 
     const ctx = mesCanvas.getContext('2d');
     const gradBlue = ctx.createLinearGradient(0, 0, 0, 320);
@@ -3368,13 +3495,23 @@ function renderCharts() {
         const color = luxuryPalette[i % luxuryPalette.length];
         const pct = totalCanal > 0 ? ((c[1] / totalCanal) * 100).toFixed(1) : '0';
         return `
-          <div class="legend-chip" onclick="document.getElementById('fltCanal').value='${c[0]}'; applyFilters();" title="Filtrar por ${c[0]}">
+          <div class="legend-chip" data-canal="${escapeHtml(c[0])}" title="Filtrar por ${escapeHtml(c[0])}">
             <span class="legend-dot" style="background:${color};"></span>
-            <span>${c[0]}</span>
+            <span>${escapeHtml(c[0])}</span>
             <span style="color:#94a3b8; font-weight:600;">${pct}%</span>
           </div>
         `;
       }).join('');
+
+      legendWrap.querySelectorAll('.legend-chip').forEach(el => {
+        el.addEventListener('click', () => {
+          const sel = document.getElementById('fltCanal');
+          // Un usuario con canal restringido no puede saltárselo desde la leyenda.
+          if (!sel || sel.disabled) return;
+          sel.value = el.dataset.canal;
+          applyFilters();
+        });
+      });
     }
   }
 
@@ -3568,22 +3705,28 @@ function renderTable() {
   const pageItems = filtered.slice(start, start + PAGE_SIZE);
 
   body.innerHTML = pageItems.map(r => `
-    <tr data-row="${r['_row'] || ''}">
-      <td><strong>${r['FOLIO'] || ''}</strong></td>
-      <td>${toDateInputValue(r['FECHA'])}</td>
-      <td>${r['CLIENTE'] || ''}</td>
-      <td>${r['DESCRIPCION'] || r['CODIGO'] || ''}</td>
-      <td><span class="pill-tag">${r['CANAL FINAL'] || 'Público'}</span></td>
+    <tr data-row="${escapeHtml(r['_row'] || '')}">
+      <td><strong>${escapeHtml(r['FOLIO'] || '')}</strong></td>
+      <td>${escapeHtml(toDateInputValue(r['FECHA']))}</td>
+      <td>${escapeHtml(r['CLIENTE'] || '')}</td>
+      <td>${escapeHtml(r['DESCRIPCION'] || r['CODIGO'] || '')}</td>
+      <td><span class="pill-tag">${escapeHtml(r['CANAL FINAL'] || 'Público')}</span></td>
       <td style="text-align:right;">${formatNum(r['CANTFACTURADA'])}</td>
       <td style="text-align:right;">${formatCLP(r['PREUNI'])}</td>
       <td style="text-align:right; font-weight:700; color:#3b82f6;">${formatCLP(r['NETO'])}</td>
       <td style="text-align:right;">${formatCLP(r['COSTOS'])}</td>
       <td style="text-align:right; font-weight:700; color:#10b981;">${formatCLP(r['($) UTILIDAD'])}</td>
       <td style="text-align:center;">
-        <button type="button" class="btn-sm btn-secondary" onclick="openModalForEdit(${r['_row']})" title="Editar registro">✏️</button>
+        <button type="button" class="btn-sm btn-secondary js-edit-row" title="Editar registro">✏️</button>
       </td>
     </tr>
   `).join('');
+
+  body.querySelectorAll('.js-edit-row').forEach(btn => {
+    btn.addEventListener('click', () => {
+      openModalForEdit(btn.closest('tr').dataset.row);
+    });
+  });
 
   const pageInfo = document.getElementById('pageInfo');
   if (pageInfo) {
@@ -3675,6 +3818,10 @@ const FIELD_MAP = [
   ['f-comuna', 'COMUNA'], ['f-region', 'REGION'], ['f-glosa', 'GLOSA']
 ];
 
+// FOLIO del registro abierto en el modal, para que el backend confirme que la fila
+// que va a escribir sigue siendo la misma que el usuario está viendo.
+let editingFolio = '';
+
 function getModalBackdrop() {
   return document.getElementById('modalBackdrop') || document.getElementById('modalOverlay');
 }
@@ -3691,11 +3838,12 @@ function openModalForNew() {
   const rowInput = document.getElementById('fRow') || document.getElementById('f-row');
   const dateInput = document.getElementById('fFecha') || document.getElementById('f-fecha');
 
+  editingFolio = '';
   if (titleEl) titleEl.textContent = 'Nuevo registro de Venta';
   if (formEl) formEl.reset();
   if (rowInput) rowInput.value = '';
   if (delBtn) delBtn.style.display = 'none';
-  if (dateInput) dateInput.value = new Date().toISOString().slice(0, 10);
+  if (dateInput) dateInput.value = todayInputValue();
   if (backdrop) backdrop.classList.add('active');
 }
 
@@ -3711,6 +3859,7 @@ function openModalForEdit(rowId) {
   const delBtn = document.getElementById('deleteRowBtn');
   const rowInput = document.getElementById('fRow') || document.getElementById('f-row');
 
+  editingFolio = String(r['FOLIO'] || '');
   if (titleEl) titleEl.textContent = 'Editar registro de Venta';
   if (rowInput) rowInput.value = r['_row'];
 
@@ -3743,16 +3892,18 @@ async function saveRow() {
 
   try {
     if (rowId) {
-      await apiPost({ action: 'update', row: rowId, data });
-      if (typeof showToast === 'function') showToast('✅ Registro actualizado exitosamente');
+      // expectedFolio deja que el backend verifique que la fila sigue siendo este
+      // registro: si otro usuario borró filas encima, el índice ya no corresponde.
+      await apiPost({ action: 'update', row: rowId, expectedFolio: editingFolio, data });
+      showToast('✅ Registro actualizado exitosamente');
     } else {
       await apiPost({ action: 'add', data });
-      if (typeof showToast === 'function') showToast('✅ Registro creado exitosamente');
+      showToast('✅ Registro creado exitosamente');
     }
     closeModal();
     loadData(false);
   } catch (err) {
-    if (typeof showToast === 'function') showToast('⚠️ Error al guardar: ' + err.message);
+    showToast('⚠️ Error al guardar: ' + err.message, 'error');
   }
 }
 
@@ -3762,12 +3913,12 @@ async function deleteCurrentRow() {
   if (!rowId) return;
   if (!confirm('¿Eliminar este registro? Esta acción no se puede deshacer.')) return;
   try {
-    await apiPost({ action: 'delete', row: rowId });
-    if (typeof showToast === 'function') showToast('🗑️ Registro eliminado');
+    await apiPost({ action: 'delete', row: rowId, expectedFolio: editingFolio });
+    showToast('🗑️ Registro eliminado');
     closeModal();
     loadData(false);
   } catch (err) {
-    if (typeof showToast === 'function') showToast('⚠️ Error al eliminar: ' + err.message);
+    showToast('⚠️ Error al eliminar: ' + err.message, 'error');
   }
 }
 
@@ -3857,27 +4008,32 @@ function renderPareto8020() {
 
   let cumulative = 0;
   let clients80Count = 0;
+  let revenue80 = 0;
   const paretoClients = [];
 
   sortedClients.forEach(([client, rev]) => {
+    const prevCumulative = cumulative;
     cumulative += rev;
-    const pct = (cumulative / totalRev) * 100;
-    if (clients80Count === 0 || (cumulative - rev) / totalRev < 0.8) {
+    if (clients80Count === 0 || prevCumulative / totalRev < 0.8) {
       clients80Count++;
+      revenue80 = cumulative;
       paretoClients.push({ client, rev, pct: ((rev / totalRev) * 100).toFixed(1) });
     }
   });
 
   const totalClientsCount = sortedClients.length;
   const pctClients80 = ((clients80Count / (totalClientsCount || 1)) * 100).toFixed(1);
+  // Porcentaje e importe reales del corte: el bucle se detiene al superar el 80%,
+  // así que el grupo suele concentrar algo más que ese 80% nominal.
+  const pctRevenueReal = ((revenue80 / totalRev) * 100).toFixed(1);
 
   summaryBox.innerHTML = `
-    El <strong>${pctClients80}% de los clientes</strong> (${clients80Count} de ${totalClientsCount}) genera el <strong>80% de los ingresos totales</strong> (${formatCLP(totalRev * 0.8)}).
+    El <strong>${pctClients80}% de los clientes</strong> (${clients80Count} de ${totalClientsCount}) genera el <strong>${pctRevenueReal}% de los ingresos totales</strong> (${formatCLP(revenue80)}).
   `;
 
   listEl.innerHTML = paretoClients.slice(0, 10).map(c => `
     <div class="pareto-item">
-      <span><strong>${c.client}</strong></span>
+      <span><strong>${escapeHtml(c.client)}</strong></span>
       <span class="sim-val">${formatCLP(c.rev)} (${c.pct}%)</span>
     </div>
   `).join('');
@@ -3887,7 +4043,9 @@ function renderRFMGrid() {
   const container = document.getElementById('rfmGrid');
   if (!container || !filtered.length) return;
 
-  const now = new Date();
+  // Se mide la recencia contra la fecha más nueva del dataset, no contra el reloj real:
+  // si la planilla está desactualizada, todos los clientes caerían en "En Riesgo".
+  const now = getDatasetReferenceDate();
   const clientMap = {};
 
   filtered.forEach(r => {
@@ -4114,7 +4272,7 @@ function getComprasProducts() {
           return `
             <tr>
               <td style="text-align:left;"><span class="sku-badge">${p.codigo}</span></td>
-              <td style="text-align:left;"><strong style="color:var(--ax-text-primary); font-size:0.86rem;">${p.descripcion}</strong></td>
+              <td style="text-align:left;"><strong style="color:var(--ax-text-primary); font-size:0.86rem;">${escapeHtml(p.descripcion)}</strong></td>
               <td style="text-align:left;"><span class="tag-pill">${p.familia}</span></td>
               <td style="text-align:right;" class="num-cell">${fmtCLP(p.costoUnit)}</td>
               <td style="text-align:right;" class="num-cell">${fmtCLP(p.preuni)}</td>
@@ -4177,7 +4335,7 @@ function getComprasProducts() {
           return `
             <div class="compras-breakdown-item">
               <div class="compras-breakdown-header">
-                <span><strong>[${p.codigo}]</strong> ${p.descripcion}</span>
+                <span><strong>[${escapeHtml(p.codigo)}]</strong> ${escapeHtml(p.descripcion)}</span>
                 <span>${fmtCLP(p.costoTotalNet)}</span>
               </div>
               <div class="compras-breakdown-bar">
@@ -5360,7 +5518,7 @@ function renderCotizacionesTopProducts(data) {
 
     const imgObj = typeof productImagesMap !== 'undefined' ? productImagesMap.get(p.sku) : null;
     const imgThumb = imgObj && imgObj.url ?
-      `<img src="${imgObj.url}" alt="${p.sku}" style="width: 38px; height: 38px; object-fit: contain; border-radius: 8px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1);" onerror="this.style.display='none'" />` :
+      `<img src="${encodeURI(imgObj.url)}" alt="${escapeHtml(p.sku)}" style="width: 38px; height: 38px; object-fit: contain; border-radius: 8px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1);" onerror="this.style.display='none'" />` :
       `<div style="width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); border-radius: 8px; font-size: 1rem;">📦</div>`;
 
     return `
@@ -5370,8 +5528,8 @@ function renderCotizacionesTopProducts(data) {
           ${imgThumb}
           <div style="min-width: 0; flex: 1;">
             <div style="display: flex; align-items: center; gap: 8px;">
-              <span class="sku-badge-pill" style="font-size: 0.82rem; padding: 2px 8px; font-weight: 800;">${p.sku}</span>
-              <span style="font-size: 0.92rem; font-weight: 700; color: var(--ax-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${p.descripcion}">${p.descripcion}</span>
+              <span class="sku-badge-pill" style="font-size: 0.82rem; padding: 2px 8px; font-weight: 800;">${escapeHtml(p.sku)}</span>
+              <span style="font-size: 0.92rem; font-weight: 700; color: var(--ax-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(p.descripcion)}">${escapeHtml(p.descripcion)}</span>
             </div>
             <div style="font-size: 0.8rem; color: var(--ax-text-tertiary); margin-top: 3px; font-weight: 500;">
               <strong style="color: #cbd5e1;">${Math.round(p.cantidad).toLocaleString('es-CL')} un.</strong> cotizadas en <strong style="color: #cbd5e1;">${p.solicitudes}</strong> solicitudes
@@ -5447,21 +5605,21 @@ function renderCotizacionesTable(data) {
 
     return `
       <tr style="height: 48px;">
-        <td style="text-align:left;"><span class="tag-pill" style="font-size:0.82rem; font-weight:700;">${r.tipo}</span></td>
-        <td style="text-align:left;"><span class="sku-badge-pill" style="font-weight:800; font-size:0.85rem;">#${r.numCot}</span></td>
-        <td style="text-align:center; font-size:0.85rem; color:#cbd5e1;">${r.fecha || '—'}</td>
-        <td style="text-align:left;"><strong style="color:var(--ax-text-primary); font-size:0.9rem;">${r.cliente}</strong></td>
-        <td style="text-align:left; font-size:0.82rem; color:var(--ax-text-secondary);">${r.rut || '—'}</td>
-        <td style="text-align:left;"><span class="sku-badge-pill" style="background:rgba(59,130,246,0.18); color:#60a5fa; border-color:rgba(59,130,246,0.35); font-weight:700; font-size:0.82rem;">${r.sku}</span></td>
-        <td style="text-align:left; max-width:280px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${r.producto}"><span style="font-size:0.88rem; font-weight:500;">${r.producto}</span></td>
+        <td style="text-align:left;"><span class="tag-pill" style="font-size:0.82rem; font-weight:700;">${escapeHtml(r.tipo)}</span></td>
+        <td style="text-align:left;"><span class="sku-badge-pill" style="font-weight:800; font-size:0.85rem;">#${escapeHtml(r.numCot)}</span></td>
+        <td style="text-align:center; font-size:0.85rem; color:#cbd5e1;">${escapeHtml(r.fecha || '—')}</td>
+        <td style="text-align:left;"><strong style="color:var(--ax-text-primary); font-size:0.9rem;">${escapeHtml(r.cliente)}</strong></td>
+        <td style="text-align:left; font-size:0.82rem; color:var(--ax-text-secondary);">${escapeHtml(r.rut || '—')}</td>
+        <td style="text-align:left;"><span class="sku-badge-pill" style="background:rgba(59,130,246,0.18); color:#60a5fa; border-color:rgba(59,130,246,0.35); font-weight:700; font-size:0.82rem;">${escapeHtml(r.sku)}</span></td>
+        <td style="text-align:left; max-width:280px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(r.producto)}"><span style="font-size:0.88rem; font-weight:500;">${escapeHtml(r.producto)}</span></td>
         <td style="text-align:center; font-weight:800; font-size:0.92rem;" class="num-cell">${Math.round(r.cantidad).toLocaleString('es-CL')}</td>
         <td style="text-align:right; font-weight:900; color:#60a5fa; font-size:0.95rem;" class="num-cell">${formatCLP(r.total)}</td>
-        <td style="text-align:center;"><span class="tag-pill" style="font-size:0.8rem; font-weight:600;">Cod. ${r.vendedor}</span></td>
+        <td style="text-align:center;"><span class="tag-pill" style="font-size:0.8rem; font-weight:600;">Cod. ${escapeHtml(r.vendedor)}</span></td>
         <td style="text-align:center;">${nvFaText}</td>
         <td style="text-align:center;">
           <span class="cotiz-status-pill ${statusClass}" style="font-size: 0.8rem; padding: 4px 10px;">
             <span>${statusIcon}</span>
-            <span>${r.estadoFinal || r.estado}</span>
+            <span>${escapeHtml(r.estadoFinal || r.estado)}</span>
           </span>
         </td>
       </tr>
@@ -5515,13 +5673,29 @@ let cotizModalRows = [];
 let cotizRowIdCounter = 0;
 
 /**
- * Genera un nuevo folio correlativo para cotizaciones
+ * Genera el siguiente folio correlativo del año en curso.
+ * Un número aleatorio colisionaría: con 4 dígitos la probabilidad de repetir
+ * folio supera el 50% tras poco más de un centenar de cotizaciones emitidas.
  */
+function nextCotizFolio() {
+  const year = new Date().getFullYear();
+  const prefix = `COT-${year}-`;
+
+  let maxSeq = 0;
+  (cotizacionesRows || []).forEach(r => {
+    const num = String(r.numCot || '');
+    if (!num.startsWith(prefix)) return;
+    const seq = parseInt(num.slice(prefix.length), 10);
+    if (Number.isFinite(seq) && seq > maxSeq) maxSeq = seq;
+  });
+
+  return `${prefix}${String(maxSeq + 1).padStart(4, '0')}`;
+}
+
 function generateNewCotizFolio() {
   const folioEl = document.getElementById('cFolio');
   const badgeEl = document.getElementById('cotizModalFolioBadge');
-  const rnd = Math.floor(Math.random() * 9000 + 1000);
-  const newFolio = `COT-2026-${rnd}`;
+  const newFolio = nextCotizFolio();
   if (folioEl) folioEl.value = newFolio;
   if (badgeEl) badgeEl.textContent = newFolio;
 }
@@ -5540,7 +5714,7 @@ function openCotizacionModal() {
   generateNewCotizFolio();
 
   // Fecha Emisión por defecto hoy
-  const today = new Date().toISOString().split('T')[0];
+  const today = todayInputValue();
   const fechaEl = document.getElementById('cFecha');
   if (fechaEl) fechaEl.value = today;
 
@@ -5619,6 +5793,28 @@ function formatChileanRut(raw) {
   const dv = clean.slice(-1);
   const formattedCuerpo = cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
   return `${formattedCuerpo}-${dv}`;
+}
+
+/**
+ * Valida el dígito verificador de un RUT chileno (módulo 11).
+ */
+function isValidChileanRut(raw) {
+  const clean = cleanRutStr(raw);
+  if (!/^\d{7,8}[0-9K]$/.test(clean)) return false;
+
+  const cuerpo = clean.slice(0, -1);
+  const dv = clean.slice(-1);
+
+  let suma = 0;
+  let multiplo = 2;
+  for (let i = cuerpo.length - 1; i >= 0; i--) {
+    suma += Number(cuerpo[i]) * multiplo;
+    multiplo = multiplo === 7 ? 2 : multiplo + 1;
+  }
+
+  const resto = 11 - (suma % 11);
+  const dvEsperado = resto === 11 ? '0' : (resto === 10 ? 'K' : String(resto));
+  return dv === dvEsperado;
 }
 
 /**
@@ -5708,22 +5904,30 @@ function onCotizRutInput(val) {
     return;
   }
 
-  // 3. Renderizar opciones de predicción
-  dropdown.innerHTML = candidates.map(c => {
+  // 3. Renderizar opciones de predicción.
+  // El cliente se referencia por índice: serializarlo dentro del atributo onclick
+  // permite escapar del atributo con un nombre que contenga comillas o entidades HTML.
+  dropdown.innerHTML = candidates.map((c, i) => {
     const loc = [c.comuna, c.region].filter(Boolean).join(', ');
-    const safeClientJson = JSON.stringify(c).replace(/"/g, '&quot;');
     return `
-      <div class="cotiz-pred-item" onclick="selectCotizClientPrediction(${safeClientJson}, true)">
+      <div class="cotiz-pred-item" data-idx="${i}">
         <div>
-          <div class="cotiz-pred-name">${c.cliente}</div>
-          <div class="cotiz-pred-loc">${loc ? '📍 ' + loc : 'Cliente Registrado'}</div>
+          <div class="cotiz-pred-name">${escapeHtml(c.cliente)}</div>
+          <div class="cotiz-pred-loc">${loc ? '📍 ' + escapeHtml(loc) : 'Cliente Registrado'}</div>
         </div>
         <div style="text-align: right;">
-          <span class="cotiz-pred-rut">${c.rut || formatChileanRut(c.rutClean)}</span>
+          <span class="cotiz-pred-rut">${escapeHtml(c.rut || formatChileanRut(c.rutClean))}</span>
         </div>
       </div>
     `;
   }).join('');
+
+  dropdown.querySelectorAll('.cotiz-pred-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const c = candidates[Number(el.dataset.idx)];
+      if (c) selectCotizClientPrediction(c, true);
+    });
+  });
 
   dropdown.style.display = 'block';
 }
@@ -5763,21 +5967,25 @@ function onCotizClientNameInput(val) {
     return;
   }
 
-  dropdown.innerHTML = candidates.map(c => {
+  dropdown.innerHTML = candidates.map((c, i) => {
     const loc = [c.comuna, c.region].filter(Boolean).join(', ');
-    const safeClientJson = JSON.stringify(c).replace(/"/g, '&quot;');
     return `
-      <div class="cotiz-pred-item" onclick="selectCotizClientPrediction(${safeClientJson}, true)">
+      <div class="cotiz-pred-item" data-idx="${i}">
         <div>
-          <div class="cotiz-pred-name">${c.cliente}</div>
-          <div class="cotiz-pred-loc">${loc ? '📍 ' + loc : ''}</div>
+          <div class="cotiz-pred-name">${escapeHtml(c.cliente)}</div>
+          <div class="cotiz-pred-loc">${loc ? '📍 ' + escapeHtml(loc) : ''}</div>
         </div>
         <div style="text-align: right;">
-          <span class="cotiz-pred-rut">${c.rut || formatChileanRut(c.rutClean)}</span>
+          <span class="cotiz-pred-rut">${escapeHtml(c.rut || formatChileanRut(c.rutClean))}</span>
         </div>
       </div>
     `;
   }).join('');
+
+  dropdown.querySelectorAll('.cotiz-pred-item').forEach(el => {
+    const c = candidates[Number(el.dataset.idx)];
+    if (c) el.addEventListener('click', () => selectCotizClientPrediction(c, true));
+  });
 
   dropdown.style.display = 'block';
 }
@@ -6040,8 +6248,8 @@ function recalcCotizTotals() {
  * Guarda la cotización con todos sus productos en Google Sheets / local state
  */
 async function saveCotizacion() {
-  const folio = document.getElementById('cFolio')?.value?.trim() || `COT-2026-${Math.floor(Math.random()*9000+1000)}`;
-  const fecha = document.getElementById('cFecha')?.value || new Date().toISOString().split('T')[0];
+  const folio = document.getElementById('cFolio')?.value?.trim() || nextCotizFolio();
+  const fecha = document.getElementById('cFecha')?.value || todayInputValue();
   const validez = document.getElementById('cValidez')?.value || '30 Días';
   const vendedor = document.getElementById('cVendedor')?.value?.trim() || 'Vendedor General';
   const canal = document.getElementById('cCanal')?.value || 'Mayoristas';
@@ -6056,7 +6264,12 @@ async function saveCotizacion() {
   const observaciones = document.getElementById('cObservaciones')?.value?.trim() || '';
 
   if (!cliente) {
-    if (typeof showToast === 'function') showToast('⚠️ Por favor ingresa el nombre o razón social del cliente');
+    showToast('⚠️ Por favor ingresa el nombre o razón social del cliente', 'warn');
+    return;
+  }
+
+  if (rut && !isValidChileanRut(rut)) {
+    showToast(`⚠️ El RUT ${rut} no es válido (dígito verificador incorrecto)`, 'warn');
     return;
   }
 
@@ -6082,11 +6295,10 @@ async function saveCotizacion() {
     return;
   }
 
-  // Generar filas para el Google Sheet
-  const newCotizRows = items.map(it => {
+  // Filas con destino a Google Sheets (esquema de columnas de la hoja)
+  const sheetRows = items.map(it => {
     const neto = it.cant * it.precio;
     const costoTot = it.cant * it.costo;
-    const util = neto - costoTot;
 
     return {
       FOLIO: folio,
@@ -6098,7 +6310,7 @@ async function saveCotizacion() {
       PREUNI: it.precio,
       COSTOS: it.costo,
       NETO: neto,
-      '($) UTILIDAD': util,
+      '($) UTILIDAD': neto - costoTot,
       CLIENTE: cliente,
       RUT: rut,
       CODVENDENDOR: vendedor,
@@ -6114,26 +6326,56 @@ async function saveCotizacion() {
     };
   });
 
-  // Guardar en el estado local de cotizaciones
-  if (typeof cotizacionesRows !== 'undefined') {
-    cotizacionesRows.unshift(...newCotizRows);
-    try {
-      localStorage.setItem('glomax_cotizaciones_cache', JSON.stringify(cotizacionesRows));
-    } catch(e) {}
-  }
+  // Filas para el estado local. Deben usar el mismo esquema en minúscula que produce
+  // normalizeCotizacionesRows, que es el único que leen la tabla, los filtros y los gráficos.
+  const fechaObj = parseCotizDate(fecha);
+  const localRows = items.map(it => ({
+    tipo: 'Cotización',
+    rut,
+    cliente,
+    contacto: email,
+    vendedor,
+    numCot: folio,
+    sku: it.sku,
+    producto: it.desc,
+    cantidad: it.cant,
+    precio: it.precio,
+    total: it.cant * it.precio,
+    costo: it.costo,
+    fecha: fechaObj ? fechaObj.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' }) : fecha,
+    fechaObj: fechaObj,
+    responsable: vendedor,
+    estado,
+    observaciones,
+    transporte: plazoEntrega,
+    nv: '',
+    fa: '',
+    estadoNv: '',
+    mes: fechaObj ? String(fechaObj.getMonth() + 1) : '',
+    estadoFinal: estado,
+    mesT: '',
+    anio: fechaObj ? String(fechaObj.getFullYear()) : '',
+    _row: null
+  }));
 
-  // Enviar a la API de Google Apps Script si está disponible
+  // Enviar a Google Apps Script. Se sincroniza ANTES de tocar el estado local para no
+  // dar por guardada una cotización que nunca llegó a la hoja.
+  let syncError = null;
   try {
-    if (typeof apiPost === 'function' && typeof API_URL !== 'undefined' && API_URL) {
-      for (const rowData of newCotizRows) {
-        await apiPost({ action: 'add_cotizacion', data: rowData });
-      }
-    }
-  } catch(err) {
+    await Promise.all(sheetRows.map(rowData => apiPost({ action: 'add_cotizacion', data: rowData })));
+  } catch (err) {
+    syncError = err;
     console.warn('[Cotizaciones] Error al sincronizar con Google Sheets:', err);
   }
 
-  if (typeof showToast === 'function') {
+  cotizacionesRows.unshift(...localRows);
+  try {
+    localStorage.setItem('glomax_cotizaciones_cache', JSON.stringify(cotizacionesRows.slice(0, 2000)));
+  } catch (e) {}
+
+  if (syncError) {
+    showToast(`⚠️ Cotización ${folio} guardada solo localmente: no se pudo sincronizar (${syncError.message})`, 'warn');
+  } else {
     showToast(`✅ Cotización ${folio} con ${items.length} productos guardada exitosamente`);
   }
 
@@ -6149,8 +6391,8 @@ async function saveCotizacion() {
  * Genera la vista de impresión / PDF oficial de la Cotización Comercial
  */
 function printCotizacionDocument() {
-  const folio = document.getElementById('cFolio')?.value?.trim() || 'COT-2026-0001';
-  const fecha = document.getElementById('cFecha')?.value || new Date().toISOString().split('T')[0];
+  const folio = document.getElementById('cFolio')?.value?.trim() || nextCotizFolio();
+  const fecha = document.getElementById('cFecha')?.value || todayInputValue();
   const validez = document.getElementById('cValidez')?.value || '30 Días';
   const vendedor = document.getElementById('cVendedor')?.value?.trim() || 'Ejecutivo Glomax';
   const canal = document.getElementById('cCanal')?.value || 'Mayoristas';
@@ -6180,9 +6422,11 @@ function printCotizacionDocument() {
   });
 
   const subtotalNeto = items.reduce((a, it) => a + it.subtotal, 0);
-  const discountPct = parseFloat(document.getElementById('cotizDiscountPct')?.value) || 0;
+  // Mismo acotado que recalcCotizTotals: los atributos min/max del input no impiden
+  // escribir 500 a mano, y un documento comercial con totales negativos es inaceptable.
+  const discountPct = Math.min(99, Math.max(0, parseFloat(document.getElementById('cotizDiscountPct')?.value) || 0));
   const discountAmount = subtotalNeto * (discountPct / 100);
-  const netoFinal = subtotalNeto - discountAmount;
+  const netoFinal = Math.max(0, subtotalNeto - discountAmount);
   const iva = netoFinal * 0.19;
   const totalBruto = netoFinal + iva;
 
@@ -6199,7 +6443,7 @@ function printCotizacionDocument() {
     <html lang="es">
     <head>
       <meta charset="UTF-8">
-      <title>Cotización ${folio} - ${cliente}</title>
+      <title>Cotización ${escapeHtml(folio)} - ${escapeHtml(cliente)}</title>
       <style>
         @page { size: A4; margin: 15mm; }
         body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b; margin: 0; padding: 20px; font-size: 13px; line-height: 1.5; }
@@ -6230,8 +6474,8 @@ function printCotizacionDocument() {
           </td>
           <td style="text-align: right; vertical-align: top;">
             <div class="doc-badge">COTIZACIÓN COMERCIAL</div>
-            <div style="font-size: 16px; font-weight: 800; margin-top: 6px; color: #0f172a;">${folio}</div>
-            <div style="font-size: 11px; color: #64748b;">Fecha: ${fecha}</div>
+            <div style="font-size: 16px; font-weight: 800; margin-top: 6px; color: #0f172a;">${escapeHtml(folio)}</div>
+            <div style="font-size: 11px; color: #64748b;">Fecha: ${escapeHtml(fecha)}</div>
           </td>
         </tr>
       </table>
@@ -6239,18 +6483,18 @@ function printCotizacionDocument() {
       <div class="meta-grid">
         <div>
           <div class="meta-title">Datos del Cliente</div>
-          <div class="meta-row"><strong>Razón Social:</strong> ${cliente}</div>
-          <div class="meta-row"><strong>RUT / DNI:</strong> ${rut}</div>
-          ${email ? `<div class="meta-row"><strong>Email:</strong> ${email}</div>` : ''}
-          <div class="meta-row"><strong>Ciudad / Región:</strong> ${comuna ? comuna + ' · ' : ''}${region}</div>
+          <div class="meta-row"><strong>Razón Social:</strong> ${escapeHtml(cliente)}</div>
+          <div class="meta-row"><strong>RUT / DNI:</strong> ${escapeHtml(rut)}</div>
+          ${email ? `<div class="meta-row"><strong>Email:</strong> ${escapeHtml(email)}</div>` : ''}
+          <div class="meta-row"><strong>Ciudad / Región:</strong> ${comuna ? escapeHtml(comuna) + ' · ' : ''}${escapeHtml(region)}</div>
         </div>
         <div>
           <div class="meta-title">Condiciones Comerciales</div>
-          <div class="meta-row"><strong>Ejecutivo:</strong> ${vendedor}</div>
-          <div class="meta-row"><strong>Canal:</strong> ${canal}</div>
-          <div class="meta-row"><strong>Validez Oferta:</strong> ${validez}</div>
-          <div class="meta-row"><strong>Forma de Pago:</strong> ${formaPago}</div>
-          <div class="meta-row"><strong>Plazo Entrega:</strong> ${plazoEntrega}</div>
+          <div class="meta-row"><strong>Ejecutivo:</strong> ${escapeHtml(vendedor)}</div>
+          <div class="meta-row"><strong>Canal:</strong> ${escapeHtml(canal)}</div>
+          <div class="meta-row"><strong>Validez Oferta:</strong> ${escapeHtml(validez)}</div>
+          <div class="meta-row"><strong>Forma de Pago:</strong> ${escapeHtml(formaPago)}</div>
+          <div class="meta-row"><strong>Plazo Entrega:</strong> ${escapeHtml(plazoEntrega)}</div>
         </div>
       </div>
 
@@ -6269,8 +6513,8 @@ function printCotizacionDocument() {
           ${items.map((it, idx) => `
             <tr>
               <td style="text-align: center; color: #64748b;">${idx + 1}</td>
-              <td style="font-weight: 700; font-family: monospace;">${it.sku}</td>
-              <td>${it.desc}</td>
+              <td style="font-weight: 700; font-family: monospace;">${escapeHtml(it.sku)}</td>
+              <td>${escapeHtml(it.desc)}</td>
               <td style="text-align: right; font-weight: 700;">${it.cant}</td>
               <td style="text-align: right;">${fmt(it.precio)}</td>
               <td style="text-align: right; font-weight: 700;">${fmt(it.subtotal)}</td>
@@ -6308,7 +6552,7 @@ function printCotizacionDocument() {
         <strong>Términos & Condiciones:</strong><br/>
         • Los precios expresados en esta cotización tienen una validez de ${validez} a partir de su emisión.<br/>
         • Forma de pago: ${formaPago}. Plazo de entrega estimado: ${plazoEntrega}.<br/>
-        ${observaciones ? `• <strong>Observaciones:</strong> ${observaciones}` : ''}
+        ${observaciones ? `• <strong>Observaciones:</strong> ${escapeHtml(observaciones)}` : ''}
       </div>
 
       <div class="footer">
@@ -6351,7 +6595,7 @@ async function fetchProductImagesMap() {
 
     if (!csvText) return;
 
-    const rows = parseCSVText(csvText);
+    const rows = parseCsvRecords(csvText);
 
     productImagesMap.clear();
     rows.forEach((cols, idx) => {
@@ -6407,7 +6651,7 @@ function renderMonthlyTargetProgress() {
     }
   }
 
-  const monthlyGoal = monthlyTargets[targetMonth] || 100000000;
+  const monthlyGoal = monthlyTargets[targetMonth];
 
   // Calcular ventas acumuladas MTD del mes objetivo
   const mtdSales = (rows || []).filter(r => {
@@ -6437,41 +6681,30 @@ function renderMonthlyTargetProgress() {
   }
 }
 
-function toggleTargetSettingsPanel(state) { window.toggleTargetSettingsPanel(state); }
+function saveTargetSettings() {
+  TARGET_MONTH_NAMES.forEach((name, i) => {
+    const input = document.getElementById(`target${name}`);
+    if (!input) return;
+    const val = Number(input.value);
+    if (Number.isFinite(val) && val >= 0) monthlyTargets[i] = val;
+  });
 
-document.getElementById('inlineTargetForm')?.addEventListener('submit', (e) => {
-  e.preventDefault();
-  for (let i = 0; i < 12; i++) {
-    const input = document.getElementById(`inTarget${i}`);
-    if (input && !isNaN(Number(input.value))) {
-      monthlyTargets[i] = Math.max(0, Number(input.value));
-    }
+  try {
+    localStorage.setItem('glomax_monthly_targets', JSON.stringify(monthlyTargets));
+  } catch (e) {
+    showToast('⚠️ No se pudieron guardar las metas en este navegador', 'warn');
   }
 
-  localStorage.setItem('glomax_monthly_targets', JSON.stringify(monthlyTargets));
-  window.toggleTargetSettingsPanel(false);
+  closeTargetModal();
   renderMonthlyTargetProgress();
   if (typeof AudioSynth !== 'undefined') AudioSynth.play('success');
-  showToast('🎯 Metas de Enero a Diciembre guardadas con éxito');
-});
-
-function saveTargetSettings() {
-  for (let i = 0; i < 12; i++) {
-    const input = document.getElementById(`inTarget${i}`);
-    if (input) {
-      const val = Number(input.value) || 100000000;
-      monthlyTargets[i] = val;
-    }
-  }
-  localStorage.setItem('glomax_monthly_targets', JSON.stringify(monthlyTargets));
-  closeTargetModal();
-  if (typeof renderMonthlyTargetProgress === 'function') {
-    renderMonthlyTargetProgress();
-  }
-  if (typeof showToast === 'function') {
-    showToast('✅ Metas de ventas mensuales actualizadas correctamente.');
-  }
+  showToast('🎯 Metas de ventas mensuales actualizadas correctamente.');
 }
+
+document.getElementById('targetModalForm')?.addEventListener('submit', (e) => {
+  e.preventDefault();
+  saveTargetSettings();
+});
 
 // ==========================================================================
 // MÓDULO FICHA TÉCNICA DE PRODUCTOS (Glomax SA Spec System & Web Scraper)
@@ -6710,7 +6943,7 @@ async function renderFichaTecnicaView() {
   let html = '<option value="">-- Selecciona un SKU / Producto (' + sortedProds.length + ' disponibles) --</option>';
   sortedProds.forEach(p => {
     const isSelected = p.sku === currentFtSelectedSku ? 'selected' : '';
-    html += `<option value="${p.sku}" ${isSelected}>${p.sku} | ${p.descripcion.substring(0, 45)} (${p.categoria || 'Sin Cat'})</option>`;
+    html += `<option value="${escapeHtml(p.sku)}" ${isSelected}>${escapeHtml(p.sku)} | ${escapeHtml(p.descripcion.substring(0, 45))} (${escapeHtml(p.categoria || 'Sin Cat')})</option>`;
   });
   selectEl.innerHTML = html;
 
@@ -6792,20 +7025,30 @@ function handleFtSearchInput(val) {
 
   let html = '';
   matches.forEach(p => {
+    // El SKU viaja en data-sku y no dentro de un atributo onclick: proviene de la
+    // planilla y un apóstrofo bastaría para romper el atributo e inyectar código.
     html += `
-      <div class="prod-suggestion-item" onclick="selectFtProductSku('${p.sku}'); document.getElementById('ftSkuSuggestions').style.display='none';">
+      <div class="prod-suggestion-item" data-sku="${escapeHtml(p.sku)}">
         <div>
-          <strong style="color: #38bdf8; font-family: 'JetBrains Mono', monospace;">${p.sku}</strong>
-          <span style="color: #cbd5e1; margin-left: 6px;">${p.descripcion}</span>
+          <strong style="color: #38bdf8; font-family: 'JetBrains Mono', monospace;">${escapeHtml(p.sku)}</strong>
+          <span style="color: #cbd5e1; margin-left: 6px;">${escapeHtml(p.descripcion)}</span>
         </div>
         <div style="font-size: 0.78rem; color: #94a3b8; text-align: right;">
-          <div><strong style="color: #34d399;">${p.categoria || 'General'}</strong></div>
+          <div><strong style="color: #34d399;">${escapeHtml(p.categoria || 'General')}</strong></div>
           <div>${formatCLP(p.precioPromedio)}</div>
         </div>
       </div>
     `;
   });
   drop.innerHTML = html;
+
+  drop.querySelectorAll('.prod-suggestion-item').forEach(el => {
+    el.addEventListener('click', () => {
+      selectFtProductSku(el.dataset.sku);
+      drop.style.display = 'none';
+    });
+  });
+
   drop.style.display = 'block';
 }
 
@@ -6865,7 +7108,7 @@ function selectFtProductSku(sku) {
         <span class="ft-tag ft-tag-blue">Glomax HD Asset</span>
       </div>
       <div class="ft-photo-frame">
-        <img src="${photoUrl}" alt="${prod.descripcion}" class="ft-product-photo" onerror="this.onerror=null; this.parentElement.innerHTML='<div style=\'color:#94a3b8; font-size:0.85rem; padding: 2rem; text-align: center;\'>📷 FotografÃ­a Oficial no disponible<br><span style=\'font-size:0.75rem; color:#64748b;\'>Se adjunta esquema CAD predeterminado</span></div>';" />
+        <img src="${encodeURI(photoUrl)}" alt="${escapeHtml(prod.descripcion)}" class="ft-product-photo" onerror="this.onerror=null; this.parentElement.innerHTML='<div style=\'color:#94a3b8; font-size:0.85rem; padding: 2rem; text-align: center;\'>📷 FotografÃ­a Oficial no disponible<br><span style=\'font-size:0.75rem; color:#64748b;\'>Se adjunta esquema CAD predeterminado</span></div>';" />
         <span class="ft-photo-badge">🔒 Certificado Glomax.cl</span>
       </div>
     </div>
@@ -6877,7 +7120,7 @@ function selectFtProductSku(sku) {
       </div>
       <div style="background: linear-gradient(135deg, rgba(6, 10, 19, 0.95), rgba(15, 23, 42, 0.9)); border: 1px dashed rgba(56, 189, 248, 0.4); border-radius: 12px; padding: 2.5rem 1.5rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center;">
         <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-        <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: #38bdf8; font-weight: 700; letter-spacing: 1px;">DIAGRAMA TÉCNICO CAD #${prod.sku}</div>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: #38bdf8; font-weight: 700; letter-spacing: 1px;">DIAGRAMA TÉCNICO CAD #${escapeHtml(prod.sku)}</div>
         <div style="font-size: 0.78rem; color: #94a3b8;">Glomax SA Industrial Engineering Standard</div>
       </div>
     </div>
@@ -6902,7 +7145,7 @@ function selectFtProductSku(sku) {
         <div style="display: flex; align-items: center; gap: 1rem;">
           <div style="text-align: right; border-right: 1px solid rgba(255,255,255,0.1); padding-right: 1rem;">
             <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Código Documento</div>
-            <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: #fbbf24; font-weight: 700;">DOC-FT-${prod.sku}</div>
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: #fbbf24; font-weight: 700;">DOC-FT-${escapeHtml(prod.sku)}</div>
           </div>
           <div style="text-align: right;">
             <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Normativa / Tipo</div>
@@ -6914,12 +7157,12 @@ function selectFtProductSku(sku) {
       <div class="ft-title-bar" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1.5rem; flex-wrap: wrap;">
         <div style="flex: 1; min-width: 280px;">
           <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 8px;">
-            <span class="ft-sku-badge" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); padding: 4px 10px; border-radius: 6px; font-weight: 800; font-family: 'JetBrains Mono', monospace;">SKU: ${prod.sku}</span>
+            <span class="ft-sku-badge" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); padding: 4px 10px; border-radius: 6px; font-weight: 800; font-family: 'JetBrains Mono', monospace;">SKU: ${escapeHtml(prod.sku)}</span>
             ${isCustomized ? '<span class="ft-tag ft-tag-gold">✏️ Spec Editada / Personalizada</span>' : '<span class="ft-tag ft-tag-blue">🛡️ Especificación Oficial Glomax</span>'}
             <span class="ft-tag ft-tag-purple">📂 ${prod.categoria || 'Sin Categoría'}</span>
             <span class="ft-tag ft-tag-green">🏷️ ${prod.marca || 'Glomax Standard'}</span>
           </div>
-          <h1 style="font-family: 'Space Grotesk', sans-serif; font-size: 1.55rem; font-weight: 800; color: #ffffff; margin: 6px 0 8px 0; line-height: 1.3;">${prod.descripcion}</h1>
+          <h1 style="font-family: 'Space Grotesk', sans-serif; font-size: 1.55rem; font-weight: 800; color: #ffffff; margin: 6px 0 8px 0; line-height: 1.3;">${escapeHtml(prod.descripcion)}</h1>
           <div style="font-size: 0.83rem; color: #cbd5e1; display: flex; gap: 12px; flex-wrap: wrap;">
             <span>Familia: <strong style="color: #ffffff;">${prod.familia || 'General'}</strong></span>
             <span>|</span>
@@ -7163,8 +7406,8 @@ function openFtCompareModal() {
   prods.forEach((p, idx) => {
     const selA = (currentFtSelectedSku ? p.sku === currentFtSelectedSku : idx === 0) ? 'selected' : '';
     const selB = (idx === 1 || (idx === 0 && prods.length === 1)) ? 'selected' : '';
-    htmlA += `<option value="${p.sku}" ${selA}>${p.sku} | ${p.descripcion.substring(0, 35)}</option>`;
-    htmlB += `<option value="${p.sku}" ${selB}>${p.sku} | ${p.descripcion.substring(0, 35)}</option>`;
+    htmlA += `<option value="${escapeHtml(p.sku)}" ${selA}>${escapeHtml(p.sku)} | ${escapeHtml(p.descripcion.substring(0, 35))}</option>`;
+    htmlB += `<option value="${escapeHtml(p.sku)}" ${selB}>${escapeHtml(p.sku)} | ${escapeHtml(p.descripcion.substring(0, 35))}</option>`;
   });
 
   selectA.innerHTML = htmlA;
@@ -7320,14 +7563,14 @@ function exportFtPdf() {
         <div style="font-size: 0.8rem; font-weight: 800; color: #0284c7; text-transform: uppercase;">Ficha Técnica Oficial</div>
         <div style="font-size: 0.75rem; color: #64748b;">Fecha Emisión: ${todayStr}</div>
         <div style="background: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 6px; font-weight: 800; font-family: monospace; display: inline-block; margin-top: 6px;">
-          SKU: ${prod.sku}
+          SKU: ${escapeHtml(prod.sku)}
         </div>
       </div>
     </div>
 
     <!-- TITULO PRODUCTO -->
     <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-left: 5px solid #0284c7; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
-      <h1 style="font-size: 1.3rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0;">${prod.descripcion}</h1>
+      <h1 style="font-size: 1.3rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0;">${escapeHtml(prod.descripcion)}</h1>
       <div style="font-size: 0.82rem; color: #475569; display: flex; gap: 15px; flex-wrap: wrap;">
         <span>Categoría: <strong>${prod.categoria || 'General'}</strong></span>
         <span>Marca: <strong>${prod.marca || 'Glomax Standard'}</strong></span>
@@ -7591,14 +7834,16 @@ async function handleFtPdfFileSelect(e) {
     if (previewArea) previewArea.style.display = 'block';
     if (applyBtn) applyBtn.style.display = 'inline-flex';
 
-    if (typeof showToast === 'function') {
-      showToast(`📄 PDF procesado con éxito. Revisa y confirma los datos del SKU ${extractedData.sku}`);
+    if (extractedData.textExtracted) {
+      showToast(`📄 PDF procesado. Revisa y confirma los datos del SKU ${extractedData.sku}`);
+    } else {
+      showToast('⚠️ No se pudo leer texto del PDF (¿escaneado o protegido?). Los campos son valores por defecto: complétalos a mano.', 'warn');
     }
 
   } catch(err) {
     console.error('Error al leer el archivo PDF:', err);
     if (loader) loader.style.display = 'none';
-    if (typeof showToast === 'function') showToast('Error al procesar el PDF. Se han cargado datos estándar para el archivo.');
+    showToast('Error al procesar el PDF: ' + err.message, 'error');
   }
 }
 
@@ -7683,7 +7928,10 @@ async function extractTextFromPdfFile(file) {
     dimensiones: dimensiones,
     material: material,
     categoria: categoria,
-    marca: marca
+    marca: marca,
+    // Un PDF escaneado, protegido o con el worker bloqueado no aporta texto: el resto
+    // de los campos son valores por defecto, no datos leídos del documento.
+    textExtracted: cleanText.length >= 30
   };
 }
 
@@ -7791,49 +8039,76 @@ function applyFtPdfImport() {
 // MOTOR DE CONEXIÓN ULTRARRÁPIDO CON GOOGLE SHEETS & INDEXEDDB (28.3MB / 186K REGISTROS)
 // ==========================================================================
 
-function parseCsvText(text) {
+// Parser CSV carácter a carácter. Recorre el texto completo en vez de partirlo por
+// líneas primero, porque un campo entrecomillado puede contener saltos de línea y comas.
+// Devuelve un registro por fila real de la hoja (incluidas las vacías), de modo que el
+// índice del registro siga correspondiendo al número de fila en Google Sheets.
+function parseCsvRecords(text) {
   if (!text || typeof text !== 'string') return [];
-  const lines = text.split(/\r?\n/).filter(line => line.trim().length > 0);
-  if (lines.length < 2) return [];
 
-  const parseCsvLine = (line) => {
-    const values = [];
-    let current = '';
-    let inQuotes = false;
-    for (let i = 0; i < line.length; i++) {
-      const char = line[i];
+  const records = [];
+  let row = [];
+  let field = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+
+    if (inQuotes) {
       if (char === '"') {
-        inQuotes = !inQuotes;
-      } else if (char === ',' && !inQuotes) {
-        values.push(current.trim());
-        current = '';
+        if (text[i + 1] === '"') { field += '"'; i++; }  // "" es una comilla literal
+        else inQuotes = false;
       } else {
-        current += char;
+        field += char;
       }
+      continue;
     }
-    values.push(current.trim());
-    return values;
-  };
 
-  const headers = parseCsvLine(lines[0]).map(h => h.replace(/^"|"$/g, '').trim());
+    if (char === '"') {
+      inQuotes = true;
+    } else if (char === ',') {
+      row.push(field.trim());
+      field = '';
+    } else if (char === '\n' || char === '\r') {
+      if (char === '\r' && text[i + 1] === '\n') i++;
+      row.push(field.trim());
+      records.push(row);
+      row = [];
+      field = '';
+    } else {
+      field += char;
+    }
+  }
+
+  if (field.length > 0 || row.length > 0) {
+    row.push(field.trim());
+    records.push(row);
+  }
+
+  // Un salto de línea final produce un registro vacío espurio que no existe en la hoja.
+  while (records.length && records[records.length - 1].every(c => c === '')) records.pop();
+
+  return records;
+}
+
+function parseCsvText(text) {
+  const records = parseCsvRecords(text);
+  if (records.length < 2) return [];
+
+  const headers = records[0].map(h => h.trim());
   const parsedData = [];
 
-  for (let i = 1; i < lines.length; i++) {
-    const cells = parseCsvLine(lines[i]);
-    if (cells.length < 2) continue;
+  for (let i = 1; i < records.length; i++) {
+    const cells = records[i];
+    // Se omiten las filas vacías, pero `i` sigue contándolas para no desalinear `_row`.
+    if (cells.every(c => c === '')) continue;
 
     const rowObj = {};
     for (let j = 0; j < headers.length; j++) {
       const h = headers[j];
-      if (h) {
-        let val = cells[j] !== undefined ? cells[j] : '';
-        if (val.startsWith('"') && val.endsWith('"')) {
-          val = val.slice(1, -1);
-        }
-        rowObj[h] = val.trim();
-      }
+      if (h) rowObj[h] = cells[j] !== undefined ? cells[j] : '';
     }
-    rowObj['_row'] = i + 1;
+    rowObj['_row'] = i + 1;  // registro 0 = encabezado = fila 1 de la hoja
     parsedData.push(rowObj);
   }
 
@@ -7843,6 +8118,7 @@ function parseCsvText(text) {
 async function apiGet() {
   if (typeof API_URL === 'undefined' || !API_URL || API_URL.includes('PEGA_AQUI')) return null;
   const res = await fetch(API_URL, { method: 'GET', signal: AbortSignal.timeout(30000) });
+  if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
   const json = await res.json();
   if (!json.ok) throw new Error(json.error || 'Error al leer datos');
   return json.data;
@@ -7865,7 +8141,15 @@ function setSyncStatus(status, customText) {
   }
 }
 
+// Una carga puede tardar más que el intervalo de auto-refresco (15s). Sin esta guarda
+// dos cargas se solapan, la más lenta pisa los datos de la más reciente y processSyncQueue
+// llega a reenviar la misma mutación pendiente dos veces.
+let isLoadingData = false;
+
 async function loadData(showLoadingState = true) {
+  if (isLoadingData) return;
+  isLoadingData = true;
+
   const startTime = performance.now();
   const latencyBadge = document.getElementById('latencyBadge');
 
@@ -7924,8 +8208,10 @@ async function loadData(showLoadingState = true) {
       updateNavBadge();
       populateFilterOptions();
       applyFilters();
-      
-      if (typeof showToast === 'function') {
+
+      // Solo en cargas iniciadas por el usuario: el auto-refresco corre cada 15s
+      // y notificar en cada ciclo llenaría la pantalla de avisos.
+      if (showLoadingState) {
         showToast(`✅ Conectado a Google Sheets (${rows.length.toLocaleString()} registros sincronizados)`);
       }
     } else {
@@ -7947,6 +8233,8 @@ async function loadData(showLoadingState = true) {
       setSyncStatus('ok');
       if (latencyBadge) latencyBadge.innerHTML = `🟡 Modo Respaldo (${rows.length.toLocaleString()} reg)`;
     }
+  } finally {
+    isLoadingData = false;
   }
 }
 

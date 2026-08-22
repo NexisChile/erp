@@ -3137,6 +3137,20 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
 }
 
+.toast.show {
+  display: block;
+}
+
+.toast--error {
+  border-color: #ef4444;
+  color: #fca5a5;
+}
+
+.toast--warn {
+  border-color: #f59e0b;
+  color: #fcd34d;
+}
+
 /* ===== RESPONSIVE ===== */
 
 @media (max-width: 1024px) {
