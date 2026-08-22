@@ -89,6 +89,32 @@ async function apiPost(payload) {
   return json;
 }
 
+// Anima el contador de una tarjeta KPI desde `from` hasta `to`.
+function animateValue(el, from, to, duration = 650, isCurrency = false) {
+  if (!el) return;
+
+  const start = Number(from) || 0;
+  const end = Number(to) || 0;
+  const fmt = (v) => isCurrency ? formatCLP(v) : formatNum(Math.round(v));
+
+  if (el._animFrame) cancelAnimationFrame(el._animFrame);
+
+  if (start === end || duration <= 0) {
+    el.textContent = fmt(end);
+    return;
+  }
+
+  const t0 = performance.now();
+  const step = (now) => {
+    const p = Math.min(1, (now - t0) / duration);
+    const eased = 1 - Math.pow(1 - p, 3);
+    el.textContent = fmt(start + (end - start) * eased);
+    if (p < 1) el._animFrame = requestAnimationFrame(step);
+    else el._animFrame = null;
+  };
+  el._animFrame = requestAnimationFrame(step);
+}
+
 function formatCLP(val) {
   const n = Math.round(Number(val) || 0);
   return '$' + n.toLocaleString('es-CL');
@@ -135,40 +161,38 @@ function parseFlexibleDate(val) {
     }
   }
 
-  if (str.includes('/')) {
-    const parts = str.split('/');
+  // Se descarta la hora antes de separar los componentes: valores como
+  // '12-08-2026 0:00' hacían que el último trozo se leyera como '2026 0:00'.
+  const soloFecha = str.split(/[\sT]/)[0];
+  const sep = soloFecha.includes('/') ? '/' : (soloFecha.includes('-') ? '-' : null);
+
+  if (sep) {
+    const parts = soloFecha.split(sep);
     if (parts.length === 3) {
       let p1 = parseInt(parts[0], 10);
       let p2 = parseInt(parts[1], 10);
       let p3 = parseInt(parts[2], 10);
-      if (p3 < 100) p3 += 2000;
-      
-      let day, month, year = p3;
 
-      if (p2 <= 12 && p1 <= 31) {
-        day = p1;
-        month = p2 - 1;
-      } else if (p1 <= 12 && p2 <= 31) {
-        month = p1 - 1;
-        day = p2;
-      } else {
-        day = p1;
-        month = p2 - 1;
+      if (!isNaN(p1) && !isNaN(p2) && !isNaN(p3)) {
+        let year, month, day;
+
+        // El año es el componente de 4 cifras; puede ir primero (ISO) o último.
+        // Antes se asumía ISO para todo lo separado por guiones, y una fecha
+        // chilena como '12-08-2026' terminaba con el año 12.
+        if (parts[0].length === 4 || p1 > 31) {
+          year = p1;
+          month = p2 - 1;
+          day = p3;
+        } else {
+          year = p3 < 100 ? p3 + 2000 : p3;
+          if (p2 <= 12 && p1 <= 31) { day = p1; month = p2 - 1; }
+          else if (p1 <= 12 && p2 <= 31) { month = p1 - 1; day = p2; }
+          else { day = p1; month = p2 - 1; }
+        }
+
+        const d = new Date(year, month, day, 12, 0, 0);
+        if (!isNaN(d.getTime())) return d;
       }
-
-      const d = new Date(year, month, day, 12, 0, 0);
-      if (!isNaN(d.getTime())) return d;
-    }
-  }
-
-  if (str.includes('-')) {
-    const parts = str.split('-');
-    if (parts.length === 3) {
-      const year = parseInt(parts[0], 10);
-      const month = parseInt(parts[1], 10) - 1;
-      const day = parseInt(parts[2], 10);
-      const d = new Date(year, month, day, 12, 0, 0);
-      if (!isNaN(d.getTime())) return d;
     }
   }
 
@@ -177,15 +201,30 @@ function parseFlexibleDate(val) {
   return new Date();
 }
 
+// Una fila solo cuenta como venta si trae contenido transaccional. Las hojas de cálculo
+// arrastran miles de filas vacías en las que las columnas calculadas (MES, AÑO, QUARTER,
+// ACUMULADO) siguen rellenándose por fórmula; sin este filtro cada una se convertiría en
+// una venta fantasma fechada hoy, inflando los totales y los KPIs del día.
+function hasTransactionalContent_(norm) {
+  const campos = ['FECHA', 'DATE', 'FECHA FACTURA', 'FOLIO', 'NVNUMERO', 'ID',
+    'CODIGO', 'COD', 'SKU', 'CLIENTE', 'NOMCLIENTE', 'NETO', 'MONTO NETO',
+    'CANTFACTURADA', 'CANT', 'CANTIDAD', 'PREUNI', 'PRECIO'];
+  return campos.some(k => String(norm[k] === undefined || norm[k] === null ? '' : norm[k]).trim() !== '');
+}
+
 function normalizeDataRows(rawRows) {
   if (!Array.isArray(rawRows)) return [];
 
-  return rawRows.map((r, i) => {
+  const normalizados = [];
+
+  rawRows.forEach((r, i) => {
     const norm = {};
 
     Object.keys(r).forEach(k => {
       if (k) norm[k.toUpperCase().trim()] = r[k];
     });
+
+    if (!hasTransactionalContent_(norm)) return;
 
     const folio = norm['FOLIO'] || norm['NVNUMERO'] || norm['ID'] || String(i + 1);
     const tipo = norm['TIPO'] || norm['TIPODOC'] || 'Factura';
@@ -229,7 +268,7 @@ function normalizeDataRows(rawRows) {
     const region = norm['REGION'] || norm['REGION DESPACHO'] || 'Región Metropolitana';
     const comuna = norm['COMUNA'] || 'Santiago';
 
-    return {
+    normalizados.push({
       'FOLIO': String(folio),
       'TIPO': String(tipo),
       'FECHA': fechaISO,
@@ -257,8 +296,10 @@ function normalizeDataRows(rawRows) {
       '# MES': parsedDate.getMonth() + 1,
       'MES': MESES_ES_LARGO[parsedDate.getMonth()],
       '_row': r['_row'] || (i + 2)
-    };
+    });
   });
+
+  return normalizados;
 }
 
 function applyFallbackDataIfEmpty() {
@@ -294,9 +335,18 @@ const GlomaxDB = {
   async init() {
     if (this.db && this.db.objectStoreNames.contains('rows')) return this.db;
 
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
+      // Red de seguridad: si IndexedDB queda bloqueado por otra pestaña, ni onsuccess
+      // ni onerror llegan a dispararse y la promesa quedaría pendiente para siempre,
+      // colgando la carga de datos completa.
+      let settled = false;
+      const done = (value) => { if (!settled) { settled = true; resolve(value); } };
+      const timeoutId = setTimeout(() => done(null), 8000);
+      const finish = (value) => { clearTimeout(timeoutId); done(value); };
+
       try {
         const req = indexedDB.open(this.dbName, this.dbVersion);
+        req.onblocked = () => finish(null);
 
         req.onupgradeneeded = (e) => {
           const db = e.target.result;
@@ -325,22 +375,24 @@ const GlomaxDB = {
               };
               retryReq.onsuccess = (evt) => {
                 this.db = evt.target.result;
-                resolve(this.db);
+                finish(this.db);
               };
-              retryReq.onerror = () => resolve(null);
+              retryReq.onerror = () => finish(null);
+              retryReq.onblocked = () => finish(null);
             };
-            delReq.onerror = () => resolve(null);
+            delReq.onerror = () => finish(null);
+            delReq.onblocked = () => finish(null);
             return;
           }
 
           this.db = db;
-          resolve(this.db);
+          finish(this.db);
         };
 
-        req.onerror = () => resolve(null);
+        req.onerror = () => finish(null);
       } catch (err) {
         console.warn('IndexedDB no soportado o deshabilitado:', err);
-        resolve(null);
+        finish(null);
       }
     });
   },
@@ -351,14 +403,22 @@ const GlomaxDB = {
       if (!db || !db.objectStoreNames.contains('rows')) return [];
 
       return new Promise((resolve) => {
+        // La lectura se encola detrás de cualquier escritura en curso. Sin este límite,
+        // una escritura lenta o atascada dejaría la carga de datos esperando para siempre.
+        let settled = false;
+        const done = (v) => { if (!settled) { settled = true; resolve(v); } };
+        const timeoutId = setTimeout(() => done([]), 10000);
+        const finish = (v) => { clearTimeout(timeoutId); done(v); };
+
         try {
           const tx = db.transaction('rows', 'readonly');
           const req = tx.objectStore('rows').getAll();
-          req.onsuccess = () => resolve(req.result || []);
-          req.onerror = () => resolve([]);
+          req.onsuccess = () => finish(req.result || []);
+          req.onerror = () => finish([]);
+          tx.onabort = () => finish([]);
         } catch (txErr) {
           console.warn('IndexedDB getRows transaction error:', txErr);
-          resolve([]);
+          finish([]);
         }
       });
     } catch (e) {
@@ -366,19 +426,52 @@ const GlomaxDB = {
     }
   },
 
+  _writing: false,
+
+  // Tope de filas cacheadas. El caché sirve para pintar algo al instante mientras llega
+  // el dataset completo; volcar las ~186.000 filas reales significa otras tantas
+  // clonaciones estructuradas en el hilo principal, que dejan la pestaña congelada
+  // varios segundos. Se guardan las más recientes y se escriben por tandas.
+  MAX_CACHED_ROWS: 20000,
+  CHUNK_SIZE: 2000,
+
   async setRows(data) {
+    if (this._writing) return;
+    this._writing = true;
     try {
       const db = await this.init();
       if (!db || !db.objectStoreNames.contains('rows')) return;
+      if (!Array.isArray(data)) return;
 
-      const tx = db.transaction('rows', 'readwrite');
-      const store = tx.objectStore('rows');
-      store.clear();
-      if (Array.isArray(data)) {
-        data.forEach(r => { if (r && r._row) store.put(r); });
+      const slice = data.length > this.MAX_CACHED_ROWS ? data.slice(-this.MAX_CACHED_ROWS) : data;
+
+      const runTx = (mode, fn) => new Promise((resolve) => {
+        try {
+          const tx = db.transaction('rows', mode);
+          fn(tx.objectStore('rows'));
+          tx.oncomplete = () => resolve();
+          tx.onerror = () => { console.warn('IndexedDB setRows tx error:', tx.error); resolve(); };
+          tx.onabort = () => { console.warn('IndexedDB setRows abortada:', tx.error); resolve(); };
+        } catch (txErr) {
+          console.warn('IndexedDB setRows error:', txErr);
+          resolve();
+        }
+      });
+
+      await runTx('readwrite', store => store.clear());
+
+      for (let i = 0; i < slice.length; i += this.CHUNK_SIZE) {
+        const chunk = slice.slice(i, i + this.CHUNK_SIZE);
+        await runTx('readwrite', store => {
+          for (const r of chunk) { if (r && r._row) store.put(r); }
+        });
+        // Cede el hilo entre tandas para que la interfaz siga respondiendo.
+        await new Promise(r => setTimeout(r, 0));
       }
     } catch (e) {
       console.warn('IndexedDB setRows error:', e);
+    } finally {
+      this._writing = false;
     }
   },
 
@@ -2082,16 +2175,27 @@ const GlomaxParallaxEngine = {
   ambientOrbs: [],
   bgMesh: null,
   
+  initialized: false,
+
   init() {
+    // init() se invoca desde DOMContentLoaded y también desde setupAllButtonListeners.
+    // Sin esta guarda, cada llamada registra otro juego de listeners de mousemove/scroll
+    // sobre window y los handlers se acumulan indefinidamente.
+    if (this.initialized) {
+      this.refreshCards();
+      return;
+    }
+
     // Si el usuario tiene reducción de movimiento activada en su sistema operativo
     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       this.isEnabled = false;
       return;
     }
-    
+
+    this.initialized = true;
     this.bgMesh = document.getElementById('parallaxBgMesh');
     this.ambientOrbs = Array.from(document.querySelectorAll('.parallax-orb, .parallax-data-node'));
-    
+
     this.bindEvents();
     this.refreshCards();
     this.startLoop();
@@ -2188,26 +2292,37 @@ const GlomaxParallaxEngine = {
       card.style.transition = 'transform 0.15s ease-out';
     });
     
-    card.addEventListener('mousemove', (e) => {
-      if (!this.isEnabled) return;
-      if (!rect) rect = card.getBoundingClientRect();
-      
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      
-      const px = (x / rect.width);
-      const py = (y / rect.height);
-      
+    // El mousemove nativo dispara decenas de veces por segundo y por tarjeta. Se agrupan
+    // las escrituras de estilo en un requestAnimationFrame para no recalcular estilos
+    // en cada evento, que con muchas tarjetas visibles produce tirones perceptibles.
+    let pendingFrame = null;
+    let lastX = 0, lastY = 0;
+
+    const applyTilt = () => {
+      pendingFrame = null;
+      if (!rect) return;
+
+      const px = (lastX - rect.left) / rect.width;
+      const py = (lastY - rect.top) / rect.height;
       const rotX = ((0.5 - py) * maxDeg).toFixed(2);
       const rotY = ((px - 0.5) * maxDeg).toFixed(2);
-      
+
       card.style.transform = `perspective(1000px) rotateX(${rotX}deg) rotateY(${rotY}deg) scale3d(1.005, 1.005, 1.005)`;
       card.style.setProperty('--glare-x', `${(px * 100).toFixed(1)}%`);
       card.style.setProperty('--glare-y', `${(py * 100).toFixed(1)}%`);
       card.style.setProperty('--glare-opacity', '0.12');
+    };
+
+    card.addEventListener('mousemove', (e) => {
+      if (!this.isEnabled) return;
+      if (!rect) rect = card.getBoundingClientRect();
+      lastX = e.clientX;
+      lastY = e.clientY;
+      if (pendingFrame === null) pendingFrame = requestAnimationFrame(applyTilt);
     }, { passive: true });
-    
+
     card.addEventListener('mouseleave', () => {
+      if (pendingFrame !== null) { cancelAnimationFrame(pendingFrame); pendingFrame = null; }
       card.style.transition = 'transform 0.4s ease-out';
       card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
       card.style.setProperty('--glare-opacity', '0');
@@ -2817,14 +2932,21 @@ function renderSummaryCards() {
   const now = new Date();
 
   // Encontrar fecha de referencia en los datos o usar la fecha actual
+  // Recorrido con acumulador en vez de Math.max(...array): el spread pasa un argumento
+  // por fila y con la planilla real (186k filas) desborda la pila de llamadas.
   let refDate = now;
   if (rows && rows.length > 0) {
-    const validDates = rows.map(r => new Date(r['FECHA'] + 'T12:00:00')).filter(d => !isNaN(d.getTime()));
-    if (validDates.length > 0) {
-      const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
-      const pastOrToday = validDates.filter(d => d <= todayEnd);
-      refDate = pastOrToday.length > 0 ? new Date(Math.max(...pastOrToday)) : new Date(Math.max(...validDates));
+    const todayEndTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59).getTime();
+    let maxPast = 0;
+    let maxAny = 0;
+    for (let i = 0; i < rows.length; i++) {
+      const t = new Date(rows[i]['FECHA'] + 'T12:00:00').getTime();
+      if (isNaN(t)) continue;
+      if (t > maxAny) maxAny = t;
+      if (t <= todayEndTime && t > maxPast) maxPast = t;
     }
+    if (maxPast > 0) refDate = new Date(maxPast);
+    else if (maxAny > 0) refDate = new Date(maxAny);
   }
 
   // Filtrar filas según filtros de dimensión seleccionados (canal, tienda, vendedor, familia, región)
@@ -4359,7 +4481,7 @@ function getComprasProducts() {
 
 function renderComprasBIAdvisor() {
   const budgetInput = document.getElementById('comprasBudgetInput');
-  const budget = budgetInput ? (parseNumberClean(budgetInput.value) || 5000000) : 5000000;
+  const budget = budgetInput ? (parseChileanNumber(budgetInput.value) || 5000000) : 5000000;
 
   const strategySelect = document.getElementById('comprasStrategySelect');
   const strategy = strategySelect ? strategySelect.value : 'balanced';
@@ -5723,9 +5845,6 @@ function openCotizacionModal() {
   if (vendEl && typeof AuthManager !== 'undefined' && AuthManager.currentUser && AuthManager.currentUser.name) {
     vendEl.value = AuthManager.currentUser.name;
   }
-
-  // Poblar datalist de clientes históricos
-  populateCotizClientDatalist();
 
   // Asegurar que las imágenes de productos estén sincronizadas
   if (typeof fetchProductImagesMap === 'function') {
@@ -8145,6 +8264,7 @@ function setSyncStatus(status, customText) {
 // dos cargas se solapan, la más lenta pisa los datos de la más reciente y processSyncQueue
 // llega a reenviar la misma mutación pendiente dos veces.
 let isLoadingData = false;
+let lastCachedRowCount = -1;
 
 async function loadData(showLoadingState = true) {
   if (isLoadingData) return;
@@ -8199,7 +8319,15 @@ async function loadData(showLoadingState = true) {
 
     if (freshRows && Array.isArray(freshRows) && freshRows.length > 0) {
       rows = normalizeDataRows(freshRows);
-      try { GlomaxDB.setRows(rows); } catch(e) {} // actualiza caché IndexedDB
+
+      // El caché local solo se reescribe si el dataset cambió de tamaño. Volcar cientos
+      // de miles de filas a IndexedDB en cada ciclo de 15s satura la base y bloquea
+      // las lecturas posteriores. Se lanza sin await para no frenar el render.
+      if (rows.length !== lastCachedRowCount) {
+        lastCachedRowCount = rows.length;
+        GlomaxDB.setRows(rows).catch(e => console.warn('No se pudo actualizar el caché local:', e));
+      }
+
       setSyncStatus('ok');
       if (latencyBadge) {
         latencyBadge.innerHTML = `🟢 ${elapsed}ms (${modeLabel} - ${rows.length.toLocaleString()} reg)`;
