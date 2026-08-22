@@ -8507,7 +8507,10 @@ async function fetchGVizData() {
   // 2. Conexión Universal Directa vía JSONP Google Sheets (Ideal para GitHub Pages y Producción)
   try {
     console.log('[FastChannel] 🚀 Conectando a Google Sheets en vivo vía JSONP...');
-    const jsonpRows = await fetchGVizViaJSONP(spId, gid, 40000);
+    // En GitHub Pages no hay proxy local y este es el canal principal: descargar la hoja
+    // completa por JSONP ronda los 45s, así que 40s cortaba la carga justo antes de
+    // terminar y empujaba la app a los proxies CORS de terceros.
+    const jsonpRows = await fetchGVizViaJSONP(spId, gid, 90000);
     if (jsonpRows && jsonpRows.length > 0) {
       console.log(`[FastChannel] ✅ Conexión exitosa vía Google Sheets JSONP (${jsonpRows.length.toLocaleString()} registros)`);
       return jsonpRows;
