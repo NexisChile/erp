@@ -2969,6 +2969,17 @@ function renderSummaryCards() {
   const refMonthISO = `${refYyyy}-${refMm}`;
   const refYearISO = `${refYyyy}`;
 
+  // refDate es el último día CON ventas, que no tiene por qué ser hoy: si la planilla
+  // no recibe datos desde el viernes, en lunes seguiría apuntando al viernes. Cuando eso
+  // pasa hay que decirlo en la tarjeta en vez de rotularla "Hoy" / "EN VIVO", y el día ya
+  // está cerrado, así que su cierre proyectado es sencillamente lo que se facturó.
+  const todayISO = toLocalISODate(now);
+  const refEsHoy = refDateISO === todayISO;
+  const diasDesdeRef = Math.round(
+    (new Date(now.getFullYear(), now.getMonth(), now.getDate()) - new Date(refYyyy, refDate.getMonth(), refDate.getDate()))
+    / 86400000
+  );
+
   // 1. VENTAS DE HOY / DÍA (fecha exacta refDateISO)
   const rowsHoy = baseRows.filter(r => r['FECHA'] === refDateISO);
   const totalHoy = rowsHoy.reduce((a, r) => a + (Number(r['NETO']) || 0), 0);
@@ -2992,7 +3003,8 @@ function renderSummaryCards() {
   const daysInMonth = new Date(refDate.getFullYear(), refDate.getMonth() + 1, 0).getDate();
   const currentDayOfYear = Math.max(1, Math.floor((refDate - new Date(refDate.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24)));
 
-  const projHoy = Math.round(totalHoy * 1.15);
+  // Solo tiene sentido extrapolar el cierre si el día sigue en curso.
+  const projHoy = refEsHoy ? Math.round(totalHoy * 1.15) : totalHoy;
   const projMes = currentDay > 0 ? Math.round((totalMes / currentDay) * daysInMonth) : Math.round(totalMes * 1.10);
   const projAnio = currentDayOfYear > 0 ? Math.round((totalAnio / currentDayOfYear) * 365) : Math.round(totalAnio * 1.20);
 
@@ -3052,7 +3064,16 @@ function renderSummaryCards() {
     elTodayVal._currentVal = totalHoy;
   }
   if (elTodayDate) elTodayDate.textContent = diaNombre;
-  if (elTodaySub) elTodaySub.textContent = `${formatNum(docsHoy)} documentos · ${formatNum(cantHoy)} unidades`;
+  if (elTodaySub) {
+    const detalle = `${formatNum(docsHoy)} documentos · ${formatNum(cantHoy)} unidades`;
+    elTodaySub.textContent = refEsHoy
+      ? detalle
+      : `${detalle} · sin ventas nuevas hace ${diasDesdeRef} ${diasDesdeRef === 1 ? 'día' : 'días'}`;
+  }
+  const elTodayBadge = document.getElementById('todayBadge');
+  const elTodayLabel = document.getElementById('todayLabel');
+  if (elTodayBadge) elTodayBadge.textContent = refEsHoy ? 'EN VIVO' : 'ÚLTIMO DÍA CON VENTAS';
+  if (elTodayLabel) elTodayLabel.textContent = refEsHoy ? 'Ventas de Hoy' : 'Últimas Ventas Registradas';
   renderCompareBadge(elTodayComp, totalHoyPrev, growthHoy, `Mismo Día ${prevYyyy}`);
 
   // RENDER CARD 2: MES (MTD)
@@ -3093,8 +3114,14 @@ function renderSummaryCards() {
     animateValue(elTodayProjVal, elTodayProjVal._currentVal, projHoy, 650, true);
     elTodayProjVal._currentVal = projHoy;
   }
-  if (elTodayProjDate) elTodayProjDate.textContent = 'Cierre de Hoy';
-  if (elTodayProjSub) elTodayProjSub.textContent = 'Pronóstico basado en ritmo de facturación diario';
+  const elTodayProjBadge = document.getElementById('todayProjBadge');
+  const elTodayProjLabel = document.getElementById('todayProjLabel');
+  if (elTodayProjBadge) elTodayProjBadge.textContent = refEsHoy ? 'PROYECCIÓN DÍA' : 'DÍA CERRADO';
+  if (elTodayProjLabel) elTodayProjLabel.textContent = refEsHoy ? 'Proyección Cierre de Hoy' : 'Cierre Real del Último Día';
+  if (elTodayProjDate) elTodayProjDate.textContent = refEsHoy ? 'Cierre de Hoy' : `Cierre de ${diaNombre}`;
+  if (elTodayProjSub) elTodayProjSub.textContent = refEsHoy
+    ? 'Pronóstico basado en ritmo de facturación diario'
+    : 'Jornada finalizada: cifra real, sin extrapolación';
   renderCompareBadge(elTodayProjComp, totalHoyPrev, growthProjHoy, `Cierre Día ${prevYyyy}`);
 
   // RENDER CARD 5: PROYECCIÓN MES

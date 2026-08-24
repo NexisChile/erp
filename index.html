@@ -12,7 +12,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <!-- Stylesheets & Libraries -->
-  <link rel="stylesheet" href="style.css?v=20260821_FIXES_V7" />
+  <link rel="stylesheet" href="style.css?v=20260824_FIXES_V8" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -575,8 +575,8 @@
           <div class="hero-cards-grid">
             <div class="ax-card hero-kpi-card" id="todayCard" data-tilt>
               <div class="today-header">
-                <span class="today-badge">EN VIVO</span>
-                <span class="today-label">Ventas de Hoy</span>
+                <span class="today-badge" id="todayBadge">EN VIVO</span>
+                <span class="today-label" id="todayLabel">Ventas de Hoy</span>
                 <span class="today-date" id="todayDateLabel">--</span>
               </div>
               <div class="today-value" id="todayValue">$0</div>
@@ -620,8 +620,8 @@
           <div class="hero-cards-grid">
             <div class="ax-card hero-kpi-card proj-card" id="todayProjCard" data-tilt>
               <div class="today-header">
-                <span class="today-badge proj-badge">PROYECCIÓN DÍA</span>
-                <span class="today-label">Proyección Cierre de Hoy</span>
+                <span class="today-badge proj-badge" id="todayProjBadge">PROYECCIÓN DÍA</span>
+                <span class="today-label" id="todayProjLabel">Proyección Cierre de Hoy</span>
                 <span class="today-date" id="todayProjDateLabel">--</span>
               </div>
               <div class="today-value" id="todayProjValue">$0</div>
@@ -2564,7 +2564,7 @@
   </div>
 
   <!-- Scripts -->
-  <script src="config.js?v=20260821_FIXES_V7"></script>
-  <script src="app.js?v=20260821_FIXES_V7"></script>
+  <script src="config.js?v=20260824_FIXES_V8"></script>
+  <script src="app.js?v=20260824_FIXES_V8"></script>
 </body>
 </html>
