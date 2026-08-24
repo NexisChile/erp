@@ -7165,14 +7165,74 @@ function getFtSpecsForSku(sku) {
   return all[sku] || null;
 }
 
+// Devuelve true si logro guardar. Antes se tragaba el error en la consola: al guardar
+// fotos es facil llenar localStorage (~10 MB) y el usuario habria perdido su edicion
+// creyendo que quedo guardada.
 function saveFtSpecsForSku(sku, specs) {
   const all = getFtAllStoredSpecs();
+  const previo = all[sku];
   all[sku] = Object.assign({}, all[sku] || {}, specs);
   try {
     localStorage.setItem(FT_STORAGE_KEY, JSON.stringify(all));
+    return true;
   } catch (e) {
+    // Dejar el almacenamiento como estaba para no corromper lo que ya habia.
+    if (previo === undefined) delete all[sku]; else all[sku] = previo;
+    try { localStorage.setItem(FT_STORAGE_KEY, JSON.stringify(all)); } catch (e2) {}
     console.error('Error al guardar especificaciones en localStorage:', e);
+    return false;
   }
+}
+
+// Las fotos se guardan como data URL dentro de localStorage, que ronda los 10 MB en
+// total. Una foto de camara moderna pasa los 3 MB, asi que se reescala y recomprime
+// antes de guardarla; si no, dos o tres fotos agotarian todo el espacio disponible.
+const FT_FOTO_MAX_PX = 1280;
+const FT_FOTO_CALIDAD = 0.72;
+
+function comprimirImagen(file) {
+  return new Promise((resolve, reject) => {
+    if (!file || !/^image\//.test(file.type)) {
+      reject(new Error('El archivo no es una imagen'));
+      return;
+    }
+    const lector = new FileReader();
+    lector.onerror = () => reject(new Error('No se pudo leer el archivo'));
+    lector.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('La imagen esta dañada o no es compatible'));
+      img.onload = () => {
+        let { width, height } = img;
+        const mayor = Math.max(width, height);
+        if (mayor > FT_FOTO_MAX_PX) {
+          const factor = FT_FOTO_MAX_PX / mayor;
+          width = Math.round(width * factor);
+          height = Math.round(height * factor);
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        // Los PNG con transparencia quedarian negros al pasar a JPEG.
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, width, height);
+        ctx.drawImage(img, 0, 0, width, height);
+        try {
+          resolve(canvas.toDataURL('image/jpeg', FT_FOTO_CALIDAD));
+        } catch (e) {
+          reject(new Error('No se pudo procesar la imagen'));
+        }
+      };
+      img.src = lector.result;
+    };
+    lector.readAsDataURL(file);
+  });
+}
+
+function pesoLegible(bytes) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1048576) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / 1048576).toFixed(1)} MB`;
 }
 
 function getFtProductPhoto(sku) {
@@ -7257,6 +7317,14 @@ function generateDefaultFtSpecs(p) {
     garantia: custom.garantia || '12 Meses Garantía Oficial Glomax S.A.',
     hsCode: custom.hsCode || `8481.${(10 + (hash % 80)).toString().padStart(2, '0')}.90`,
     notas: custom.notas || 'Producto probado y certificado conforme a exigencias de control de calidad Glomax S.A. Se recomienda almacenar en ambiente seco, templado y limpio.',
+    // Galeria del SKU. Antes solo existia fotoUrl (una sola imagen, y solo por URL);
+    // fotos permite varias y admite tanto URLs como imagenes subidas del computador.
+    // Si el SKU solo tiene la foto antigua o la del catalogo, se usa esa como galeria.
+    fotos: Array.isArray(custom.fotos) && custom.fotos.length
+      ? custom.fotos.slice()
+      : (custom.fotoUrl || photoUrl ? [custom.fotoUrl || photoUrl] : []),
+    // Campos libres que agrega el usuario, ademas de los fijos de arriba.
+    camposCustom: Array.isArray(custom.camposCustom) ? custom.camposCustom.slice() : [],
     bom: [
       { parte: 'Estructura / Clic Principal', cant: 1, participacion: '45%' },
       { parte: 'Ensamble de Sellado & Empaque', cant: 2, participacion: '25%' },
@@ -7462,7 +7530,41 @@ function selectFtProductSku(sku) {
     `;
   });
 
-  const photoUrl = spec.fotoUrl || getFtProductPhoto(prod.sku);
+  const fotos = (spec.fotos && spec.fotos.length)
+    ? spec.fotos
+    : (spec.fotoUrl || getFtProductPhoto(prod.sku) ? [spec.fotoUrl || getFtProductPhoto(prod.sku)] : []);
+  const photoUrl = fotos[0] || '';
+
+  // Tira de miniaturas: solo tiene sentido si hay mas de una foto.
+  const galeriaHtml = fotos.length > 1 ? `
+    <div class="ft-photo-strip">
+      ${fotos.map((f, i) => `
+        <img src="${escapeHtml(f)}" alt="Vista ${i + 1} de ${escapeHtml(prod.sku)}"
+             data-ft-foto="${escapeHtml(f)}" title="Ver esta foto" />
+      `).join('')}
+    </div>
+  ` : '';
+
+  // Tarjeta con los campos que agrego el usuario; se omite si no definio ninguno.
+  const camposValidos = (spec.camposCustom || []).filter(c => c && (c.etiqueta || c.valor));
+  const camposCustomHtml = camposValidos.length ? `
+    <div class="ft-card" style="background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(139, 92, 246, 0.35); border-radius: 14px; padding: 1.25rem;">
+      <div class="ft-card-header" style="display: flex; align-items: center; gap: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 10px; margin-bottom: 12px; color: #a78bfa; font-weight: 700;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <span>ESPECIFICACIONES ADICIONALES</span>
+      </div>
+      <table class="ft-spec-table" style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+        <tbody>
+          ${camposValidos.map(c => `
+            <tr>
+              <th style="padding: 8px 0; color: #94a3b8; width: 45%; text-align: left;">${escapeHtml(c.etiqueta)}</th>
+              <td style="color: #ffffff; font-weight: 600;">${escapeHtml(c.valor)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  ` : '';
 
   const photoCardHtml = photoUrl ? `
     <div class="ft-card">
@@ -7474,9 +7576,10 @@ function selectFtProductSku(sku) {
         <span class="ft-tag ft-tag-blue">Glomax HD Asset</span>
       </div>
       <div class="ft-photo-frame">
-        <img src="${encodeURI(photoUrl)}" alt="${escapeHtml(prod.descripcion)}" class="ft-product-photo" onerror="this.onerror=null; this.parentElement.innerHTML='<div style=\'color:#94a3b8; font-size:0.85rem; padding: 2rem; text-align: center;\'>📷 FotografÃ­a Oficial no disponible<br><span style=\'font-size:0.75rem; color:#64748b;\'>Se adjunta esquema CAD predeterminado</span></div>';" />
+        <img src="${escapeHtml(photoUrl)}" alt="${escapeHtml(prod.descripcion)}" class="ft-product-photo" id="ftMainPhoto" onerror="this.onerror=null; this.parentElement.innerHTML='<div style=\'color:#94a3b8; font-size:0.85rem; padding: 2rem; text-align: center;\'>📷 Fotografía no disponible</div>';" />
         <span class="ft-photo-badge">🔒 Certificado Glomax.cl</span>
       </div>
+      ${galeriaHtml}
     </div>
   ` : `
     <div class="ft-card">
@@ -7589,13 +7692,13 @@ function selectFtProductSku(sku) {
           </div>
           <table class="ft-spec-table" style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
             <tbody>
-              <tr><th style="padding: 8px 0; color: #94a3b8; width: 45%;">Dimensiones (L x A x H):</th><td style="color: #ffffff; font-weight: 600;">${spec.dimensiones}</td></tr>
-              <tr><th style="padding: 8px 0; color: #94a3b8;">Peso Neto Unitario:</th><td style="color: #ffffff; font-weight: 600;">${spec.pesoNeto}</td></tr>
-              <tr><th style="padding: 8px 0; color: #94a3b8;">Peso Bruto Empacado:</th><td style="color: #ffffff; font-weight: 600;">${spec.pesoBruto}</td></tr>
-              <tr><th style="padding: 8px 0; color: #94a3b8;">Volumen Unitario (m³):</th><td style="color: #38bdf8; font-weight: 700;">${spec.volumen}</td></tr>
-              <tr><th style="padding: 8px 0; color: #94a3b8;">Capacidad Cajas x Pallet:</th><td style="color: #ffffff; font-weight: 600;">${spec.cajasPallet}</td></tr>
-              <tr><th style="padding: 8px 0; color: #94a3b8;">Código Arancelario (HS):</th><td><code style="background: rgba(56,189,248,0.15); color: #38bdf8; padding: 2px 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace;">${spec.hsCode}</code></td></tr>
-              <tr><th style="padding: 8px 0; color: #94a3b8;">País de Origen / Fabricación:</th><td style="color: #ffffff; font-weight: 600;">${spec.origen}</td></tr>
+              <tr><th style="padding: 8px 0; color: #94a3b8; width: 45%;">Dimensiones (L x A x H):</th><td style="color: #ffffff; font-weight: 600;">${escapeHtml(spec.dimensiones)}</td></tr>
+              <tr><th style="padding: 8px 0; color: #94a3b8;">Peso Neto Unitario:</th><td style="color: #ffffff; font-weight: 600;">${escapeHtml(spec.pesoNeto)}</td></tr>
+              <tr><th style="padding: 8px 0; color: #94a3b8;">Peso Bruto Empacado:</th><td style="color: #ffffff; font-weight: 600;">${escapeHtml(spec.pesoBruto)}</td></tr>
+              <tr><th style="padding: 8px 0; color: #94a3b8;">Volumen Unitario (m³):</th><td style="color: #38bdf8; font-weight: 700;">${escapeHtml(spec.volumen)}</td></tr>
+              <tr><th style="padding: 8px 0; color: #94a3b8;">Capacidad Cajas x Pallet:</th><td style="color: #ffffff; font-weight: 600;">${escapeHtml(spec.cajasPallet)}</td></tr>
+              <tr><th style="padding: 8px 0; color: #94a3b8;">Código Arancelario (HS):</th><td><code style="background: rgba(56,189,248,0.15); color: #38bdf8; padding: 2px 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace;">${escapeHtml(spec.hsCode)}</code></td></tr>
+              <tr><th style="padding: 8px 0; color: #94a3b8;">País de Origen / Fabricación:</th><td style="color: #ffffff; font-weight: 600;">${escapeHtml(spec.origen)}</td></tr>
             </tbody>
           </table>
         </div>
@@ -7612,13 +7715,13 @@ function selectFtProductSku(sku) {
           </div>
           <table class="ft-spec-table" style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
             <tbody>
-              <tr><th style="padding: 8px 0; color: #94a3b8; width: 45%;">Material Principal:</th><td><strong style="color: #38bdf8;">${spec.material}</strong></td></tr>
-              <tr><th style="padding: 8px 0; color: #94a3b8;">Acabado Superficial:</th><td style="color: #ffffff;">${spec.acabado}</td></tr>
-              <tr><th style="padding: 8px 0; color: #94a3b8;">Rango Temperatura:</th><td style="color: #ffffff;">${spec.tempRango}</td></tr>
-              <tr><th style="padding: 8px 0; color: #94a3b8;">Certificaciones Calidad:</th><td><span class="ft-tag ft-tag-green" style="font-weight: 700;">${spec.certificaciones}</span></td></tr>
-              <tr><th style="padding: 8px 0; color: #94a3b8;">Grado Protección IP:</th><td><span class="ft-tag ft-tag-blue" style="font-weight: 700;">${spec.gradoIP}</span></td></tr>
-              <tr><th style="padding: 8px 0; color: #94a3b8;">Especificación Eléctrica:</th><td style="color: #ffffff;">${spec.electrico}</td></tr>
-              <tr><th style="padding: 8px 0; color: #94a3b8;">Garantía Comercial:</th><td><strong style="color: #34d399; font-size: 0.9rem;">${spec.garantia}</strong></td></tr>
+              <tr><th style="padding: 8px 0; color: #94a3b8; width: 45%;">Material Principal:</th><td><strong style="color: #38bdf8;">${escapeHtml(spec.material)}</strong></td></tr>
+              <tr><th style="padding: 8px 0; color: #94a3b8;">Acabado Superficial:</th><td style="color: #ffffff;">${escapeHtml(spec.acabado)}</td></tr>
+              <tr><th style="padding: 8px 0; color: #94a3b8;">Rango Temperatura:</th><td style="color: #ffffff;">${escapeHtml(spec.tempRango)}</td></tr>
+              <tr><th style="padding: 8px 0; color: #94a3b8;">Certificaciones Calidad:</th><td><span class="ft-tag ft-tag-green" style="font-weight: 700;">${escapeHtml(spec.certificaciones)}</span></td></tr>
+              <tr><th style="padding: 8px 0; color: #94a3b8;">Grado Protección IP:</th><td><span class="ft-tag ft-tag-blue" style="font-weight: 700;">${escapeHtml(spec.gradoIP)}</span></td></tr>
+              <tr><th style="padding: 8px 0; color: #94a3b8;">Especificación Eléctrica:</th><td style="color: #ffffff;">${escapeHtml(spec.electrico)}</td></tr>
+              <tr><th style="padding: 8px 0; color: #94a3b8;">Garantía Comercial:</th><td><strong style="color: #34d399; font-size: 0.9rem;">${escapeHtml(spec.garantia)}</strong></td></tr>
             </tbody>
           </table>
         </div>
@@ -7646,6 +7749,8 @@ function selectFtProductSku(sku) {
           </table>
         </div>
 
+        ${camposCustomHtml}
+
         <!-- IV. TIMBRE DE LICITACIÓN & APROBACIÓN DE CALIDAD -->
         <div class="ft-card" style="background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 14px; padding: 1.25rem;">
           <div class="ft-card-header" style="display: flex; align-items: center; gap: 8px; color: #38bdf8; font-weight: 700; margin-bottom: 8px;">
@@ -7653,7 +7758,7 @@ function selectFtProductSku(sku) {
             <span>IV. ENSAYOS, SEGURIDAD & TIMBRE DE APORBACIÓN LICITACIONES</span>
           </div>
           <p style="font-size: 0.83rem; color: #cbd5e1; line-height: 1.6; margin: 0 0 12px 0;">
-            ${spec.notas}
+            ${escapeHtml(spec.notas)}
           </p>
           
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; border-top: 1px dashed rgba(255,255,255,0.15); padding-top: 12px;">
@@ -7676,9 +7781,148 @@ function selectFtProductSku(sku) {
   `;
 
   container.innerHTML = html;
+
+  // Clic en una miniatura: cambiar la foto grande sin recargar toda la ficha.
+  const principal = container.querySelector('#ftMainPhoto');
+  container.querySelectorAll('[data-ft-foto]').forEach(thumb => {
+    thumb.addEventListener('click', () => {
+      if (principal) principal.src = thumb.getAttribute('data-ft-foto');
+    });
+  });
 }
 
 // Modales de Edición & Comparación
+// ---------- Galeria de fotos del modal de edicion ----------
+// Se trabaja sobre una copia en memoria y solo se persiste al guardar, para que
+// Cancelar deshaga de verdad lo que el usuario hizo con las fotos.
+let _ftEditFotos = [];
+
+function renderFtEditGallery() {
+  const cont = document.getElementById('ftEditPhotoGallery');
+  if (!cont) return;
+
+  if (!_ftEditFotos.length) {
+    cont.innerHTML = '';
+    return;
+  }
+
+  cont.innerHTML = _ftEditFotos.map((src, i) => `
+    <div class="ft-photo-thumb ${i === 0 ? 'is-main' : ''}" title="${i === 0 ? 'Foto principal' : 'Clic en ★ para hacerla principal'}">
+      <img src="${escapeHtml(src)}" alt="Foto ${i + 1}" />
+      <button type="button" class="ft-photo-remove" data-idx="${i}" title="Quitar foto">✕</button>
+      ${i === 0
+        ? '<span class="ft-photo-main-tag">PRINCIPAL</span>'
+        : `<button type="button" class="ft-photo-remove" data-main="${i}" style="left:3px; right:auto; color:#fbbf24;" title="Hacer principal">★</button>`}
+    </div>
+  `).join('');
+
+  cont.querySelectorAll('[data-idx]').forEach(btn => {
+    btn.onclick = () => {
+      _ftEditFotos.splice(Number(btn.getAttribute('data-idx')), 1);
+      renderFtEditGallery();
+      actualizarFtPhotoStatus();
+    };
+  });
+  cont.querySelectorAll('[data-main]').forEach(btn => {
+    btn.onclick = () => {
+      const i = Number(btn.getAttribute('data-main'));
+      const [f] = _ftEditFotos.splice(i, 1);
+      _ftEditFotos.unshift(f);
+      renderFtEditGallery();
+    };
+  });
+}
+
+function actualizarFtPhotoStatus(msg, esError) {
+  const el = document.getElementById('ftEditPhotoStatus');
+  if (!el) return;
+  el.classList.toggle('is-error', !!esError);
+  if (msg) { el.textContent = msg; return; }
+  if (!_ftEditFotos.length) { el.textContent = ''; return; }
+  const bytes = _ftEditFotos.reduce((a, s) => a + s.length, 0);
+  el.textContent = `${_ftEditFotos.length} foto${_ftEditFotos.length === 1 ? '' : 's'} · ${pesoLegible(bytes)}`;
+}
+
+const FT_MAX_FOTOS = 8;
+
+async function agregarFtFotosDesdeArchivos(fileList) {
+  const archivos = Array.from(fileList || []).filter(f => /^image\//.test(f.type));
+  if (!archivos.length) {
+    actualizarFtPhotoStatus('Selecciona archivos de imagen (JPG, PNG o WEBP).', true);
+    return;
+  }
+
+  actualizarFtPhotoStatus(`Procesando ${archivos.length} imagen${archivos.length === 1 ? '' : 'es'}…`);
+  let agregadas = 0, fallidas = 0;
+
+  for (const f of archivos) {
+    if (_ftEditFotos.length >= FT_MAX_FOTOS) break;
+    try {
+      _ftEditFotos.push(await comprimirImagen(f));
+      agregadas++;
+    } catch (e) {
+      fallidas++;
+      console.warn('[Ficha Tecnica] No se pudo procesar', f.name, e);
+    }
+  }
+
+  renderFtEditGallery();
+  const partes = [];
+  if (agregadas) partes.push(`${agregadas} foto${agregadas === 1 ? '' : 's'} agregada${agregadas === 1 ? '' : 's'}`);
+  if (fallidas) partes.push(`${fallidas} no se pudo procesar`);
+  if (archivos.length > agregadas + fallidas) partes.push(`limite de ${FT_MAX_FOTOS} fotos por SKU`);
+  actualizarFtPhotoStatus(partes.join(' · ') || null, fallidas > 0);
+  if (!partes.length) actualizarFtPhotoStatus();
+}
+
+function addFtPhotoFromUrl() {
+  const input = document.getElementById('ftEditFotoUrl');
+  const url = input ? input.value.trim() : '';
+  if (!url) return;
+  if (!/^https?:\/\//i.test(url) && !/^data:image\//i.test(url)) {
+    actualizarFtPhotoStatus('La URL debe empezar por http:// o https://', true);
+    return;
+  }
+  if (_ftEditFotos.length >= FT_MAX_FOTOS) {
+    actualizarFtPhotoStatus(`Maximo ${FT_MAX_FOTOS} fotos por SKU.`, true);
+    return;
+  }
+  if (_ftEditFotos.includes(url)) {
+    actualizarFtPhotoStatus('Esa imagen ya esta en la galeria.', true);
+    return;
+  }
+  _ftEditFotos.push(url);
+  if (input) input.value = '';
+  renderFtEditGallery();
+  actualizarFtPhotoStatus();
+}
+
+// ---------- Campos personalizados ----------
+function addFtCustomFieldRow(etiqueta, valor) {
+  const cont = document.getElementById('ftEditCustomFields');
+  if (!cont) return;
+  const row = document.createElement('div');
+  row.className = 'ft-custom-field-row';
+  row.innerHTML = `
+    <input type="text" class="ft-custom-label" placeholder="Nombre del campo (ej: Capacidad de carga)" />
+    <input type="text" class="ft-custom-value" placeholder="Valor (ej: 120 kg)" />
+    <button type="button" class="ft-custom-remove" title="Quitar campo">✕</button>
+  `;
+  row.querySelector('.ft-custom-label').value = etiqueta || '';
+  row.querySelector('.ft-custom-value').value = valor || '';
+  row.querySelector('.ft-custom-remove').onclick = () => row.remove();
+  cont.appendChild(row);
+}
+
+function leerFtCustomFields() {
+  return Array.from(document.querySelectorAll('#ftEditCustomFields .ft-custom-field-row'))
+    .map(row => ({
+      etiqueta: (row.querySelector('.ft-custom-label')?.value || '').trim(),
+      valor: (row.querySelector('.ft-custom-value')?.value || '').trim()
+    }))
+    .filter(c => c.etiqueta || c.valor);
+}
+
 function openFtEditModal() {
   if (!currentFtSelectedSku) {
     showToast('Selecciona un producto primero para editar su Ficha Técnica ⚠️');
@@ -7693,8 +7937,19 @@ function openFtEditModal() {
   document.getElementById('ftEditModalTitle').textContent = `✏️ Editar Ficha Técnica: ${prod.sku}`;
   document.getElementById('ftEditModalSub').textContent = prod.descripcion;
 
+  // La galeria arranca desde una copia: si el usuario cancela, no se toca lo guardado.
+  _ftEditFotos = Array.isArray(spec.fotos) ? spec.fotos.slice() : [];
+  renderFtEditGallery();
+  actualizarFtPhotoStatus();
+
   const fotoInput = document.getElementById('ftEditFotoUrl');
-  if (fotoInput) fotoInput.value = spec.fotoUrl || getFtProductPhoto(prod.sku) || '';
+  if (fotoInput) fotoInput.value = '';
+
+  const contCustom = document.getElementById('ftEditCustomFields');
+  if (contCustom) {
+    contCustom.innerHTML = '';
+    (spec.camposCustom || []).forEach(c => addFtCustomFieldRow(c.etiqueta, c.valor));
+  }
 
   document.getElementById('ftEditDimensiones').value = spec.dimensiones;
   document.getElementById('ftEditPesoNeto').value = spec.pesoNeto;
@@ -7714,6 +7969,8 @@ function openFtEditModal() {
   document.getElementById('ftEditHSCode').value = spec.hsCode;
   document.getElementById('ftEditNotas').value = spec.notas;
 
+  setupFtPhotoInputs();
+
   const modal = document.getElementById('ftEditModal');
   if (modal) modal.classList.add('show');
 }
@@ -7721,6 +7978,43 @@ function openFtEditModal() {
 function closeFtEditModal() {
   const modal = document.getElementById('ftEditModal');
   if (modal) modal.classList.remove('show');
+  _ftEditFotos = [];
+}
+
+function setupFtPhotoInputs() {
+  const input = document.getElementById('ftEditPhotoInput');
+  if (input && !input._glomaxBound) {
+    input._glomaxBound = true;
+    input.addEventListener('change', async (e) => {
+      await agregarFtFotosDesdeArchivos(e.target.files);
+      e.target.value = ''; // permite volver a elegir el mismo archivo
+    });
+  }
+
+  const zona = document.getElementById('ftPhotoDropzone');
+  if (zona && !zona._glomaxBound) {
+    zona._glomaxBound = true;
+    ['dragenter', 'dragover'].forEach(ev => zona.addEventListener(ev, (e) => {
+      e.preventDefault(); e.stopPropagation();
+      zona.classList.add('dragover');
+    }));
+    ['dragleave', 'drop'].forEach(ev => zona.addEventListener(ev, (e) => {
+      e.preventDefault(); e.stopPropagation();
+      zona.classList.remove('dragover');
+    }));
+    zona.addEventListener('drop', (e) => {
+      agregarFtFotosDesdeArchivos(e.dataTransfer && e.dataTransfer.files);
+    });
+  }
+
+  // Enter en el campo de URL debe añadir la foto, no enviar el formulario entero.
+  const urlInput = document.getElementById('ftEditFotoUrl');
+  if (urlInput && !urlInput._glomaxBound) {
+    urlInput._glomaxBound = true;
+    urlInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); addFtPhotoFromUrl(); }
+    });
+  }
 }
 
 function saveFtSpecs(e) {
@@ -7728,10 +8022,12 @@ function saveFtSpecs(e) {
   const sku = document.getElementById('ftEditSku').value;
   if (!sku) return;
 
-  const fotoInput = document.getElementById('ftEditFotoUrl');
-
   const updatedSpecs = {
-    fotoUrl: fotoInput ? fotoInput.value.trim() : '',
+    fotos: _ftEditFotos.slice(),
+    // Se mantiene fotoUrl sincronizado con la principal: lo siguen leyendo
+    // getFtProductPhoto, la comparativa y las fichas guardadas antes de la galeria.
+    fotoUrl: _ftEditFotos[0] || '',
+    camposCustom: leerFtCustomFields(),
     dimensiones: document.getElementById('ftEditDimensiones').value.trim(),
     pesoNeto: document.getElementById('ftEditPesoNeto').value.trim(),
     pesoBruto: document.getElementById('ftEditPesoBruto').value.trim(),
@@ -7751,9 +8047,16 @@ function saveFtSpecs(e) {
     notas: document.getElementById('ftEditNotas').value.trim()
   };
 
-  saveFtSpecsForSku(sku, updatedSpecs);
+  if (!saveFtSpecsForSku(sku, updatedSpecs)) {
+    // Sin espacio en localStorage: no se cierra el modal para no perder lo editado.
+    actualizarFtPhotoStatus('No hay espacio en este navegador para guardar. Quita algunas fotos e intenta de nuevo.', true);
+    showToast('⚠️ No se pudo guardar: almacenamiento del navegador lleno');
+    return;
+  }
+
   closeFtEditModal();
-  showToast(`✅ Ficha Técnica e imagen guardadas con éxito para SKU ${sku}`);
+  const nFotos = updatedSpecs.fotos.length;
+  showToast(`✅ Ficha Técnica de ${sku} guardada${nFotos ? ` · ${nFotos} foto${nFotos === 1 ? '' : 's'}` : ''}`);
   selectFtProductSku(sku);
 }
 
@@ -7885,7 +8188,10 @@ function exportFtPdf() {
   if (!prod) return;
 
   const spec = generateDefaultFtSpecs(prod);
-  const photoUrl = spec.fotoUrl || getFtProductPhoto(prod.sku);
+  const fotosPdf = (spec.fotos && spec.fotos.length)
+    ? spec.fotos
+    : (spec.fotoUrl || getFtProductPhoto(prod.sku) ? [spec.fotoUrl || getFtProductPhoto(prod.sku)] : []);
+  const photoUrl = fotosPdf[0] || '';
 
   showToast('📄 Generando PDF de Ficha Técnica oficial Glomax S.A...');
 
@@ -7903,10 +8209,34 @@ function exportFtPdf() {
     `;
   });
 
+  // Las fotos secundarias van como tira bajo la principal, para que el PDF de
+  // licitacion muestre todas las vistas cargadas del producto.
+  const secundariasPdf = fotosPdf.slice(1, 5);
   const photoPdfHtml = photoUrl ? `
     <div style="text-align: center; margin-bottom: 15px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; background: #fafafa;">
-      <img src="${photoUrl}" style="max-height: 180px; max-width: 100%; object-fit: contain;" />
+      <img src="${escapeHtml(photoUrl)}" style="max-height: 180px; max-width: 100%; object-fit: contain;" />
       <div style="font-size: 0.72rem; color: #64748b; margin-top: 4px; font-weight: 700;">FOTOGRAFÍA OFICIAL DE PRODUCTO GLOMAX</div>
+      ${secundariasPdf.length ? `
+        <div style="display: flex; gap: 6px; justify-content: center; margin-top: 8px; flex-wrap: wrap;">
+          ${secundariasPdf.map(f => `<img src="${escapeHtml(f)}" style="width: 74px; height: 74px; object-fit: cover; border: 1px solid #cbd5e1; border-radius: 4px;" />`).join('')}
+        </div>` : ''}
+    </div>
+  ` : '';
+
+  const camposValidosPdf = (spec.camposCustom || []).filter(c => c && (c.etiqueta || c.valor));
+  const camposCustomPdfHtml = camposValidosPdf.length ? `
+    <div style="margin-top: 12px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px;">
+      <div style="font-size: 0.78rem; font-weight: 800; color: #0284c7; text-transform: uppercase; margin-bottom: 6px;">Especificaciones Adicionales</div>
+      <table style="width: 100%; border-collapse: collapse; font-size: 0.8rem;">
+        <tbody>
+          ${camposValidosPdf.map(c => `
+            <tr style="border-bottom: 1px solid #f1f5f9;">
+              <th style="text-align: left; padding: 5px 0; color: #64748b; width: 45%;">${escapeHtml(c.etiqueta)}</th>
+              <td style="padding: 5px 0; font-weight: 600; color: #0f172a;">${escapeHtml(c.valor)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
     </div>
   ` : '';
 
@@ -7956,13 +8286,13 @@ function exportFtPdf() {
           🛠️ Especificaciones Técnicas
         </div>
         <table style="width: 100%; border-collapse: collapse; font-size: 0.82rem;">
-          <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #64748b;">Material:</th><td style="padding: 5px 0; font-weight: 600; color: #0f172a;">${spec.material}</td></tr>
-          <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #64748b;">Acabado:</th><td style="padding: 5px 0; color: #0f172a;">${spec.acabado}</td></tr>
-          <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #64748b;">Temperatura:</th><td style="padding: 5px 0; color: #0f172a;">${spec.tempRango}</td></tr>
-          <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #64748b;">Certificaciones:</th><td style="padding: 5px 0; font-weight: 700; color: #059669;">${spec.certificaciones}</td></tr>
-          <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #64748b;">Protección IP:</th><td style="padding: 5px 0; font-weight: 700; color: #0284c7;">${spec.gradoIP}</td></tr>
-          <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #64748b;">Eléctrico:</th><td style="padding: 5px 0; color: #0f172a;">${spec.electrico}</td></tr>
-          <tr><th style="text-align: left; padding: 5px 0; color: #64748b;">Garantía:</th><td style="padding: 5px 0; font-weight: 700; color: #059669;">${spec.garantia}</td></tr>
+          <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #64748b;">Material:</th><td style="padding: 5px 0; font-weight: 600; color: #0f172a;">${escapeHtml(spec.material)}</td></tr>
+          <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #64748b;">Acabado:</th><td style="padding: 5px 0; color: #0f172a;">${escapeHtml(spec.acabado)}</td></tr>
+          <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #64748b;">Temperatura:</th><td style="padding: 5px 0; color: #0f172a;">${escapeHtml(spec.tempRango)}</td></tr>
+          <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #64748b;">Certificaciones:</th><td style="padding: 5px 0; font-weight: 700; color: #059669;">${escapeHtml(spec.certificaciones)}</td></tr>
+          <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #64748b;">Protección IP:</th><td style="padding: 5px 0; font-weight: 700; color: #0284c7;">${escapeHtml(spec.gradoIP)}</td></tr>
+          <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #64748b;">Eléctrico:</th><td style="padding: 5px 0; color: #0f172a;">${escapeHtml(spec.electrico)}</td></tr>
+          <tr><th style="text-align: left; padding: 5px 0; color: #64748b;">Garantía:</th><td style="padding: 5px 0; font-weight: 700; color: #059669;">${escapeHtml(spec.garantia)}</td></tr>
         </table>
       </div>
 
@@ -7972,12 +8302,12 @@ function exportFtPdf() {
           📦 Logística, Empaque & Código
         </div>
         <table style="width: 100%; border-collapse: collapse; font-size: 0.82rem;">
-          <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #64748b;">Dimensiones:</th><td style="padding: 5px 0; font-weight: 600; color: #0f172a;">${spec.dimensiones}</td></tr>
-          <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #64748b;">Peso Neto / Bruto:</th><td style="padding: 5px 0; color: #0f172a;">${spec.pesoNeto} / ${spec.pesoBruto}</td></tr>
-          <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #64748b;">Volumen:</th><td style="padding: 5px 0; color: #0f172a;">${spec.volumen}</td></tr>
-          <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #64748b;">Cajas x Pallet:</th><td style="padding: 5px 0; color: #0f172a;">${spec.cajasPallet}</td></tr>
-          <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #64748b;">HS Code:</th><td style="padding: 5px 0; font-family: monospace; font-weight: 700;">${spec.hsCode}</td></tr>
-          <tr><th style="text-align: left; padding: 5px 0; color: #64748b;">Origen:</th><td style="padding: 5px 0; color: #0f172a;">${spec.origen}</td></tr>
+          <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #64748b;">Dimensiones:</th><td style="padding: 5px 0; font-weight: 600; color: #0f172a;">${escapeHtml(spec.dimensiones)}</td></tr>
+          <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #64748b;">Peso Neto / Bruto:</th><td style="padding: 5px 0; color: #0f172a;">${escapeHtml(spec.pesoNeto)} / ${escapeHtml(spec.pesoBruto)}</td></tr>
+          <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #64748b;">Volumen:</th><td style="padding: 5px 0; color: #0f172a;">${escapeHtml(spec.volumen)}</td></tr>
+          <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #64748b;">Cajas x Pallet:</th><td style="padding: 5px 0; color: #0f172a;">${escapeHtml(spec.cajasPallet)}</td></tr>
+          <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #64748b;">HS Code:</th><td style="padding: 5px 0; font-family: monospace; font-weight: 700;">${escapeHtml(spec.hsCode)}</td></tr>
+          <tr><th style="text-align: left; padding: 5px 0; color: #64748b;">Origen:</th><td style="padding: 5px 0; color: #0f172a;">${escapeHtml(spec.origen)}</td></tr>
         </table>
 
         <!-- BARCODE EN PDF -->
@@ -8011,10 +8341,12 @@ function exportFtPdf() {
       </table>
     </div>
 
+    ${camposCustomPdfHtml}
+
     <!-- CONTROL DE CALIDAD & TIMBRE -->
-    <div style="border: 1px solid #0284c7; background: #f0f9ff; border-radius: 8px; padding: 14px; margin-bottom: 20px;">
+    <div style="border: 1px solid #0284c7; background: #f0f9ff; border-radius: 8px; padding: 14px; margin: 20px 0;">
       <div style="font-size: 0.85rem; font-weight: 800; color: #0369a1; margin-bottom: 4px;">🛡️ Control de Calidad & Normas de Seguridad:</div>
-      <div style="font-size: 0.8rem; color: #334155; line-height: 1.5;">${spec.notas}</div>
+      <div style="font-size: 0.8rem; color: #334155; line-height: 1.5;">${escapeHtml(spec.notas)}</div>
     </div>
 
     <!-- PIE DE PAGINA PDF -->

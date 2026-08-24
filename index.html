@@ -12,7 +12,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <!-- Stylesheets & Libraries -->
-  <link rel="stylesheet" href="style.css?v=20260824_COMPRAS_V11" />
+  <link rel="stylesheet" href="style.css?v=20260824_FICHA_V12" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -2368,12 +2368,31 @@
       <form id="ftEditForm" onsubmit="saveFtSpecs(event)">
         <input type="hidden" id="ftEditSku" />
 
-        <div class="form-section-title" style="color: #38bdf8; border-bottom-color: rgba(56, 189, 248, 0.3);">1. Especificaciones Físicas & Logística</div>
+        <div class="form-section-title" style="color: #38bdf8; border-bottom-color: rgba(56, 189, 248, 0.3);">1. Fotografías del Producto</div>
         <div class="form-grid">
           <div class="form-group full">
-            <label for="ftEditFotoUrl">URL Fotografía / Imagen de Producto</label>
-            <input type="text" id="ftEditFotoUrl" placeholder="https://www.glomax.cl/imagenes/producto.jpg" />
+            <label>Fotografías (se guardan en este navegador)</label>
+            <div class="ft-photo-dropzone" id="ftPhotoDropzone">
+              <input type="file" id="ftEditPhotoInput" accept="image/*" multiple hidden />
+              <button type="button" class="btn-secondary btn-sm" onclick="document.getElementById('ftEditPhotoInput').click()">
+                📁 Subir fotos desde el computador
+              </button>
+              <span class="ft-photo-hint">o arrastra las imágenes aquí · JPG, PNG o WEBP</span>
+            </div>
+            <div class="ft-photo-gallery" id="ftEditPhotoGallery"></div>
+            <div class="ft-photo-status" id="ftEditPhotoStatus"></div>
           </div>
+          <div class="form-group full">
+            <label for="ftEditFotoUrl">…o pegar la URL de una imagen</label>
+            <div style="display:flex; gap:8px;">
+              <input type="text" id="ftEditFotoUrl" placeholder="https://www.glomax.cl/imagenes/producto.jpg" style="flex:1;" />
+              <button type="button" class="btn-secondary btn-sm" onclick="addFtPhotoFromUrl()">Añadir</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section-title" style="color: #38bdf8; border-bottom-color: rgba(56, 189, 248, 0.3);">2. Especificaciones Físicas & Logística</div>
+        <div class="form-grid">
           <div class="form-group">
             <label for="ftEditDimensiones">Dimensiones (Alto x Ancho x Prof. mm)</label>
             <input type="text" id="ftEditDimensiones" placeholder="Ej: 450 x 300 x 200 mm" />
@@ -2400,7 +2419,7 @@
           </div>
         </div>
 
-        <div class="form-section-title" style="color: #38bdf8; border-bottom-color: rgba(56, 189, 248, 0.3);">2. Parámetros Técnicos & Materiales</div>
+        <div class="form-section-title" style="color: #38bdf8; border-bottom-color: rgba(56, 189, 248, 0.3);">3. Parámetros Técnicos & Materiales</div>
         <div class="form-grid">
           <div class="form-group">
             <label for="ftEditMaterial">Material Principal</label>
@@ -2428,7 +2447,7 @@
           </div>
         </div>
 
-        <div class="form-section-title" style="color: #38bdf8; border-bottom-color: rgba(56, 189, 248, 0.3);">3. Garantía & Control de Calidad</div>
+        <div class="form-section-title" style="color: #38bdf8; border-bottom-color: rgba(56, 189, 248, 0.3);">4. Garantía & Control de Calidad</div>
         <div class="form-grid">
           <div class="form-group">
             <label for="ftEditGarantia">Garantía Comercial (Meses)</label>
@@ -2441,6 +2460,17 @@
           <div class="form-group full">
             <label for="ftEditNotas">Notas Técnicas & Recomendaciones de Seguridad</label>
             <textarea id="ftEditNotas" rows="3" class="filter-input" style="width:100%; height:auto; padding:8px;" placeholder="Detalles adicionales de instalación, almacenamiento o normas técnicas..."></textarea>
+          </div>
+        </div>
+
+        <div class="form-section-title" style="color: #38bdf8; border-bottom-color: rgba(56, 189, 248, 0.3);">5. Campos Personalizados</div>
+        <div class="form-grid">
+          <div class="form-group full">
+            <label>Agrega los campos que necesites para este SKU</label>
+            <div class="ft-custom-fields" id="ftEditCustomFields"></div>
+            <button type="button" class="btn-secondary btn-sm" style="margin-top:8px;" onclick="addFtCustomFieldRow()">
+              ➕ Añadir campo
+            </button>
           </div>
         </div>
 
@@ -2564,7 +2594,7 @@
   </div>
 
   <!-- Scripts -->
-  <script src="config.js?v=20260824_COMPRAS_V11"></script>
-  <script src="app.js?v=20260824_COMPRAS_V11"></script>
+  <script src="config.js?v=20260824_FICHA_V12"></script>
+  <script src="app.js?v=20260824_FICHA_V12"></script>
 </body>
 </html>

@@ -7511,6 +7511,9 @@ select#comprasStrategySelect {
 }
 
 .hero-compare-badge.trend-negative .compare-growth-tag {
+  color: #f87171 !important;
+  font-weight: 800 !important;
+}
 
 /* ==========================================================================
    ✨ GLOMAX S.A. — OBSIDIAN GLASSMORPHISM EXECUTIVE 2026 LUXURY SUITE
@@ -8431,4 +8434,145 @@ html, body {
 @keyframes toastSlideUp {
   0% { opacity: 0; transform: translateY(12px) scale(0.96); }
   100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ==========================================================================
+   FICHA TÉCNICA · GALERÍA DE FOTOS Y CAMPOS PERSONALIZADOS
+   ========================================================================== */
+
+.ft-photo-dropzone {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 14px 16px;
+  border: 1px dashed rgba(56, 189, 248, 0.45);
+  border-radius: 10px;
+  background: rgba(56, 189, 248, 0.05);
+  transition: background 0.18s ease, border-color 0.18s ease;
+}
+
+.ft-photo-dropzone.dragover {
+  background: rgba(56, 189, 248, 0.14);
+  border-color: rgba(56, 189, 248, 0.85);
+}
+
+.ft-photo-hint {
+  font-size: 0.76rem;
+  color: var(--ax-text-tertiary, #94a3b8);
+}
+
+.ft-photo-gallery {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.ft-photo-gallery:empty { margin-top: 0; }
+
+.ft-photo-thumb {
+  position: relative;
+  width: 88px;
+  height: 88px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(15, 23, 42, 0.6);
+}
+
+.ft-photo-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.ft-photo-thumb .ft-photo-remove {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.85);
+  color: #f87171;
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.ft-photo-thumb .ft-photo-remove:hover { background: #ef4444; color: #fff; }
+
+/* Marca cuál es la foto principal (la que encabeza la ficha y el PDF) */
+.ft-photo-thumb.is-main { border-color: #38bdf8; box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.35); }
+
+.ft-photo-thumb .ft-photo-main-tag {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(56, 189, 248, 0.9);
+  color: #030712;
+  font-size: 0.6rem;
+  font-weight: 800;
+  text-align: center;
+  padding: 2px 0;
+  letter-spacing: 0.4px;
+}
+
+.ft-photo-status {
+  margin-top: 8px;
+  font-size: 0.76rem;
+  color: var(--ax-text-tertiary, #94a3b8);
+  min-height: 1em;
+}
+
+.ft-photo-status.is-error { color: #f87171; }
+
+/* Miniaturas dentro de la ficha ya renderizada */
+.ft-photo-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.ft-photo-strip img {
+  width: 62px;
+  height: 62px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.ft-photo-strip img:hover { transform: translateY(-2px); border-color: #38bdf8; }
+
+.ft-custom-field-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) auto;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.ft-custom-field-row input { width: 100%; }
+
+.ft-custom-field-row .ft-custom-remove {
+  border: 1px solid rgba(248, 113, 113, 0.4);
+  background: rgba(248, 113, 113, 0.1);
+  color: #f87171;
+  border-radius: 8px;
+  padding: 0 12px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.ft-custom-field-row .ft-custom-remove:hover { background: #ef4444; color: #fff; }
+
+@media (max-width: 620px) {
+  .ft-custom-field-row { grid-template-columns: 1fr; }
 }
