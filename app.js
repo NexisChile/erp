@@ -1120,6 +1120,9 @@ function switchView(viewName) {
       } else if (viewName === 'compras') {
         if (!isCached) {
           if (typeof renderComprasView === 'function') renderComprasView();
+          // El asesor no se pintaba al entrar a la vista: su tabla quedaba vacia
+          // hasta que el usuario tocaba el presupuesto o la estrategia.
+          if (typeof renderComprasBIAdvisor === 'function') renderComprasBIAdvisor();
           _viewLastRenderedRevision['compras'] = _glomaxRenderRevision;
         }
       } else if (viewName === 'productos') {
@@ -2485,6 +2488,59 @@ function setupAllButtonListeners() {
       if (typeof renderComprasView === 'function') renderComprasView();
     }
   };
+
+  // Buscador, orden y familia de Compras: renderComprasView ya leia estos controles,
+  // pero nadie disparaba el refresco al usarlos, asi que escribir en el buscador o
+  // cambiar el orden no producia ningun efecto visible.
+  const comprasRefrescar = (volverAPrimeraPagina) => {
+    if (volverAPrimeraPagina && typeof comprasCurrentPage !== 'undefined') comprasCurrentPage = 1;
+    if (typeof renderComprasView === 'function') renderComprasView();
+  };
+
+  const compSearch = document.getElementById('comprasSearchBox');
+  if (compSearch) {
+    // Con 1.200+ SKUs re-renderizar en cada tecla se nota; se espera a que pare de escribir.
+    let debounce = null;
+    compSearch.oninput = () => {
+      clearTimeout(debounce);
+      debounce = setTimeout(() => comprasRefrescar(true), 200);
+    };
+  }
+
+  const compSort = document.getElementById('comprasSortSelect');
+  if (compSort) compSort.onchange = () => comprasRefrescar(true);
+
+  const compFam = document.getElementById('comprasFamiliaFilter');
+  if (compFam) compFam.onchange = () => comprasRefrescar(true);
+
+  // Asesor de compras: recalcula la propuesta al cambiar presupuesto o estrategia.
+  const compBudget = document.getElementById('comprasBudgetInput');
+  if (compBudget) {
+    let debounceB = null;
+    compBudget.oninput = () => {
+      clearTimeout(debounceB);
+      debounceB = setTimeout(() => {
+        if (typeof renderComprasBIAdvisor === 'function') renderComprasBIAdvisor();
+      }, 250);
+    };
+  }
+
+  const compStrategy = document.getElementById('comprasStrategySelect');
+  if (compStrategy) compStrategy.onchange = () => {
+    if (typeof renderComprasBIAdvisor === 'function') renderComprasBIAdvisor();
+  };
+
+  // Atajos de presupuesto ($2M, $5M...): estaban en el HTML con su data-budget pero
+  // sin ningun listener, asi que pulsarlos no hacia absolutamente nada.
+  document.querySelectorAll('.budget-pill[data-budget]').forEach(pill => {
+    pill.onclick = () => {
+      const monto = pill.getAttribute('data-budget');
+      const input = document.getElementById('comprasBudgetInput');
+      if (input && monto) input.value = monto;
+      document.querySelectorAll('.budget-pill[data-budget]').forEach(p => p.classList.toggle('active', p === pill));
+      if (typeof renderComprasBIAdvisor === 'function') renderComprasBIAdvisor();
+    };
+  });
 
   // 7. Navegación Sidebar (.ax-nav__item con data-view)
   document.querySelectorAll('.ax-nav__item[data-view]').forEach(item => {
@@ -4400,6 +4456,12 @@ function updateWhatIfSimulation() {
   document.getElementById('simProjMargin').textContent = `${projMargin.toFixed(1)}%`;
 }
 
+// Estado de paginacion de la Seccion de Compras. Faltaba declararlo: renderComprasView
+// lo lee al paginar, asi que la vista reventaba con ReferenceError justo despues de
+// pintar los KPI y la tabla de productos quedaba siempre vacia.
+let comprasCurrentPage = 1;
+const COMPRAS_PAGE_SIZE = 50;
+
 function getComprasProducts() {
     const map = new Map();
     filtered.forEach(r => {
@@ -4665,18 +4727,30 @@ function renderComprasBIAdvisor() {
   let totalExpectedProfit = 0;
   const basket = [];
 
+  // Ningun SKU puede llevarse mas de esta parte del presupuesto. Sin tope, el primero de
+  // la lista compraba hasta agotarlo: con $50.000.000 un solo producto se llevaba
+  // $49.994.010 (99,9%) y los demas quedaban como lineas residuales de $126. Eso no es una
+  // cartera de compra, y explicaba que subir el presupuesto devolviera MENOS SKUs.
+  const TOPE_POR_SKU = 0.25;
+  const topeSku = budget * TOPE_POR_SKU;
+  // Por debajo de esto la linea es calderilla y solo ensucia la propuesta.
+  const loteMinimo = budget * 0.01;
+
   for (const p of scoredProducts) {
     if (remainingBudget < p.costoUnit) continue;
 
     let suggestedUnits = Math.max(2, Math.round(p.cantTotal > 0 ? p.cantTotal * 0.25 : 4));
     let costForLot = suggestedUnits * p.costoUnit;
 
-    if (costForLot > remainingBudget) {
-      suggestedUnits = Math.floor(remainingBudget / p.costoUnit);
+    const tope = Math.min(remainingBudget, topeSku);
+    if (costForLot > tope) {
+      suggestedUnits = Math.floor(tope / p.costoUnit);
       costForLot = suggestedUnits * p.costoUnit;
     }
 
-    if (suggestedUnits <= 0) continue;
+    // Se exigen 2 unidades para no proponer lotes de 1, igual que el lote ideal de arriba.
+    if (suggestedUnits < 2) continue;
+    if (costForLot < loteMinimo && basket.length > 0) continue;
 
     const revenueForLot = suggestedUnits * p.preuni;
     const profitForLot = revenueForLot - costForLot;
@@ -4712,6 +4786,36 @@ function renderComprasBIAdvisor() {
   if (expProfEl) expProfEl.textContent = fmtCLP(totalExpectedProfit);
   if (expMargEl) expMargEl.textContent = `${expectedMarginPct.toFixed(1)}% ROI`;
   if (skuBadgeEl) skuBadgeEl.textContent = `${basket.length} SKUs recomendados`;
+
+  // Payback: el HTML mostraba "0 Meses" fijo porque nadie calculaba este dato.
+  // Se estima con el ritmo real al que se vendieron esos SKUs: cuantas unidades salen
+  // al mes segun el historial, cuanta utilidad generan a ese ritmo, y cuantos meses
+  // toma entonces recuperar lo invertido. El lote no puede rendir mas alla de agotarse.
+  const paybackEl = document.getElementById('projPaybackMonths');
+  if (paybackEl) {
+    const mesesConDatos = new Set();
+    for (let i = 0; i < filtered.length; i++) {
+      const f = filtered[i]['FECHA'];
+      if (f) mesesConDatos.add(f.slice(0, 7));
+    }
+    const meses = Math.max(1, mesesConDatos.size);
+
+    let utilidadMensual = 0;
+    basket.forEach(b => {
+      const unidadesMes = (Number(b.cantTotal) || 0) / meses;
+      const margenUnit = (Number(b.preuni) || 0) - (Number(b.costoUnit) || 0);
+      if (unidadesMes > 0 && margenUnit > 0) utilidadMensual += unidadesMes * margenUnit;
+    });
+
+    if (utilidadMensual > 0 && totalAllocatedCost > 0) {
+      const mesesPayback = totalAllocatedCost / utilidadMensual;
+      paybackEl.textContent = mesesPayback < 1
+        ? `${Math.max(1, Math.round(mesesPayback * 30))} Días`
+        : `${mesesPayback.toFixed(1)} Meses`;
+    } else {
+      paybackEl.textContent = 'Sin dato';
+    }
+  }
 
   const tbody = document.getElementById('comprasAdvisorTableBody');
   if (tbody) {
