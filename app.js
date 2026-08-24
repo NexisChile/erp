@@ -1387,12 +1387,12 @@ function renderProductosView() {
       }
       const matches = sortedSkus.filter(p => p.sku.toLowerCase().includes(q) || p.desc.toLowerCase().includes(q)).slice(0, 10);
       if (matches.length === 0) {
-        suggestions.innerHTML = '<div style="padding: 10px; color: #94a3b8; font-size: 0.82rem;">No se encontraron productos coincidentes</div>';
+        suggestions.innerHTML = '<div style="padding: 10px; color: var(--ax-text-tertiary); font-size: 0.8125rem;">No se encontraron productos coincidentes</div>';
       } else {
         suggestions.innerHTML = matches.map(m => `
           <div class="prod-suggestion-item" data-sku="${escapeHtml(m.sku)}" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: space-between;">
-            <span style="font-weight: 700; color: #c084fc; font-family: monospace;">${escapeHtml(m.sku)}</span>
-            <span style="font-size: 0.8rem; color: #cbd5e1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px;">${escapeHtml(m.desc)}</span>
+            <span style="font-weight: 700; color: var(--ax-accent-purple); font-family: monospace;">${escapeHtml(m.sku)}</span>
+            <span style="font-size: 0.8125rem; color: var(--ax-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px;">${escapeHtml(m.desc)}</span>
           </div>
         `).join('');
 
@@ -1499,7 +1499,7 @@ function selectProductFor360(sku, skipInputUpdate = false) {
   if (elAvgCostUSD) elAvgCostUSD.textContent = `USD $${avgCostUSD.toFixed(2)}`;
   if (elMarginPct) {
     elMarginPct.textContent = marginPct.toFixed(1) + '%';
-    elMarginPct.style.color = marginPct >= 30 ? '#34d399' : (marginPct >= 15 ? '#fbbf24' : '#f87171');
+    elMarginPct.style.color = marginPct >= 30 ? 'var(--ax-accent-emerald)' : (marginPct >= 15 ? 'var(--ax-accent-gold)' : 'var(--ax-accent-rose)');
   }
 
   // 3. Mini KPIs
@@ -1813,7 +1813,7 @@ function renderProdYearlyAnalytics(byYearMap, totalNetoGlobal) {
   // Tabla Anual
   if (tbody) {
     if (years.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: #94a3b8;">No hay registros anuales para este SKU.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--ax-text-tertiary);">No hay registros anuales para este SKU.</td></tr>`;
       return;
     }
 
@@ -1832,14 +1832,14 @@ function renderProdYearlyAnalytics(byYearMap, totalNetoGlobal) {
 
       return `
         <tr>
-          <td style="font-weight: 800; color: #f8fafc;">${y.year}</td>
+          <td style="font-weight: 800; color: var(--ax-text-primary);">${y.year}</td>
           <td style="text-align: right; font-weight: 700;">${Math.round(y.qty).toLocaleString('es-CL')} un.</td>
-          <td style="text-align: right; font-weight: 800; color: #38bdf8;">${typeof formatCLP === 'function' ? formatCLP(y.neto) : '$'+Math.round(y.neto).toLocaleString('es-CL')}</td>
-          <td style="text-align: right; color: #fda4af;">${typeof formatCLP === 'function' ? formatCLP(y.costo) : '$'+Math.round(y.costo).toLocaleString('es-CL')}</td>
-          <td style="text-align: right; font-weight: 700; color: #34d399;">${typeof formatCLP === 'function' ? formatCLP(y.util) : '$'+Math.round(y.util).toLocaleString('es-CL')}</td>
-          <td style="text-align: right; font-weight: 800; color: ${Number(marg) >= 30 ? '#34d399' : '#fbbf24'};">${marg}%</td>
+          <td style="text-align: right; font-weight: 800; color: var(--ax-accent-sky);">${typeof formatCLP === 'function' ? formatCLP(y.neto) : '$'+Math.round(y.neto).toLocaleString('es-CL')}</td>
+          <td style="text-align: right; color: var(--ax-accent-rose);">${typeof formatCLP === 'function' ? formatCLP(y.costo) : '$'+Math.round(y.costo).toLocaleString('es-CL')}</td>
+          <td style="text-align: right; font-weight: 700; color: var(--ax-accent-emerald);">${typeof formatCLP === 'function' ? formatCLP(y.util) : '$'+Math.round(y.util).toLocaleString('es-CL')}</td>
+          <td style="text-align: right; font-weight: 800; color: ${Number(marg) >= 30 ? 'var(--ax-accent-emerald)' : 'var(--ax-accent-gold)'};">${marg}%</td>
           <td style="text-align: right; font-weight: 700; color: #a855f7;">${part}%</td>
-          <td style="text-align: center; color: #cbd5e1;">${monthFull[maxMonthIdx]}</td>
+          <td style="text-align: center; color: var(--ax-text-secondary);">${monthFull[maxMonthIdx]}</td>
         </tr>
       `;
     }).join('');
@@ -1889,7 +1889,7 @@ function renderProdCustomerBreakdown(skuRows, totalSkuQty) {
   if (badge) badge.textContent = `${clientsList.length} Clientes`;
 
   if (clientsList.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #94a3b8;">No se registraron clientes para este SKU.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--ax-text-tertiary);">No se registraron clientes para este SKU.</td></tr>`;
     return;
   }
 
@@ -1900,14 +1900,14 @@ function renderProdCustomerBreakdown(skuRows, totalSkuQty) {
 
     return `
       <tr>
-        <td style="text-align: left; font-weight: 700; color: #f8fafc;">${c.cliente}</td>
+        <td style="text-align: left; font-weight: 700; color: var(--ax-text-primary);">${c.cliente}</td>
         <td style="text-align: left;"><span class="tag-pill" style="font-size: 0.75rem;">${c.canal}</span></td>
         <td style="text-align: center; font-weight: 700;">${c.comprasCount}</td>
         <td style="text-align: right; font-weight: 700;">${Math.round(c.cantidadTotal).toLocaleString('es-CL')}</td>
         <td style="text-align: right;">${typeof formatCLP === 'function' ? formatCLP(avgPrice) : '$'+Math.round(avgPrice).toLocaleString('es-CL')}</td>
-        <td style="text-align: right; font-weight: 800; color: #38bdf8;">${typeof formatCLP === 'function' ? formatCLP(c.netoTotal) : '$'+Math.round(c.netoTotal).toLocaleString('es-CL')}</td>
-        <td style="text-align: right; font-weight: 700; color: #34d399;">${typeof formatCLP === 'function' ? formatCLP(c.utilidadTotal) : '$'+Math.round(c.utilidadTotal).toLocaleString('es-CL')}</td>
-        <td style="text-align: right; font-weight: 700; color: ${Number(marg) >= 30 ? '#34d399' : '#fbbf24'};">${marg}%</td>
+        <td style="text-align: right; font-weight: 800; color: var(--ax-accent-sky);">${typeof formatCLP === 'function' ? formatCLP(c.netoTotal) : '$'+Math.round(c.netoTotal).toLocaleString('es-CL')}</td>
+        <td style="text-align: right; font-weight: 700; color: var(--ax-accent-emerald);">${typeof formatCLP === 'function' ? formatCLP(c.utilidadTotal) : '$'+Math.round(c.utilidadTotal).toLocaleString('es-CL')}</td>
+        <td style="text-align: right; font-weight: 700; color: ${Number(marg) >= 30 ? 'var(--ax-accent-emerald)' : 'var(--ax-accent-gold)'};">${marg}%</td>
         <td style="text-align: right; font-weight: 700; color: #a855f7;">${part}%</td>
       </tr>
     `;
@@ -2100,28 +2100,28 @@ function updateMixSugeridoView() {
   // Render Table Body
   if (tbody) {
     if (skuList.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: #94a3b8; padding: 2rem;">No se encontraron productos en este canal o filtro.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: var(--ax-text-tertiary); padding: 2rem;">No se encontraron productos en este canal o filtro.</td></tr>`;
       return;
     }
 
     const displayList = skuList.slice(0, 100);
     tbody.innerHTML = displayList.map((p, idx) => {
-      let badgeStyle = 'background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3);';
-      if (p.clasificacion.includes('Rentable')) badgeStyle = 'background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3);';
-      else if (p.clasificacion.includes('Volumen')) badgeStyle = 'background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3);';
-      else if (p.clasificacion.includes('Rotación')) badgeStyle = 'background: rgba(148, 163, 184, 0.15); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.3);';
+      let badgeStyle = 'background: rgba(16, 185, 129, 0.15); color: var(--ax-accent-emerald); border: 1px solid rgba(16, 185, 129, 0.3);';
+      if (p.clasificacion.includes('Rentable')) badgeStyle = 'background: rgba(59, 130, 246, 0.15); color: var(--ax-accent); border: 1px solid rgba(59, 130, 246, 0.3);';
+      else if (p.clasificacion.includes('Volumen')) badgeStyle = 'background: rgba(245, 158, 11, 0.15); color: var(--ax-accent-gold); border: 1px solid rgba(245, 158, 11, 0.3);';
+      else if (p.clasificacion.includes('Rotación')) badgeStyle = 'background: rgba(148, 163, 184, 0.15); color: var(--ax-text-secondary); border: 1px solid rgba(148, 163, 184, 0.3);';
 
       return `
         <tr>
-          <td style="text-align: center; font-weight: 800; color: #94a3b8;">#${idx + 1}</td>
-          <td style="text-align: left;"><span class="sku-badge-pill js-sku-drill" data-sku="${escapeHtml(p.sku)}" style="font-weight: 800; font-size: 0.82rem; cursor: pointer;" title="Ver análisis 360 de este producto">${escapeHtml(p.sku)}</span></td>
-          <td style="text-align: left; max-width: 260px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; color: #f8fafc;" title="${escapeHtml(p.desc)}">${escapeHtml(p.desc)}</td>
+          <td style="text-align: center; font-weight: 800; color: var(--ax-text-tertiary);">#${idx + 1}</td>
+          <td style="text-align: left;"><span class="sku-badge-pill js-sku-drill" data-sku="${escapeHtml(p.sku)}" style="font-weight: 800; font-size: 0.8125rem; cursor: pointer;" title="Ver análisis 360 de este producto">${escapeHtml(p.sku)}</span></td>
+          <td style="text-align: left; max-width: 260px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; color: var(--ax-text-primary);" title="${escapeHtml(p.desc)}">${escapeHtml(p.desc)}</td>
           <td style="text-align: left;"><span class="tag-pill" style="font-size: 0.75rem;">${escapeHtml(p.familia)}</span></td>
-          <td style="text-align: center;"><span style="padding: 3px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 700; ${badgeStyle}">${escapeHtml(p.clasificacion)}</span></td>
+          <td style="text-align: center;"><span style="padding: 3px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; ${badgeStyle}">${escapeHtml(p.clasificacion)}</span></td>
           <td style="text-align: right; font-weight: 700;">${Math.round(p.cant).toLocaleString('es-CL')} un.</td>
-          <td style="text-align: right; font-weight: 800; color: #38bdf8;">${typeof formatCLP === 'function' ? formatCLP(p.neto) : '$'+Math.round(p.neto).toLocaleString('es-CL')}</td>
-          <td style="text-align: right; font-weight: 700; color: #34d399;">${typeof formatCLP === 'function' ? formatCLP(p.utilidad) : '$'+Math.round(p.utilidad).toLocaleString('es-CL')}</td>
-          <td style="text-align: right; font-weight: 800; color: ${p.marg >= 30 ? '#34d399' : '#fbbf24'};">${p.marg.toFixed(1)}%</td>
+          <td style="text-align: right; font-weight: 800; color: var(--ax-accent-sky);">${typeof formatCLP === 'function' ? formatCLP(p.neto) : '$'+Math.round(p.neto).toLocaleString('es-CL')}</td>
+          <td style="text-align: right; font-weight: 700; color: var(--ax-accent-emerald);">${typeof formatCLP === 'function' ? formatCLP(p.utilidad) : '$'+Math.round(p.utilidad).toLocaleString('es-CL')}</td>
+          <td style="text-align: right; font-weight: 800; color: ${p.marg >= 30 ? 'var(--ax-accent-emerald)' : 'var(--ax-accent-gold)'};">${p.marg.toFixed(1)}%</td>
           <td style="text-align: right; font-weight: 800; color: #a855f7;">${p.part.toFixed(1)}%</td>
         </tr>
       `;
@@ -2130,7 +2130,7 @@ function updateMixSugeridoView() {
     if (skuList.length > 100) {
       tbody.innerHTML += `
         <tr>
-          <td colspan="10" style="text-align: center; color: #94a3b8; font-size: 0.8rem; padding: 1rem; background: rgba(255,255,255,0.02);">
+          <td colspan="10" style="text-align: center; color: var(--ax-text-tertiary); font-size: 0.8125rem; padding: 1rem; background: rgba(255,255,255,0.02);">
             Mostrando los 100 productos principales de ${skuList.length} en este segmento. Usa el buscador para filtrar un producto específico.
           </td>
         </tr>
@@ -3819,7 +3819,7 @@ function renderCharts() {
           <div class="legend-chip" data-canal="${escapeHtml(c[0])}" title="Filtrar por ${escapeHtml(c[0])}">
             <span class="legend-dot" style="background:${color};"></span>
             <span>${escapeHtml(c[0])}</span>
-            <span style="color:#94a3b8; font-weight:600;">${pct}%</span>
+            <span style="color:var(--ax-text-tertiary); font-weight:600;">${pct}%</span>
           </div>
         `;
       }).join('');
@@ -4012,7 +4012,7 @@ function renderTable() {
   if (!body) return;
 
   if (!filtered.length) {
-    body.innerHTML = '<tr><td colspan="11" style="text-align:center; padding: 2rem; color: #94a3b8;">No se encontraron registros de ventas que coincidan con los filtros.</td></tr>';
+    body.innerHTML = '<tr><td colspan="11" style="text-align:center; padding: 2rem; color: var(--ax-text-tertiary);">No se encontraron registros de ventas que coincidan con los filtros.</td></tr>';
     const pageInfo = document.getElementById('pageInfo');
     if (pageInfo) pageInfo.textContent = 'Página 0 de 0';
     return;
@@ -4034,9 +4034,9 @@ function renderTable() {
       <td><span class="pill-tag">${escapeHtml(r['CANAL FINAL'] || 'Público')}</span></td>
       <td style="text-align:right;">${formatNum(r['CANTFACTURADA'])}</td>
       <td style="text-align:right;">${formatCLP(r['PREUNI'])}</td>
-      <td style="text-align:right; font-weight:700; color:#3b82f6;">${formatCLP(r['NETO'])}</td>
+      <td style="text-align:right; font-weight:700; color:var(--ax-accent);">${formatCLP(r['NETO'])}</td>
       <td style="text-align:right;">${formatCLP(r['COSTOS'])}</td>
-      <td style="text-align:right; font-weight:700; color:#10b981;">${formatCLP(r['($) UTILIDAD'])}</td>
+      <td style="text-align:right; font-weight:700; color:var(--ax-accent-emerald);">${formatCLP(r['($) UTILIDAD'])}</td>
       <td style="text-align:center;">
         <button type="button" class="btn-sm btn-secondary js-edit-row" title="Editar registro">✏️</button>
       </td>
@@ -4400,7 +4400,7 @@ function renderRFMGrid() {
   container.innerHTML = `
     <div class="rfm-card" style="border-color:rgba(109, 92, 240, 0.4);">
       <span class="rfm-card-title">👑 VIP Champions</span>
-      <span class="rfm-card-count" style="color:#A78BFA;">${vipCount}</span>
+      <span class="rfm-card-count" style="color:var(--ax-accent-purple);">${vipCount}</span>
       <span class="rfm-card-sub">Alto valor y frecuencia</span>
     </div>
     <div class="rfm-card" style="border-color:rgba(43, 196, 176, 0.4);">
@@ -4594,18 +4594,18 @@ function getComprasProducts() {
           if (p.margenPct < 10) badgeClass = 'badge-red';
           else if (p.margenPct < 25) badgeClass = 'badge-amber';
 
-          const utilColor = p.utilidadTotal < 0 ? '#f87171' : '#34d399';
+          const utilColor = p.utilidadTotal < 0 ? 'var(--ax-accent-rose)' : 'var(--ax-accent-emerald)';
 
           return `
             <tr>
               <td style="text-align:left;"><span class="sku-badge">${p.codigo}</span></td>
-              <td style="text-align:left;"><strong style="color:var(--ax-text-primary); font-size:0.86rem;">${escapeHtml(p.descripcion)}</strong></td>
+              <td style="text-align:left;"><strong style="color:var(--ax-text-primary); font-size:0.875rem;">${escapeHtml(p.descripcion)}</strong></td>
               <td style="text-align:left;"><span class="tag-pill">${p.familia}</span></td>
               <td style="text-align:right;" class="num-cell">${fmtCLP(p.costoUnit)}</td>
               <td style="text-align:right;" class="num-cell">${fmtCLP(p.preuni)}</td>
               <td style="text-align:center;"><span class="badge ${badgeClass}">${p.margenPct.toFixed(1)}%</span></td>
               <td style="text-align:right;" class="num-cell">${fmtN(p.cantTotal)}</td>
-              <td style="text-align:right; font-weight:700; color:#f87171;" class="num-cell">${fmtCLP(p.costoTotalNet)}</td>
+              <td style="text-align:right; font-weight:700; color:var(--ax-accent-rose);" class="num-cell">${fmtCLP(p.costoTotalNet)}</td>
               <td style="text-align:right; font-weight:600;" class="num-cell">${fmtCLP(p.netoTotal)}</td>
               <td style="text-align:right; font-weight:700; color:${utilColor};" class="num-cell">${fmtCLP(p.utilidadTotal)}</td>
             </tr>
@@ -4836,14 +4836,14 @@ function renderComprasBIAdvisor() {
         return `
           <tr>
             <td style="text-align:left;"><span class="sku-badge-pill">${b.codigo}</span></td>
-            <td style="text-align:left;"><strong style="color:var(--ax-text-primary); font-size:0.83rem;">${b.descripcion}</strong></td>
+            <td style="text-align:left;"><strong style="color:var(--ax-text-primary); font-size:0.8125rem;">${b.descripcion}</strong></td>
             <td style="text-align:left;"><span class="tag-pill">${b.familia}</span></td>
             <td style="text-align:right;" class="num-cell">${fmtCLP(b.costoUnit)}</td>
             <td style="text-align:right;" class="num-cell">${fmtCLP(b.preuni)}</td>
             <td style="text-align:center;"><span class="badge ${b.margenPct >= 30 ? 'badge-green' : 'badge-amber'}">${b.margenPct.toFixed(1)}%</span></td>
-            <td style="text-align:center; font-weight:800; color:#60a5fa;" class="num-cell">+${b.suggestedUnits} un.</td>
-            <td style="text-align:right; font-weight:700; color:#f87171;" class="num-cell">${fmtCLP(b.allocatedCost)}</td>
-            <td style="text-align:right; font-weight:700; color:#34d399;" class="num-cell">${fmtCLP(b.expectedProfit)}</td>
+            <td style="text-align:center; font-weight:800; color:var(--ax-accent);" class="num-cell">+${b.suggestedUnits} un.</td>
+            <td style="text-align:right; font-weight:700; color:var(--ax-accent-rose);" class="num-cell">${fmtCLP(b.allocatedCost)}</td>
+            <td style="text-align:right; font-weight:700; color:var(--ax-accent-emerald);" class="num-cell">${fmtCLP(b.expectedProfit)}</td>
             <td style="text-align:center;"><span class="badge ${tagClass}">${tagText}</span></td>
           </tr>
         `;
@@ -5376,34 +5376,34 @@ function renderCotizacionesHeroCards(data) {
     if (summaryStrip) {
       summaryStrip.innerHTML = `
         <div class="cotiz-summary-card">
-          <div class="cotiz-summary-icon" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa;">💰</div>
+          <div class="cotiz-summary-icon" style="background: rgba(59, 130, 246, 0.15); color: var(--ax-accent);">💰</div>
           <div>
             <div class="cotiz-summary-lbl">Cartera Total Cotizada</div>
-            <div class="cotiz-summary-val" style="color: #60a5fa;">$0</div>
+            <div class="cotiz-summary-val" style="color: var(--ax-accent);">$0</div>
             <div class="cotiz-summary-sub">0 solicitudes en este periodo</div>
           </div>
         </div>
         <div class="cotiz-summary-card">
-          <div class="cotiz-summary-icon" style="background: rgba(16, 185, 129, 0.15); color: #34d399;">🏆</div>
+          <div class="cotiz-summary-icon" style="background: rgba(16, 185, 129, 0.15); color: var(--ax-accent-emerald);">🏆</div>
           <div>
             <div class="cotiz-summary-lbl">Negocios Ganados</div>
-            <div class="cotiz-summary-val" style="color: #34d399;">$0</div>
-            <div class="cotiz-summary-sub" style="color: #34d399;">0 cotizaciones aceptadas</div>
+            <div class="cotiz-summary-val" style="color: var(--ax-accent-emerald);">$0</div>
+            <div class="cotiz-summary-sub" style="color: var(--ax-accent-emerald);">0 cotizaciones aceptadas</div>
           </div>
         </div>
         <div class="cotiz-summary-card">
-          <div class="cotiz-summary-icon" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24;">⏳</div>
+          <div class="cotiz-summary-icon" style="background: rgba(245, 158, 11, 0.15); color: var(--ax-accent-gold);">⏳</div>
           <div>
             <div class="cotiz-summary-lbl">En Seguimiento Activo</div>
-            <div class="cotiz-summary-val" style="color: #fbbf24;">$0</div>
-            <div class="cotiz-summary-sub" style="color: #fbbf24;">0 solicitudes en proceso</div>
+            <div class="cotiz-summary-val" style="color: var(--ax-accent-gold);">$0</div>
+            <div class="cotiz-summary-sub" style="color: var(--ax-accent-gold);">0 solicitudes en proceso</div>
           </div>
         </div>
         <div class="cotiz-summary-card">
-          <div class="cotiz-summary-icon" style="background: rgba(139, 92, 246, 0.15); color: #a78bfa;">📈</div>
+          <div class="cotiz-summary-icon" style="background: rgba(139, 92, 246, 0.15); color: var(--ax-accent-purple);">📈</div>
           <div>
             <div class="cotiz-summary-lbl">Tasa Global de Conversión</div>
-            <div class="cotiz-summary-val" style="color: #a78bfa;">0.0%</div>
+            <div class="cotiz-summary-val" style="color: var(--ax-accent-purple);">0.0%</div>
             <div class="cotiz-summary-sub">Efectividad de cierre comercial</div>
           </div>
         </div>
@@ -5412,8 +5412,8 @@ function renderCotizacionesHeroCards(data) {
     container.innerHTML = `
       <div class="ax-card" style="grid-column: 1 / -1; padding: 3rem 2rem; text-align: center; color: var(--ax-text-tertiary); background: rgba(255,255,255,0.02); border: 1px dashed rgba(255,255,255,0.1); border-radius: 16px;">
         <div style="font-size: 2.8rem; margin-bottom: 0.65rem;">📅</div>
-        <div style="font-size: 1.15rem; font-weight: 700; color: var(--ax-text-primary); margin-bottom: 0.35rem;">No se registraron cotizaciones para el periodo o filtros seleccionados</div>
-        <div style="font-size: 0.88rem; color: var(--ax-text-secondary);">Prueba seleccionando "Todo", "Este Año" o ajustando los filtros de búsqueda.</div>
+        <div style="font-size: 1.125rem; font-weight: 700; color: var(--ax-text-primary); margin-bottom: 0.35rem;">No se registraron cotizaciones para el periodo o filtros seleccionados</div>
+        <div style="font-size: 0.875rem; color: var(--ax-text-secondary);">Prueba seleccionando "Todo", "Este Año" o ajustando los filtros de búsqueda.</div>
       </div>
     `;
     if (subEl) subEl.textContent = '0 solicitudes encontradas | Cartera: $0';
@@ -5488,38 +5488,38 @@ function renderCotizacionesHeroCards(data) {
   if (summaryStrip) {
     summaryStrip.innerHTML = `
       <div class="cotiz-summary-card">
-        <div class="cotiz-summary-icon" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa;">💰</div>
+        <div class="cotiz-summary-icon" style="background: rgba(59, 130, 246, 0.15); color: var(--ax-accent);">💰</div>
         <div>
           <div class="cotiz-summary-lbl">Cartera Total Cotizada</div>
-          <div class="cotiz-summary-val" style="color: #60a5fa;">${formatCLP(grandTotalMonto)}</div>
-          <div style="font-size: 0.76rem; color: #94a3b8;">${data.length.toLocaleString('es-CL')} solicitudes totales</div>
+          <div class="cotiz-summary-val" style="color: var(--ax-accent);">${formatCLP(grandTotalMonto)}</div>
+          <div style="font-size: 0.75rem; color: var(--ax-text-tertiary);">${data.length.toLocaleString('es-CL')} solicitudes totales</div>
         </div>
       </div>
 
       <div class="cotiz-summary-card">
-        <div class="cotiz-summary-icon" style="background: rgba(16, 185, 129, 0.15); color: #34d399;">🏆</div>
+        <div class="cotiz-summary-icon" style="background: rgba(16, 185, 129, 0.15); color: var(--ax-accent-emerald);">🏆</div>
         <div>
           <div class="cotiz-summary-lbl">Negocios Ganados</div>
-          <div class="cotiz-summary-val" style="color: #34d399;">${formatCLP(grandAceptadasMonto)}</div>
-          <div style="font-size: 0.76rem; color: #34d399; font-weight: 700;">${grandAceptadasCnt.toLocaleString('es-CL')} cotizaciones aceptadas</div>
+          <div class="cotiz-summary-val" style="color: var(--ax-accent-emerald);">${formatCLP(grandAceptadasMonto)}</div>
+          <div style="font-size: 0.75rem; color: var(--ax-accent-emerald); font-weight: 700;">${grandAceptadasCnt.toLocaleString('es-CL')} cotizaciones aceptadas</div>
         </div>
       </div>
 
       <div class="cotiz-summary-card">
-        <div class="cotiz-summary-icon" style="background: rgba(251, 191, 36, 0.15); color: #fbbf24;">⏳</div>
+        <div class="cotiz-summary-icon" style="background: rgba(251, 191, 36, 0.15); color: var(--ax-accent-gold);">⏳</div>
         <div>
           <div class="cotiz-summary-lbl">En Seguimiento Activo</div>
-          <div class="cotiz-summary-val" style="color: #fbbf24;">${formatCLP(grandEnviadasMonto)}</div>
-          <div style="font-size: 0.76rem; color: #fbbf24; font-weight: 700;">${grandEnviadasCnt.toLocaleString('es-CL')} solicitudes en proceso</div>
+          <div class="cotiz-summary-val" style="color: var(--ax-accent-gold);">${formatCLP(grandEnviadasMonto)}</div>
+          <div style="font-size: 0.75rem; color: var(--ax-accent-gold); font-weight: 700;">${grandEnviadasCnt.toLocaleString('es-CL')} solicitudes en proceso</div>
         </div>
       </div>
 
       <div class="cotiz-summary-card">
-        <div class="cotiz-summary-icon" style="background: rgba(168, 85, 247, 0.15); color: #c084fc;">📈</div>
+        <div class="cotiz-summary-icon" style="background: rgba(168, 85, 247, 0.15); color: var(--ax-accent-purple);">📈</div>
         <div>
           <div class="cotiz-summary-lbl">Tasa Global de Conversión</div>
-          <div class="cotiz-summary-val" style="color: #c084fc;">${grandWinRate}%</div>
-          <div style="font-size: 0.76rem; color: #94a3b8;">Efectividad de cierre comercial</div>
+          <div class="cotiz-summary-val" style="color: var(--ax-accent-purple);">${grandWinRate}%</div>
+          <div style="font-size: 0.75rem; color: var(--ax-text-tertiary);">Efectividad de cierre comercial</div>
         </div>
       </div>
     `;
@@ -5566,7 +5566,7 @@ function renderCotizacionesHeroCards(data) {
             <span class="cotiz-tipo-badge-icon">${icon}</span>
             <span>${item.tipo}</span>
           </span>
-          <span class="cotiz-win-badge" style="background: ${isHighWin ? 'rgba(16, 185, 129, 0.2)' : 'rgba(59, 130, 246, 0.2)'}; color: ${isHighWin ? '#34d399' : '#60a5fa'}; border: 1px solid ${isHighWin ? 'rgba(16, 185, 129, 0.4)' : 'rgba(59, 130, 246, 0.4)'};">
+          <span class="cotiz-win-badge" style="background: ${isHighWin ? 'rgba(16, 185, 129, 0.2)' : 'rgba(59, 130, 246, 0.2)'}; color: ${isHighWin ? 'var(--ax-accent-emerald)' : 'var(--ax-accent)'}; border: 1px solid ${isHighWin ? 'rgba(16, 185, 129, 0.4)' : 'rgba(59, 130, 246, 0.4)'};">
             ${winRate}% Aprobación
           </span>
         </div>
@@ -5582,35 +5582,35 @@ function renderCotizacionesHeroCards(data) {
         <!-- Cuadrícula 2x2 de Contadores con Alta Legibilidad -->
         <div class="cotiz-counters-grid">
           <div class="cotiz-counter-box" style="border-left: 3px solid #10b981;">
-            <span class="cotiz-counter-lbl" style="color: #34d399;">✅ Aceptadas</span>
+            <span class="cotiz-counter-lbl" style="color: var(--ax-accent-emerald);">✅ Aceptadas</span>
             <span class="cotiz-counter-main-num">${item.aceptadasCnt.toLocaleString('es-CL')}</span>
-            <span class="cotiz-counter-money" style="color: #34d399;">${formatCLP(item.aceptadasMonto)}</span>
+            <span class="cotiz-counter-money" style="color: var(--ax-accent-emerald);">${formatCLP(item.aceptadasMonto)}</span>
           </div>
 
           <div class="cotiz-counter-box" style="border-left: 3px solid #f59e0b;">
-            <span class="cotiz-counter-lbl" style="color: #fbbf24;">⏳ En Proceso</span>
+            <span class="cotiz-counter-lbl" style="color: var(--ax-accent-gold);">⏳ En Proceso</span>
             <span class="cotiz-counter-main-num">${item.enviadasCnt.toLocaleString('es-CL')}</span>
-            <span class="cotiz-counter-money" style="color: #fbbf24;">${formatCLP(item.enviadasMonto)}</span>
+            <span class="cotiz-counter-money" style="color: var(--ax-accent-gold);">${formatCLP(item.enviadasMonto)}</span>
           </div>
 
           <div class="cotiz-counter-box" style="border-left: 3px solid #ef4444;">
-            <span class="cotiz-counter-lbl" style="color: #f87171;">❌ Perdidas</span>
+            <span class="cotiz-counter-lbl" style="color: var(--ax-accent-rose);">❌ Perdidas</span>
             <span class="cotiz-counter-main-num">${item.perdidasCnt.toLocaleString('es-CL')}</span>
-            <span class="cotiz-counter-money" style="color: #f87171;">${formatCLP(item.perdidasMonto)}</span>
+            <span class="cotiz-counter-money" style="color: var(--ax-accent-rose);">${formatCLP(item.perdidasMonto)}</span>
           </div>
 
           <div class="cotiz-counter-box" style="border-left: 3px solid #a855f7;">
-            <span class="cotiz-counter-lbl" style="color: #c084fc;">📦 Pend / Stock</span>
+            <span class="cotiz-counter-lbl" style="color: var(--ax-accent-purple);">📦 Pend / Stock</span>
             <span class="cotiz-counter-main-num">${item.otrasCnt.toLocaleString('es-CL')}</span>
-            <span class="cotiz-counter-money" style="color: #c084fc;">${formatCLP(item.otrasMonto)}</span>
+            <span class="cotiz-counter-money" style="color: var(--ax-accent-purple);">${formatCLP(item.otrasMonto)}</span>
           </div>
         </div>
 
         <!-- Barra de Conversión con Mayor Grosor e Iluminación -->
         <div class="cotiz-progress-section">
-          <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.78rem; margin-bottom:4px;">
-            <span style="color: #94a3b8; font-weight: 600;">Efectividad de Cierre</span>
-            <strong style="color:${isHighWin ? '#34d399' : '#60a5fa'}; font-size:0.85rem;">${winRate}%</strong>
+          <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.8125rem; margin-bottom:4px;">
+            <span style="color: var(--ax-text-tertiary); font-weight: 600;">Efectividad de Cierre</span>
+            <strong style="color:${isHighWin ? 'var(--ax-accent-emerald)' : 'var(--ax-accent)'}; font-size:0.875rem;">${winRate}%</strong>
           </div>
           <div class="cotiz-progress-bar-wrap">
             <div class="cotiz-progress-bar-fill" style="width: ${Math.min(100, Math.max(0, Number(winRate)))}%; background: ${isHighWin ? 'linear-gradient(90deg, #10b981, #34d399)' : 'linear-gradient(90deg, #3b82f6, #60a5fa)'}; box-shadow: 0 0 10px ${isHighWin ? 'rgba(16, 185, 129, 0.4)' : 'rgba(59, 130, 246, 0.4)'};"></div>
@@ -5881,9 +5881,9 @@ function renderCotizacionesTopProducts(data) {
   container.innerHTML = top10.map((p, idx) => {
     const pct = Math.min(100, Math.max(5, (p.total / maxTotal) * 100));
     let rankBadge = `<span class="badge badge-blue">#${idx + 1}</span>`;
-    if (idx === 0) rankBadge = `<span class="badge badge-amber" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24;">🥇 1°</span>`;
-    if (idx === 1) rankBadge = `<span class="badge" style="background: rgba(203, 213, 225, 0.2); color: #e2e8f0;">🥈 2°</span>`;
-    if (idx === 2) rankBadge = `<span class="badge" style="background: rgba(217, 119, 6, 0.2); color: #f59e0b;">🥉 3°</span>`;
+    if (idx === 0) rankBadge = `<span class="badge badge-amber" style="background: rgba(245, 158, 11, 0.2); color: var(--ax-accent-gold);">🥇 1°</span>`;
+    if (idx === 1) rankBadge = `<span class="badge" style="background: rgba(203, 213, 225, 0.2); color: var(--ax-text-secondary);">🥈 2°</span>`;
+    if (idx === 2) rankBadge = `<span class="badge" style="background: rgba(217, 119, 6, 0.2); color: var(--ax-accent-gold);">🥉 3°</span>`;
 
     const imgObj = typeof productImagesMap !== 'undefined' ? productImagesMap.get(p.sku) : null;
     const imgThumb = imgObj && imgObj.url ?
@@ -5897,17 +5897,17 @@ function renderCotizacionesTopProducts(data) {
           ${imgThumb}
           <div style="min-width: 0; flex: 1;">
             <div style="display: flex; align-items: center; gap: 8px;">
-              <span class="sku-badge-pill" style="font-size: 0.82rem; padding: 2px 8px; font-weight: 800;">${escapeHtml(p.sku)}</span>
-              <span style="font-size: 0.92rem; font-weight: 700; color: var(--ax-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(p.descripcion)}">${escapeHtml(p.descripcion)}</span>
+              <span class="sku-badge-pill" style="font-size: 0.8125rem; padding: 2px 8px; font-weight: 800;">${escapeHtml(p.sku)}</span>
+              <span style="font-size: 0.875rem; font-weight: 700; color: var(--ax-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(p.descripcion)}">${escapeHtml(p.descripcion)}</span>
             </div>
-            <div style="font-size: 0.8rem; color: var(--ax-text-tertiary); margin-top: 3px; font-weight: 500;">
-              <strong style="color: #cbd5e1;">${Math.round(p.cantidad).toLocaleString('es-CL')} un.</strong> cotizadas en <strong style="color: #cbd5e1;">${p.solicitudes}</strong> solicitudes
+            <div style="font-size: 0.8125rem; color: var(--ax-text-tertiary); margin-top: 3px; font-weight: 500;">
+              <strong style="color: var(--ax-text-secondary);">${Math.round(p.cantidad).toLocaleString('es-CL')} un.</strong> cotizadas en <strong style="color: var(--ax-text-secondary);">${p.solicitudes}</strong> solicitudes
             </div>
           </div>
         </div>
 
         <div style="text-align: right; min-width: 130px;">
-          <strong style="color: #60a5fa; font-size: 1.05rem; font-weight: 800;">${formatCLP(p.total)}</strong>
+          <strong style="color: var(--ax-accent); font-size: 1rem; font-weight: 800;">${formatCLP(p.total)}</strong>
           <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.08); border-radius: 4px; margin-top: 5px; overflow: hidden;">
             <div style="width: ${pct}%; height: 100%; background: linear-gradient(90deg, #3b82f6, #10b981); border-radius: 4px;"></div>
           </div>
@@ -5940,7 +5940,7 @@ function renderCotizacionesTable(data) {
   if (cotizCurrentPage > totalPages) cotizCurrentPage = totalPages;
 
   if (pageInfo) {
-    pageInfo.innerHTML = `Página <strong>${cotizCurrentPage}</strong> de <strong>${totalPages}</strong> (<span style="color: #60a5fa; font-weight: 700;">${data.length.toLocaleString('es-CL')}</span> cotizaciones)`;
+    pageInfo.innerHTML = `Página <strong>${cotizCurrentPage}</strong> de <strong>${totalPages}</strong> (<span style="color: var(--ax-accent); font-weight: 700;">${data.length.toLocaleString('es-CL')}</span> cotizaciones)`;
   }
 
   if (prevBtn) prevBtn.disabled = cotizCurrentPage <= 1;
@@ -5969,24 +5969,24 @@ function renderCotizacionesTable(data) {
     }
 
     const nvFaText = (r.nv || r.fa) ?
-      `<span style="font-size:0.82rem; font-weight: 600; color:#e2e8f0;">${r.nv ? 'NV:'+r.nv : ''} ${r.fa ? 'FA:'+r.fa : ''}</span>` :
-      `<span style="color:var(--ax-text-tertiary); font-size:0.8rem;">—</span>`;
+      `<span style="font-size:0.8125rem; font-weight: 600; color:var(--ax-text-secondary);">${r.nv ? 'NV:'+r.nv : ''} ${r.fa ? 'FA:'+r.fa : ''}</span>` :
+      `<span style="color:var(--ax-text-tertiary); font-size:0.8125rem;">—</span>`;
 
     return `
       <tr style="height: 48px;">
-        <td style="text-align:left;"><span class="tag-pill" style="font-size:0.82rem; font-weight:700;">${escapeHtml(r.tipo)}</span></td>
-        <td style="text-align:left;"><span class="sku-badge-pill" style="font-weight:800; font-size:0.85rem;">#${escapeHtml(r.numCot)}</span></td>
-        <td style="text-align:center; font-size:0.85rem; color:#cbd5e1;">${escapeHtml(r.fecha || '—')}</td>
-        <td style="text-align:left;"><strong style="color:var(--ax-text-primary); font-size:0.9rem;">${escapeHtml(r.cliente)}</strong></td>
-        <td style="text-align:left; font-size:0.82rem; color:var(--ax-text-secondary);">${escapeHtml(r.rut || '—')}</td>
-        <td style="text-align:left;"><span class="sku-badge-pill" style="background:rgba(59,130,246,0.18); color:#60a5fa; border-color:rgba(59,130,246,0.35); font-weight:700; font-size:0.82rem;">${escapeHtml(r.sku)}</span></td>
-        <td style="text-align:left; max-width:280px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(r.producto)}"><span style="font-size:0.88rem; font-weight:500;">${escapeHtml(r.producto)}</span></td>
-        <td style="text-align:center; font-weight:800; font-size:0.92rem;" class="num-cell">${Math.round(r.cantidad).toLocaleString('es-CL')}</td>
-        <td style="text-align:right; font-weight:900; color:#60a5fa; font-size:0.95rem;" class="num-cell">${formatCLP(r.total)}</td>
-        <td style="text-align:center;"><span class="tag-pill" style="font-size:0.8rem; font-weight:600;">Cod. ${escapeHtml(r.vendedor)}</span></td>
+        <td style="text-align:left;"><span class="tag-pill" style="font-size:0.8125rem; font-weight:700;">${escapeHtml(r.tipo)}</span></td>
+        <td style="text-align:left;"><span class="sku-badge-pill" style="font-weight:800; font-size:0.875rem;">#${escapeHtml(r.numCot)}</span></td>
+        <td style="text-align:center; font-size:0.875rem; color:var(--ax-text-secondary);">${escapeHtml(r.fecha || '—')}</td>
+        <td style="text-align:left;"><strong style="color:var(--ax-text-primary); font-size:0.875rem;">${escapeHtml(r.cliente)}</strong></td>
+        <td style="text-align:left; font-size:0.8125rem; color:var(--ax-text-secondary);">${escapeHtml(r.rut || '—')}</td>
+        <td style="text-align:left;"><span class="sku-badge-pill" style="background:rgba(59,130,246,0.18); color:var(--ax-accent); border-color:rgba(59,130,246,0.35); font-weight:700; font-size:0.8125rem;">${escapeHtml(r.sku)}</span></td>
+        <td style="text-align:left; max-width:280px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(r.producto)}"><span style="font-size:0.875rem; font-weight:500;">${escapeHtml(r.producto)}</span></td>
+        <td style="text-align:center; font-weight:800; font-size:0.875rem;" class="num-cell">${Math.round(r.cantidad).toLocaleString('es-CL')}</td>
+        <td style="text-align:right; font-weight:900; color:var(--ax-accent); font-size:1rem;" class="num-cell">${formatCLP(r.total)}</td>
+        <td style="text-align:center;"><span class="tag-pill" style="font-size:0.8125rem; font-weight:600;">Cod. ${escapeHtml(r.vendedor)}</span></td>
         <td style="text-align:center;">${nvFaText}</td>
         <td style="text-align:center;">
-          <span class="cotiz-status-pill ${statusClass}" style="font-size: 0.8rem; padding: 4px 10px;">
+          <span class="cotiz-status-pill ${statusClass}" style="font-size: 0.8125rem; padding: 4px 10px;">
             <span>${statusIcon}</span>
             <span>${escapeHtml(r.estadoFinal || r.estado)}</span>
           </span>
@@ -6262,7 +6262,7 @@ function onCotizRutInput(val) {
 
   if (candidates.length === 0) {
     dropdown.innerHTML = `
-      <div style="padding: 10px 12px; font-size: 0.78rem; color: #94a3b8;">
+      <div style="padding: 10px 12px; font-size: 0.8125rem; color: var(--ax-text-tertiary);">
         Sin coincidencias previas para RUT <strong>${raw}</strong>. Se registrará como cliente nuevo.
       </div>
     `;
@@ -6417,7 +6417,7 @@ function addCotizProductRow(initialData = null) {
   tr.dataset.rowId = rowId;
 
   tr.innerHTML = `
-    <td style="text-align: center; font-weight: 700; color: #94a3b8;" class="item-index-col"></td>
+    <td style="text-align: center; font-weight: 700; color: var(--ax-text-tertiary);" class="item-index-col"></td>
     <td style="text-align: center;">
       <img src="${data.imgUrl || 'https://via.placeholder.com/32?text=SKU'}" id="itemThumb_${rowId}" class="cotiz-item-thumb" alt="SKU" onerror="this.onerror=null; this.src='https://via.placeholder.com/32?text=SKU';" />
     </td>
@@ -6431,19 +6431,19 @@ function addCotizProductRow(initialData = null) {
       <input type="number" class="cotiz-item-input" id="itemCant_${rowId}" value="${data.cant}" min="0.1" step="any" style="text-align: right; font-weight: 700;" oninput="recalcCotizTotals()" required />
     </td>
     <td>
-      <input type="number" class="cotiz-item-input" id="itemPrecio_${rowId}" value="${data.precio}" min="0" step="any" style="text-align: right; font-weight: 700; color: #38bdf8;" oninput="recalcCotizTotals()" required />
+      <input type="number" class="cotiz-item-input" id="itemPrecio_${rowId}" value="${data.precio}" min="0" step="any" style="text-align: right; font-weight: 700; color: var(--ax-accent-sky);" oninput="recalcCotizTotals()" required />
     </td>
     <td>
-      <input type="number" class="cotiz-item-input" id="itemCosto_${rowId}" value="${data.costo}" min="0" step="any" style="text-align: right; color: #fda4af;" oninput="recalcCotizTotals()" placeholder="0" />
+      <input type="number" class="cotiz-item-input" id="itemCosto_${rowId}" value="${data.costo}" min="0" step="any" style="text-align: right; color: var(--ax-accent-rose);" oninput="recalcCotizTotals()" placeholder="0" />
     </td>
-    <td style="text-align: right; font-weight: 800; font-family: monospace; color: #f8fafc;" id="itemSubtotal_${rowId}">
+    <td style="text-align: right; font-weight: 800; font-family: monospace; color: var(--ax-text-primary);" id="itemSubtotal_${rowId}">
       $0
     </td>
     <td style="text-align: center;">
-      <span class="margin-pill" id="itemMargin_${rowId}" style="font-size: 0.72rem; padding: 2px 6px;">0%</span>
+      <span class="margin-pill" id="itemMargin_${rowId}" style="font-size: 0.75rem; padding: 2px 6px;">0%</span>
     </td>
     <td style="text-align: center;">
-      <button type="button" class="mini-action-btn" onclick="removeCotizProductRow(${rowId})" title="Eliminar este producto" style="color: #f87171;">🗑️</button>
+      <button type="button" class="mini-action-btn" onclick="removeCotizProductRow(${rowId})" title="Eliminar este producto" style="color: var(--ax-accent-rose);">🗑️</button>
     </td>
   `;
 
@@ -6575,7 +6575,7 @@ function recalcCotizTotals() {
     if (subEl) subEl.textContent = typeof formatCLP === 'function' ? formatCLP(lineNeto) : `$${Math.round(lineNeto).toLocaleString('es-CL')}`;
     if (margEl) {
       margEl.textContent = lineMargen.toFixed(1) + '%';
-      margEl.style.color = lineMargen >= 30 ? '#34d399' : (lineMargen >= 15 ? '#fbbf24' : '#f87171');
+      margEl.style.color = lineMargen >= 30 ? 'var(--ax-accent-emerald)' : (lineMargen >= 15 ? 'var(--ax-accent-gold)' : 'var(--ax-accent-rose)');
       margEl.style.background = lineMargen >= 30 ? 'rgba(16, 185, 129, 0.2)' : (lineMargen >= 15 ? 'rgba(245, 158, 11, 0.2)' : 'rgba(244, 63, 94, 0.2)');
     }
   });
@@ -6606,7 +6606,7 @@ function recalcCotizTotals() {
   if (elTotalUtil) elTotalUtil.textContent = fmt(totalUtilidad);
   if (elMarginPill) {
     elMarginPill.textContent = `Margen: ${margenGlobal.toFixed(1)}%`;
-    elMarginPill.style.color = margenGlobal >= 30 ? '#34d399' : (margenGlobal >= 15 ? '#fbbf24' : '#f87171');
+    elMarginPill.style.color = margenGlobal >= 30 ? 'var(--ax-accent-emerald)' : (margenGlobal >= 15 ? 'var(--ax-accent-gold)' : 'var(--ax-accent-rose)');
   }
 }
 
@@ -7370,7 +7370,7 @@ async function renderFichaTecnicaView() {
   if (sortedProds.length === 0) {
     selectEl.innerHTML = '<option value="">No hay productos disponibles en el catálogo</option>';
     const container = document.getElementById('ftContentArea');
-    if (container) container.innerHTML = '<div style="text-align: center; color: #94a3b8; padding: 3rem;">No hay productos registrados en el sistema.</div>';
+    if (container) container.innerHTML = '<div style="text-align: center; color: var(--ax-text-tertiary); padding: 3rem;">No hay productos registrados en el sistema.</div>';
     return;
   }
 
@@ -7452,7 +7452,7 @@ function handleFtSearchInput(val) {
   }
 
   if (matches.length === 0) {
-    drop.innerHTML = '<div style="padding: 10px; color: #94a3b8; font-size: 0.85rem; text-align: center;">No se encontraron productos con ese criterio.</div>';
+    drop.innerHTML = '<div style="padding: 10px; color: var(--ax-text-tertiary); font-size: 0.875rem; text-align: center;">No se encontraron productos con ese criterio.</div>';
     drop.style.display = 'block';
     return;
   }
@@ -7464,11 +7464,11 @@ function handleFtSearchInput(val) {
     html += `
       <div class="prod-suggestion-item" data-sku="${escapeHtml(p.sku)}">
         <div>
-          <strong style="color: #38bdf8; font-family: 'JetBrains Mono', monospace;">${escapeHtml(p.sku)}</strong>
-          <span style="color: #cbd5e1; margin-left: 6px;">${escapeHtml(p.descripcion)}</span>
+          <strong style="color: var(--ax-accent-sky); font-family: 'JetBrains Mono', monospace;">${escapeHtml(p.sku)}</strong>
+          <span style="color: var(--ax-text-secondary); margin-left: 6px;">${escapeHtml(p.descripcion)}</span>
         </div>
-        <div style="font-size: 0.78rem; color: #94a3b8; text-align: right;">
-          <div><strong style="color: #34d399;">${escapeHtml(p.categoria || 'General')}</strong></div>
+        <div style="font-size: 0.8125rem; color: var(--ax-text-tertiary); text-align: right;">
+          <div><strong style="color: var(--ax-accent-emerald);">${escapeHtml(p.categoria || 'General')}</strong></div>
           <div>${formatCLP(p.precioPromedio)}</div>
         </div>
       </div>
@@ -7498,7 +7498,7 @@ function selectFtProductSku(sku) {
   if (!container) return;
 
   if (!prod) {
-    container.innerHTML = '<div style="text-align: center; color: #f87171; padding: 3rem; background: rgba(239, 68, 68, 0.05); border: 1px dashed #ef4444; border-radius: 12px;">⚠️ No se encontraron datos técnicos para el SKU seleccionado.</div>';
+    container.innerHTML = '<div style="text-align: center; color: var(--ax-accent-rose); padding: 3rem; background: rgba(239, 68, 68, 0.05); border: 1px dashed #ef4444; border-radius: 12px;">⚠️ No se encontraron datos técnicos para el SKU seleccionado.</div>';
     return;
   }
 
@@ -7516,14 +7516,14 @@ function selectFtProductSku(sku) {
     const pctNum = parseFloat(b.participacion) || (100 / spec.bom.length);
     bomRowsHtml += `
       <tr>
-        <td style="font-weight: 600; color: #cbd5e1;">${idx + 1}. ${b.parte}</td>
-        <td style="text-align: center; font-weight: 700; color: #38bdf8;">${b.cant} und.</td>
+        <td style="font-weight: 600; color: var(--ax-text-secondary);">${idx + 1}. ${b.parte}</td>
+        <td style="text-align: center; font-weight: 700; color: var(--ax-accent-sky);">${b.cant} und.</td>
         <td style="text-align: right;">
           <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
-            <div style="width: 60px; height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden;">
+            <div style="width: 60px; height: 6px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden;">
               <div style="width: ${pctNum}%; height: 100%; background: linear-gradient(90deg, #38bdf8, #8b5cf6);"></div>
             </div>
-            <span class="ft-tag ft-tag-purple" style="font-size: 0.72rem;">${b.participacion}</span>
+            <span class="ft-tag ft-tag-purple" style="font-size: 0.75rem;">${b.participacion}</span>
           </div>
         </td>
       </tr>
@@ -7548,17 +7548,17 @@ function selectFtProductSku(sku) {
   // Tarjeta con los campos que agrego el usuario; se omite si no definio ninguno.
   const camposValidos = (spec.camposCustom || []).filter(c => c && (c.etiqueta || c.valor));
   const camposCustomHtml = camposValidos.length ? `
-    <div class="ft-card" style="background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(139, 92, 246, 0.35); border-radius: 14px; padding: 1.25rem;">
-      <div class="ft-card-header" style="display: flex; align-items: center; gap: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 10px; margin-bottom: 12px; color: #a78bfa; font-weight: 700;">
+    <div class="ft-card" style="background: var(--surf-3); border: 1px solid rgba(139, 92, 246, 0.35); border-radius: 12px; padding: 1.25rem;">
+      <div class="ft-card-header" style="display: flex; align-items: center; gap: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 10px; margin-bottom: 12px; color: var(--ax-accent-purple); font-weight: 700;">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         <span>ESPECIFICACIONES ADICIONALES</span>
       </div>
-      <table class="ft-spec-table" style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+      <table class="ft-spec-table" style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
         <tbody>
           ${camposValidos.map(c => `
             <tr>
-              <th style="padding: 8px 0; color: #94a3b8; width: 45%; text-align: left;">${escapeHtml(c.etiqueta)}</th>
-              <td style="color: #ffffff; font-weight: 600;">${escapeHtml(c.valor)}</td>
+              <th style="padding: 8px 0; color: var(--ax-text-tertiary); width: 45%; text-align: left;">${escapeHtml(c.etiqueta)}</th>
+              <td style="color: var(--ax-text-primary); font-weight: 600;">${escapeHtml(c.valor)}</td>
             </tr>
           `).join('')}
         </tbody>
@@ -7571,12 +7571,12 @@ function selectFtProductSku(sku) {
       <div class="ft-card-header" style="justify-content: space-between;">
         <div style="display: flex; align-items: center; gap: 8px;">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-          <span style="font-weight: 700; color: #f8fafc;">REGISTRO FOTOGRÁFICO OFICIAL</span>
+          <span style="font-weight: 700; color: var(--ax-text-primary);">REGISTRO FOTOGRÁFICO OFICIAL</span>
         </div>
         <span class="ft-tag ft-tag-blue">Glomax HD Asset</span>
       </div>
       <div class="ft-photo-frame">
-        <img src="${escapeHtml(photoUrl)}" alt="${escapeHtml(prod.descripcion)}" class="ft-product-photo" id="ftMainPhoto" onerror="this.onerror=null; this.parentElement.innerHTML='<div style=\'color:#94a3b8; font-size:0.85rem; padding: 2rem; text-align: center;\'>📷 Fotografía no disponible</div>';" />
+        <img src="${escapeHtml(photoUrl)}" alt="${escapeHtml(prod.descripcion)}" class="ft-product-photo" id="ftMainPhoto" onerror="this.onerror=null; this.parentElement.innerHTML='<div style=\'color:var(--ax-text-tertiary); font-size:0.875rem; padding: 2rem; text-align: center;\'>📷 Fotografía no disponible</div>';" />
         <span class="ft-photo-badge">🔒 Certificado Glomax.cl</span>
       </div>
       ${galeriaHtml}
@@ -7585,12 +7585,12 @@ function selectFtProductSku(sku) {
     <div class="ft-card">
       <div class="ft-card-header">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-        <span style="font-weight: 700; color: #f8fafc;">ESQUEMA TÉCNICO CAD 3D</span>
+        <span style="font-weight: 700; color: var(--ax-text-primary);">ESQUEMA TÉCNICO CAD 3D</span>
       </div>
       <div style="background: linear-gradient(135deg, rgba(6, 10, 19, 0.95), rgba(15, 23, 42, 0.9)); border: 1px dashed rgba(56, 189, 248, 0.4); border-radius: 12px; padding: 2.5rem 1.5rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center;">
         <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-        <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: #38bdf8; font-weight: 700; letter-spacing: 1px;">DIAGRAMA TÉCNICO CAD #${escapeHtml(prod.sku)}</div>
-        <div style="font-size: 0.78rem; color: #94a3b8;">Glomax SA Industrial Engineering Standard</div>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.875rem; color: var(--ax-accent-sky); font-weight: 700; letter-spacing: 1px;">DIAGRAMA TÉCNICO CAD #${escapeHtml(prod.sku)}</div>
+        <div style="font-size: 0.8125rem; color: var(--ax-text-tertiary);">Glomax SA Industrial Engineering Standard</div>
       </div>
     </div>
   `;
@@ -7602,23 +7602,23 @@ function selectFtProductSku(sku) {
       <!-- FRANJA SUPREMA DE CERTIFICACIÓN Y MEMBRETE -->
       <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 1rem; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
         <div style="display: flex; align-items: center; gap: 12px;">
-          <div style="background: linear-gradient(135deg, #3b82f6, #2563eb); width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(59,130,246,0.4);">
+          <div style="background: linear-gradient(135deg, #3b82f6, #2563eb); width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(59,130,246,0.4);">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
           </div>
           <div>
-            <div style="font-family: 'Space Grotesk', sans-serif; font-weight: 800; font-size: 1.05rem; color: #ffffff; letter-spacing: 0.5px;">GLOMAX S.A. · CHILE</div>
-            <div style="font-size: 0.75rem; color: #38bdf8; font-weight: 600;">DEPARTAMENTO DE INGENIERÍA & CONTROL DE CALIDAD</div>
+            <div style="font-family: 'Space Grotesk', sans-serif; font-weight: 800; font-size: 1rem; color: var(--ax-text-primary); letter-spacing: 0.5px;">GLOMAX S.A. · CHILE</div>
+            <div style="font-size: 0.75rem; color: var(--ax-accent-sky); font-weight: 600;">DEPARTAMENTO DE INGENIERÍA & CONTROL DE CALIDAD</div>
           </div>
         </div>
 
         <div style="display: flex; align-items: center; gap: 1rem;">
           <div style="text-align: right; border-right: 1px solid rgba(255,255,255,0.1); padding-right: 1rem;">
-            <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Código Documento</div>
-            <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: #fbbf24; font-weight: 700;">DOC-FT-${escapeHtml(prod.sku)}</div>
+            <div style="font-size: 0.6875rem; color: var(--ax-text-tertiary); font-weight: 700; text-transform: uppercase;">Código Documento</div>
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.875rem; color: var(--ax-accent-gold); font-weight: 700;">DOC-FT-${escapeHtml(prod.sku)}</div>
           </div>
           <div style="text-align: right;">
-            <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Normativa / Tipo</div>
-            <div style="font-size: 0.82rem; color: #34d399; font-weight: 700;">Apta para Licitaciones</div>
+            <div style="font-size: 0.6875rem; color: var(--ax-text-tertiary); font-weight: 700; text-transform: uppercase;">Normativa / Tipo</div>
+            <div style="font-size: 0.8125rem; color: var(--ax-accent-emerald); font-weight: 700;">Apta para Licitaciones</div>
           </div>
         </div>
       </div>
@@ -7626,53 +7626,53 @@ function selectFtProductSku(sku) {
       <div class="ft-title-bar" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1.5rem; flex-wrap: wrap;">
         <div style="flex: 1; min-width: 280px;">
           <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 8px;">
-            <span class="ft-sku-badge" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); padding: 4px 10px; border-radius: 6px; font-weight: 800; font-family: 'JetBrains Mono', monospace;">SKU: ${escapeHtml(prod.sku)}</span>
+            <span class="ft-sku-badge" style="background: rgba(56, 189, 248, 0.2); color: var(--ax-accent-sky); border: 1px solid rgba(56, 189, 248, 0.4); padding: 4px 10px; border-radius: 6px; font-weight: 800; font-family: 'JetBrains Mono', monospace;">SKU: ${escapeHtml(prod.sku)}</span>
             ${isCustomized ? '<span class="ft-tag ft-tag-gold">✏️ Spec Editada / Personalizada</span>' : '<span class="ft-tag ft-tag-blue">🛡️ Especificación Oficial Glomax</span>'}
             <span class="ft-tag ft-tag-purple">📂 ${prod.categoria || 'Sin Categoría'}</span>
             <span class="ft-tag ft-tag-green">🏷️ ${prod.marca || 'Glomax Standard'}</span>
           </div>
-          <h1 style="font-family: 'Space Grotesk', sans-serif; font-size: 1.55rem; font-weight: 800; color: #ffffff; margin: 6px 0 8px 0; line-height: 1.3;">${escapeHtml(prod.descripcion)}</h1>
-          <div style="font-size: 0.83rem; color: #cbd5e1; display: flex; gap: 12px; flex-wrap: wrap;">
-            <span>Familia: <strong style="color: #ffffff;">${prod.familia || 'General'}</strong></span>
+          <h1 style="font-family: 'Space Grotesk', sans-serif; font-size: 1.5rem; font-weight: 800; color: var(--ax-text-primary); margin: 6px 0 8px 0; line-height: 1.3;">${escapeHtml(prod.descripcion)}</h1>
+          <div style="font-size: 0.8125rem; color: var(--ax-text-secondary); display: flex; gap: 12px; flex-wrap: wrap;">
+            <span>Familia: <strong style="color: var(--ax-text-primary);">${prod.familia || 'General'}</strong></span>
             <span>|</span>
-            <span>Línea: <strong style="color: #ffffff;">${prod.linea || 'Estándar'}</strong></span>
+            <span>Línea: <strong style="color: var(--ax-text-primary);">${prod.linea || 'Estándar'}</strong></span>
             <span>|</span>
-            <span>Canal Destino: <strong style="color: #ffffff;">${prod.canalFinal || 'Multicanal'}</strong></span>
+            <span>Canal Destino: <strong style="color: var(--ax-text-primary);">${prod.canalFinal || 'Multicanal'}</strong></span>
           </div>
         </div>
 
         <!-- CÓDIGO DE BARRAS VECTORIAL CON SELLO -->
-        <div style="text-align: right; background: #ffffff; padding: 10px 14px; border-radius: 10px; box-shadow: 0 4px 14px rgba(0,0,0,0.3);">
+        <div style="text-align: right; background: #ffffff; padding: 10px 14px; border-radius: 12px; box-shadow: 0 4px 14px rgba(0,0,0,0.3);">
           <div class="ft-barcode-box" style="background: #ffffff; padding: 0; border: none;">
             <svg viewBox="0 0 240 48" width="180" height="38" xmlns="http://www.w3.org/2000/svg">
               ${barcodeBars}
             </svg>
-            <div class="ft-barcode-text" style="font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; font-weight: 800; color: #0f172a; text-align: center; margin-top: 2px;">${fullEan13}</div>
+            <div class="ft-barcode-text" style="font-family: 'JetBrains Mono', monospace; font-size: 0.8125rem; font-weight: 800; color: #0f172a; text-align: center; margin-top: 2px;">${fullEan13}</div>
           </div>
-          <div style="font-size: 0.65rem; color: #475569; font-weight: 700; margin-top: 2px; text-transform: uppercase;">EAN-13 VERIFIED ASSET</div>
+          <div style="font-size: 0.6875rem; color: #475569; font-weight: 700; margin-top: 2px; text-transform: uppercase;">EAN-13 VERIFIED ASSET</div>
         </div>
       </div>
 
       <!-- MÉTRICAS COMERCIALES & LOGÍSTICAS DE CABECERA -->
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-top: 1.25rem;">
-        <div style="background: rgba(6, 10, 19, 0.7); padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(56, 189, 248, 0.25);">
-          <div style="font-size: 0.72rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Precio Lista Prom.</div>
-          <div style="font-size: 1.25rem; font-weight: 800; color: #38bdf8; font-family: 'JetBrains Mono', monospace;">${formatCLP(prod.precioPromedio)}</div>
+        <div style="background: var(--surf-2); padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(56, 189, 248, 0.25);">
+          <div style="font-size: 0.75rem; color: var(--ax-text-tertiary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Precio Lista Prom.</div>
+          <div style="font-size: 1.25rem; font-weight: 800; color: var(--ax-accent-sky); font-family: 'JetBrains Mono', monospace;">${formatCLP(prod.precioPromedio)}</div>
         </div>
 
-        <div style="background: rgba(6, 10, 19, 0.7); padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(168, 85, 247, 0.25);">
-          <div style="font-size: 0.72rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Costo Neto Unitario</div>
-          <div style="font-size: 1.25rem; font-weight: 800; color: #c084fc; font-family: 'JetBrains Mono', monospace;">${formatCLP(prod.costoUnitario)}</div>
+        <div style="background: var(--surf-2); padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(168, 85, 247, 0.25);">
+          <div style="font-size: 0.75rem; color: var(--ax-text-tertiary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Costo Neto Unitario</div>
+          <div style="font-size: 1.25rem; font-weight: 800; color: var(--ax-accent-purple); font-family: 'JetBrains Mono', monospace;">${formatCLP(prod.costoUnitario)}</div>
         </div>
 
-        <div style="background: rgba(6, 10, 19, 0.7); padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.25);">
-          <div style="font-size: 0.72rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Margen Prom. (%)</div>
-          <div style="font-size: 1.25rem; font-weight: 800; color: ${prod.margenPct >= 30 ? '#34d399' : '#fbbf24'}; font-family: 'JetBrains Mono', monospace;">${prod.margenPct.toFixed(1)}%</div>
+        <div style="background: var(--surf-2); padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.25);">
+          <div style="font-size: 0.75rem; color: var(--ax-text-tertiary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Margen Prom. (%)</div>
+          <div style="font-size: 1.25rem; font-weight: 800; color: ${prod.margenPct >= 30 ? 'var(--ax-accent-emerald)' : 'var(--ax-accent-gold)'}; font-family: 'JetBrains Mono', monospace;">${prod.margenPct.toFixed(1)}%</div>
         </div>
 
-        <div style="background: rgba(6, 10, 19, 0.7); padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1);">
-          <div style="font-size: 0.72rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Unidades Movilizadas</div>
-          <div style="font-size: 1.25rem; font-weight: 800; color: #f8fafc; font-family: 'JetBrains Mono', monospace;">${formatNum(prod.cantTotal)} und.</div>
+        <div style="background: var(--surf-2); padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1);">
+          <div style="font-size: 0.75rem; color: var(--ax-text-tertiary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Unidades Movilizadas</div>
+          <div style="font-size: 1.25rem; font-weight: 800; color: var(--ax-text-primary); font-family: 'JetBrains Mono', monospace;">${formatNum(prod.cantTotal)} und.</div>
         </div>
       </div>
     </div>
@@ -7685,20 +7685,20 @@ function selectFtProductSku(sku) {
         ${photoCardHtml}
 
         <!-- I. ESPECIFICACIONES LOGÍSTICAS & EMPAQUE -->
-        <div class="ft-card" style="background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 14px; padding: 1.25rem;">
-          <div class="ft-card-header" style="display: flex; align-items: center; gap: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 10px; margin-bottom: 12px; color: #38bdf8; font-weight: 700;">
+        <div class="ft-card" style="background: var(--surf-3); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 1.25rem;">
+          <div class="ft-card-header" style="display: flex; align-items: center; gap: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 10px; margin-bottom: 12px; color: var(--ax-accent-sky); font-weight: 700;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8.5V17a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8.5"/><path d="M3 8.5L12 4l9 4.5"/><line x1="12" y1="4" x2="12" y2="19"/></svg>
             <span>I. LOGÍSTICA, EMBALAJE & EMPAQUE</span>
           </div>
-          <table class="ft-spec-table" style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+          <table class="ft-spec-table" style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
             <tbody>
-              <tr><th style="padding: 8px 0; color: #94a3b8; width: 45%;">Dimensiones (L x A x H):</th><td style="color: #ffffff; font-weight: 600;">${escapeHtml(spec.dimensiones)}</td></tr>
-              <tr><th style="padding: 8px 0; color: #94a3b8;">Peso Neto Unitario:</th><td style="color: #ffffff; font-weight: 600;">${escapeHtml(spec.pesoNeto)}</td></tr>
-              <tr><th style="padding: 8px 0; color: #94a3b8;">Peso Bruto Empacado:</th><td style="color: #ffffff; font-weight: 600;">${escapeHtml(spec.pesoBruto)}</td></tr>
-              <tr><th style="padding: 8px 0; color: #94a3b8;">Volumen Unitario (m³):</th><td style="color: #38bdf8; font-weight: 700;">${escapeHtml(spec.volumen)}</td></tr>
-              <tr><th style="padding: 8px 0; color: #94a3b8;">Capacidad Cajas x Pallet:</th><td style="color: #ffffff; font-weight: 600;">${escapeHtml(spec.cajasPallet)}</td></tr>
-              <tr><th style="padding: 8px 0; color: #94a3b8;">Código Arancelario (HS):</th><td><code style="background: rgba(56,189,248,0.15); color: #38bdf8; padding: 2px 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace;">${escapeHtml(spec.hsCode)}</code></td></tr>
-              <tr><th style="padding: 8px 0; color: #94a3b8;">País de Origen / Fabricación:</th><td style="color: #ffffff; font-weight: 600;">${escapeHtml(spec.origen)}</td></tr>
+              <tr><th style="padding: 8px 0; color: var(--ax-text-tertiary); width: 45%;">Dimensiones (L x A x H):</th><td style="color: var(--ax-text-primary); font-weight: 600;">${escapeHtml(spec.dimensiones)}</td></tr>
+              <tr><th style="padding: 8px 0; color: var(--ax-text-tertiary);">Peso Neto Unitario:</th><td style="color: var(--ax-text-primary); font-weight: 600;">${escapeHtml(spec.pesoNeto)}</td></tr>
+              <tr><th style="padding: 8px 0; color: var(--ax-text-tertiary);">Peso Bruto Empacado:</th><td style="color: var(--ax-text-primary); font-weight: 600;">${escapeHtml(spec.pesoBruto)}</td></tr>
+              <tr><th style="padding: 8px 0; color: var(--ax-text-tertiary);">Volumen Unitario (m³):</th><td style="color: var(--ax-accent-sky); font-weight: 700;">${escapeHtml(spec.volumen)}</td></tr>
+              <tr><th style="padding: 8px 0; color: var(--ax-text-tertiary);">Capacidad Cajas x Pallet:</th><td style="color: var(--ax-text-primary); font-weight: 600;">${escapeHtml(spec.cajasPallet)}</td></tr>
+              <tr><th style="padding: 8px 0; color: var(--ax-text-tertiary);">Código Arancelario (HS):</th><td><code style="background: rgba(56,189,248,0.15); color: var(--ax-accent-sky); padding: 2px 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace;">${escapeHtml(spec.hsCode)}</code></td></tr>
+              <tr><th style="padding: 8px 0; color: var(--ax-text-tertiary);">País de Origen / Fabricación:</th><td style="color: var(--ax-text-primary); font-weight: 600;">${escapeHtml(spec.origen)}</td></tr>
             </tbody>
           </table>
         </div>
@@ -7708,39 +7708,39 @@ function selectFtProductSku(sku) {
       <div style="display: flex; flex-direction: column; gap: 1.5rem;">
         
         <!-- II. PARÁMETROS TÉCNICOS & RENDIMIENTO -->
-        <div class="ft-card" style="background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 14px; padding: 1.25rem;">
-          <div class="ft-card-header" style="display: flex; align-items: center; gap: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 10px; margin-bottom: 12px; color: #38bdf8; font-weight: 700;">
+        <div class="ft-card" style="background: var(--surf-3); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 1.25rem;">
+          <div class="ft-card-header" style="display: flex; align-items: center; gap: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 10px; margin-bottom: 12px; color: var(--ax-accent-sky); font-weight: 700;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
             <span>II. PARÁMETROS TÉCNICOS & RENDIMIENTO</span>
           </div>
-          <table class="ft-spec-table" style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+          <table class="ft-spec-table" style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
             <tbody>
-              <tr><th style="padding: 8px 0; color: #94a3b8; width: 45%;">Material Principal:</th><td><strong style="color: #38bdf8;">${escapeHtml(spec.material)}</strong></td></tr>
-              <tr><th style="padding: 8px 0; color: #94a3b8;">Acabado Superficial:</th><td style="color: #ffffff;">${escapeHtml(spec.acabado)}</td></tr>
-              <tr><th style="padding: 8px 0; color: #94a3b8;">Rango Temperatura:</th><td style="color: #ffffff;">${escapeHtml(spec.tempRango)}</td></tr>
-              <tr><th style="padding: 8px 0; color: #94a3b8;">Certificaciones Calidad:</th><td><span class="ft-tag ft-tag-green" style="font-weight: 700;">${escapeHtml(spec.certificaciones)}</span></td></tr>
-              <tr><th style="padding: 8px 0; color: #94a3b8;">Grado Protección IP:</th><td><span class="ft-tag ft-tag-blue" style="font-weight: 700;">${escapeHtml(spec.gradoIP)}</span></td></tr>
-              <tr><th style="padding: 8px 0; color: #94a3b8;">Especificación Eléctrica:</th><td style="color: #ffffff;">${escapeHtml(spec.electrico)}</td></tr>
-              <tr><th style="padding: 8px 0; color: #94a3b8;">Garantía Comercial:</th><td><strong style="color: #34d399; font-size: 0.9rem;">${escapeHtml(spec.garantia)}</strong></td></tr>
+              <tr><th style="padding: 8px 0; color: var(--ax-text-tertiary); width: 45%;">Material Principal:</th><td><strong style="color: var(--ax-accent-sky);">${escapeHtml(spec.material)}</strong></td></tr>
+              <tr><th style="padding: 8px 0; color: var(--ax-text-tertiary);">Acabado Superficial:</th><td style="color: var(--ax-text-primary);">${escapeHtml(spec.acabado)}</td></tr>
+              <tr><th style="padding: 8px 0; color: var(--ax-text-tertiary);">Rango Temperatura:</th><td style="color: var(--ax-text-primary);">${escapeHtml(spec.tempRango)}</td></tr>
+              <tr><th style="padding: 8px 0; color: var(--ax-text-tertiary);">Certificaciones Calidad:</th><td><span class="ft-tag ft-tag-green" style="font-weight: 700;">${escapeHtml(spec.certificaciones)}</span></td></tr>
+              <tr><th style="padding: 8px 0; color: var(--ax-text-tertiary);">Grado Protección IP:</th><td><span class="ft-tag ft-tag-blue" style="font-weight: 700;">${escapeHtml(spec.gradoIP)}</span></td></tr>
+              <tr><th style="padding: 8px 0; color: var(--ax-text-tertiary);">Especificación Eléctrica:</th><td style="color: var(--ax-text-primary);">${escapeHtml(spec.electrico)}</td></tr>
+              <tr><th style="padding: 8px 0; color: var(--ax-text-tertiary);">Garantía Comercial:</th><td><strong style="color: var(--ax-accent-emerald); font-size: 0.875rem;">${escapeHtml(spec.garantia)}</strong></td></tr>
             </tbody>
           </table>
         </div>
 
         <!-- III. BOM (BILL OF MATERIALS / COMPONENTES) -->
-        <div class="ft-card" style="background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 14px; padding: 1.25rem;">
-          <div class="ft-card-header" style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 10px; margin-bottom: 12px; color: #c084fc; font-weight: 700;">
+        <div class="ft-card" style="background: var(--surf-3); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 1.25rem;">
+          <div class="ft-card-header" style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 10px; margin-bottom: 12px; color: var(--ax-accent-purple); font-weight: 700;">
             <div style="display: flex; align-items: center; gap: 8px;">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
               <span>III. LISTA DE MATERIALES Y PIEZAS (BOM)</span>
             </div>
             <span class="ft-tag ft-tag-purple">Despiece Estructural</span>
           </div>
-          <table class="ft-spec-table" style="width: 100%; border-collapse: collapse; font-size: 0.83rem;">
+          <table class="ft-spec-table" style="width: 100%; border-collapse: collapse; font-size: 0.8125rem;">
             <thead>
               <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
-                <th style="color: #94a3b8; text-align: left; padding: 6px 0;">Subcomponente / Pieza</th>
-                <th style="color: #94a3b8; text-align: center; padding: 6px 0;">Cant.</th>
-                <th style="color: #94a3b8; text-align: right; padding: 6px 0;">Participación %</th>
+                <th style="color: var(--ax-text-tertiary); text-align: left; padding: 6px 0;">Subcomponente / Pieza</th>
+                <th style="color: var(--ax-text-tertiary); text-align: center; padding: 6px 0;">Cant.</th>
+                <th style="color: var(--ax-text-tertiary); text-align: right; padding: 6px 0;">Participación %</th>
               </tr>
             </thead>
             <tbody>
@@ -7752,26 +7752,26 @@ function selectFtProductSku(sku) {
         ${camposCustomHtml}
 
         <!-- IV. TIMBRE DE LICITACIÓN & APROBACIÓN DE CALIDAD -->
-        <div class="ft-card" style="background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 14px; padding: 1.25rem;">
-          <div class="ft-card-header" style="display: flex; align-items: center; gap: 8px; color: #38bdf8; font-weight: 700; margin-bottom: 8px;">
+        <div class="ft-card" style="background: var(--surf-3); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 12px; padding: 1.25rem;">
+          <div class="ft-card-header" style="display: flex; align-items: center; gap: 8px; color: var(--ax-accent-sky); font-weight: 700; margin-bottom: 8px;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
             <span>IV. ENSAYOS, SEGURIDAD & TIMBRE DE APORBACIÓN LICITACIONES</span>
           </div>
-          <p style="font-size: 0.83rem; color: #cbd5e1; line-height: 1.6; margin: 0 0 12px 0;">
+          <p style="font-size: 0.8125rem; color: var(--ax-text-secondary); line-height: 1.6; margin: 0 0 12px 0;">
             ${escapeHtml(spec.notas)}
           </p>
           
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; border-top: 1px dashed rgba(255,255,255,0.15); padding-top: 12px;">
             <div style="border-right: 1px solid rgba(255,255,255,0.1); padding-right: 10px;">
-              <div style="font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Ingeniería & Producto</div>
-              <div style="font-size: 0.82rem; color: #ffffff; font-weight: 700; margin-top: 2px;">Depto. Técnico Glomax S.A.</div>
-              <div style="font-size: 0.72rem; color: #34d399; margin-top: 2px;">✔ Aprobación Técnica Vigente</div>
+              <div style="font-size: 0.6875rem; color: var(--ax-text-tertiary); text-transform: uppercase; font-weight: 700;">Ingeniería & Producto</div>
+              <div style="font-size: 0.8125rem; color: var(--ax-text-primary); font-weight: 700; margin-top: 2px;">Depto. Técnico Glomax S.A.</div>
+              <div style="font-size: 0.75rem; color: var(--ax-accent-emerald); margin-top: 2px;">✔ Aprobación Técnica Vigente</div>
             </div>
 
             <div>
-              <div style="font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Acreditación Licitaciones</div>
-              <div style="font-size: 0.82rem; color: #ffffff; font-weight: 700; margin-top: 2px;">ISO 9001:2015 / NCh</div>
-              <div style="font-size: 0.72rem; color: #38bdf8; margin-top: 2px;">🔒 Documento Oficial Verificado</div>
+              <div style="font-size: 0.6875rem; color: var(--ax-text-tertiary); text-transform: uppercase; font-weight: 700;">Acreditación Licitaciones</div>
+              <div style="font-size: 0.8125rem; color: var(--ax-text-primary); font-weight: 700; margin-top: 2px;">ISO 9001:2015 / NCh</div>
+              <div style="font-size: 0.75rem; color: var(--ax-accent-sky); margin-top: 2px;">🔒 Documento Oficial Verificado</div>
             </div>
           </div>
         </div>
@@ -7812,7 +7812,7 @@ function renderFtEditGallery() {
       <button type="button" class="ft-photo-remove" data-idx="${i}" title="Quitar foto">✕</button>
       ${i === 0
         ? '<span class="ft-photo-main-tag">PRINCIPAL</span>'
-        : `<button type="button" class="ft-photo-remove" data-main="${i}" style="left:3px; right:auto; color:#fbbf24;" title="Hacer principal">★</button>`}
+        : `<button type="button" class="ft-photo-remove" data-main="${i}" style="left:3px; right:auto; color:var(--ax-accent-gold);" title="Hacer principal">★</button>`}
     </div>
   `).join('');
 
@@ -8103,7 +8103,7 @@ function renderFtComparison() {
   const prodB = ftProductsMap.get(skuB);
 
   if (!prodA || !prodB) {
-    area.innerHTML = '<div style="text-align: center; padding: 2rem; color: #94a3b8;">Selecciona 2 SKUs válidos.</div>';
+    area.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--ax-text-tertiary);">Selecciona 2 SKUs válidos.</div>';
     return;
   }
 
@@ -8133,9 +8133,9 @@ function renderFtComparison() {
   rows.forEach(r => {
     trsHtml += `
       <tr>
-        <th style="color: #cbd5e1; width: 28%; font-weight: 700; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.06); padding: 8px 12px;">${r.label}</th>
-        <td style="color: #38bdf8; width: 36%; border-bottom: 1px solid rgba(255,255,255,0.06); padding: 8px 12px;">${r.a}</td>
-        <td style="color: #c084fc; width: 36%; border-bottom: 1px solid rgba(255,255,255,0.06); padding: 8px 12px;">${r.b}</td>
+        <th style="color: var(--ax-text-secondary); width: 28%; font-weight: 700; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.06); padding: 8px 12px;">${r.label}</th>
+        <td style="color: var(--ax-accent-sky); width: 36%; border-bottom: 1px solid rgba(255,255,255,0.06); padding: 8px 12px;">${r.a}</td>
+        <td style="color: var(--ax-accent-purple); width: 36%; border-bottom: 1px solid rgba(255,255,255,0.06); padding: 8px 12px;">${r.b}</td>
       </tr>
     `;
   });
@@ -8143,10 +8143,10 @@ function renderFtComparison() {
   area.innerHTML = `
     <table class="ft-spec-table" style="width: 100%; border-collapse: collapse;">
       <thead>
-        <tr style="background: rgba(15, 23, 42, 0.9);">
-          <th style="text-align: left; color: #94a3b8;">Atributo / Parámetro</th>
-          <th style="text-align: left; color: #38bdf8; font-size: 0.95rem;">SKU: ${prodA.sku}</th>
-          <th style="text-align: left; color: #c084fc; font-size: 0.95rem;">SKU: ${prodB.sku}</th>
+        <tr style="background: var(--surf-3);">
+          <th style="text-align: left; color: var(--ax-text-tertiary);">Atributo / Parámetro</th>
+          <th style="text-align: left; color: var(--ax-accent-sky); font-size: 1rem;">SKU: ${prodA.sku}</th>
+          <th style="text-align: left; color: var(--ax-accent-purple); font-size: 1rem;">SKU: ${prodB.sku}</th>
         </tr>
       </thead>
       <tbody>
@@ -8215,7 +8215,7 @@ function exportFtPdf() {
   const photoPdfHtml = photoUrl ? `
     <div style="text-align: center; margin-bottom: 15px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; background: #fafafa;">
       <img src="${escapeHtml(photoUrl)}" style="max-height: 180px; max-width: 100%; object-fit: contain;" />
-      <div style="font-size: 0.72rem; color: #64748b; margin-top: 4px; font-weight: 700;">FOTOGRAFÍA OFICIAL DE PRODUCTO GLOMAX</div>
+      <div style="font-size: 0.75rem; color: #64748b; margin-top: 4px; font-weight: 700;">FOTOGRAFÍA OFICIAL DE PRODUCTO GLOMAX</div>
       ${secundariasPdf.length ? `
         <div style="display: flex; gap: 6px; justify-content: center; margin-top: 8px; flex-wrap: wrap;">
           ${secundariasPdf.map(f => `<img src="${escapeHtml(f)}" style="width: 74px; height: 74px; object-fit: cover; border: 1px solid #cbd5e1; border-radius: 4px;" />`).join('')}
@@ -8226,8 +8226,8 @@ function exportFtPdf() {
   const camposValidosPdf = (spec.camposCustom || []).filter(c => c && (c.etiqueta || c.valor));
   const camposCustomPdfHtml = camposValidosPdf.length ? `
     <div style="margin-top: 12px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px;">
-      <div style="font-size: 0.78rem; font-weight: 800; color: #0284c7; text-transform: uppercase; margin-bottom: 6px;">Especificaciones Adicionales</div>
-      <table style="width: 100%; border-collapse: collapse; font-size: 0.8rem;">
+      <div style="font-size: 0.8125rem; font-weight: 800; color: #0284c7; text-transform: uppercase; margin-bottom: 6px;">Especificaciones Adicionales</div>
+      <table style="width: 100%; border-collapse: collapse; font-size: 0.8125rem;">
         <tbody>
           ${camposValidosPdf.map(c => `
             <tr style="border-bottom: 1px solid #f1f5f9;">
@@ -8251,12 +8251,12 @@ function exportFtPdf() {
     <!-- CABECERA PDF DE FICHA TÉCNICA -->
     <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0284c7; padding-bottom: 15px; margin-bottom: 20px;">
       <div>
-        <div style="font-size: 1.6rem; font-weight: 900; color: #0284c7; letter-spacing: -0.5px;">GLOMAX S.A.</div>
-        <div style="font-size: 0.85rem; font-weight: 700; color: #475569; text-transform: uppercase;">División de Ingeniería & Control de Calidad</div>
-        <div style="font-size: 0.78rem; color: #64748b; margin-top: 2px;">Casa Matriz · Santiago de Chile | www.glomax.cl</div>
+        <div style="font-size: 1.5rem; font-weight: 900; color: #0284c7; letter-spacing: -0.5px;">GLOMAX S.A.</div>
+        <div style="font-size: 0.875rem; font-weight: 700; color: #475569; text-transform: uppercase;">División de Ingeniería & Control de Calidad</div>
+        <div style="font-size: 0.8125rem; color: #64748b; margin-top: 2px;">Casa Matriz · Santiago de Chile | www.glomax.cl</div>
       </div>
       <div style="text-align: right;">
-        <div style="font-size: 0.8rem; font-weight: 800; color: #0284c7; text-transform: uppercase;">Ficha Técnica Oficial</div>
+        <div style="font-size: 0.8125rem; font-weight: 800; color: #0284c7; text-transform: uppercase;">Ficha Técnica Oficial</div>
         <div style="font-size: 0.75rem; color: #64748b;">Fecha Emisión: ${todayStr}</div>
         <div style="background: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 6px; font-weight: 800; font-family: monospace; display: inline-block; margin-top: 6px;">
           SKU: ${escapeHtml(prod.sku)}
@@ -8266,8 +8266,8 @@ function exportFtPdf() {
 
     <!-- TITULO PRODUCTO -->
     <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-left: 5px solid #0284c7; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
-      <h1 style="font-size: 1.3rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0;">${escapeHtml(prod.descripcion)}</h1>
-      <div style="font-size: 0.82rem; color: #475569; display: flex; gap: 15px; flex-wrap: wrap;">
+      <h1 style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0;">${escapeHtml(prod.descripcion)}</h1>
+      <div style="font-size: 0.8125rem; color: #475569; display: flex; gap: 15px; flex-wrap: wrap;">
         <span>Categoría: <strong>${prod.categoria || 'General'}</strong></span>
         <span>Marca: <strong>${prod.marca || 'Glomax Standard'}</strong></span>
         <span>Familia: <strong>${prod.familia || 'General'}</strong></span>
@@ -8282,10 +8282,10 @@ function exportFtPdf() {
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
       <!-- COLUMNA 1: PARAMETROS TECNICOS -->
       <div style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 14px;">
-        <div style="font-size: 0.9rem; font-weight: 800; color: #0284c7; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 10px; text-transform: uppercase;">
+        <div style="font-size: 0.875rem; font-weight: 800; color: #0284c7; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 10px; text-transform: uppercase;">
           🛠️ Especificaciones Técnicas
         </div>
-        <table style="width: 100%; border-collapse: collapse; font-size: 0.82rem;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.8125rem;">
           <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #64748b;">Material:</th><td style="padding: 5px 0; font-weight: 600; color: #0f172a;">${escapeHtml(spec.material)}</td></tr>
           <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #64748b;">Acabado:</th><td style="padding: 5px 0; color: #0f172a;">${escapeHtml(spec.acabado)}</td></tr>
           <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #64748b;">Temperatura:</th><td style="padding: 5px 0; color: #0f172a;">${escapeHtml(spec.tempRango)}</td></tr>
@@ -8298,10 +8298,10 @@ function exportFtPdf() {
 
       <!-- COLUMNA 2: LOGISTICA Y EMPAQUE -->
       <div style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 14px;">
-        <div style="font-size: 0.9rem; font-weight: 800; color: #0284c7; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 10px; text-transform: uppercase;">
+        <div style="font-size: 0.875rem; font-weight: 800; color: #0284c7; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 10px; text-transform: uppercase;">
           📦 Logística, Empaque & Código
         </div>
-        <table style="width: 100%; border-collapse: collapse; font-size: 0.82rem;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.8125rem;">
           <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #64748b;">Dimensiones:</th><td style="padding: 5px 0; font-weight: 600; color: #0f172a;">${escapeHtml(spec.dimensiones)}</td></tr>
           <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #64748b;">Peso Neto / Bruto:</th><td style="padding: 5px 0; color: #0f172a;">${escapeHtml(spec.pesoNeto)} / ${escapeHtml(spec.pesoBruto)}</td></tr>
           <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #64748b;">Volumen:</th><td style="padding: 5px 0; color: #0f172a;">${escapeHtml(spec.volumen)}</td></tr>
@@ -8315,7 +8315,7 @@ function exportFtPdf() {
           <svg viewBox="0 0 240 40" style="max-width: 180px; height: 35px;">
             ${barcodeBars}
           </svg>
-          <div style="font-family: monospace; font-size: 0.72rem; font-weight: 700; color: #334155; letter-spacing: 2px;">
+          <div style="font-family: monospace; font-size: 0.75rem; font-weight: 700; color: #334155; letter-spacing: 2px;">
             EAN: 780${prod.sku.replace(/\D/g, '').padStart(9, '0').substring(0, 9)}
           </div>
         </div>
@@ -8324,10 +8324,10 @@ function exportFtPdf() {
 
     <!-- BOM / LISTA DE COMPONENTES -->
     <div style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 14px; margin-bottom: 20px;">
-      <div style="font-size: 0.9rem; font-weight: 800; color: #0284c7; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 10px; text-transform: uppercase;">
+      <div style="font-size: 0.875rem; font-weight: 800; color: #0284c7; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 10px; text-transform: uppercase;">
         ⚙️ Bill of Materials (Componentes & Estructura Interna)
       </div>
-      <table style="width: 100%; border-collapse: collapse; font-size: 0.82rem;">
+      <table style="width: 100%; border-collapse: collapse; font-size: 0.8125rem;">
         <thead>
           <tr style="background: #f1f5f9; text-align: left;">
             <th style="padding: 6px 10px; color: #475569;">Pieza / Subcomponente</th>
@@ -8345,8 +8345,8 @@ function exportFtPdf() {
 
     <!-- CONTROL DE CALIDAD & TIMBRE -->
     <div style="border: 1px solid #0284c7; background: #f0f9ff; border-radius: 8px; padding: 14px; margin: 20px 0;">
-      <div style="font-size: 0.85rem; font-weight: 800; color: #0369a1; margin-bottom: 4px;">🛡️ Control de Calidad & Normas de Seguridad:</div>
-      <div style="font-size: 0.8rem; color: #334155; line-height: 1.5;">${escapeHtml(spec.notas)}</div>
+      <div style="font-size: 0.875rem; font-weight: 800; color: #0369a1; margin-bottom: 4px;">🛡️ Control de Calidad & Normas de Seguridad:</div>
+      <div style="font-size: 0.8125rem; color: #334155; line-height: 1.5;">${escapeHtml(spec.notas)}</div>
     </div>
 
     <!-- PIE DE PAGINA PDF -->
@@ -8440,7 +8440,7 @@ function updateImportPhotoPreview(url) {
 
   const cleanUrl = (url || '').trim();
   if (cleanUrl) {
-    container.innerHTML = `<img src="${cleanUrl}" style="max-height: 140px; max-width: 100%; border-radius: 8px; border: 1px solid rgba(56, 189, 248, 0.4); box-shadow: 0 4px 12px rgba(0,0,0,0.4);" onerror="this.parentElement.innerHTML='<span style=\'color:#f87171; font-size:0.8rem;\'>⚠️ Foto no accesible en esa URL</span>';" />`;
+    container.innerHTML = `<img src="${cleanUrl}" style="max-height: 140px; max-width: 100%; border-radius: 8px; border: 1px solid rgba(56, 189, 248, 0.4); box-shadow: 0 4px 12px rgba(0,0,0,0.4);" onerror="this.parentElement.innerHTML='<span style=\'color:var(--ax-accent-rose); font-size:0.8125rem;\'>⚠️ Foto no accesible en esa URL</span>';" />`;
   } else {
     container.innerHTML = '';
   }
@@ -8845,6 +8845,22 @@ function setSyncStatus(status, customText) {
 let isLoadingData = false;
 let lastCachedRowCount = -1;
 
+// El badge de latencia vivia en una pildora de ancho fijo pero recibia cadenas de
+// ~43 caracteres ("324385ms (Google Sheets Live - 87.765 reg)"), que reventaban el
+// header. Ahora la pildora solo lleva el dato corto y el detalle va al tooltip.
+function formatLatency(ms) {
+  if (!isFinite(ms) || ms < 0) return '--';
+  if (ms < 1000) return Math.round(ms) + 'ms';
+  if (ms < 60000) return (ms / 1000).toFixed(1) + 's';
+  return Math.round(ms / 60000) + 'min';
+}
+
+function setLatencyBadge(el, icon, value, detalle) {
+  if (!el) return;
+  el.textContent = icon + ' ' + value;
+  el.title = detalle || '';
+}
+
 async function loadData(showLoadingState = true) {
   if (isLoadingData) return;
   isLoadingData = true;
@@ -8859,7 +8875,7 @@ async function loadData(showLoadingState = true) {
       if (cachedRows && cachedRows.length > 0) {
         rows = normalizeDataRows(cachedRows);
         setSyncStatus('ok');
-        if (latencyBadge) latencyBadge.innerHTML = `⚡ 0ms (Caché Local - ${rows.length.toLocaleString()} reg)`;
+        if (latencyBadge) setLatencyBadge(latencyBadge, '⚡', '0ms', `Caché local · ${rows.length.toLocaleString()} registros`);
         updateNavBadge();
         populateFilterOptions();
         applyFilters();
@@ -8909,7 +8925,7 @@ async function loadData(showLoadingState = true) {
 
       setSyncStatus('ok');
       if (latencyBadge) {
-        latencyBadge.innerHTML = `🟢 ${elapsed}ms (${modeLabel} - ${rows.length.toLocaleString()} reg)`;
+        setLatencyBadge(latencyBadge, '🟢', formatLatency(elapsed), `${modeLabel} · ${rows.length.toLocaleString()} registros`);
         latencyBadge.classList.remove('syncing');
       }
       updateNavBadge();
@@ -8926,7 +8942,7 @@ async function loadData(showLoadingState = true) {
       if (!rows || rows.length === 0) {
         applyFallbackDataIfEmpty();
         setSyncStatus('ok');
-        if (latencyBadge) latencyBadge.innerHTML = `🟡 Modo Respaldo (${rows.length.toLocaleString()} reg)`;
+        if (latencyBadge) setLatencyBadge(latencyBadge, '🟡', 'Respaldo', `Modo respaldo · ${rows.length.toLocaleString()} registros`);
       } else {
         setSyncStatus('ok');
       }
@@ -8938,7 +8954,7 @@ async function loadData(showLoadingState = true) {
     if (!rows || rows.length === 0) {
       applyFallbackDataIfEmpty();
       setSyncStatus('ok');
-      if (latencyBadge) latencyBadge.innerHTML = `🟡 Modo Respaldo (${rows.length.toLocaleString()} reg)`;
+      if (latencyBadge) setLatencyBadge(latencyBadge, '🟡', 'Respaldo', `Modo respaldo · ${rows.length.toLocaleString()} registros`);
     }
   } finally {
     isLoadingData = false;

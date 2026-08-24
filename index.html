@@ -12,14 +12,14 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <!-- Stylesheets & Libraries -->
-  <link rel="stylesheet" href="style.css?v=20260824_FICHA_V12" />
+  <link rel="stylesheet" href="style.css?v=20260824_UI_V13" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <style>
     /* CRITICAL UI OVERRIDE FOR PURCHASING BI ADVISOR & INVESTMENT TABLE */
     .bi-compras-advisor-card {
-      background: rgba(18, 24, 38, 0.95) !important;
+      background: var(--surf-3) !important;
       border: 1px solid rgba(59, 130, 246, 0.3) !important;
       border-radius: 16px !important;
       box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), 0 0 24px rgba(59, 130, 246, 0.15) !important;
@@ -45,9 +45,9 @@
 
     .advisor-input-group label {
       display: block !important;
-      font-size: 0.78rem !important;
+      font-size: 0.8125rem !important;
       font-weight: 700 !important;
-      color: #cbd5e1 !important;
+      color: var(--ax-text-secondary) !important;
       text-transform: uppercase !important;
       letter-spacing: 0.5px !important;
       margin-bottom: 0.5rem !important;
@@ -63,9 +63,9 @@
     .currency-prefix {
       position: absolute !important;
       left: 14px !important;
-      font-size: 1.15rem !important;
+      font-size: 1.125rem !important;
       font-weight: 700 !important;
-      color: #3b82f6 !important;
+      color: var(--ax-accent) !important;
       z-index: 2 !important;
     }
 
@@ -73,12 +73,12 @@
       width: 100% !important;
       padding-left: 36px !important;
       height: 48px !important;
-      font-size: 1.15rem !important;
+      font-size: 1.125rem !important;
       font-weight: 700 !important;
-      background: rgba(15, 23, 42, 0.9) !important;
+      background: var(--surf-3) !important;
       border: 1px solid rgba(59, 130, 246, 0.4) !important;
       color: #ffffff !important;
-      border-radius: 10px !important;
+      border-radius: 12px !important;
     }
 
     .advisor-presets {
@@ -90,19 +90,19 @@
     }
 
     .preset-label {
-      font-size: 0.72rem !important;
+      font-size: 0.75rem !important;
       font-weight: 700 !important;
-      color: #94a3b8 !important;
+      color: var(--ax-text-tertiary) !important;
       text-transform: uppercase !important;
     }
 
     .budget-pill {
       padding: 6px 14px !important;
       border-radius: 20px !important;
-      font-size: 0.82rem !important;
+      font-size: 0.8125rem !important;
       font-weight: 700 !important;
       background: rgba(255, 255, 255, 0.06) !important;
-      color: #cbd5e1 !important;
+      color: var(--ax-text-secondary) !important;
       border: 1px solid rgba(255, 255, 255, 0.12) !important;
       cursor: pointer !important;
     }
@@ -110,15 +110,15 @@
     .budget-pill:hover, .budget-pill.active {
       background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
       color: #ffffff !important;
-      border-color: #3b82f6 !important;
+      border-color: var(--ax-accent) !important;
       box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4) !important;
     }
 
     .advisor-strategy-group label {
       display: block !important;
-      font-size: 0.78rem !important;
+      font-size: 0.8125rem !important;
       font-weight: 700 !important;
-      color: #cbd5e1 !important;
+      color: var(--ax-text-secondary) !important;
       text-transform: uppercase !important;
       margin-bottom: 0.4rem !important;
     }
@@ -127,10 +127,10 @@
       width: 100% !important;
       height: 46px !important;
       padding: 0 1rem !important;
-      border-radius: 10px !important;
-      font-size: 0.88rem !important;
+      border-radius: 12px !important;
+      font-size: 0.875rem !important;
       font-weight: 600 !important;
-      background: rgba(15, 23, 42, 0.9) !important;
+      background: var(--surf-3) !important;
       color: #ffffff !important;
       border: 1px solid rgba(255, 255, 255, 0.12) !important;
     }
@@ -150,8 +150,8 @@
       flex-direction: column !important;
       justify-content: center !important;
       padding: 1.1rem 1.25rem !important;
-      border-radius: 14px !important;
-      background: rgba(15, 23, 42, 0.85) !important;
+      border-radius: 12px !important;
+      background: var(--surf-2) !important;
       border: 1px solid rgba(255, 255, 255, 0.08) !important;
     }
 
@@ -168,27 +168,27 @@
     }
 
     .proj-label {
-      font-size: 0.73rem !important;
+      font-size: 0.75rem !important;
       font-weight: 700 !important;
-      color: #94a3b8 !important;
+      color: var(--ax-text-tertiary) !important;
       text-transform: uppercase !important;
       margin-bottom: 0.35rem !important;
     }
 
     .proj-val {
-      font-size: 1.3rem !important;
+      font-size: 1.25rem !important;
       font-weight: 800 !important;
-      color: #f8fafc !important;
+      color: var(--ax-text-primary) !important;
     }
 
     .proj-card.highlight-green .proj-val {
-      color: #34d399 !important;
-      font-size: 1.45rem !important;
+      color: var(--ax-accent-emerald) !important;
+      font-size: 1.5rem !important;
     }
 
     .proj-card.highlight-blue .proj-val {
-      color: #60a5fa !important;
-      font-size: 1.45rem !important;
+      color: var(--ax-accent) !important;
+      font-size: 1.5rem !important;
     }
 
     .advisor-results-header {
@@ -202,16 +202,16 @@
     .results-title {
       font-size: 1rem !important;
       font-weight: 700 !important;
-      color: #f8fafc !important;
+      color: var(--ax-text-primary) !important;
     }
 
     .skus-count-badge {
       padding: 4px 12px !important;
       border-radius: 20px !important;
-      font-size: 0.78rem !important;
+      font-size: 0.8125rem !important;
       font-weight: 700 !important;
       background: rgba(16, 185, 129, 0.15) !important;
-      color: #34d399 !important;
+      color: var(--ax-accent-emerald) !important;
       border: 1px solid rgba(16, 185, 129, 0.3) !important;
     }
 
@@ -227,12 +227,12 @@
     .advisor-table th {
       position: sticky !important;
       top: 0 !important;
-      background: rgba(15, 23, 42, 0.98) !important;
+      background: var(--surf-3) !important;
       padding: 0.85rem 1rem !important;
       font-size: 0.75rem !important;
       font-weight: 700 !important;
       text-transform: uppercase !important;
-      color: #94a3b8 !important;
+      color: var(--ax-text-tertiary) !important;
       border-bottom: 2px solid rgba(59, 130, 246, 0.3) !important;
       z-index: 5 !important;
       letter-spacing: 0.5px !important;
@@ -240,9 +240,9 @@
 
     .advisor-table td {
       padding: 0.85rem 1rem !important;
-      font-size: 0.85rem !important;
+      font-size: 0.875rem !important;
       border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
-      color: #cbd5e1 !important;
+      color: var(--ax-text-secondary) !important;
     }
 
     .advisor-row:hover td {
@@ -252,16 +252,16 @@
     .suggested-units-pill {
       display: inline-block !important;
       padding: 4px 10px !important;
-      border-radius: 14px !important;
+      border-radius: 12px !important;
       background: rgba(59, 130, 246, 0.16) !important;
-      color: #60a5fa !important;
+      color: var(--ax-accent) !important;
       border: 1px solid rgba(59, 130, 246, 0.35) !important;
       font-weight: 800 !important;
     }
 
     .investment-cost-cell {
       font-weight: 800 !important;
-      color: #f87171 !important;
+      color: var(--ax-accent-rose) !important;
     }
 
     .expected-profit-badge {
@@ -269,7 +269,7 @@
       padding: 4px 10px !important;
       border-radius: 12px !important;
       background: rgba(16, 185, 129, 0.16) !important;
-      color: #34d399 !important;
+      color: var(--ax-accent-emerald) !important;
       border: 1px solid rgba(16, 185, 129, 0.35) !important;
       font-weight: 800 !important;
     }
@@ -358,13 +358,13 @@
                 <button class="ax-nav__item" data-view="productos">
           <svg class="ax-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
           <span class="ax-nav__label">Productos & SKUs</span>
-          <span class="ax-nav__badge ax-nav__badge--prod" style="background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4);">SKU</span>
+          <span class="ax-nav__badge ax-nav__badge--prod" style="background: rgba(168, 85, 247, 0.2); color: var(--ax-accent-purple); border: 1px solid rgba(168, 85, 247, 0.4);">SKU</span>
         </button>
 
         <button class="ax-nav__item" data-view="fichatecnica">
           <svg class="ax-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
           <span class="ax-nav__label">Ficha Técnica</span>
-          <span class="ax-nav__badge ax-nav__badge--ficha" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.5);">SPEC</span>
+          <span class="ax-nav__badge ax-nav__badge--ficha" style="background: rgba(56, 189, 248, 0.2); color: var(--ax-accent-sky); border: 1px solid rgba(56, 189, 248, 0.5);">SPEC</span>
         </button>
 
         <button class="ax-nav__item" data-view="cotizaciones">
@@ -376,14 +376,14 @@
         <button class="ax-nav__item" data-view="mixsugerido">
           <svg class="ax-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v1"/><path d="M18 8l4 4-4 4"/><path d="M22 12H9"/></svg>
           <span class="ax-nav__label">Mix Sugerido</span>
-          <span class="ax-nav__badge ax-nav__badge--hot" style="background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4);">AI Mix</span>
+          <span class="ax-nav__badge ax-nav__badge--hot" style="background: rgba(16, 185, 129, 0.2); color: var(--ax-accent-emerald); border: 1px solid rgba(16, 185, 129, 0.4);">AI Mix</span>
         </button>
 
         <p class="ax-sidebar__section">Seguridad & Sesión</p>
         <button type="button" class="ax-nav__item" id="sidebarAuthBtn" onclick="if(typeof AuthManager!=='undefined') AuthManager.openLoginModal()">
           <svg class="ax-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
           <span class="ax-nav__label" id="sidebarAuthLabel">Iniciar Sesión / Canal</span>
-          <span class="ax-nav__badge ax-nav__badge--hot" id="sidebarAuthBadge" style="background: rgba(59,130,246,0.2); color:#60a5fa; border:1px solid rgba(59,130,246,0.4);">Login</span>
+          <span class="ax-nav__badge ax-nav__badge--hot" id="sidebarAuthBadge" style="background: rgba(59,130,246,0.2); color:var(--ax-accent); border:1px solid rgba(59,130,246,0.4);">Login</span>
         </button>
 
         <p class="ax-sidebar__section">Filtros Rápidos</p>
@@ -456,13 +456,13 @@
           </button>
 
           <!-- HEADER MIX SUGERIDO BUTTON -->
-          <button type="button" class="btn-primary btn-sm" id="headerMixBtn" style="display: flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 20px; font-weight: 700; font-size: 0.8rem; background: linear-gradient(135deg, #10b981, #059669); border: none; color: #fff; cursor: pointer; box-shadow: 0 4px 12px rgba(16,185,129,0.35);" onclick="switchView('mixsugerido')">
+          <button type="button" class="btn-primary btn-sm" id="headerMixBtn" style="display: flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 20px; font-weight: 700; font-size: 0.8125rem; background: linear-gradient(135deg, #10b981, #059669); border: none; color: #fff; cursor: pointer; box-shadow: 0 4px 12px rgba(16,185,129,0.35);" onclick="switchView('mixsugerido')">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v1"/><path d="M18 8l4 4-4 4"/><path d="M22 12H9"/></svg>
             <span>Mix Sugerido</span>
           </button>
 
           <!-- HEADER LOGIN BUTTON & USER PROFILE BADGE -->
-          <button type="button" class="btn-primary btn-sm" id="headerLoginBtn" style="display: flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 20px; font-weight: 700; font-size: 0.8rem; background: linear-gradient(135deg, #3b82f6, #2563eb); border: none; color: #fff; cursor: pointer; box-shadow: 0 4px 12px rgba(59,130,246,0.3);" onclick="if(typeof AuthManager!=='undefined') AuthManager.openLoginModal()">
+          <button type="button" class="btn-primary btn-sm" id="headerLoginBtn" style="display: flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 20px; font-weight: 700; font-size: 0.8125rem; background: linear-gradient(135deg, #3b82f6, #2563eb); border: none; color: #fff; cursor: pointer; box-shadow: 0 4px 12px rgba(59,130,246,0.3);" onclick="if(typeof AuthManager!=='undefined') AuthManager.openLoginModal()">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
             <span>Iniciar Sesión</span>
           </button>
@@ -552,8 +552,8 @@
             <div style="display: flex; align-items: center; gap: 1rem;">
               <span style="font-size: 2rem;" data-parallax-layer="badge">🛍️</span>
               <div>
-                <h4 style="margin: 0; font-size: 1rem; font-weight: 800; color: #34d399;" data-parallax-layer="value">Nuevo Módulo: Mix de Productos Sugerido (AI Portfolio Advisor)</h4>
-                <p style="margin: 3px 0 0 0; font-size: 0.82rem; color: #cbd5e1;" data-parallax-layer="label">Genera y optimiza el catálogo por mejor venta, rentabilidad y volumen (segmentado por Canal o Global).</p>
+                <h4 style="margin: 0; font-size: 1rem; font-weight: 800; color: var(--ax-accent-emerald);" data-parallax-layer="value">Nuevo Módulo: Mix de Productos Sugerido (AI Portfolio Advisor)</h4>
+                <p style="margin: 3px 0 0 0; font-size: 0.8125rem; color: var(--ax-text-secondary);" data-parallax-layer="label">Genera y optimiza el catálogo por mejor venta, rentabilidad y volumen (segmentado por Canal o Global).</p>
               </div>
             </div>
             <button type="button" class="btn-primary" onclick="switchView('mixsugerido')" style="background: linear-gradient(135deg, #10b981, #059669); border: none; font-weight: 800; border-radius: 20px; padding: 8px 18px; color: #fff; cursor: pointer; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);">
@@ -1005,7 +1005,7 @@
             <div class="ax-card kpi-card">
               <div class="kpi-card__top">
                 <span class="kpi-card__label">Inversión Total en Costos</span>
-                <span class="kpi-card__icon" style="background: rgba(239, 68, 68, 0.15); color: #f87171;">📦</span>
+                <span class="kpi-card__icon" style="background: rgba(239, 68, 68, 0.15); color: var(--ax-accent-rose);">📦</span>
               </div>
               <div class="kpi-card__value" id="kpiComprasCostos">$0</div>
               <div class="kpi-card__sub" id="kpiComprasCostosSub">Inversión acumulada en costos netos</div>
@@ -1014,7 +1014,7 @@
             <div class="ax-card kpi-card">
               <div class="kpi-card__top">
                 <span class="kpi-card__label">Catálogo de SKUs Activos</span>
-                <span class="kpi-card__icon" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa;">🏷️</span>
+                <span class="kpi-card__icon" style="background: rgba(59, 130, 246, 0.15); color: var(--ax-accent);">🏷️</span>
               </div>
               <div class="kpi-card__value" id="kpiComprasSkus">0</div>
               <div class="kpi-card__sub" id="kpiComprasSkusSub">Productos únicos registrados</div>
@@ -1023,7 +1023,7 @@
             <div class="ax-card kpi-card">
               <div class="kpi-card__top">
                 <span class="kpi-card__label">Costo Unitario Promedio</span>
-                <span class="kpi-card__icon" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24;">⚖️</span>
+                <span class="kpi-card__icon" style="background: rgba(245, 158, 11, 0.15); color: var(--ax-accent-gold);">⚖️</span>
               </div>
               <div class="kpi-card__value" id="kpiComprasCostoPromedio">$0</div>
               <div class="kpi-card__sub" id="kpiComprasCostoPromedioSub">Costo medio ponderado por unidad</div>
@@ -1032,7 +1032,7 @@
             <div class="ax-card kpi-card">
               <div class="kpi-card__top">
                 <span class="kpi-card__label">Margen Comercial Promedio</span>
-                <span class="kpi-card__icon" style="background: rgba(16, 185, 129, 0.15); color: #34d399;">📈</span>
+                <span class="kpi-card__icon" style="background: rgba(16, 185, 129, 0.15); color: var(--ax-accent-emerald);">📈</span>
               </div>
               <div class="kpi-card__value" id="kpiComprasMargenPromedio">0%</div>
               <div class="kpi-card__sub" id="kpiComprasMargenPromedioSub">Promedio de margen % sobre ventas</div>
@@ -1118,9 +1118,9 @@
                       <th style="text-align: right;">Costo Unit.</th>
                       <th style="text-align: right;">Precio Venta</th>
                       <th style="text-align: center;">Margen %</th>
-                      <th style="text-align: center; color: #60a5fa;">Unidades Sugeridas</th>
-                      <th style="text-align: right; color: #f87171;">Monto Inversión</th>
-                      <th style="text-align: right; color: #34d399;">Utilidad Esperada</th>
+                      <th style="text-align: center; color: var(--ax-accent);">Unidades Sugeridas</th>
+                      <th style="text-align: right; color: var(--ax-accent-rose);">Monto Inversión</th>
+                      <th style="text-align: right; color: var(--ax-accent-emerald);">Utilidad Esperada</th>
                       <th style="text-align: center;">Categoría BI</th>
                     </tr>
                   </thead>
@@ -1404,11 +1404,11 @@
             <div style="display: grid; grid-template-columns: 1.3fr 1.3fr 0.9fr auto; gap: 1rem; align-items: start;">
               <!-- COL 1: BÚSQUEDA SKU -->
               <div style="display: flex; flex-direction: column;">
-                <label for="prodSkuSearch" style="height: 18px; line-height: 18px; font-size: 0.75rem; font-weight: 700; color: #cbd5e1; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px; white-space: nowrap; display: flex; align-items: center;">
+                <label for="prodSkuSearch" style="height: 18px; line-height: 18px; font-size: 0.75rem; font-weight: 700; color: var(--ax-text-secondary); text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px; white-space: nowrap; display: flex; align-items: center;">
                   🔍 Buscar SKU o Descripción
                 </label>
                 <div style="position: relative; height: 46px;">
-                  <input type="text" id="prodSkuSearch" class="filter-input" placeholder="Escribe SKU (ej. ABC-123) o nombre..." style="width: 100%; height: 46px; font-size: 0.9rem; font-weight: 600; padding-left: 12px; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(168, 85, 247, 0.4); border-radius: 10px; color: #fff; box-sizing: border-box;" autocomplete="off" />
+                  <input type="text" id="prodSkuSearch" class="filter-input" placeholder="Escribe SKU (ej. ABC-123) o nombre..." style="width: 100%; height: 46px; font-size: 0.875rem; font-weight: 600; padding-left: 12px; background: var(--surf-3); border: 1px solid rgba(168, 85, 247, 0.4); border-radius: 12px; color: #fff; box-sizing: border-box;" autocomplete="off" />
                   <div id="prodSkuSuggestions" class="prod-suggestions-dropdown" style="display: none;"></div>
                 </div>
                 <div style="height: 18px; margin-top: 4px;"></div>
@@ -1416,11 +1416,11 @@
 
               <!-- COL 2: LISTA DESPLEGABLE -->
               <div style="display: flex; flex-direction: column;">
-                <label for="prodSkuSelect" style="height: 18px; line-height: 18px; font-size: 0.75rem; font-weight: 700; color: #cbd5e1; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px; white-space: nowrap; display: flex; align-items: center;">
+                <label for="prodSkuSelect" style="height: 18px; line-height: 18px; font-size: 0.75rem; font-weight: 700; color: var(--ax-text-secondary); text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px; white-space: nowrap; display: flex; align-items: center;">
                   📦 Lista de Productos (Ventas)
                 </label>
                 <div style="height: 46px;">
-                  <select id="prodSkuSelect" class="filter-select" style="width: 100%; height: 46px; font-size: 0.88rem; font-weight: 600; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 10px; color: #fff; box-sizing: border-box;">
+                  <select id="prodSkuSelect" class="filter-select" style="width: 100%; height: 46px; font-size: 0.875rem; font-weight: 600; background: var(--surf-3); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 12px; color: #fff; box-sizing: border-box;">
                     <option value="">Cargando productos...</option>
                   </select>
                 </div>
@@ -1429,14 +1429,14 @@
 
               <!-- COL 3: VALOR DÓLAR -->
               <div style="display: flex; flex-direction: column;">
-                <label for="prodDolarRateInput" style="height: 18px; line-height: 18px; font-size: 0.75rem; font-weight: 700; color: #cbd5e1; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px; white-space: nowrap; display: flex; align-items: center;">
+                <label for="prodDolarRateInput" style="height: 18px; line-height: 18px; font-size: 0.75rem; font-weight: 700; color: var(--ax-text-secondary); text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px; white-space: nowrap; display: flex; align-items: center;">
                   💵 Valor Dólar ($ CLP / USD)
                 </label>
                 <div class="input-with-icon" style="position: relative; height: 46px;">
-                  <span class="currency-prefix" style="color: #10b981; left: 10px;">$</span>
-                  <input type="number" id="prodDolarRateInput" min="1" step="0.5" value="950" placeholder="950" style="width: 100%; padding-left: 28px; height: 46px; font-size: 1.05rem; font-weight: 800; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 10px; color: #fff; box-sizing: border-box;" />
+                  <span class="currency-prefix" style="color: var(--ax-accent-emerald); left: 10px;">$</span>
+                  <input type="number" id="prodDolarRateInput" min="1" step="0.5" value="950" placeholder="950" style="width: 100%; padding-left: 28px; height: 46px; font-size: 1rem; font-weight: 800; background: var(--surf-3); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 12px; color: #fff; box-sizing: border-box;" />
                 </div>
-                <div id="prodDolarStatus" style="height: 18px; line-height: 18px; font-size: 0.68rem; color: #10b981; margin-top: 4px; white-space: nowrap; display: flex; align-items: center;">Obteniendo valor...</div>
+                <div id="prodDolarStatus" style="height: 18px; line-height: 18px; font-size: 0.6875rem; color: var(--ax-accent-emerald); margin-top: 4px; white-space: nowrap; display: flex; align-items: center;">Obteniendo valor...</div>
               </div>
 
               <!-- COL 4: BOTONES DE ACCIÓN -->
@@ -1458,36 +1458,36 @@
           <!-- DETALLE DEL PRODUCTO SELECCIONADO (KPI CARDS & INFORMACIÓN) -->
           <div id="prodDetailContainer">
             <!-- HEADER RESUMEN PRODUCTO -->
-            <div class="ax-card" id="prodHeaderCard" style="padding: 1.5rem; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.08);">
+            <div class="ax-card" id="prodHeaderCard" style="padding: 1.5rem; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; background: var(--surf-3); border: 1px solid rgba(255, 255, 255, 0.08);">
               <div>
                 <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.35rem;">
-                  <span id="prodSkuBadge" style="padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 800; background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.5); font-family: 'JetBrains Mono', monospace;">
+                  <span id="prodSkuBadge" style="padding: 4px 12px; border-radius: 20px; font-size: 0.875rem; font-weight: 800; background: rgba(168, 85, 247, 0.2); color: var(--ax-accent-purple); border: 1px solid rgba(168, 85, 247, 0.5); font-family: 'JetBrains Mono', monospace;">
                     SKU: ---
                   </span>
-                  <span id="prodCategoryBadge" style="padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3);">
+                  <span id="prodCategoryBadge" style="padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; background: rgba(59, 130, 246, 0.15); color: var(--ax-accent); border: 1px solid rgba(59, 130, 246, 0.3);">
                     ---
                   </span>
-                  <span id="prodFamiliaBadge" style="padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3);">
+                  <span id="prodFamiliaBadge" style="padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; background: rgba(16, 185, 129, 0.15); color: var(--ax-accent-emerald); border: 1px solid rgba(16, 185, 129, 0.3);">
                     ---
                   </span>
                 </div>
-                <h2 id="prodTitle" style="font-size: 1.4rem; font-weight: 800; color: #f8fafc; margin: 0.25rem 0;">Selecciona un producto para comenzar</h2>
-                <div id="prodSubtitle" style="font-size: 0.85rem; color: #94a3b8;">Busca por código SKU o selecciona uno del desplegable arriba.</div>
+                <h2 id="prodTitle" style="font-size: 1.375rem; font-weight: 800; color: var(--ax-text-primary); margin: 0.25rem 0;">Selecciona un producto para comenzar</h2>
+                <div id="prodSubtitle" style="font-size: 0.875rem; color: var(--ax-text-tertiary);">Busca por código SKU o selecciona uno del desplegable arriba.</div>
               </div>
               <div id="prodQuickStats" style="display: flex; gap: 1.5rem; text-align: right;">
                 <div>
-                  <div style="font-size: 0.72rem; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Precio Prom. Venta (Col N)</div>
-                  <div id="prodAvgPrice" style="font-size: 1.25rem; font-weight: 800; color: #38bdf8;">$0</div>
-                  <div id="prodAvgPriceUSD" style="font-size: 0.75rem; font-weight: 700; color: #94a3b8;">USD $0</div>
+                  <div style="font-size: 0.75rem; font-weight: 700; color: var(--ax-text-tertiary); text-transform: uppercase;">Precio Prom. Venta (Col N)</div>
+                  <div id="prodAvgPrice" style="font-size: 1.25rem; font-weight: 800; color: var(--ax-accent-sky);">$0</div>
+                  <div id="prodAvgPriceUSD" style="font-size: 0.75rem; font-weight: 700; color: var(--ax-text-tertiary);">USD $0</div>
                 </div>
                 <div>
-                  <div style="font-size: 0.72rem; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Costo Unit. Prom. (Col Z)</div>
+                  <div style="font-size: 0.75rem; font-weight: 700; color: var(--ax-text-tertiary); text-transform: uppercase;">Costo Unit. Prom. (Col Z)</div>
                   <div id="prodAvgCost" style="font-size: 1.25rem; font-weight: 800; color: #f43f5e;">$0</div>
-                  <div id="prodAvgCostUSD" style="font-size: 0.75rem; font-weight: 700; color: #94a3b8;">USD $0</div>
+                  <div id="prodAvgCostUSD" style="font-size: 0.75rem; font-weight: 700; color: var(--ax-text-tertiary);">USD $0</div>
                 </div>
                 <div>
-                  <div style="font-size: 0.72rem; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Margen %</div>
-                  <div id="prodMarginPct" style="font-size: 1.25rem; font-weight: 800; color: #34d399;">0%</div>
+                  <div style="font-size: 0.75rem; font-weight: 700; color: var(--ax-text-tertiary); text-transform: uppercase;">Margen %</div>
+                  <div id="prodMarginPct" style="font-size: 1.25rem; font-weight: 800; color: var(--ax-accent-emerald);">0%</div>
                 </div>
               </div>
             </div>
@@ -1501,49 +1501,49 @@
               </div>
               <div class="ax-card mini-kpi-card">
                 <span class="mini-kpi-label">Velocidad Promedio Mensual</span>
-                <span class="mini-kpi-value" id="prodKpiMonthlySpeed" style="color: #c084fc;">0 und/mes</span>
+                <span class="mini-kpi-value" id="prodKpiMonthlySpeed" style="color: var(--ax-accent-purple);">0 und/mes</span>
                 <span class="mini-kpi-sub">Promedio general activo</span>
               </div>
               <div class="ax-card mini-kpi-card">
                 <span class="mini-kpi-label">Mejor Año de Ventas</span>
-                <span class="mini-kpi-value" id="prodKpiPeakYear" style="color: #f59e0b;">----</span>
+                <span class="mini-kpi-value" id="prodKpiPeakYear" style="color: var(--ax-accent-gold);">----</span>
                 <span class="mini-kpi-sub" id="prodKpiPeakYearSub">0 unidades</span>
               </div>
               <div class="ax-card mini-kpi-card">
                 <span class="mini-kpi-label">Mes de Mayor Demanda</span>
-                <span class="mini-kpi-value" id="prodKpiPeakMonth" style="color: #38bdf8;">----</span>
+                <span class="mini-kpi-value" id="prodKpiPeakMonth" style="color: var(--ax-accent-sky);">----</span>
                 <span class="mini-kpi-sub" id="prodKpiPeakMonthSub">Pico histórico de ventas</span>
               </div>
             </div>
 
             <!-- SECCIÓN PROYECTOR DE INVENTARIO / MESES DE VENTA -->
-            <div class="ax-card" style="padding: 1.5rem; margin-bottom: 1.5rem; border: 1px solid rgba(168, 85, 247, 0.3); background: rgba(18, 24, 38, 0.95); border-radius: 16px; box-shadow: 0 12px 32px rgba(0,0,0,0.4);">
+            <div class="ax-card" style="padding: 1.5rem; margin-bottom: 1.5rem; border: 1px solid rgba(168, 85, 247, 0.3); background: var(--surf-3); border-radius: 16px; box-shadow: 0 12px 32px rgba(0,0,0,0.4);">
               <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 1rem; margin-bottom: 1.25rem;">
                 <div>
                   <div style="display: flex; align-items: center; gap: 0.5rem;">
                     <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #c084fc; box-shadow: 0 0 10px #c084fc;"></span>
-                    <h3 style="font-size: 1.1rem; font-weight: 800; color: #f8fafc; margin: 0;">🔮 Proyector de Agotamiento de Stock (¿En cuántos meses se vende?)</h3>
+                    <h3 style="font-size: 1.125rem; font-weight: 800; color: var(--ax-text-primary); margin: 0;">🔮 Proyector de Agotamiento de Stock (¿En cuántos meses se vende?)</h3>
                   </div>
-                  <p style="font-size: 0.82rem; color: #94a3b8; margin: 0.25rem 0 0 1.25rem;">Ingresa la cantidad que necesitas importar o tener en inventario para calcular su duración en meses basada en la velocidad de ventas.</p>
+                  <p style="font-size: 0.8125rem; color: var(--ax-text-tertiary); margin: 0.25rem 0 0 1.25rem;">Ingresa la cantidad que necesitas importar o tener en inventario para calcular su duración en meses basada en la velocidad de ventas.</p>
                 </div>
-                <span class="skus-count-badge" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border-color: rgba(168, 85, 247, 0.3);">
+                <span class="skus-count-badge" style="background: rgba(168, 85, 247, 0.15); color: var(--ax-accent-purple); border-color: rgba(168, 85, 247, 0.3);">
                   Motor de Simulación BI
                 </span>
               </div>
 
               <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 1.5rem;">
                 <!-- CONTROLES DE LA PROYECCIÓN -->
-                <div style="display: flex; flex-direction: column; gap: 1.2rem; background: rgba(15, 23, 42, 0.6); padding: 1.25rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.06);">
+                <div style="display: flex; flex-direction: column; gap: 1.2rem; background: var(--surf-1); padding: 1.25rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.06);">
                   <div>
-                    <label for="prodProjQtyInput" style="display: block; font-size: 0.78rem; font-weight: 700; color: #cbd5e1; text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.5px;">
+                    <label for="prodProjQtyInput" style="display: block; font-size: 0.8125rem; font-weight: 700; color: var(--ax-text-secondary); text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.5px;">
                       📦 Cantidad de Unidades a Proyectar (Stock / Inserción)
                     </label>
                     <div class="input-with-icon">
-                      <span class="currency-prefix" style="color: #c084fc;">#</span>
-                      <input type="number" id="prodProjQtyInput" min="1" step="1" value="100" placeholder="Ej. 250" style="width: 100%; padding-left: 36px; height: 48px; font-size: 1.25rem; font-weight: 800; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(168, 85, 247, 0.5); color: #ffffff; border-radius: 10px;" />
+                      <span class="currency-prefix" style="color: var(--ax-accent-purple);">#</span>
+                      <input type="number" id="prodProjQtyInput" min="1" step="1" value="100" placeholder="Ej. 250" style="width: 100%; padding-left: 36px; height: 48px; font-size: 1.25rem; font-weight: 800; background: var(--surf-3); border: 1px solid rgba(168, 85, 247, 0.5); color: #ffffff; border-radius: 12px;" />
                     </div>
                     <div style="display: flex; gap: 0.4rem; margin-top: 0.6rem; flex-wrap: wrap;">
-                      <span style="font-size: 0.72rem; font-weight: 700; color: #94a3b8; align-self: center;">Accesos:</span>
+                      <span style="font-size: 0.75rem; font-weight: 700; color: var(--ax-text-tertiary); align-self: center;">Accesos:</span>
                       <button type="button" class="budget-pill" onclick="setProdProjPreset(50)">50 u.</button>
                       <button type="button" class="budget-pill" onclick="setProdProjPreset(100)">100 u.</button>
                       <button type="button" class="budget-pill" onclick="setProdProjPreset(500)">500 u.</button>
@@ -1552,10 +1552,10 @@
                   </div>
 
                   <div>
-                    <label for="prodProjSpeedMode" style="display: block; font-size: 0.78rem; font-weight: 700; color: #cbd5e1; text-transform: uppercase; margin-bottom: 0.4rem;">
+                    <label for="prodProjSpeedMode" style="display: block; font-size: 0.8125rem; font-weight: 700; color: var(--ax-text-secondary); text-transform: uppercase; margin-bottom: 0.4rem;">
                       ⏱️ Ritmo / Velocidad de Ventas de Referencia
                     </label>
-                    <select id="prodProjSpeedMode" style="width: 100%; height: 46px; padding: 0 1rem; border-radius: 10px; font-size: 0.88rem; font-weight: 600; background: rgba(15, 23, 42, 0.9); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.12);">
+                    <select id="prodProjSpeedMode" style="width: 100%; height: 46px; padding: 0 1rem; border-radius: 12px; font-size: 0.875rem; font-weight: 600; background: var(--surf-3); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.12);">
                       <option value="all">Promedio Histórico Total (Todos los años)</option>
                       <option value="12m" selected>Últimos 12 Meses (Recomendado)</option>
                       <option value="6m">Últimos 6 Meses (Tendencia reciente)</option>
@@ -1567,20 +1567,20 @@
                 <!-- RESULTADOS DE LA PROYECCIÓN -->
                 <div style="display: flex; flex-direction: column; gap: 1rem;">
                   <!-- METRICA DESTACADA DE DURACIÓN EN MESES -->
-                  <div style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.2) 0%, rgba(15, 23, 42, 0.9) 100%); border: 1px solid rgba(168, 85, 247, 0.5); padding: 1.25rem; border-radius: 14px; display: flex; align-items: center; justify-content: space-between;">
+                  <div style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.2) 0%, rgba(15, 23, 42, 0.9) 100%); border: 1px solid rgba(168, 85, 247, 0.5); padding: 1.25rem; border-radius: 12px; display: flex; align-items: center; justify-content: space-between;">
                     <div>
-                      <div style="font-size: 0.78rem; font-weight: 700; color: #e9d5ff; text-transform: uppercase; letter-spacing: 0.5px;">⏳ Duración Proyectada en Inventario</div>
-                      <div id="prodProjResultMonths" style="font-size: 2.2rem; font-weight: 800; color: #a855f7; font-family: 'Space Grotesk', sans-serif;">
+                      <div style="font-size: 0.8125rem; font-weight: 700; color: #e9d5ff; text-transform: uppercase; letter-spacing: 0.5px;">⏳ Duración Proyectada en Inventario</div>
+                      <div id="prodProjResultMonths" style="font-size: 2.25rem; font-weight: 800; color: #a855f7; font-family: 'Space Grotesk', sans-serif;">
                         0.0 Meses
                       </div>
-                      <div id="prodProjResultDays" style="font-size: 0.85rem; font-weight: 600; color: #cbd5e1; margin-top: 0.2rem;">
+                      <div id="prodProjResultDays" style="font-size: 0.875rem; font-weight: 600; color: var(--ax-text-secondary); margin-top: 0.2rem;">
                         ≈ 0 Días de cobertura comercial
                       </div>
                     </div>
-                    <div style="text-align: right; background: rgba(15, 23, 42, 0.8); padding: 0.85rem 1.1rem; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1);">
-                      <div style="font-size: 0.72rem; font-weight: 700; color: #94a3b8; text-transform: uppercase;">📅 Agotamiento Estimado</div>
-                      <div id="prodProjDepletionDate" style="font-size: 1.15rem; font-weight: 800; color: #34d399; margin-top: 0.2rem;">---</div>
-                      <div id="prodProjSpeedLabel" style="font-size: 0.72rem; color: #94a3b8; margin-top: 0.25rem;">Ritmo: 0 u./mes</div>
+                    <div style="text-align: right; background: var(--surf-2); padding: 0.85rem 1.1rem; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1);">
+                      <div style="font-size: 0.75rem; font-weight: 700; color: var(--ax-text-tertiary); text-transform: uppercase;">📅 Agotamiento Estimado</div>
+                      <div id="prodProjDepletionDate" style="font-size: 1.125rem; font-weight: 800; color: var(--ax-accent-emerald); margin-top: 0.2rem;">---</div>
+                      <div id="prodProjSpeedLabel" style="font-size: 0.75rem; color: var(--ax-text-tertiary); margin-top: 0.25rem;">Ritmo: 0 u./mes</div>
                     </div>
                   </div>
 
@@ -1589,27 +1589,27 @@
                     <div class="proj-card highlight-blue">
                       <span class="proj-label">Venta Proyectada (Col O)</span>
                       <span class="proj-val" id="prodProjEstRevenue">$0 CLP</span>
-                      <div id="prodProjEstRevenueUSD" style="font-size: 0.8rem; font-weight: 700; color: #60a5fa; margin-top: 0.2rem;">USD $0</div>
+                      <div id="prodProjEstRevenueUSD" style="font-size: 0.8125rem; font-weight: 700; color: var(--ax-accent); margin-top: 0.2rem;">USD $0</div>
                     </div>
                     <div class="proj-card">
                       <span class="proj-label">Inversión Costos (Col AA)</span>
                       <span class="proj-val" id="prodProjEstCost" style="color: #f43f5e;">$0 CLP</span>
-                      <div id="prodProjEstCostUSD" style="font-size: 0.8rem; font-weight: 700; color: #fda4af; margin-top: 0.2rem;">USD $0</div>
+                      <div id="prodProjEstCostUSD" style="font-size: 0.8125rem; font-weight: 700; color: var(--ax-accent-rose); margin-top: 0.2rem;">USD $0</div>
                     </div>
                     <div class="proj-card highlight-green">
                       <span class="proj-label">Utilidad Proyectada (Col AB)</span>
                       <span class="proj-val" id="prodProjEstProfit">$0 CLP</span>
-                      <div id="prodProjEstProfitUSD" style="font-size: 0.8rem; font-weight: 700; color: #34d399; margin-top: 0.2rem;">USD $0</div>
+                      <div id="prodProjEstProfitUSD" style="font-size: 0.8125rem; font-weight: 700; color: var(--ax-accent-emerald); margin-top: 0.2rem;">USD $0</div>
                     </div>
                   </div>
                 </div>
               </div>
 
               <!-- GRÁFICO DE CURVA DE AGOTAMIENTO -->
-              <div style="margin-top: 1.5rem; background: rgba(15, 23, 42, 0.6); padding: 1.25rem; border-radius: 14px; border: 1px solid rgba(255,255,255,0.06);">
+              <div style="margin-top: 1.5rem; background: var(--surf-1); padding: 1.25rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.06);">
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
-                  <span style="font-size: 0.85rem; font-weight: 700; color: #e2e8f0; text-transform: uppercase; letter-spacing: 0.5px;">📉 Curva de Proyección de Agotamiento de Stock Mes a Mes</span>
-                  <span style="font-size: 0.75rem; color: #94a3b8;">Reducción proyectada de unidades en inventario</span>
+                  <span style="font-size: 0.875rem; font-weight: 700; color: var(--ax-text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">📉 Curva de Proyección de Agotamiento de Stock Mes a Mes</span>
+                  <span style="font-size: 0.75rem; color: var(--ax-text-tertiary);">Reducción proyectada de unidades en inventario</span>
                 </div>
                 <div style="height: 220px; position: relative;">
                   <canvas id="prodProjectionChart"></canvas>
@@ -1623,9 +1623,9 @@
                 <div>
                   <div style="display: flex; align-items: center; gap: 0.5rem;">
                     <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #38bdf8; box-shadow: 0 0 10px #38bdf8;"></span>
-                    <h3 style="font-size: 1.1rem; font-weight: 800; color: #f8fafc; margin: 0;">📊 Movimientos del SKU Durante los Años (Comparativo Multianual)</h3>
+                    <h3 style="font-size: 1.125rem; font-weight: 800; color: var(--ax-text-primary); margin: 0;">📊 Movimientos del SKU Durante los Años (Comparativo Multianual)</h3>
                   </div>
-                  <p style="font-size: 0.82rem; color: #94a3b8; margin: 0.25rem 0 0 1.25rem;">Compara el volumen de unidades vendidas mes a mes a lo largo de cada año registrado.</p>
+                  <p style="font-size: 0.8125rem; color: var(--ax-text-tertiary); margin: 0.25rem 0 0 1.25rem;">Compara el volumen de unidades vendidas mes a mes a lo largo de cada año registrado.</p>
                 </div>
                 <div style="display: flex; gap: 0.5rem;">
                   <button type="button" class="preset-btn active" id="prodChartMetricQtyBtn" onclick="setProdChartMetric('qty')">Unidades</button>
@@ -1640,7 +1640,7 @@
 
               <!-- TABLA MATRIZ MULTIANUAL -->
               <div style="margin-top: 1.5rem;">
-                <h4 style="font-size: 0.9rem; font-weight: 700; color: #cbd5e1; margin-bottom: 0.75rem; text-transform: uppercase;">Resumen Anual de Ventas y Márgenes de este SKU</h4>
+                <h4 style="font-size: 0.875rem; font-weight: 700; color: var(--ax-text-secondary); margin-bottom: 0.75rem; text-transform: uppercase;">Resumen Anual de Ventas y Márgenes de este SKU</h4>
                 <div style="overflow-x: auto;">
                   <table class="advisor-table" id="prodYearlyTable">
                     <thead>
@@ -1656,7 +1656,7 @@
                       </tr>
                     </thead>
                     <tbody id="prodYearlyTableBody">
-                      <tr><td colspan="8" style="text-align: center; color: #94a3b8;">Selecciona un producto para ver el resumen anual.</td></tr>
+                      <tr><td colspan="8" style="text-align: center; color: var(--ax-text-tertiary);">Selecciona un producto para ver el resumen anual.</td></tr>
                     </tbody>
                   </table>
                 </div>
@@ -1667,8 +1667,8 @@
             <div class="ax-card" style="padding: 1.5rem;">
               <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 1rem; margin-bottom: 1rem;">
                 <div>
-                  <h3 style="font-size: 1.05rem; font-weight: 800; color: #f8fafc; margin: 0;">👥 Resumen de Ventas por Cliente (Columna I)</h3>
-                  <p style="font-size: 0.8rem; color: #94a3b8; margin: 0.2rem 0 0 0;">Acumulado de unidades totales compradas y facturación neta por cliente para este SKU.</p>
+                  <h3 style="font-size: 1rem; font-weight: 800; color: var(--ax-text-primary); margin: 0;">👥 Resumen de Ventas por Cliente (Columna I)</h3>
+                  <p style="font-size: 0.8125rem; color: var(--ax-text-tertiary); margin: 0.2rem 0 0 0;">Acumulado de unidades totales compradas y facturación neta por cliente para este SKU.</p>
                 </div>
                 <span class="skus-count-badge" id="prodTxCountBadge">0 Clientes</span>
               </div>
@@ -1688,7 +1688,7 @@
                     </tr>
                   </thead>
                   <tbody id="prodTxTableBody">
-                    <tr><td colspan="9" style="text-align: center; color: #94a3b8;">Selecciona un producto para ver la lista de clientes.</td></tr>
+                    <tr><td colspan="9" style="text-align: center; color: var(--ax-text-tertiary);">Selecciona un producto para ver la lista de clientes.</td></tr>
                   </tbody>
                 </table>
               </div>
@@ -1708,9 +1708,9 @@
             </div>
 
             <!-- SELECTOR DE SEGMENTO: GLOBAL vs CANAL DE VENTA -->
-            <div class="mix-segment-selector-wrapper" style="display: flex; align-items: center; gap: 0.75rem; background: rgba(15, 23, 42, 0.9); padding: 6px 14px; border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.35);">
-              <label for="mixCanalSegment" style="font-size: 0.78rem; font-weight: 700; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.5px;">Segmentación:</label>
-              <select id="mixCanalSegment" class="filter-select" style="min-width: 190px; height: 38px; font-weight: 700; color: #34d399; background: rgba(6, 10, 19, 0.8); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 8px;">
+            <div class="mix-segment-selector-wrapper" style="display: flex; align-items: center; gap: 0.75rem; background: var(--surf-3); padding: 6px 14px; border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.35);">
+              <label for="mixCanalSegment" style="font-size: 0.8125rem; font-weight: 700; color: var(--ax-text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Segmentación:</label>
+              <select id="mixCanalSegment" class="filter-select" style="min-width: 190px; height: 38px; font-weight: 700; color: var(--ax-accent-emerald); background: var(--surf-2); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 8px;">
                 <option value="ALL">🌐 Global (Todos los Canales)</option>
               </select>
             </div>
@@ -1720,10 +1720,10 @@
           <div class="hero-cards-grid" style="margin-top: 1.25rem;">
             <div class="ax-card hero-kpi-card" style="border-color: rgba(16, 185, 129, 0.3);">
               <div class="today-header">
-                <span class="today-badge" style="background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4);">CATÁLOGO MIX</span>
+                <span class="today-badge" style="background: rgba(16, 185, 129, 0.2); color: var(--ax-accent-emerald); border: 1px solid rgba(16, 185, 129, 0.4);">CATÁLOGO MIX</span>
                 <span class="today-label">SKUs en Mix Sugerido</span>
               </div>
-              <div class="today-value" id="mixKpiSkus" style="color: #34d399;">0 SKUs</div>
+              <div class="today-value" id="mixKpiSkus" style="color: var(--ax-accent-emerald);">0 SKUs</div>
               <div class="today-sub" id="mixKpiSkusSub">Productos recomendados por desempeño</div>
             </div>
 
@@ -1732,7 +1732,7 @@
                 <span class="today-badge badge-purple">VENTA CONCENTRADA</span>
                 <span class="today-label">Venta Neta Acumulada Mix</span>
               </div>
-              <div class="today-value" id="mixKpiRevenue" style="color: #60a5fa;">$0</div>
+              <div class="today-value" id="mixKpiRevenue" style="color: var(--ax-accent);">$0</div>
               <div class="today-sub" id="mixKpiRevenueSub">Concentración de ingresos del periodo</div>
             </div>
 
@@ -1741,7 +1741,7 @@
                 <span class="today-badge badge-gold">MARGEN Y UTILIDAD</span>
                 <span class="today-label">Utilidad Generada Mix</span>
               </div>
-              <div class="today-value" id="mixKpiProfit" style="color: #c084fc;">$0</div>
+              <div class="today-value" id="mixKpiProfit" style="color: var(--ax-accent-purple);">$0</div>
               <div class="today-sub" id="mixKpiMarginSub">Margen promedio: 0%</div>
             </div>
           </div>
@@ -1752,14 +1752,14 @@
               <div class="advisor-results-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
                 <div>
                   <h3 class="results-title">📊 Ranking & Matriz de Mix de Productos Recomendados</h3>
-                  <p style="font-size: 0.78rem; color: #94a3b8; margin: 4px 0 0 0;">Catálogo sugerido por participación de mercado, rentabilidad y volumen de unidades</p>
+                  <p style="font-size: 0.8125rem; color: var(--ax-text-tertiary); margin: 4px 0 0 0;">Catálogo sugerido por participación de mercado, rentabilidad y volumen de unidades</p>
                 </div>
 
                 <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
                   <div class="input-with-icon" style="max-width: 220px;">
-                    <input type="search" id="mixSearchBox" class="filter-input" placeholder="Buscar SKU o descripción..." style="height: 38px; font-size: 0.82rem;" />
+                    <input type="search" id="mixSearchBox" class="filter-input" placeholder="Buscar SKU o descripción..." style="height: 38px; font-size: 0.8125rem;" />
                   </div>
-                  <select id="mixSortSelect" class="filter-select" style="height: 38px; font-size: 0.82rem; font-weight: 700;">
+                  <select id="mixSortSelect" class="filter-select" style="height: 38px; font-size: 0.8125rem; font-weight: 700;">
                     <option value="neto">Ordenar por: Mayor Venta ($)</option>
                     <option value="cant">Ordenar por: Mayor Volumen (Unidades)</option>
                     <option value="margin">Ordenar por: Mayor Margen (%)</option>
@@ -1787,7 +1787,7 @@
                   </thead>
                   <tbody id="mixSugeridoTableBody">
                     <tr>
-                      <td colspan="10" style="text-align: center; color: #94a3b8; padding: 2rem;">Cargando Mix de Productos Sugerido...</td>
+                      <td colspan="10" style="text-align: center; color: var(--ax-text-tertiary); padding: 2rem;">Cargando Mix de Productos Sugerido...</td>
                     </tr>
                   </tbody>
                 </table>
@@ -1809,7 +1809,7 @@
 
             <!-- BOTONES DE ACCIÓN RÁPIDA DE FICHA TÉCNICA -->
             <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-              <button type="button" class="btn-secondary" onclick="openFtPdfUploadModal()" title="Cargar un archivo PDF para extraer información y generar la Ficha Técnica oficial en formato licitación" style="border-color: rgba(56, 189, 248, 0.5); color: #38bdf8; background: rgba(56, 189, 248, 0.1);">
+              <button type="button" class="btn-secondary" onclick="openFtPdfUploadModal()" title="Cargar un archivo PDF para extraer información y generar la Ficha Técnica oficial en formato licitación" style="border-color: rgba(56, 189, 248, 0.5); color: var(--ax-accent-sky); background: rgba(56, 189, 248, 0.1);">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="12" x2="12" y2="18"/><polyline points="9 15 12 12 15 15"/></svg>
                 <span>📄 Cargar PDF Ficha Técnica</span>
               </button>
@@ -1821,7 +1821,7 @@
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
                 <span>Editar Spec</span>
               </button>
-              <button type="button" class="btn-secondary" onclick="exportFtPdf()" title="Exportar Ficha Técnica en PDF de alta calidad" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4);">
+              <button type="button" class="btn-secondary" onclick="exportFtPdf()" title="Exportar Ficha Técnica en PDF de alta calidad" style="background: rgba(16, 185, 129, 0.15); color: var(--ax-accent-emerald); border: 1px solid rgba(16, 185, 129, 0.4);">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                 <span>📥 Descargar PDF</span>
               </button>
@@ -1836,16 +1836,16 @@
           <div class="ax-card" style="margin-top: 1.25rem; padding: 1.25rem; border-color: rgba(56, 189, 248, 0.3);">
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; align-items: center;">
               <div>
-                <label style="font-size: 0.78rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px; display: block;">Buscar o Autocompletar SKU:</label>
+                <label style="font-size: 0.8125rem; font-weight: 700; color: var(--ax-text-tertiary); text-transform: uppercase; margin-bottom: 4px; display: block;">Buscar o Autocompletar SKU:</label>
                 <div style="position: relative;">
-                  <input type="search" id="ftSkuSearch" class="filter-input" placeholder="🔍 Escribe SKU, nombre o categoría..." style="height: 40px; font-size: 0.85rem;" />
+                  <input type="search" id="ftSkuSearch" class="filter-input" placeholder="🔍 Escribe SKU, nombre o categoría..." style="height: 40px; font-size: 0.875rem;" />
                   <div id="ftSkuSuggestions" class="prod-suggestions-dropdown" style="display:none;"></div>
                 </div>
               </div>
 
               <div>
-                <label style="font-size: 0.78rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px; display: block;">Seleccionar Producto / SKU:</label>
-                <select id="ftSkuSelect" class="filter-select" style="height: 40px; font-size: 0.85rem; width: 100%;">
+                <label style="font-size: 0.8125rem; font-weight: 700; color: var(--ax-text-tertiary); text-transform: uppercase; margin-bottom: 4px; display: block;">Seleccionar Producto / SKU:</label>
+                <select id="ftSkuSelect" class="filter-select" style="height: 40px; font-size: 0.875rem; width: 100%;">
                   <option value="">Cargando catálogo...</option>
                 </select>
               </div>
@@ -2005,15 +2005,15 @@
     <div class="modal-content cotiz-modal-wide">
       <div class="modal-header" style="padding-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: 1.25rem;">
         <div style="display: flex; align-items: center; gap: 0.75rem;">
-          <div class="modal-icon-badge" style="background: rgba(96, 165, 250, 0.15); color: #60a5fa; padding: 8px 12px; border-radius: 10px; border: 1px solid rgba(96, 165, 250, 0.3); font-weight: 800; font-size: 1.2rem;">
+          <div class="modal-icon-badge" style="background: rgba(96, 165, 250, 0.15); color: var(--ax-accent); padding: 8px 12px; border-radius: 12px; border: 1px solid rgba(96, 165, 250, 0.3); font-weight: 800; font-size: 1.25rem;">
             📑
           </div>
           <div>
             <div style="display: flex; align-items: center; gap: 0.5rem;">
-              <h3 id="cotizModalTitle" style="margin: 0; font-size: 1.2rem; font-weight: 800;">Emisión de Cotización Comercial</h3>
+              <h3 id="cotizModalTitle" style="margin: 0; font-size: 1.25rem; font-weight: 800;">Emisión de Cotización Comercial</h3>
               <span class="folio-live-badge" id="cotizModalFolioBadge">COT-2026-0001</span>
             </div>
-            <p class="modal-subtitle" style="margin: 3px 0 0 0; font-size: 0.82rem;">Registra cotizaciones con múltiples productos, cálculo de márgenes e IVA en tiempo real.</p>
+            <p class="modal-subtitle" style="margin: 3px 0 0 0; font-size: 0.8125rem;">Registra cotizaciones con múltiples productos, cálculo de márgenes e IVA en tiempo real.</p>
           </div>
         </div>
         <button type="button" class="btn-secondary modal-close-icon" id="closeCotizModalBtn" onclick="closeCotizacionModal()" title="Cerrar modal">✕</button>
@@ -2083,7 +2083,7 @@
               <span>Datos del Cliente / Razón Social</span>
               <span id="cotizClientMatchBadge" class="client-match-badge" style="display: none;">✓ Cliente Verificado</span>
             </div>
-            <span style="font-size: 0.74rem; color: #94a3b8;">🔍 Escribe el RUT o Nombre para buscar y autocompletar</span>
+            <span style="font-size: 0.75rem; color: var(--ax-text-tertiary);">🔍 Escribe el RUT o Nombre para buscar y autocompletar</span>
           </div>
           <div class="cotiz-form-grid-3">
             <div class="form-group" style="position: relative;">
@@ -2119,7 +2119,7 @@
               <span>Líneas de Productos & Precios Cotizados</span>
             </div>
             <div style="display: flex; gap: 0.5rem;">
-              <button type="button" class="btn-secondary btn-sm" onclick="addCotizProductRow()" style="background: rgba(96, 165, 250, 0.15); color: #60a5fa; border: 1px solid rgba(96, 165, 250, 0.4); font-weight: 700;">
+              <button type="button" class="btn-secondary btn-sm" onclick="addCotizProductRow()" style="background: rgba(96, 165, 250, 0.15); color: var(--ax-accent); border: 1px solid rgba(96, 165, 250, 0.4); font-weight: 700;">
                 + Agregar Producto
               </button>
               <button type="button" class="btn-secondary btn-sm" onclick="clearCotizProductRows()" title="Limpiar lista de productos">
@@ -2155,7 +2155,7 @@
             <button type="button" class="btn-secondary btn-sm" onclick="addCotizProductRow()" style="font-weight: 700;">
               ➕ Agregar otra línea de producto
             </button>
-            <span style="font-size: 0.8rem; color: #94a3b8;" id="cotizItemsCountLabel">1 producto en cotización</span>
+            <span style="font-size: 0.8125rem; color: var(--ax-text-tertiary);" id="cotizItemsCountLabel">1 producto en cotización</span>
           </div>
         </div>
 
@@ -2196,7 +2196,7 @@
 
           <!-- TOTALES Y LIQUIDACIÓN EN TIEMPO REAL -->
           <div class="modal-section-card cotiz-totals-box">
-            <div class="form-section-title" style="color: #60a5fa; border-bottom: 1px solid rgba(96,165,250,0.2);">
+            <div class="form-section-title" style="color: var(--ax-accent); border-bottom: 1px solid rgba(96,165,250,0.2);">
               <span>Totales de Cotización</span>
             </div>
             
@@ -2208,15 +2208,15 @@
             <div class="totals-row" style="align-items: center;">
               <div style="display: flex; align-items: center; gap: 0.5rem;">
                 <span>Descuento:</span>
-                <input type="number" id="cotizDiscountPct" value="0" min="0" max="99" step="1" style="width: 55px; height: 26px; font-size: 0.78rem; text-align: center; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15); border-radius: 4px; color: #f8fafc;" oninput="recalcCotizTotals()" />
+                <input type="number" id="cotizDiscountPct" value="0" min="0" max="99" step="1" style="width: 55px; height: 26px; font-size: 0.8125rem; text-align: center; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15); border-radius: 4px; color: var(--ax-text-primary);" oninput="recalcCotizTotals()" />
                 <span>%</span>
               </div>
-              <span class="totals-val" style="color: #fda4af;" id="cotizDiscountAmount">-$0</span>
+              <span class="totals-val" style="color: var(--ax-accent-rose);" id="cotizDiscountAmount">-$0</span>
             </div>
 
             <div class="totals-row">
               <span>Neto Final:</span>
-              <span class="totals-val font-bold" style="color: #38bdf8;" id="cotizNetoFinal">$0</span>
+              <span class="totals-val font-bold" style="color: var(--ax-accent-sky);" id="cotizNetoFinal">$0</span>
             </div>
 
             <div class="totals-row">
@@ -2225,8 +2225,8 @@
             </div>
 
             <div class="totals-row total-highlight">
-              <span style="font-size: 1.05rem; font-weight: 800;">TOTAL FINAL:</span>
-              <span class="totals-val font-bold" style="font-size: 1.25rem; color: #34d399;" id="cotizTotalBruto">$0</span>
+              <span style="font-size: 1rem; font-weight: 800;">TOTAL FINAL:</span>
+              <span class="totals-val font-bold" style="font-size: 1.25rem; color: var(--ax-accent-emerald);" id="cotizTotalBruto">$0</span>
             </div>
 
             <div class="totals-margin-badge" id="cotizMarginBadgeWrap">
@@ -2242,7 +2242,7 @@
             Cancelar
           </button>
           <div style="display: flex; gap: 0.75rem;">
-            <button type="button" class="btn-secondary" onclick="printCotizacionDocument()" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4);" title="Imprimir o Exportar Cotización en PDF">
+            <button type="button" class="btn-secondary" onclick="printCotizacionDocument()" style="background: rgba(56, 189, 248, 0.15); color: var(--ax-accent-sky); border: 1px solid rgba(56, 189, 248, 0.4);" title="Imprimir o Exportar Cotización en PDF">
               📄 Imprimir / PDF
             </button>
             <button type="submit" class="btn-primary" id="saveCotizModalBtn" style="min-width: 170px;">
@@ -2359,7 +2359,7 @@
     <div class="modal-content" style="max-width: 720px; border-color: rgba(56, 189, 248, 0.4);">
       <div class="modal-header">
         <div>
-          <h3 id="ftEditModalTitle" style="color: #38bdf8;">✏️ Editar Ficha Técnica de Producto</h3>
+          <h3 id="ftEditModalTitle" style="color: var(--ax-accent-sky);">✏️ Editar Ficha Técnica de Producto</h3>
           <p class="modal-subtitle" id="ftEditModalSub">Personaliza los datos técnicos, físicos y empaque de este SKU.</p>
         </div>
         <button type="button" class="btn-secondary modal-close-icon" onclick="closeFtEditModal()" title="Cerrar modal">✕</button>
@@ -2368,7 +2368,7 @@
       <form id="ftEditForm" onsubmit="saveFtSpecs(event)">
         <input type="hidden" id="ftEditSku" />
 
-        <div class="form-section-title" style="color: #38bdf8; border-bottom-color: rgba(56, 189, 248, 0.3);">1. Fotografías del Producto</div>
+        <div class="form-section-title" style="color: var(--ax-accent-sky); border-bottom-color: rgba(56, 189, 248, 0.3);">1. Fotografías del Producto</div>
         <div class="form-grid">
           <div class="form-group full">
             <label>Fotografías (se guardan en este navegador)</label>
@@ -2391,7 +2391,7 @@
           </div>
         </div>
 
-        <div class="form-section-title" style="color: #38bdf8; border-bottom-color: rgba(56, 189, 248, 0.3);">2. Especificaciones Físicas & Logística</div>
+        <div class="form-section-title" style="color: var(--ax-accent-sky); border-bottom-color: rgba(56, 189, 248, 0.3);">2. Especificaciones Físicas & Logística</div>
         <div class="form-grid">
           <div class="form-group">
             <label for="ftEditDimensiones">Dimensiones (Alto x Ancho x Prof. mm)</label>
@@ -2419,7 +2419,7 @@
           </div>
         </div>
 
-        <div class="form-section-title" style="color: #38bdf8; border-bottom-color: rgba(56, 189, 248, 0.3);">3. Parámetros Técnicos & Materiales</div>
+        <div class="form-section-title" style="color: var(--ax-accent-sky); border-bottom-color: rgba(56, 189, 248, 0.3);">3. Parámetros Técnicos & Materiales</div>
         <div class="form-grid">
           <div class="form-group">
             <label for="ftEditMaterial">Material Principal</label>
@@ -2447,7 +2447,7 @@
           </div>
         </div>
 
-        <div class="form-section-title" style="color: #38bdf8; border-bottom-color: rgba(56, 189, 248, 0.3);">4. Garantía & Control de Calidad</div>
+        <div class="form-section-title" style="color: var(--ax-accent-sky); border-bottom-color: rgba(56, 189, 248, 0.3);">4. Garantía & Control de Calidad</div>
         <div class="form-grid">
           <div class="form-group">
             <label for="ftEditGarantia">Garantía Comercial (Meses)</label>
@@ -2463,7 +2463,7 @@
           </div>
         </div>
 
-        <div class="form-section-title" style="color: #38bdf8; border-bottom-color: rgba(56, 189, 248, 0.3);">5. Campos Personalizados</div>
+        <div class="form-section-title" style="color: var(--ax-accent-sky); border-bottom-color: rgba(56, 189, 248, 0.3);">5. Campos Personalizados</div>
         <div class="form-grid">
           <div class="form-group full">
             <label>Agrega los campos que necesites para este SKU</label>
@@ -2487,7 +2487,7 @@
     <div class="modal-content" style="max-width: 960px; border-color: rgba(56, 189, 248, 0.4);">
       <div class="modal-header">
         <div>
-          <h3 style="color: #38bdf8;">🔄 Comparativa Técnica de SKUs Lado a Lado</h3>
+          <h3 style="color: var(--ax-accent-sky);">🔄 Comparativa Técnica de SKUs Lado a Lado</h3>
           <p class="modal-subtitle">Compara especificaciones físicas, precios, márgenes y materiales entre dos productos del catálogo.</p>
         </div>
         <button type="button" class="btn-secondary modal-close-icon" onclick="closeFtCompareModal()" title="Cerrar modal">✕</button>
@@ -2495,11 +2495,11 @@
 
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem;">
         <div>
-          <label style="font-size: 0.78rem; font-weight: 700; color: #38bdf8; text-transform: uppercase; margin-bottom: 4px; display: block;">Producto A (Base):</label>
+          <label style="font-size: 0.8125rem; font-weight: 700; color: var(--ax-accent-sky); text-transform: uppercase; margin-bottom: 4px; display: block;">Producto A (Base):</label>
           <select id="ftCompareSkuA" class="filter-select" style="width: 100%; height: 38px;" onchange="renderFtComparison()"></select>
         </div>
         <div>
-          <label style="font-size: 0.78rem; font-weight: 700; color: #c084fc; text-transform: uppercase; margin-bottom: 4px; display: block;">Producto B (Comparativa):</label>
+          <label style="font-size: 0.8125rem; font-weight: 700; color: var(--ax-accent-purple); text-transform: uppercase; margin-bottom: 4px; display: block;">Producto B (Comparativa):</label>
           <select id="ftCompareSkuB" class="filter-select" style="width: 100%; height: 38px;" onchange="renderFtComparison()"></select>
         </div>
       </div>
@@ -2516,13 +2516,13 @@
 
   <!-- MODAL CARGAR PDF FICHA TÉCNICA -->
   <div class="modal-backdrop" id="ftPdfUploadModal">
-    <div class="modal-content" style="max-width: 650px; background: rgba(15, 23, 42, 0.98); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 16px; box-shadow: 0 16px 40px rgba(0,0,0,0.6);">
+    <div class="modal-content" style="max-width: 650px; background: var(--surf-3); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 16px; box-shadow: 0 16px 40px rgba(0,0,0,0.6);">
       <div class="modal-header" style="border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px;">
         <div>
-          <h3 style="color: #38bdf8; font-family: 'Space Grotesk', sans-serif; font-weight: 800; display: flex; align-items: center; gap: 8px;">
+          <h3 style="color: var(--ax-accent-sky); font-family: 'Space Grotesk', sans-serif; font-weight: 800; display: flex; align-items: center; gap: 8px;">
             📄 Cargar PDF de Ficha Técnica
           </h3>
-          <p class="modal-subtitle" style="color: #94a3b8; font-size: 0.83rem;">
+          <p class="modal-subtitle" style="color: var(--ax-text-tertiary); font-size: 0.8125rem;">
             Sube un archivo PDF para extraer automáticamente su información técnica y generar la nueva Ficha Técnica oficial apta para licitaciones.
           </p>
         </div>
@@ -2531,23 +2531,23 @@
 
       <div style="padding: 1rem 0;">
         <!-- DROPZONE PARA EL ARCHIVO PDF -->
-        <div id="ftPdfDropzone" style="border: 2px dashed rgba(56, 189, 248, 0.4); border-radius: 14px; padding: 2.5rem 1.5rem; text-align: center; background: rgba(6, 10, 19, 0.6); cursor: pointer; transition: all 0.2s ease;" onclick="document.getElementById('ftPdfFileInput').click()">
+        <div id="ftPdfDropzone" style="border: 2px dashed rgba(56, 189, 248, 0.4); border-radius: 12px; padding: 2.5rem 1.5rem; text-align: center; background: var(--surf-1); cursor: pointer; transition: all 0.2s ease;" onclick="document.getElementById('ftPdfFileInput').click()">
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="1.5" style="margin-bottom: 12px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="12" x2="12" y2="18"/><polyline points="9 15 12 12 15 15"/></svg>
-          <div style="font-size: 1rem; font-weight: 700; color: #ffffff;">Haz clic o arrastra un archivo PDF aquí</div>
-          <div style="font-size: 0.78rem; color: #94a3b8; margin-top: 6px;">Formatos permitidos: .PDF (Fichas Técnicas, Catálogos, Especificaciones)</div>
+          <div style="font-size: 1rem; font-weight: 700; color: var(--ax-text-primary);">Haz clic o arrastra un archivo PDF aquí</div>
+          <div style="font-size: 0.8125rem; color: var(--ax-text-tertiary); margin-top: 6px;">Formatos permitidos: .PDF (Fichas Técnicas, Catálogos, Especificaciones)</div>
           <input type="file" id="ftPdfFileInput" accept=".pdf" style="display: none;" onchange="handleFtPdfFileSelect(event)" />
         </div>
 
         <!-- INDICADOR DE PROCESAMIENTO / LOADER -->
         <div id="ftPdfLoader" style="display: none; text-align: center; padding: 2rem 1rem;">
-          <div style="display: inline-block; width: 36px; height: 36px; border: 3px solid rgba(56,189,248,0.2); border-top-color: #38bdf8; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
-          <div style="font-size: 0.9rem; font-weight: 700; color: #38bdf8; margin-top: 12px;">Leyendo y procesando documento PDF con IA Reader...</div>
-          <div style="font-size: 0.78rem; color: #94a3b8; margin-top: 4px;">Extrayendo SKU, dimensiones, especificaciones y materiales</div>
+          <div style="display: inline-block; width: 36px; height: 36px; border: 3px solid rgba(56,189,248,0.2); border-top-color: var(--ax-accent-sky); border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+          <div style="font-size: 0.875rem; font-weight: 700; color: var(--ax-accent-sky); margin-top: 12px;">Leyendo y procesando documento PDF con IA Reader...</div>
+          <div style="font-size: 0.8125rem; color: var(--ax-text-tertiary); margin-top: 4px;">Extrayendo SKU, dimensiones, especificaciones y materiales</div>
         </div>
 
         <!-- PREVISUALIZACIÓN DE DATOS EXTRAÍDOS -->
-        <div id="ftPdfPreviewArea" style="display: none; background: rgba(6, 10, 19, 0.9); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 12px; padding: 1.25rem; margin-top: 1.25rem;">
-          <div style="font-size: 0.88rem; font-weight: 700; color: #34d399; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+        <div id="ftPdfPreviewArea" style="display: none; background: var(--ax-canvas); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 12px; padding: 1.25rem; margin-top: 1.25rem;">
+          <div style="font-size: 0.875rem; font-weight: 700; color: var(--ax-accent-emerald); margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
             ✅ Información Extraída del PDF:
           </div>
           
@@ -2594,7 +2594,7 @@
   </div>
 
   <!-- Scripts -->
-  <script src="config.js?v=20260824_FICHA_V12"></script>
-  <script src="app.js?v=20260824_FICHA_V12"></script>
+  <script src="config.js?v=20260824_UI_V13"></script>
+  <script src="app.js?v=20260824_UI_V13"></script>
 </body>
 </html>
