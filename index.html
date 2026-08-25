@@ -24,7 +24,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <!-- Stylesheets & Libraries -->
-  <link rel="stylesheet" href="style.css?v=20260825_PRECIOS_V38" />
+  <link rel="stylesheet" href="style.css?v=20260825_PRECIOS_V39" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -1825,6 +1825,21 @@
               <span class="section-subtitle">Tu precio de venta frente al del competidor, por producto</span>
             </div>
             <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+              <label class="precios-canal">
+                <span class="precios-canal__label">Mi precio en</span>
+                <select id="preciosCanal" class="precios-canal__select">
+                  <option value="DRCARE">DrCare</option>
+                  <option value="MELI">Meli</option>
+                  <option value="FALABELLA">Falabella</option>
+                  <option value="RIPLEY">Ripley</option>
+                  <option value="PARIS">Paris</option>
+                  <option value="WALMART">Walmart</option>
+                  <option value="EASY">Easy</option>
+                  <option value="ABCDIN">Abcdin</option>
+                  <option value="HITES">Hites</option>
+                </select>
+              </label>
+              <span id="preciosCanalAviso" class="precios-canal__aviso"></span>
               <span id="preciosUpdated" class="precios-updated">&mdash;</span>
               <button type="button" class="btn-secondary" id="preciosReload">Actualizar</button>
             </div>
@@ -2687,7 +2702,7 @@
   </div>
 
   <!-- Scripts -->
-  <script src="config.js?v=20260825_PRECIOS_V38"></script>
-  <script src="app.js?v=20260825_PRECIOS_V38"></script>
+  <script src="config.js?v=20260825_PRECIOS_V39"></script>
+  <script src="app.js?v=20260825_PRECIOS_V39"></script>
 </body>
 </html>

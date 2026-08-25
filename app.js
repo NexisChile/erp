@@ -9260,7 +9260,8 @@ if (document.readyState === 'loading') {
 
 let preciosRows = [];          // ultima lectura por producto y competidor
 let preciosFallidos = [];      // filas que el scraper no pudo leer
-let preciosMisPrecios = new Map(); // precio propio fijado a mano en PreciosMapa
+let preciosMisPrecios = new Map(); // codigo -> { DRCARE: n, MELI: n, ... }
+let preciosCanal = 'DRCARE';       // tienda elegida en el desplegable
 let preciosTab = 'todos';
 let preciosCargando = false;
 /* Codigos desplegados. Vive fuera del render porque la tabla se vuelve a pintar
@@ -9278,33 +9279,80 @@ const PRECIOS_DIF_ABSURDA = 500;
    Tiene que coincidir con PRECIOS_HOJA_MAPA de Code.gs. */
 const PRECIOS_HOJA_MAPA = 'PreciosMapa';
 
-/* Nombres aceptados para la columna del precio propio en PreciosMapa. Tiene que
-   coincidir con PRECIOS_COL_PROPIA de Code.gs. */
-const PRECIOS_COL_PROPIA = ['DRCARE', 'DR CARE', 'MIPRECIO', 'MI PRECIO', 'PRECIO PROPIO'];
+/**
+ * Las tiendas donde vendes, cada una con su columna en PreciosMapa.
+ *
+ * Se busca por NOMBRE del encabezado y no por letra de columna. Una letra es
+ * una posicion, y basta que alguien inserte una columna en medio para que todos
+ * los precios queden corridos una tienda: verias el de Ripley bajo el rotulo de
+ * Falabella sin que nada falle. El nombre se mueve con su columna.
+ *
+ * Los alias existen porque el encabezado lo escribe una persona: "Meli" y
+ * "Mercado Libre" son la misma tienda.
+ */
+const PRECIOS_CANALES = [
+  { clave: 'DRCARE',    etiqueta: 'DrCare',
+    columnas: ['DRCARE', 'DR CARE', 'MIPRECIO', 'MI PRECIO', 'PRECIO PROPIO'] },
+  { clave: 'MELI',      etiqueta: 'Meli',
+    columnas: ['MELI', 'MERCADOLIBRE', 'MERCADO LIBRE'] },
+  { clave: 'FALABELLA', etiqueta: 'Falabella', columnas: ['FALABELLA'] },
+  { clave: 'RIPLEY',    etiqueta: 'Ripley',    columnas: ['RIPLEY'] },
+  { clave: 'PARIS',     etiqueta: 'Paris',     columnas: ['PARIS', 'PARÍS'] },
+  { clave: 'WALMART',   etiqueta: 'Walmart',   columnas: ['WALMART', 'LIDER'] },
+  { clave: 'EASY',      etiqueta: 'Easy',      columnas: ['EASY'] },
+  { clave: 'ABCDIN',    etiqueta: 'Abcdin',    columnas: ['ABCDIN', 'ABC DIN'] },
+  { clave: 'HITES',     etiqueta: 'Hites',     columnas: ['HITES'] }
+];
+
+const PRECIOS_CANAL_POR_DEFECTO = 'DRCARE';
+const PRECIOS_CANAL_GUARDADO = 'glomax_precios_canal';
 
 /**
- * Lee el precio propio por codigo desde PreciosMapa.
+ * Lee de PreciosMapa el precio de cada codigo en CADA tienda.
  *
- * Es mejor referencia que el PREUNI de la ultima venta: existe aunque el
- * producto no se haya vendido nunca, y no se mueve porque a un cliente puntual
- * se le haya hecho un descuento. Cuando la celda esta vacia se cae al PREUNI,
- * asi que llenarla es opcional y se puede ir haciendo de a poco.
+ * Se leen todas de una vez y no solo la elegida: cambiar de tienda en el
+ * desplegable es entonces un recalculo en memoria, sin volver a pedirle la hoja
+ * a Google. Comparar canales es justo lo que se hace a mano, y una espera de
+ * dos segundos por cada cambio lo volveria inutilizable.
  */
 function preciosPropiosDesdeMapa(filas) {
   const mapa = new Map();
   if (!Array.isArray(filas) || !filas.length) return mapa;
 
-  const columna = PRECIOS_COL_PROPIA.find(c =>
-    Object.prototype.hasOwnProperty.call(filas[0], c));
-  if (!columna) return mapa;
+  /* Se resuelve el nombre real de cada columna una sola vez. Las tiendas que no
+     tengan columna en la hoja simplemente no aparecen. */
+  const columnas = {};
+  PRECIOS_CANALES.forEach(c => {
+    const encontrada = c.columnas.find(n =>
+      Object.prototype.hasOwnProperty.call(filas[0], n));
+    if (encontrada) columnas[c.clave] = encontrada;
+  });
 
   filas.forEach(f => {
     const codigo = String(f['CODIGO'] || '').trim();
     if (!codigo) return;
-    const precio = parseMoneyCL(f[columna]);
-    if (precio > 0) mapa.set(codigo, precio);
+    let porCanal = mapa.get(codigo);
+    Object.keys(columnas).forEach(clave => {
+      const precio = parseMoneyCL(f[columnas[clave]]);
+      if (!(precio > 0)) return;
+      if (!porCanal) { porCanal = {}; mapa.set(codigo, porCanal); }
+      /* Un mismo codigo aparece en varias filas, una por competidor, con el
+         precio repetido. Gana la primera que lo traiga; si difieren, es una
+         inconsistencia de la hoja y no algo que el dashboard deba arbitrar. */
+      if (porCanal[clave] === undefined) porCanal[clave] = precio;
+    });
   });
   return mapa;
+}
+
+/** Precio propio de un codigo en la tienda elegida, o 0 si no hay. */
+function preciosPropioDe(codigo) {
+  const porCanal = preciosMisPrecios.get(codigo);
+  return (porCanal && porCanal[preciosCanal]) || 0;
+}
+
+function preciosCanalActual() {
+  return PRECIOS_CANALES.find(c => c.clave === preciosCanal) || PRECIOS_CANALES[0];
 }
 
 /* En la hoja el precio puede venir como numero o escrito a mano ("$129.990").
@@ -9549,7 +9597,7 @@ function renderPreciosView() {
     /* El precio fijado a mano manda sobre el de la ultima venta: es una
        decision explicita, mientras que el PREUNI es el resultado de una
        negociacion puntual que pudo llevar descuento. */
-    const propio = preciosMisPrecios.get(l.codigo) || 0;
+    const propio = preciosPropioDe(l.codigo);
     const miPrecio = propio > 0 ? propio : (mio ? mio.preuni : 0);
     const dif = miPrecio > 0 && l.precio > 0 ? ((miPrecio - l.precio) / l.precio) * 100 : null;
     return {
@@ -9616,6 +9664,22 @@ function renderPreciosView() {
     ? 'Última lectura: ' + ultima.toLocaleDateString('es-CL')
     : 'Sin lecturas';
 
+  /* Cuantos productos no tienen precio en la tienda elegida. Sin este aviso,
+     una columna vacia se ve igual que una llena -la tabla muestra el PREUNI de
+     la ultima venta- y darias por comparado un canal que no lo esta. */
+  const sinFijar = grupos.filter(g => !g.miPrecioFijado).length;
+  const elAviso = document.getElementById('preciosCanalAviso');
+  if (elAviso) {
+    elAviso.textContent = sinFijar
+      ? sinFijar + (sinFijar === 1 ? ' producto sin precio en ' : ' productos sin precio en ') +
+        preciosCanalActual().etiqueta
+      : '';
+    elAviso.title = sinFijar
+      ? 'Esos productos muestran el precio de su última venta, no el de ' +
+        preciosCanalActual().etiqueta + '. Complétalos en PreciosMapa.'
+      : '';
+  }
+
   const texto = (document.getElementById('preciosFiltro') || {}).value || '';
   const q = texto.trim().toLowerCase();
 
@@ -9627,8 +9691,8 @@ function renderPreciosView() {
       codigo: f.codigo,
       descripcion: (mios.get(f.codigo) || {}).descripcion || '',
       competidor: f.competidor,
-      miPrecio: preciosMisPrecios.get(f.codigo) || (mios.get(f.codigo) || {}).preuni || 0,
-      miPrecioFijado: (preciosMisPrecios.get(f.codigo) || 0) > 0,
+      miPrecio: preciosPropioDe(f.codigo) || (mios.get(f.codigo) || {}).preuni || 0,
+      miPrecioFijado: preciosPropioDe(f.codigo) > 0,
       suPrecio: 0, dif: null, dudoso: false, fecha: f.fecha, url: f.url,
       estado: f.estado, lecturas: []
     }));
@@ -9692,8 +9756,9 @@ function renderPreciosView() {
         (varios ? '<span class="precios-mas">más barato de ' + g.competidores +
           '</span>' : '') + '</td>' +
       '<td class="num" title="' + (g.miPrecio <= 0 ? 'Sin precio propio'
-        : g.miPrecioFijado ? 'Precio fijado en PreciosMapa'
-        : 'PREUNI de la última venta de este código') + '">' +
+        : g.miPrecioFijado ? 'Precio de ' + preciosCanalActual().etiqueta + ' en PreciosMapa'
+        : 'Sin precio en ' + preciosCanalActual().etiqueta +
+          ': se muestra el PREUNI de la última venta') + '">' +
         (g.miPrecio > 0 ? formatCLP(g.miPrecio) : '—') +
         (g.miPrecioFijado ? '<span class="precios-fijado" aria-hidden="true">·</span>' : '') +
       '</td>' +
@@ -9750,6 +9815,26 @@ function setupPreciosListeners() {
   if (recargar && !recargar._bound) {
     recargar._bound = true;
     recargar.addEventListener('click', () => loadPrecios(true));
+  }
+
+  /* Cambiar de tienda no vuelve a pedir la hoja: los precios de todos los
+     canales ya estan en memoria y solo hay que repintar. */
+  const canal = document.getElementById('preciosCanal');
+  if (canal && !canal._bound) {
+    canal._bound = true;
+    let guardado = null;
+    try { guardado = localStorage.getItem(PRECIOS_CANAL_GUARDADO); } catch (e) { guardado = null; }
+    if (guardado && PRECIOS_CANALES.some(c => c.clave === guardado)) preciosCanal = guardado;
+    else preciosCanal = PRECIOS_CANAL_POR_DEFECTO;
+    canal.value = preciosCanal;
+
+    canal.addEventListener('change', () => {
+      preciosCanal = canal.value;
+      /* Se recuerda la eleccion: se mira un canal a la vez y durante un rato,
+         y volver a DrCare en cada recarga obliga a reelegir siempre. */
+      try { localStorage.setItem(PRECIOS_CANAL_GUARDADO, preciosCanal); } catch (e) { /* modo privado */ }
+      renderPreciosView();
+    });
   }
 
   /* El listener va en el tbody y no en cada boton: la tabla se rehace completa

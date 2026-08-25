@@ -10062,3 +10062,57 @@ button, input, select, textarea, optgroup {
 @media (max-width: 720px) {
   .precios-mas { display: none; }
 }
+
+/* ===== Precios · selector de tienda ====================================== */
+
+.precios-canal {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0.3rem 0.3rem 0.7rem;
+  border: 1px solid var(--ax-border);
+  border-radius: 8px;
+  background: var(--surf-2);
+}
+
+.precios-canal__label {
+  color: var(--ax-text-secondary);
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.precios-canal__select {
+  padding: 0.25rem 0.4rem;
+  border: 1px solid var(--ax-border);
+  border-radius: 6px;
+  background: var(--surf-1);
+  color: var(--ax-text-primary);
+  /* font: inherit para no caer en el Arial del navegador, que es lo que hace
+     por su cuenta con los controles de formulario. */
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.precios-canal__select:focus-visible {
+  outline: 2px solid var(--ax-accent-sky);
+  outline-offset: 1px;
+}
+
+/* Aviso de cobertura. En ambar y no en rojo a proposito: no es un error, es
+   trabajo pendiente en la hoja. */
+.precios-canal__aviso {
+  color: var(--ax-accent-gold);
+  font-size: 0.78rem;
+  white-space: nowrap;
+  cursor: help;
+}
+.precios-canal__aviso:empty {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .precios-canal { width: 100%; justify-content: space-between; }
+  .precios-canal__select { flex: 1; margin-left: 0.5rem; }
+  .precios-canal__aviso { white-space: normal; }
+}
