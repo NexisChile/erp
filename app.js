@@ -1144,6 +1144,12 @@ function switchView(viewName) {
           if (typeof renderMixSugeridoModule === 'function') renderMixSugeridoModule();
           _viewLastRenderedRevision['mixsugerido'] = _glomaxRenderRevision;
         }
+      } else if (viewName === 'precios') {
+        /* Esta vista no depende de los filtros globales sino de una pestana
+           aparte, asi que no se cachea por revision: se pide al entrar y el
+           propio loadPrecios corta si ya hay una carga en curso. */
+        if (typeof setupPreciosListeners === 'function') setupPreciosListeners();
+        if (typeof loadPrecios === 'function') loadPrecios();
       } else if (viewName === 'fichatecnica') {
         if (!isCached) {
           if (typeof renderFichaTecnicaView === 'function') renderFichaTecnicaView();
@@ -9230,4 +9236,288 @@ if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initApp);
 } else {
   initApp();
+}
+
+/* ============================================================================
+   MODULO DE PRECIOS DE COMPETENCIA
+   ----------------------------------------------------------------------------
+   Lee la pestana PreciosHist que llena Precios.gs y la cruza con el precio de
+   venta propio para responder una sola pregunta: donde estoy mas caro que la
+   competencia y cuanto.
+
+   El scraping en si no ocurre aqui ni puede ocurrir: este codigo corre en el
+   navegador y el navegador no puede leer otros dominios. Aqui solo se lee la
+   hoja, igual que el resto del tablero.
+   ========================================================================== */
+
+let preciosRows = [];          // ultima lectura por producto y competidor
+let preciosFallidos = [];      // filas que el scraper no pudo leer
+let preciosTab = 'todos';
+let preciosCargando = false;
+
+/**
+ * Mi precio de venta por codigo: el PREUNI de la venta mas reciente.
+ *
+ * Se usa la mas reciente y no el promedio a proposito. Un promedio historico
+ * arrastra precios de hace dos anos y la comparacion con el competidor deja de
+ * significar nada; lo que interesa es a cuanto lo estoy vendiendo hoy.
+ */
+function preciosMiPrecioPorCodigo() {
+  const mapa = new Map();
+  (rows || []).forEach(r => {
+    const codigo = String(r['CODIGO'] || '').trim();
+    const preuni = Number(r['PREUNI']) || 0;
+    if (!codigo || preuni <= 0) return;
+    const fecha = parseCotizDate(r['FECHA']);
+    const prev = mapa.get(codigo);
+    if (!prev || (fecha && prev.fecha && fecha > prev.fecha) || (fecha && !prev.fecha)) {
+      mapa.set(codigo, {
+        preuni: preuni,
+        fecha: fecha,
+        descripcion: String(r['DESCRIPCION'] || '').trim()
+      });
+    }
+  });
+  return mapa;
+}
+
+/** Se queda con la lectura mas nueva de cada par (codigo, competidor). */
+function preciosUltimaLectura(filas) {
+  const mapa = new Map();
+  filas.forEach(f => {
+    const codigo = String(f['CODIGO'] || '').trim();
+    const competidor = String(f['COMPETIDOR'] || '').trim() || '-';
+    if (!codigo) return;
+    const clave = codigo + '||' + competidor;
+    const fecha = parseCotizDate(f['FECHA']);
+    const prev = mapa.get(clave);
+    if (!prev || (fecha && prev.fecha && fecha > prev.fecha) || (fecha && !prev.fecha)) {
+      mapa.set(clave, {
+        codigo: codigo,
+        competidor: competidor,
+        precio: Number(f['PRECIO']) || 0,
+        disponible: String(f['DISPONIBLE'] || '').trim(),
+        estado: String(f['ESTADO'] || '').trim(),
+        url: String(f['URL'] || '').trim(),
+        fecha: fecha
+      });
+    }
+  });
+  return Array.from(mapa.values());
+}
+
+function preciosMostrarAviso(html) {
+  const setup = document.getElementById('preciosSetup');
+  const body = document.getElementById('preciosBody');
+  if (setup) { setup.innerHTML = html; setup.style.display = ''; }
+  if (body) body.style.display = 'none';
+}
+
+async function loadPrecios(forzar) {
+  if (preciosCargando) return;
+  const gid = typeof SPREADSHEET_PRECIOS_GID !== 'undefined' ? SPREADSHEET_PRECIOS_GID : '';
+
+  if (!gid) {
+    preciosMostrarAviso(
+      '<h3>Falta un paso de configuración</h3>' +
+      '<p>El módulo está instalado pero todavía no sabe de qué pestaña leer.</p>' +
+      '<ol>' +
+      '<li>Pega <code>Precios.gs</code> en el mismo proyecto de Apps Script que <code>Code.gs</code>.</li>' +
+      '<li>Ejecuta <code>crearHojasPrecios()</code>. En el registro te va a imprimir un GID.</li>' +
+      '<li>Copia ese número en <code>SPREADSHEET_PRECIOS_GID</code> dentro de <code>config.js</code>.</li>' +
+      '<li>Llena la pestaña <code>PreciosMapa</code> con tu código y la URL del competidor.</li>' +
+      '<li>Ejecuta <code>instalarDisparadorPrecios()</code> para que se actualice solo.</li>' +
+      '</ol>' +
+      '<p class="precios-setup__nota">Antes de cargar un sitio nuevo en la hoja, prueba su URL con ' +
+      '<code>probarUrl()</code>: te dice si el precio se puede leer y por qué vía.</p>');
+    return;
+  }
+
+  preciosCargando = true;
+  try {
+    const spId = typeof SPREADSHEET_ID !== 'undefined' ? SPREADSHEET_ID : '';
+    const filas = await fetchGVizViaJSONP(spId, gid, 20000);
+    const lecturas = preciosUltimaLectura(filas || []);
+    preciosRows = lecturas.filter(l => l.precio > 0);
+    preciosFallidos = lecturas.filter(l => !(l.precio > 0));
+    renderPreciosView();
+  } catch (e) {
+    console.error('[Precios] No se pudo leer la pestana:', e);
+    preciosMostrarAviso(
+      '<h3>No se pudo leer la pestaña de precios</h3>' +
+      '<p>' + escapeHtml(String(e && e.message ? e.message : e)) + '</p>' +
+      '<p class="precios-setup__nota">Revisa que el GID de <code>SPREADSHEET_PRECIOS_GID</code> ' +
+      'sea el correcto y que la hoja esté compartida como "cualquiera con el enlace puede ver".</p>');
+  } finally {
+    preciosCargando = false;
+  }
+}
+
+function renderPreciosView() {
+  const setup = document.getElementById('preciosSetup');
+  const body = document.getElementById('preciosBody');
+  const tbody = document.getElementById('preciosTableBody');
+  if (!tbody) return;
+
+  const mios = preciosMiPrecioPorCodigo();
+
+  const items = preciosRows.map(l => {
+    const mio = mios.get(l.codigo);
+    const miPrecio = mio ? mio.preuni : 0;
+    const dif = miPrecio > 0 && l.precio > 0 ? ((miPrecio - l.precio) / l.precio) * 100 : null;
+    return {
+      codigo: l.codigo,
+      descripcion: mio ? mio.descripcion : '',
+      competidor: l.competidor,
+      miPrecio: miPrecio,
+      suPrecio: l.precio,
+      dif: dif,
+      disponible: l.disponible,
+      fecha: l.fecha,
+      url: l.url,
+      estado: l.estado
+    };
+  });
+
+  const comparables = items.filter(i => i.dif !== null);
+  const caros = comparables.filter(i => i.dif > 0.5);
+  const baratos = comparables.filter(i => i.dif < -0.5);
+
+  if (!items.length && !preciosFallidos.length) {
+    preciosMostrarAviso(
+      '<h3>Todavía no hay lecturas</h3>' +
+      '<p>La pestaña existe pero está vacía. Llena <code>PreciosMapa</code> con al menos ' +
+      'un producto y su URL, y ejecuta <code>scrapePrecios()</code> una vez a mano para ' +
+      'comprobar que lee bien antes de dejarlo con disparador.</p>');
+    return;
+  }
+
+  if (setup) setup.style.display = 'none';
+  if (body) body.style.display = '';
+
+  const fuentes = new Set(items.map(i => i.competidor));
+  document.getElementById('preciosKpiTotal').textContent = formatNum(items.length);
+  document.getElementById('preciosKpiFuentes').textContent =
+    fuentes.size + (fuentes.size === 1 ? ' competidor' : ' competidores');
+  document.getElementById('preciosKpiCaro').textContent = formatNum(caros.length);
+  document.getElementById('preciosKpiBarato').textContent = formatNum(baratos.length);
+
+  const holgura = baratos.length
+    ? baratos.reduce((a, i) => a + Math.abs(i.dif), 0) / baratos.length : 0;
+  document.getElementById('preciosKpiHolgura').textContent =
+    baratos.length ? holgura.toFixed(1) + '% de holgura media' : '—';
+
+  const brecha = comparables.length
+    ? comparables.reduce((a, i) => a + i.dif, 0) / comparables.length : null;
+  const elBrecha = document.getElementById('preciosKpiBrecha');
+  elBrecha.textContent = brecha === null ? '—'
+    : (brecha > 0 ? '+' : '') + brecha.toFixed(1) + '%';
+  elBrecha.className = 'precios-kpi__value ' +
+    (brecha === null ? '' : brecha > 0 ? 'is-caro' : 'is-barato');
+
+  const ultima = items.concat(preciosFallidos)
+    .map(i => i.fecha).filter(Boolean).sort((a, b) => b - a)[0];
+  document.getElementById('preciosUpdated').textContent = ultima
+    ? 'Última lectura: ' + ultima.toLocaleDateString('es-CL')
+    : 'Sin lecturas';
+
+  const texto = (document.getElementById('preciosFiltro') || {}).value || '';
+  const q = texto.trim().toLowerCase();
+
+  let visibles;
+  if (preciosTab === 'fallo') {
+    visibles = preciosFallidos.map(f => ({
+      codigo: f.codigo,
+      descripcion: (mios.get(f.codigo) || {}).descripcion || '',
+      competidor: f.competidor,
+      miPrecio: (mios.get(f.codigo) || {}).preuni || 0,
+      suPrecio: 0, dif: null, fecha: f.fecha, url: f.url, estado: f.estado
+    }));
+  } else if (preciosTab === 'caro') {
+    visibles = caros.slice();
+  } else if (preciosTab === 'barato') {
+    visibles = baratos.slice();
+  } else {
+    visibles = items.slice();
+  }
+
+  if (q) {
+    visibles = visibles.filter(i =>
+      i.codigo.toLowerCase().includes(q) ||
+      (i.descripcion || '').toLowerCase().includes(q) ||
+      (i.competidor || '').toLowerCase().includes(q));
+  }
+
+  /* Se ordena por brecha descendente: arriba queda donde mas caro estoy, que
+     es lo unico que exige una decision hoy. */
+  visibles.sort((a, b) =>
+    (b.dif === null ? -Infinity : b.dif) - (a.dif === null ? -Infinity : a.dif));
+
+  if (!visibles.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color: var(--ax-text-tertiary); padding: 2rem;">' +
+      'Ningún producto en esta vista.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = visibles.map(i => {
+    let situacion, clase;
+    if (i.dif === null) {
+      /* Dos causas distintas que no hay que mezclar: o el scraper no pudo leer
+         la pagina, o la leyo bien pero yo nunca le he vendido ese producto y no
+         tengo precio propio con que comparar. Mostrar el estado del scraper en
+         el segundo caso hacia leer "OK/texto" como si fuera una situacion
+         comercial, que no significa nada para quien mira la tabla. */
+      situacion = i.suPrecio > 0 ? 'Sin venta previa' : escapeHtml(i.estado || 'Sin dato');
+      clase = 'is-nulo';
+    } else if (i.dif > 0.5) {
+      situacion = 'Más caro'; clase = 'is-caro';
+    } else if (i.dif < -0.5) {
+      situacion = 'Más barato'; clase = 'is-barato';
+    } else {
+      situacion = 'A la par'; clase = 'is-par';
+    }
+    const difTxt = i.dif === null ? '—'
+      : (i.dif > 0 ? '+' : '') + i.dif.toFixed(1) + '%';
+    const enlace = i.url
+      ? '<a href="' + escapeHtml(i.url) + '" target="_blank" rel="noopener noreferrer nofollow">' +
+        escapeHtml(i.competidor) + '</a>'
+      : escapeHtml(i.competidor);
+    return '<tr>' +
+      '<td class="mono">' + escapeHtml(i.codigo) + '</td>' +
+      '<td>' + escapeHtml(i.descripcion || '—') + '</td>' +
+      '<td>' + enlace + '</td>' +
+      '<td class="num">' + (i.miPrecio > 0 ? formatCLP(i.miPrecio) : '—') + '</td>' +
+      '<td class="num">' + (i.suPrecio > 0 ? formatCLP(i.suPrecio) : '—') + '</td>' +
+      '<td class="num ' + clase + '">' + difTxt + '</td>' +
+      '<td><span class="precios-pill ' + clase + '">' + situacion + '</span></td>' +
+      '<td>' + (i.fecha ? i.fecha.toLocaleDateString('es-CL') : '—') + '</td>' +
+      '</tr>';
+  }).join('');
+}
+
+function setupPreciosListeners() {
+  const filtro = document.getElementById('preciosFiltro');
+  if (filtro && !filtro._bound) {
+    filtro._bound = true;
+    let t = null;
+    filtro.addEventListener('input', () => {
+      clearTimeout(t);
+      t = setTimeout(renderPreciosView, 180); // no repintar en cada tecla
+    });
+  }
+  document.querySelectorAll('[data-precio-tab]').forEach(btn => {
+    if (btn._bound) return;
+    btn._bound = true;
+    btn.addEventListener('click', () => {
+      preciosTab = btn.getAttribute('data-precio-tab');
+      document.querySelectorAll('[data-precio-tab]').forEach(b =>
+        b.classList.toggle('active', b === btn));
+      renderPreciosView();
+    });
+  });
+  const recargar = document.getElementById('preciosReload');
+  if (recargar && !recargar._bound) {
+    recargar._bound = true;
+    recargar.addEventListener('click', () => loadPrecios(true));
+  }
 }

@@ -24,7 +24,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <!-- Stylesheets & Libraries -->
-  <link rel="stylesheet" href="style.css?v=20260824_UI_V30" />
+  <link rel="stylesheet" href="style.css?v=20260824_PRECIOS_V32" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -389,6 +389,12 @@
           <svg class="ax-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v1"/><path d="M18 8l4 4-4 4"/><path d="M22 12H9"/></svg>
           <span class="ax-nav__label">Mix Sugerido</span>
           <span class="ax-nav__badge ax-nav__badge--hot" style="background: rgba(61, 220, 151, 0.2); color: var(--ax-accent-emerald); border: 1px solid rgba(61, 220, 151, 0.4);">AI Mix</span>
+        </button>
+
+        <button class="ax-nav__item" data-view="precios">
+          <svg class="ax-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          <span class="ax-nav__label">Precios Competencia</span>
+          <span class="ax-nav__badge ax-nav__badge--ficha">VS</span>
         </button>
 
         <p class="ax-sidebar__section">Seguridad & Sesión</p>
@@ -1808,6 +1814,81 @@
           </div>
         </div>
 
+        <!-- VISTA PRECIOS DE COMPETENCIA -->
+        <div class="view" id="view-precios">
+          <div class="dashboard-section-header" style="margin-top: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <div class="section-title-wrap">
+                <span class="section-badge-dot" style="background: #2DD4CE; box-shadow: 0 0 12px rgba(45, 212, 206, 0.6);"></span>
+                <h2 class="dashboard-section-title">Precios de Competencia</h2>
+              </div>
+              <span class="section-subtitle">Tu precio de venta frente al del competidor, por producto</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+              <span id="preciosUpdated" class="precios-updated">&mdash;</span>
+              <button type="button" class="btn-secondary" id="preciosReload">Actualizar</button>
+            </div>
+          </div>
+
+          <div id="preciosSetup" class="precios-setup" style="display: none;"></div>
+
+          <div id="preciosBody" style="display: none;">
+            <div class="precios-kpis">
+              <div class="ax-card precios-kpi">
+                <span class="precios-kpi__label">Productos monitoreados</span>
+                <span class="precios-kpi__value" id="preciosKpiTotal">0</span>
+                <span class="precios-kpi__sub" id="preciosKpiFuentes">&mdash;</span>
+              </div>
+              <div class="ax-card precios-kpi precios-kpi--riesgo">
+                <span class="precios-kpi__label">Estoy más caro</span>
+                <span class="precios-kpi__value" id="preciosKpiCaro">0</span>
+                <span class="precios-kpi__sub">Riesgo de perder la venta</span>
+              </div>
+              <div class="ax-card precios-kpi precios-kpi--ok">
+                <span class="precios-kpi__label">Estoy más barato</span>
+                <span class="precios-kpi__value" id="preciosKpiBarato">0</span>
+                <span class="precios-kpi__sub" id="preciosKpiHolgura">&mdash;</span>
+              </div>
+              <div class="ax-card precios-kpi">
+                <span class="precios-kpi__label">Brecha promedio</span>
+                <span class="precios-kpi__value" id="preciosKpiBrecha">&mdash;</span>
+                <span class="precios-kpi__sub">Ponderada por producto</span>
+              </div>
+            </div>
+
+            <div class="ax-card table-card" style="margin-top: 1.25rem;">
+              <div class="precios-toolbar">
+                <input type="text" id="preciosFiltro" class="filter-input" placeholder="Filtrar por código, descripción o competidor&hellip;" />
+                <div class="precios-tabs" role="group" aria-label="Filtrar por situación">
+                  <button type="button" class="preset-btn active" data-precio-tab="todos">Todos</button>
+                  <button type="button" class="preset-btn" data-precio-tab="caro">Más caro</button>
+                  <button type="button" class="preset-btn" data-precio-tab="barato">Más barato</button>
+                  <button type="button" class="preset-btn" data-precio-tab="fallo">Sin dato</button>
+                </div>
+              </div>
+              <div class="table-wrap">
+                <table class="data-table precios-table">
+                  <thead>
+                    <tr>
+                      <th>Código</th>
+                      <th>Descripción</th>
+                      <th>Competidor</th>
+                      <th class="num">Mi precio</th>
+                      <th class="num">Su precio</th>
+                      <th class="num">Diferencia</th>
+                      <th>Situación</th>
+                      <th>Leído</th>
+                    </tr>
+                  </thead>
+                  <tbody id="preciosTableBody">
+                    <tr><td colspan="8" style="text-align:center; color: var(--ax-text-tertiary); padding: 2rem;">Cargando precios&hellip;</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- VISTA FICHA TÉCNICA -->
         <div class="view" id="view-fichatecnica">
           <div class="dashboard-section-header" style="margin-top: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
@@ -2606,7 +2687,7 @@
   </div>
 
   <!-- Scripts -->
-  <script src="config.js?v=20260824_UI_V30"></script>
-  <script src="app.js?v=20260824_UI_V30"></script>
+  <script src="config.js?v=20260824_PRECIOS_V32"></script>
+  <script src="app.js?v=20260824_PRECIOS_V32"></script>
 </body>
 </html>

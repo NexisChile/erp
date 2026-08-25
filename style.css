@@ -9828,3 +9828,116 @@ button, input, select, textarea, optgroup {
    El turquesa del tema claro daba 4.48:1 sobre su fondo palido, justo por
    debajo del 4.5 que exige un texto de 9.6px. Un paso mas oscuro: 5.41:1. */
 [data-ax-theme="light"] .ax-nav__badge--ficha { color: #0C6E6B !important; }
+
+/* ============================================================================
+   11. MODULO DE PRECIOS DE COMPETENCIA
+   ----------------------------------------------------------------------------
+   El color aqui carga significado, no decora: rosa es que estoy por encima del
+   competidor y verde que estoy por debajo. Se usan los tokens de la capa 10
+   para que ambos temas queden cubiertos solos.
+   ========================================================================== */
+
+.precios-setup {
+  background: var(--surf-1) !important;
+  border: 1px solid var(--ax-border) !important;
+  border-radius: var(--ax-radius-lg) !important;
+  padding: var(--sp-8) !important;
+  margin-top: var(--sp-5) !important;
+  max-width: 780px !important;
+}
+.precios-setup h3 {
+  font-family: var(--ax-font-display) !important;
+  font-size: var(--fs-2xl) !important;
+  font-weight: 600 !important;
+  color: var(--ax-text-primary) !important;
+  margin: 0 0 var(--sp-3) 0 !important;
+}
+.precios-setup p { color: var(--ax-text-secondary) !important; margin: 0 0 var(--sp-3) 0 !important; }
+.precios-setup ol { color: var(--ax-text-secondary) !important; margin: 0 0 var(--sp-4) 0 !important; padding-left: var(--sp-5) !important; }
+.precios-setup li { margin-bottom: var(--sp-2) !important; line-height: 1.6 !important; }
+.precios-setup code {
+  font-family: var(--ax-font-mono) !important;
+  font-size: var(--fs-sm) !important;
+  background: var(--ax-surface) !important;
+  border: 1px solid var(--ax-border) !important;
+  border-radius: var(--ax-radius-sm) !important;
+  padding: 2px 6px !important;
+  color: var(--ax-accent-sky) !important;
+}
+.precios-setup__nota {
+  border-left: 3px solid var(--ax-accent-sky) !important;
+  padding-left: var(--sp-3) !important;
+  color: var(--ax-text-tertiary) !important;
+  font-size: var(--fs-md) !important;
+}
+
+.precios-updated {
+  font-size: var(--fs-sm) !important;
+  color: var(--ax-text-tertiary) !important;
+  letter-spacing: 0.02em !important;
+}
+
+.precios-kpis {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(212px, 1fr)) !important;
+  gap: var(--sp-4) !important;
+  margin-top: var(--sp-5) !important;
+}
+.precios-kpi { display: flex !important; flex-direction: column !important; gap: var(--sp-1) !important; padding: var(--sp-5) !important; }
+.precios-kpi__label {
+  font-size: var(--fs-2xs) !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.07em !important;
+  text-transform: uppercase !important;
+  color: var(--ax-text-tertiary) !important;
+}
+.precios-kpi__value {
+  font-family: var(--ax-font-display) !important;
+  font-size: var(--fs-5xl) !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.032em !important;
+  color: var(--ax-text-primary) !important;
+}
+.precios-kpi__sub { font-size: var(--fs-xs) !important; color: var(--ax-text-tertiary) !important; }
+.precios-kpi--riesgo .precios-kpi__value { color: var(--ax-accent-rose) !important; }
+.precios-kpi--ok .precios-kpi__value { color: var(--ax-accent-emerald) !important; }
+
+.precios-toolbar {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: var(--sp-4) !important;
+  flex-wrap: wrap !important;
+  padding: var(--sp-4) var(--sp-5) !important;
+  border-bottom: 1px solid var(--ax-border) !important;
+}
+.precios-toolbar .filter-input { flex: 1 1 260px !important; min-width: 0 !important; }
+.precios-tabs { display: flex !important; gap: var(--sp-2) !important; flex-wrap: wrap !important; }
+
+.precios-table td.num, .precios-table th.num { text-align: right !important; }
+.precios-table td.mono { font-family: var(--ax-font-mono) !important; font-size: var(--fs-sm) !important; }
+.precios-table a { color: var(--ax-accent) !important; text-decoration: none !important; }
+.precios-table a:hover { text-decoration: underline !important; }
+
+.precios-table .is-caro   { color: var(--ax-accent-rose) !important; font-weight: 600 !important; }
+.precios-table .is-barato { color: var(--ax-accent-emerald) !important; font-weight: 600 !important; }
+.precios-table .is-par    { color: var(--ax-text-secondary) !important; }
+.precios-table .is-nulo   { color: var(--ax-text-tertiary) !important; }
+
+.precios-pill {
+  display: inline-block !important;
+  font-size: var(--fs-2xs) !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.04em !important;
+  padding: 3px 10px !important;
+  border-radius: var(--r-pill) !important;
+  white-space: nowrap !important;
+}
+.precios-pill.is-caro   { background: color-mix(in srgb, var(--ax-accent-rose) 16%, transparent) !important; color: var(--ax-accent-rose) !important; }
+.precios-pill.is-barato { background: color-mix(in srgb, var(--ax-accent-emerald) 16%, transparent) !important; color: var(--ax-accent-emerald) !important; }
+.precios-pill.is-par    { background: var(--ax-surface) !important; color: var(--ax-text-secondary) !important; }
+.precios-pill.is-nulo   { background: var(--ax-surface) !important; color: var(--ax-text-tertiary) !important; }
+
+@media (max-width: 720px) {
+  .precios-toolbar { flex-direction: column !important; align-items: stretch !important; }
+}

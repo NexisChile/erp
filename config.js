@@ -6,6 +6,11 @@ const SPREADSHEET_ID = "16bU5xUuPDvI6xIpuBabK9j_EiUFgcgMTq1T0S2LeVgQ";
 const SPREADSHEET_GID = "999482111"; // Pestaña Ventas
 const SPREADSHEET_COTIZACIONES_GID = "2001859242"; // Pestaña Cotizaciones
 
+// Pestaña PreciosHist, que llena el modulo de precios de competencia
+// (Precios.gs). El GID lo imprime crearHojasPrecios() en el registro de Apps
+// Script. Si se deja vacio, el modulo se muestra pero avisa que falta configurar.
+const SPREADSHEET_PRECIOS_GID = "";
+
 // Configuración de Auto-Actualización y Sincronización Automática en Segundo Plano
 const ENABLE_AUTO_REFRESH = true;        // Habilita auto-refresco automático
 // Una recarga completa tarda ~3s por el proxy local, pero ~45s en GitHub Pages (JSONP).
