@@ -10538,7 +10538,7 @@ const MP_COL = {
   id: 0, nombre: 1, descripcion: 2, organismo: 3, tipo: 4,
   monto: 5, montoOfertado: 6, cierre: 7, estadoOportunidad: 8, asignado: 9,
   etiqueta: 10, seguimiento: 11, comentario: 12, lineas: 13, cod: 14,
-  mes: 15, anio: 16, montoNeto: 17, montoOfertadoNeto: 18
+  mes: 15, anio: 16, montoNeto: 17, montoOfertadoNeto: 18, tienda: 19
 };
 
 let mpRows = [];
@@ -10720,6 +10720,11 @@ function normalizeMercadoPublicoRows(rawRows) {
       lineas: mpLineas(celda(MP_COL.lineas)),
       lineasTexto: mpTexto(celda(MP_COL.lineas)),
       cod: mpTexto(celda(MP_COL.cod)),
+      /* La columna T es el nombre legible de Cod (137 = COMPRAS AGILES,
+         136 = LICITACIONES, 150 = CM. MOBILIARIO). Las filas sin nombre se
+         agrupan bajo una etiqueta propia en vez de desaparecer del desplegable:
+         son 260 y de otro modo solo se verian eligiendo "Todas". */
+      tienda: mpTexto(celda(MP_COL.tienda)) || 'Sin tienda',
       neto: neto,
       netoOfertado: netoOfertado,
       resultado: mpResultado(seguimiento),
@@ -10873,12 +10878,12 @@ function mpPoblarFiltros() {
     if (previo && ordenadas.indexOf(previo) !== -1) sel.value = previo;
   };
 
-  const anios = new Set(), tipos = new Set(), seguimientos = new Set();
+  const anios = new Set(), tiendas = new Set(), seguimientos = new Set();
   const asignados = new Set(), etiquetas = new Set(), lineas = new Set();
 
   mpRows.forEach(r => {
     if (r.anio) anios.add(String(r.anio));
-    tipos.add(r.tipo);
+    tiendas.add(r.tienda);
     seguimientos.add(r.seguimiento);
     asignados.add(r.asignado);
     if (r.etiqueta) etiquetas.add(r.etiqueta);
@@ -10894,7 +10899,7 @@ function mpPoblarFiltros() {
     if (previo && lista.indexOf(previo) !== -1) selAnio.value = previo;
   }
 
-  llenar('fltMpTipo', tipos, 'Todos los tipos');
+  llenar('fltMpTienda', tiendas, 'Todas las tiendas');
   llenar('fltMpSeguimiento', seguimientos, 'Todo seguimiento');
   llenar('fltMpAsignado', asignados, 'Todos los responsables');
   llenar('fltMpEtiqueta', etiquetas, 'Todas las etiquetas');
@@ -10908,7 +10913,7 @@ function mpValor(id) {
 
 function mpAplicarFiltros() {
   const anio = mpValor('fltMpAnio');
-  const tipo = mpValor('fltMpTipo');
+  const tienda = mpValor('fltMpTienda');
   const seg = mpValor('fltMpSeguimiento');
   const asig = mpValor('fltMpAsignado');
   const etiq = mpValor('fltMpEtiqueta');
@@ -10920,7 +10925,7 @@ function mpAplicarFiltros() {
 
   mpFiltrado = mpRows.filter(r => {
     if (anio && String(r.anio) !== anio) return false;
-    if (tipo && r.tipo !== tipo) return false;
+    if (tienda && r.tienda !== tienda) return false;
     if (seg && r.seguimiento !== seg) return false;
     if (asig && r.asignado !== asig) return false;
     if (etiq && r.etiqueta !== etiq) return false;
@@ -10934,7 +10939,7 @@ function mpAplicarFiltros() {
 
     if (busca) {
       const heno = (r.id + ' ' + r.nombre + ' ' + r.organismo + ' ' + r.etiqueta + ' ' +
-        r.asignado + ' ' + r.lineasTexto + ' ' + r.descripcion).toLowerCase();
+        r.asignado + ' ' + r.lineasTexto + ' ' + r.tienda + ' ' + r.descripcion).toLowerCase();
       if (heno.indexOf(busca) === -1) return false;
     }
     return true;
@@ -10945,7 +10950,7 @@ function mpAplicarFiltros() {
 }
 
 function limpiarMpFiltros() {
-  ['fltMpAnio', 'fltMpTipo', 'fltMpSeguimiento', 'fltMpAsignado', 'fltMpEtiqueta',
+  ['fltMpAnio', 'fltMpTienda', 'fltMpSeguimiento', 'fltMpAsignado', 'fltMpEtiqueta',
     'fltMpLinea', 'mpSearchBox', 'mpFoco'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
@@ -11596,8 +11601,9 @@ const MP_COLUMNAS_EXCEL = [
   { titulo: 'AÑO',                 ancho: 8,  tipo: 'numero' },
   { titulo: 'MONTO NETO',          ancho: 15, tipo: 'clp' },
   { titulo: 'MONTO OFERTADO NETO', ancho: 17, tipo: 'clp' },
+  { titulo: 'TIENDA',              ancho: 18, tipo: 'texto' },
   /* Las tres ultimas no estan en la hoja: son la lectura del modulo. Van al
-     final para que las 19 primeras queden en el mismo orden que el original y
+     final para que las 20 primeras queden en el mismo orden que el original y
      se puedan pegar de vuelta sin recolocar nada. */
   { titulo: 'RESULTADO',           ancho: 18, tipo: 'texto' },
   { titulo: '¿SE OFERTÓ?',         ancho: 11, tipo: 'texto' },
@@ -11624,7 +11630,7 @@ function mpFilaExcel(d, ahora) {
     d.cierre, d.estadoOportunidad, d.asignado, d.etiqueta, d.seguimiento,
     d.comentario, d.lineasTexto, d.cod,
     d.mes ? MP_MESES_NOMBRE[d.mes - 1] : '', d.anio || null,
-    d.neto || null, d.netoOfertado || null,
+    d.neto || null, d.netoOfertado || null, d.tienda,
     mpResultadoTexto(d), d.oferto ? 'Sí' : 'No', dias
   ];
 }
@@ -11693,7 +11699,7 @@ function setupMercadoPublicoListeners() {
     el.addEventListener(evento, fn);
   };
 
-  ['fltMpAnio', 'fltMpTipo', 'fltMpSeguimiento', 'fltMpAsignado', 'fltMpEtiqueta',
+  ['fltMpAnio', 'fltMpTienda', 'fltMpSeguimiento', 'fltMpAsignado', 'fltMpEtiqueta',
     'fltMpLinea', 'mpFoco'].forEach(id => enlazar(id, 'change', mpAplicarFiltros));
 
   /* La busqueda se retrasa: son 17.000 filas y filtrar en cada tecla deja el
