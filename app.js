@@ -9123,8 +9123,16 @@ function fetchGVizViaJSONP(spreadsheetId, gid, timeoutMs = 40000) {
       reject(new Error(`Timeout de conexión JSONP (${timeoutMs / 1000}s)`));
     }, timeoutMs);
 
+    /* El segundo argumento puede ser un GID o el nombre de la pestana. GViz
+       entiende los dos y un GID siempre es solo digitos, asi que se distinguen
+       sin ambiguedad. Poder pedirla por nombre ahorra un paso de configuracion
+       entero: no hay que ir a buscar el GID al registro de Apps Script ni
+       copiarlo a config.js para que una pestana se lea. */
+    const selector = /^\d+$/.test(String(gid))
+      ? 'gid=' + encodeURIComponent(gid)
+      : 'sheet=' + encodeURIComponent(gid);
     scriptEl = document.createElement('script');
-    scriptEl.src = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?tqx=out:json;responseHandler:${callbackName}&gid=${gid}&headers=1`;
+    scriptEl.src = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?tqx=out:json;responseHandler:${callbackName}&${selector}&headers=1`;
     scriptEl.onerror = function() {
       cleanup();
       reject(new Error('Error al cargar script JSONP de Google Sheets'));
@@ -9265,6 +9273,10 @@ let preciosAbiertos = new Set();
    pasar cualquier diferencia comercial concebible y solo atrapa los errores de
    formato, que se van a las decenas de miles por ciento. */
 const PRECIOS_DIF_ABSURDA = 500;
+
+/* Nombre de la pestana del mapa, para pedirla a GViz sin depender de un GID.
+   Tiene que coincidir con PRECIOS_HOJA_MAPA de Code.gs. */
+const PRECIOS_HOJA_MAPA = 'PreciosMapa';
 
 /* Nombres aceptados para la columna del precio propio en PreciosMapa. Tiene que
    coincidir con PRECIOS_COL_PROPIA de Code.gs. */
@@ -9418,19 +9430,21 @@ async function loadPrecios(forzar) {
     preciosRows = lecturas.filter(l => l.precio > 0);
     preciosFallidos = lecturas.filter(l => !(l.precio > 0));
 
-    /* PreciosMapa es opcional: si no esta configurada, o si falla la lectura,
-       el modulo sigue funcionando con el PREUNI de la ultima venta. No tiene
-       sentido dejar la vista en blanco por una columna de apoyo. */
-    const gidMapa = typeof SPREADSHEET_PRECIOSMAPA_GID !== 'undefined'
-      ? SPREADSHEET_PRECIOSMAPA_GID : '';
-    if (gidMapa) {
-      try {
-        preciosMisPrecios = preciosPropiosDesdeMapa(
-          await fetchGVizViaJSONP(spId, gidMapa, 20000) || []);
-      } catch (e) {
-        console.warn('[Precios] No se pudo leer PreciosMapa, se usa el PREUNI:', e);
-        preciosMisPrecios = new Map();
-      }
+    /* Se pide por nombre salvo que haya un GID puesto a mano. Sin esto habria
+       que copiar otro GID a config.js solo para leer una columna, y mientras no
+       se hiciera el dashboard mostraria el PREUNI en silencio: parece que
+       funciona, pero compara contra el precio equivocado.
+
+       Si la pestana no existe o falla la lectura, se sigue con el PREUNI. No
+       tiene sentido dejar la vista en blanco por una columna de apoyo. */
+    const gidMapa = (typeof SPREADSHEET_PRECIOSMAPA_GID !== 'undefined'
+      && SPREADSHEET_PRECIOSMAPA_GID) || PRECIOS_HOJA_MAPA;
+    try {
+      preciosMisPrecios = preciosPropiosDesdeMapa(
+        await fetchGVizViaJSONP(spId, gidMapa, 20000) || []);
+    } catch (e) {
+      console.warn('[Precios] No se pudo leer ' + gidMapa + ', se usa el PREUNI:', e);
+      preciosMisPrecios = new Map();
     }
 
     renderPreciosView();

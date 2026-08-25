@@ -11,9 +11,11 @@ const SPREADSHEET_COTIZACIONES_GID = "2001859242"; // Pestaña Cotizaciones
 // Script. Si se deja vacio, el modulo se muestra pero avisa que falta configurar.
 const SPREADSHEET_PRECIOS_GID = "1840508986";
 
-// Pestaña PreciosMapa. Solo hace falta si se usa la columna DrCare para fijar el
-// precio propio; sin ella el modulo funciona igual y toma el PREUNI de la ultima
-// venta de cada codigo. El GID tambien lo imprime verificarHojasPrecios().
+// Pestaña PreciosMapa, de donde sale la columna DrCare con tu precio.
+//
+// Normalmente se deja VACIO: la pestaña se pide por nombre, que GViz tambien
+// acepta, asi que no hay ningun GID que copiar. Solo hace falta rellenar esto
+// si le cambiaste el nombre a la pestaña y no quieres tocar el codigo.
 //
 // Se lee la pestaña en vivo en vez de copiar el precio al historial a proposito:
 // asi un cambio en DrCare se ve en el dashboard al recargar, y no recien cuando
