@@ -9264,6 +9264,12 @@ let preciosMisPrecios = new Map(); // codigo -> { DRCARE: n, MELI: n, ... }
 let preciosCanalPorUrl = new Map(); // url -> canal marcado a mano en PreciosMapa
 let preciosCanalSinReconocer = [];  // textos de la columna CANAL que no se entienden
 let preciosCanal = 'DRCARE';        // tienda elegida: filtra competidores y tu precio
+/* Lo que la tabla acaba de pintar, tal cual, para que el Excel salga de ahi y
+   no de un segundo calculo en paralelo: si exportar recalculara por su cuenta,
+   cualquier cambio futuro en el filtrado tendria que acordarse de los dos
+   sitios, y el dia que se olvide el archivo dira otra cosa que la pantalla. */
+let preciosVisibles = [];
+let preciosFallidosVisibles = [];
 let preciosTab = 'todos';
 let preciosCargando = false;
 /* Codigos desplegados. Vive fuera del render porque la tabla se vuelve a pintar
@@ -9694,18 +9700,25 @@ function preciosAgrupar(items) {
   return Array.from(grupos.values());
 }
 
+/** La situacion en texto plano. Separada porque el Excel la necesita sin
+    escapar: un estado como "BLOQUEADO (403)" pasado por escapeHtml llegaria a
+    la celda con las entidades a la vista. */
+function preciosSituacionTexto(i) {
+  if (i.dudoso) return 'Revisar lectura';
+  if (i.dif === null) return i.suPrecio > 0 ? 'Sin venta previa' : (i.estado || 'Sin dato');
+  if (i.dif > 0.5) return 'Más caro';
+  if (i.dif < -0.5) return 'Más barato';
+  return 'A la par';
+}
+
 /** Etiqueta y color de la situacion, igual para la fila resumen y el detalle. */
 function preciosSituacion(i) {
-  if (i.dudoso) return { texto: 'Revisar lectura', clase: 'is-nulo' };
-  if (i.dif === null) {
-    return {
-      texto: i.suPrecio > 0 ? 'Sin venta previa' : escapeHtml(i.estado || 'Sin dato'),
-      clase: 'is-nulo'
-    };
+  const texto = preciosSituacionTexto(i);
+  let clase = 'is-nulo';
+  if (!i.dudoso && i.dif !== null) {
+    clase = i.dif > 0.5 ? 'is-caro' : i.dif < -0.5 ? 'is-barato' : 'is-par';
   }
-  if (i.dif > 0.5) return { texto: 'Más caro', clase: 'is-caro' };
-  if (i.dif < -0.5) return { texto: 'Más barato', clase: 'is-barato' };
-  return { texto: 'A la par', clase: 'is-par' };
+  return { texto: escapeHtml(texto), clase: clase };
 }
 
 function preciosDifTexto(dif) {
@@ -9790,6 +9803,9 @@ function renderPreciosView() {
      resuelve mas abajo, dentro de la tabla, para no esconder los KPI ni el
      desplegable con el que se cambia de tienda. */
   if (!preciosRows.length && !preciosFallidos.length) {
+    preciosVisibles = [];
+    preciosFallidosVisibles = [];
+    preciosSincronizarExportar();
     preciosMostrarAviso(
       '<h3>Todavía no hay lecturas</h3>' +
       '<p>La pestaña existe pero está vacía. Llena <code>PreciosMapa</code> con al menos ' +
@@ -9899,6 +9915,10 @@ function renderPreciosView() {
   visibles.sort((a, b) =>
     (b.dif === null ? -Infinity : b.dif) - (a.dif === null ? -Infinity : a.dif));
 
+  preciosVisibles = visibles;
+  preciosFallidosVisibles = fallidosUsados;
+  preciosSincronizarExportar();
+
   if (!visibles.length) {
     /* Vacio por filtrar y vacio por no tener datos son cosas distintas, y la
        diferencia es lo unico que dice que hacer a continuacion. */
@@ -10007,6 +10027,13 @@ function setupPreciosListeners() {
     recargar.addEventListener('click', () => loadPrecios(true));
   }
 
+  const exportar = document.getElementById('preciosExportar');
+  if (exportar && !exportar._bound) {
+    exportar._bound = true;
+    exportar.addEventListener('click', exportarPreciosExcel);
+    preciosSincronizarExportar();
+  }
+
   /* Cambiar de tienda no vuelve a pedir la hoja: los precios de todos los
      canales ya estan en memoria y solo hay que repintar. */
   const canal = document.getElementById('preciosCanal');
@@ -10061,5 +10088,394 @@ function preciosAlternarGrupo(codigo, abierto, btn) {
     btn.setAttribute('aria-expanded', abierto ? 'true' : 'false');
     const fila = btn.closest('tr');
     if (fila) fila.classList.toggle('is-abierta', abierto);
+  }
+}
+
+/* ==========================================================================
+   EXPORTAR PRECIOS A EXCEL
+
+   Se escribe un .xlsx de verdad, a mano, sin libreria. Un .csv habria sido
+   cuatro lineas, pero abre con la coma y el punto peleados con la
+   configuracion regional -49.990 leido como 49,99- y en una planilla de
+   precios ese error no se ve hasta que ya decidiste algo con el.
+
+   El formato es un ZIP con unos XML dentro. Se guardan sin comprimir: son
+   pocos kilobytes y ahorra meter un deflate entero aqui.
+   ========================================================================== */
+
+let xlsxCrcTabla = null;
+
+function xlsxCrc32(bytes) {
+  if (!xlsxCrcTabla) {
+    xlsxCrcTabla = new Int32Array(256);
+    for (let n = 0; n < 256; n++) {
+      let c = n;
+      for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      xlsxCrcTabla[n] = c;
+    }
+  }
+  let crc = -1;
+  for (let i = 0; i < bytes.length; i++) {
+    crc = (crc >>> 8) ^ xlsxCrcTabla[(crc ^ bytes[i]) & 0xFF];
+  }
+  return (crc ^ -1) >>> 0;
+}
+
+/** Empaqueta [{nombre, contenido}] en un ZIP (metodo 0, sin comprimir). */
+function xlsxZip(archivos) {
+  const enc = new TextEncoder();
+  const partes = [];
+  const central = [];
+  let offset = 0;
+
+  /* La fecha del ZIP es la de ahora en formato MS-DOS. No la usa nadie, pero
+     sin ella algunos descompresores muestran 1980 y parece un archivo roto. */
+  const d = new Date();
+  const hora = ((d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1)) & 0xFFFF;
+  const dia = (((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate()) & 0xFFFF;
+
+  archivos.forEach(a => {
+    const nombre = enc.encode(a.nombre);
+    const datos = enc.encode(a.contenido);
+    const crc = xlsxCrc32(datos);
+
+    const local = new Uint8Array(30 + nombre.length);
+    const v = new DataView(local.buffer);
+    v.setUint32(0, 0x04034b50, true);
+    v.setUint16(4, 20, true);
+    v.setUint16(6, 0x0800, true);   // nombres en UTF-8
+    v.setUint16(8, 0, true);        // sin comprimir
+    v.setUint16(10, hora, true);
+    v.setUint16(12, dia, true);
+    v.setUint32(14, crc, true);
+    v.setUint32(18, datos.length, true);
+    v.setUint32(22, datos.length, true);
+    v.setUint16(26, nombre.length, true);
+    local.set(nombre, 30);
+    partes.push(local, datos);
+
+    const cen = new Uint8Array(46 + nombre.length);
+    const w = new DataView(cen.buffer);
+    w.setUint32(0, 0x02014b50, true);
+    w.setUint16(4, 20, true);
+    w.setUint16(6, 20, true);
+    w.setUint16(8, 0x0800, true);
+    w.setUint16(10, 0, true);
+    w.setUint16(12, hora, true);
+    w.setUint16(14, dia, true);
+    w.setUint32(16, crc, true);
+    w.setUint32(20, datos.length, true);
+    w.setUint32(24, datos.length, true);
+    w.setUint16(28, nombre.length, true);
+    w.setUint32(42, offset, true);
+    cen.set(nombre, 46);
+    central.push(cen);
+
+    offset += local.length + datos.length;
+  });
+
+  const cdInicio = offset;
+  let cdLargo = 0;
+  central.forEach(c => { partes.push(c); cdLargo += c.length; });
+
+  const fin = new Uint8Array(22);
+  const f = new DataView(fin.buffer);
+  f.setUint32(0, 0x06054b50, true);
+  f.setUint16(8, central.length, true);
+  f.setUint16(10, central.length, true);
+  f.setUint32(12, cdLargo, true);
+  f.setUint32(16, cdInicio, true);
+  partes.push(fin);
+
+  return new Blob(partes, {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  });
+}
+
+function xlsxTexto(v) {
+  /* Excel rechaza el archivo entero si una celda trae un caracter de control,
+     asi que se limpian antes de escribirlos y no despues de que falle. */
+  return String(v === null || v === undefined ? '' : v)
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .slice(0, 32767);
+}
+
+function xlsxColumna(n) {
+  let s = '';
+  let x = n + 1;
+  while (x > 0) {
+    const r = (x - 1) % 26;
+    s = String.fromCharCode(65 + r) + s;
+    x = Math.floor((x - 1) / 26);
+  }
+  return s;
+}
+
+/** Fecha -> numero de serie de Excel (dias desde el 30-12-1899). */
+function xlsxSerialFecha(fecha) {
+  const utc = Date.UTC(fecha.getFullYear(), fecha.getMonth(), fecha.getDate());
+  return Math.round((utc - Date.UTC(1899, 11, 30)) / 86400000);
+}
+
+/* Estilos: 0 normal, 1 encabezado, 2 pesos, 3 porcentaje, 4 fecha. */
+const XLSX_ESTILO = { texto: 0, clp: 2, pct: 3, fecha: 4 };
+
+function xlsxCelda(ref, valor, tipo) {
+  if (valor === null || valor === undefined || valor === '') return '';
+  const s = XLSX_ESTILO[tipo] || 0;
+  const attrS = s ? ' s="' + s + '"' : '';
+  if (tipo === 'clp' || tipo === 'pct') {
+    if (typeof valor !== 'number' || !isFinite(valor)) return '';
+    return '<c r="' + ref + '"' + attrS + '><v>' + valor + '</v></c>';
+  }
+  if (tipo === 'fecha') {
+    if (!(valor instanceof Date) || isNaN(valor)) return '';
+    return '<c r="' + ref + '"' + attrS + '><v>' + xlsxSerialFecha(valor) + '</v></c>';
+  }
+  return '<c r="' + ref + '"' + attrS + ' t="inlineStr"><is><t xml:space="preserve">' +
+    xlsxTexto(valor) + '</t></is></c>';
+}
+
+/** Una hoja: {nombre, columnas:[{titulo, ancho, tipo}], filas:[[...]]}. */
+function xlsxHoja(hoja) {
+  const cols = hoja.columnas;
+  const anchos = cols.map((c, i) =>
+    '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + (c.ancho || 14) +
+    '" customWidth="1"/>').join('');
+
+  const encabezado = '<row r="1" ht="20" customHeight="1">' +
+    cols.map((c, i) => '<c r="' + xlsxColumna(i) + '1" s="1" t="inlineStr">' +
+      '<is><t>' + xlsxTexto(c.titulo) + '</t></is></c>').join('') + '</row>';
+
+  const cuerpo = hoja.filas.map((fila, n) => {
+    const r = n + 2;
+    return '<row r="' + r + '">' +
+      fila.map((v, i) => xlsxCelda(xlsxColumna(i) + r, v, cols[i].tipo)).join('') +
+      '</row>';
+  }).join('');
+
+  const ultima = xlsxColumna(cols.length - 1);
+  const filas = hoja.filas.length + 1;
+
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+    '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+    '<dimension ref="A1:' + ultima + filas + '"/>' +
+    /* Se congela el encabezado: con treinta filas ya no sabes que columna
+       estas mirando cuando bajas. */
+    '<sheetViews><sheetView workbookViewId="0">' +
+    '<pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/>' +
+    '</sheetView></sheetViews>' +
+    '<sheetFormatPr defaultRowHeight="15"/>' +
+    '<cols>' + anchos + '</cols>' +
+    '<sheetData>' + encabezado + cuerpo + '</sheetData>' +
+    '<autoFilter ref="A1:' + ultima + filas + '"/>' +
+    '</worksheet>';
+}
+
+/** Nombre de hoja valido: Excel prohibe : \ / ? * [ ] y mas de 31 caracteres. */
+function xlsxNombreHoja(nombre) {
+  const limpio = String(nombre || 'Hoja').replace(/[:\\\/?*\[\]]/g, ' ').trim();
+  return (limpio || 'Hoja').slice(0, 31);
+}
+
+function xlsxCrearLibro(hojas) {
+  const ct = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+    '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+    '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+    '<Default Extension="xml" ContentType="application/xml"/>' +
+    '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' +
+    '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>' +
+    hojas.map((h, i) => '<Override PartName="/xl/worksheets/sheet' + (i + 1) +
+      '.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>').join('') +
+    '</Types>';
+
+  const rels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+    '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>' +
+    '</Relationships>';
+
+  const libro = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+    '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" ' +
+    'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>' +
+    hojas.map((h, i) => '<sheet name="' + xlsxTexto(xlsxNombreHoja(h.nombre)) +
+      '" sheetId="' + (i + 1) + '" r:id="rId' + (i + 1) + '"/>').join('') +
+    '</sheets></workbook>';
+
+  const libroRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+    hojas.map((h, i) => '<Relationship Id="rId' + (i + 1) +
+      '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" ' +
+      'Target="worksheets/sheet' + (i + 1) + '.xml"/>').join('') +
+    '<Relationship Id="rIdStyles" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>' +
+    '</Relationships>';
+
+  const estilos = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+    '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+    '<numFmts count="3">' +
+    '<numFmt numFmtId="164" formatCode="&quot;$&quot;#,##0"/>' +
+    /* Con el signo delante: en una planilla de brechas, +15,9% y 15,9% se
+       confunden de un vistazo y significan cosas opuestas. */
+    '<numFmt numFmtId="165" formatCode="+0.0%;-0.0%;0.0%"/>' +
+    '<numFmt numFmtId="166" formatCode="dd-mm-yyyy"/>' +
+    '</numFmts>' +
+    '<fonts count="2">' +
+    '<font><sz val="11"/><name val="Calibri"/></font>' +
+    '<font><b/><color rgb="FFFFFFFF"/><sz val="11"/><name val="Calibri"/></font>' +
+    '</fonts>' +
+    '<fills count="3">' +
+    '<fill><patternFill patternType="none"/></fill>' +
+    '<fill><patternFill patternType="gray125"/></fill>' +
+    '<fill><patternFill patternType="solid"><fgColor rgb="FF1F3A5F"/><bgColor indexed="64"/></patternFill></fill>' +
+    '</fills>' +
+    '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>' +
+    '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>' +
+    '<cellXfs count="5">' +
+    '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>' +
+    '<xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment vertical="center"/></xf>' +
+    '<xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>' +
+    '<xf numFmtId="165" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>' +
+    '<xf numFmtId="166" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>' +
+    '</cellXfs>' +
+    '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>' +
+    '</styleSheet>';
+
+  const archivos = [
+    { nombre: '[Content_Types].xml', contenido: ct },
+    { nombre: '_rels/.rels', contenido: rels },
+    { nombre: 'xl/workbook.xml', contenido: libro },
+    { nombre: 'xl/_rels/workbook.xml.rels', contenido: libroRels },
+    { nombre: 'xl/styles.xml', contenido: estilos }
+  ];
+  hojas.forEach((h, i) => archivos.push({
+    nombre: 'xl/worksheets/sheet' + (i + 1) + '.xml', contenido: xlsxHoja(h)
+  }));
+
+  return xlsxZip(archivos);
+}
+
+function xlsxDescargar(blob, nombre) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = nombre;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  /* Se libera con retraso: revocar en el mismo tick cancela la descarga que se
+     acaba de disparar. */
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+
+/* --------------------------------------------------------------------------
+   El armado de las filas de precios
+   -------------------------------------------------------------------------- */
+
+const PRECIOS_COLUMNAS_EXCEL = [
+  { titulo: 'CÓDIGO',        ancho: 14, tipo: 'texto' },
+  { titulo: 'DESCRIPCIÓN',   ancho: 42, tipo: 'texto' },
+  { titulo: 'COMPETIDOR',    ancho: 22, tipo: 'texto' },
+  { titulo: 'TIENDA',        ancho: 13, tipo: 'texto' },
+  { titulo: 'MI PRECIO',     ancho: 13, tipo: 'clp' },
+  { titulo: 'SU PRECIO',     ancho: 13, tipo: 'clp' },
+  { titulo: 'DIFERENCIA',    ancho: 12, tipo: 'pct' },
+  { titulo: 'SITUACIÓN',     ancho: 18, tipo: 'texto' },
+  { titulo: 'COMPETIDORES',  ancho: 13, tipo: 'texto' },
+  { titulo: 'MÁS BARATO',    ancho: 12, tipo: 'texto' },
+  { titulo: 'FECHA',         ancho: 12, tipo: 'fecha' },
+  { titulo: 'URL',           ancho: 52, tipo: 'texto' }
+];
+
+function preciosFilaExcel(g, l, total, esMejor) {
+  return [
+    g.codigo,
+    g.descripcion || '',
+    l.competidor || '',
+    preciosEtiquetaDeCanal(l.canal) || 'Web propia',
+    l.miPrecio > 0 ? l.miPrecio : null,
+    l.suPrecio > 0 ? l.suPrecio : null,
+    /* Se guarda como fraccion y no como el texto "15,9%": asi Excel la trata de
+       numero y puedes ordenar, promediar o pintar la columna sin tocar nada. */
+    l.dif === null || l.dif === undefined ? null : l.dif / 100,
+    preciosSituacionTexto(l),
+    total > 1 ? String(total) : '',
+    total > 1 ? (esMejor ? 'Sí' : '') : '',
+    l.fecha instanceof Date ? l.fecha : null,
+    l.url || ''
+  ];
+}
+
+/**
+ * Aplana lo que hay en pantalla: un producto con tres competidores sale como
+ * tres filas y no como la fila resumen sola. En la tabla el detalle esta
+ * plegado porque estorba; en una planilla es justo lo que se va a filtrar y
+ * ordenar, y esconderlo obligaria a abrir grupo por grupo para copiar a mano.
+ */
+function preciosFilasExcel(visibles) {
+  const filas = [];
+  (visibles || []).forEach(g => {
+    const lecturas = (g.lecturas && g.lecturas.length) ? g.lecturas : [g];
+    lecturas.forEach(l => {
+      filas.push(preciosFilaExcel(g, l, lecturas.length, !!(g.mejor && l === g.mejor)));
+    });
+  });
+  return filas;
+}
+
+/** Habilita o apaga el boton segun haya algo que exportar. */
+function preciosSincronizarExportar() {
+  const btn = document.getElementById('preciosExportar');
+  if (!btn) return;
+  const n = preciosFilasExcel(preciosVisibles).length;
+  btn.disabled = !n;
+  btn.title = n
+    ? 'Exportar a Excel ' + n + (n === 1 ? ' lectura' : ' lecturas') +
+      ' de esta vista, una fila por competidor'
+    : 'No hay nada que exportar en esta vista';
+}
+
+function exportarPreciosExcel() {
+  const filas = preciosFilasExcel(preciosVisibles);
+  if (!filas.length) {
+    if (typeof showToast === 'function') showToast('⚠️ No hay nada que exportar en esta vista');
+    return;
+  }
+
+  const etiqueta = preciosCanalActual().etiqueta;
+  const hojas = [{
+    nombre: 'Precios ' + etiqueta,
+    columnas: PRECIOS_COLUMNAS_EXCEL,
+    filas: filas
+  }];
+
+  /* Las lecturas fallidas van en su propia hoja y no mezcladas con las buenas:
+     en la misma tabla, una fila sin precio se confunde con un competidor que
+     resulto barato. Si ya estas mirando esa pestana, no se duplican. */
+  if (preciosTab !== 'fallo' && preciosFallidosVisibles.length) {
+    hojas.push({
+      nombre: 'Sin dato',
+      columnas: PRECIOS_COLUMNAS_EXCEL,
+      filas: preciosFallidosVisibles.map(f => preciosFilaExcel(
+        { codigo: f.codigo, descripcion: '' },
+        {
+          competidor: f.competidor, canal: preciosCanalDeLectura(f),
+          miPrecio: 0, suPrecio: 0, dif: null, dudoso: false,
+          estado: f.estado, fecha: f.fecha, url: f.url
+        }, 1, false))
+    });
+  }
+
+  try {
+    const blob = xlsxCrearLibro(hojas);
+    const fecha = typeof todayInputValue === 'function'
+      ? todayInputValue() : new Date().toISOString().slice(0, 10);
+    xlsxDescargar(blob, 'Glomax_Precios_' + etiqueta.replace(/\s+/g, '_') + '_' + fecha + '.xlsx');
+    if (typeof showToast === 'function') {
+      showToast('📊 Excel exportado: ' + filas.length +
+        (filas.length === 1 ? ' lectura' : ' lecturas') + ' de ' + etiqueta);
+    }
+  } catch (e) {
+    console.error('[precios] no se pudo armar el Excel', e);
+    if (typeof showToast === 'function') showToast('⚠️ No se pudo generar el Excel');
   }
 }

@@ -10163,3 +10163,24 @@ button, input, select, textarea, optgroup {
   font-family: "JetBrains Mono", monospace;
   font-size: 0.85em;
 }
+
+/* Boton deshabilitado. Sin esto se ve exactamente igual que uno activo: el
+   usuario hace clic, no pasa nada, y la culpa parece del sistema.
+
+   Va con !important porque el bloque .btn-secondary de mas arriba marca asi
+   cursor, fondo y transform; sin esto el boton apagado seguiria levantandose
+   al pasar el raton, que es justo la senal de "se puede pulsar". */
+.btn-secondary:disabled,
+.btn-secondary[disabled] {
+  opacity: 0.45 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+.btn-secondary:disabled:hover,
+.btn-secondary[disabled]:hover {
+  background: var(--surf-2) !important;
+  border-color: var(--ax-border) !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
