@@ -9252,8 +9252,80 @@ if (document.readyState === 'loading') {
 
 let preciosRows = [];          // ultima lectura por producto y competidor
 let preciosFallidos = [];      // filas que el scraper no pudo leer
+let preciosMisPrecios = new Map(); // precio propio fijado a mano en PreciosMapa
 let preciosTab = 'todos';
 let preciosCargando = false;
+
+/* A partir de esta brecha, en porcentaje, la lectura se trata como sospechosa y
+   no como una diferencia de precio real. 500% es holgado a proposito: deja
+   pasar cualquier diferencia comercial concebible y solo atrapa los errores de
+   formato, que se van a las decenas de miles por ciento. */
+const PRECIOS_DIF_ABSURDA = 500;
+
+/* Nombres aceptados para la columna del precio propio en PreciosMapa. Tiene que
+   coincidir con PRECIOS_COL_PROPIA de Code.gs. */
+const PRECIOS_COL_PROPIA = ['DRCARE', 'DR CARE', 'MIPRECIO', 'MI PRECIO', 'PRECIO PROPIO'];
+
+/**
+ * Lee el precio propio por codigo desde PreciosMapa.
+ *
+ * Es mejor referencia que el PREUNI de la ultima venta: existe aunque el
+ * producto no se haya vendido nunca, y no se mueve porque a un cliente puntual
+ * se le haya hecho un descuento. Cuando la celda esta vacia se cae al PREUNI,
+ * asi que llenarla es opcional y se puede ir haciendo de a poco.
+ */
+function preciosPropiosDesdeMapa(filas) {
+  const mapa = new Map();
+  if (!Array.isArray(filas) || !filas.length) return mapa;
+
+  const columna = PRECIOS_COL_PROPIA.find(c =>
+    Object.prototype.hasOwnProperty.call(filas[0], c));
+  if (!columna) return mapa;
+
+  filas.forEach(f => {
+    const codigo = String(f['CODIGO'] || '').trim();
+    if (!codigo) return;
+    const precio = parseMoneyCL(f[columna]);
+    if (precio > 0) mapa.set(codigo, precio);
+  });
+  return mapa;
+}
+
+/* En la hoja el precio puede venir como numero o escrito a mano ("$129.990").
+   Number() leeria eso como 129,99 y la comparacion quedaria mil veces mal.
+
+   La regla de separadores es la misma que usa preciosParsearNumero_ en Code.gs
+   y conviene que sigan iguales: tres digitos detras del separador son un grupo
+   de miles, uno o dos son decimales, un separador repetido solo agrupa, y si
+   estan los dos el ultimo es el decimal. */
+function parseMoneyCL(v) {
+  if (typeof v === 'number') return isFinite(v) && v > 0 ? v : 0;
+  let s = String(v === undefined || v === null ? '' : v).trim();
+  if (!s) return 0;
+  s = s.replace(/[^\d.,-]/g, '');
+  s = s.replace(/^[.,]+/, '').replace(/[.,]+$/, '');
+  if (!s) return 0;
+
+  const ultimaComa = s.lastIndexOf(',');
+  const ultimoPunto = s.lastIndexOf('.');
+  if (ultimaComa !== -1 || ultimoPunto !== -1) {
+    let decimal;
+    if (ultimaComa !== -1 && ultimoPunto !== -1) {
+      decimal = ultimaComa > ultimoPunto ? ',' : '.';
+    } else {
+      const sep = ultimaComa !== -1 ? ',' : '.';
+      const pos = ultimaComa !== -1 ? ultimaComa : ultimoPunto;
+      const veces = (s.match(sep === ',' ? /,/g : /\./g) || []).length;
+      decimal = (veces > 1 || (s.length - pos - 1) === 3) ? null : sep;
+    }
+    if (decimal === null) s = s.replace(/[.,]/g, '');
+    else if (decimal === ',') s = s.replace(/\./g, '').replace(',', '.');
+    else s = s.replace(/,/g, '');
+  }
+
+  const n = parseFloat(s);
+  return isFinite(n) && n > 0 ? n : 0;
+}
 
 /**
  * Mi precio de venta por codigo: el PREUNI de la venta mas reciente.
@@ -9341,6 +9413,22 @@ async function loadPrecios(forzar) {
     const lecturas = preciosUltimaLectura(filas || []);
     preciosRows = lecturas.filter(l => l.precio > 0);
     preciosFallidos = lecturas.filter(l => !(l.precio > 0));
+
+    /* PreciosMapa es opcional: si no esta configurada, o si falla la lectura,
+       el modulo sigue funcionando con el PREUNI de la ultima venta. No tiene
+       sentido dejar la vista en blanco por una columna de apoyo. */
+    const gidMapa = typeof SPREADSHEET_PRECIOSMAPA_GID !== 'undefined'
+      ? SPREADSHEET_PRECIOSMAPA_GID : '';
+    if (gidMapa) {
+      try {
+        preciosMisPrecios = preciosPropiosDesdeMapa(
+          await fetchGVizViaJSONP(spId, gidMapa, 20000) || []);
+      } catch (e) {
+        console.warn('[Precios] No se pudo leer PreciosMapa, se usa el PREUNI:', e);
+        preciosMisPrecios = new Map();
+      }
+    }
+
     renderPreciosView();
   } catch (e) {
     console.error('[Precios] No se pudo leer la pestana:', e);
@@ -9364,13 +9452,18 @@ function renderPreciosView() {
 
   const items = preciosRows.map(l => {
     const mio = mios.get(l.codigo);
-    const miPrecio = mio ? mio.preuni : 0;
+    /* El precio fijado a mano manda sobre el de la ultima venta: es una
+       decision explicita, mientras que el PREUNI es el resultado de una
+       negociacion puntual que pudo llevar descuento. */
+    const propio = preciosMisPrecios.get(l.codigo) || 0;
+    const miPrecio = propio > 0 ? propio : (mio ? mio.preuni : 0);
     const dif = miPrecio > 0 && l.precio > 0 ? ((miPrecio - l.precio) / l.precio) * 100 : null;
     return {
       codigo: l.codigo,
       descripcion: mio ? mio.descripcion : '',
       competidor: l.competidor,
       miPrecio: miPrecio,
+      miPrecioFijado: propio > 0,
       suPrecio: l.precio,
       dif: dif,
       disponible: l.disponible,
@@ -9380,7 +9473,15 @@ function renderPreciosView() {
     };
   });
 
-  const comparables = items.filter(i => i.dif !== null);
+  /* Una brecha de miles por ciento no es una situacion comercial, es una
+     lectura mala: el sitio publico el precio en otro formato, o lo que se leyo
+     era el despacho. Si entra al promedio, una sola fila lo arrastra y la
+     "Brecha promedio" deja de servir para decidir nada. Se aparta y se marca,
+     que es distinto de esconderla. */
+  const dudosos = items.filter(i => i.dif !== null && Math.abs(i.dif) > PRECIOS_DIF_ABSURDA);
+  items.forEach(i => { i.dudoso = i.dif !== null && Math.abs(i.dif) > PRECIOS_DIF_ABSURDA; });
+
+  const comparables = items.filter(i => i.dif !== null && !i.dudoso);
   const caros = comparables.filter(i => i.dif > 0.5);
   const baratos = comparables.filter(i => i.dif < -0.5);
 
@@ -9396,10 +9497,15 @@ function renderPreciosView() {
   if (setup) setup.style.display = 'none';
   if (body) body.style.display = '';
 
+  /* Un mismo codigo puede estar cargado en varios competidores y cada par
+     genera su propia fila. Contar filas y llamarlas "productos" inflaba el
+     numero: con un SKU en tres sitios decia tres productos monitoreados. */
   const fuentes = new Set(items.map(i => i.competidor));
-  document.getElementById('preciosKpiTotal').textContent = formatNum(items.length);
+  const productos = new Set(items.map(i => i.codigo));
+  document.getElementById('preciosKpiTotal').textContent = formatNum(productos.size);
   document.getElementById('preciosKpiFuentes').textContent =
-    fuentes.size + (fuentes.size === 1 ? ' competidor' : ' competidores');
+    formatNum(items.length) + (items.length === 1 ? ' comparación' : ' comparaciones') +
+    ' · ' + fuentes.size + (fuentes.size === 1 ? ' competidor' : ' competidores');
   document.getElementById('preciosKpiCaro').textContent = formatNum(caros.length);
   document.getElementById('preciosKpiBarato').textContent = formatNum(baratos.length);
 
@@ -9470,6 +9576,8 @@ function renderPreciosView() {
          comercial, que no significa nada para quien mira la tabla. */
       situacion = i.suPrecio > 0 ? 'Sin venta previa' : escapeHtml(i.estado || 'Sin dato');
       clase = 'is-nulo';
+    } else if (i.dudoso) {
+      situacion = 'Revisar lectura'; clase = 'is-nulo';
     } else if (i.dif > 0.5) {
       situacion = 'Más caro'; clase = 'is-caro';
     } else if (i.dif < -0.5) {
@@ -9487,7 +9595,12 @@ function renderPreciosView() {
       '<td class="mono">' + escapeHtml(i.codigo) + '</td>' +
       '<td>' + escapeHtml(i.descripcion || '—') + '</td>' +
       '<td>' + enlace + '</td>' +
-      '<td class="num">' + (i.miPrecio > 0 ? formatCLP(i.miPrecio) : '—') + '</td>' +
+      '<td class="num" title="' + (i.miPrecio <= 0 ? 'Sin precio propio'
+        : i.miPrecioFijado ? 'Precio fijado en PreciosMapa'
+        : 'PREUNI de la última venta de este código') + '">' +
+        (i.miPrecio > 0 ? formatCLP(i.miPrecio) : '—') +
+        (i.miPrecioFijado ? '<span class="precios-fijado" aria-hidden="true">·</span>' : '') +
+      '</td>' +
       '<td class="num">' + (i.suPrecio > 0 ? formatCLP(i.suPrecio) : '—') + '</td>' +
       '<td class="num ' + clase + '">' + difTxt + '</td>' +
       '<td><span class="precios-pill ' + clase + '">' + situacion + '</span></td>' +

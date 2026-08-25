@@ -9941,3 +9941,12 @@ button, input, select, textarea, optgroup {
 @media (max-width: 720px) {
   .precios-toolbar { flex-direction: column !important; align-items: stretch !important; }
 }
+
+/* Marca discreta en "Mi precio" cuando el valor viene de PreciosMapa y no de la
+   ultima venta. Es un punto, no una palabra: la distincion importa al auditar
+   una cifra rara, no cada vez que se recorre la tabla. */
+.precios-fijado {
+  color: var(--ax-accent-sky);
+  margin-left: 0.3em;
+  font-weight: 700;
+}

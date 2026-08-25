@@ -7,9 +7,18 @@ const SPREADSHEET_GID = "999482111"; // Pestaña Ventas
 const SPREADSHEET_COTIZACIONES_GID = "2001859242"; // Pestaña Cotizaciones
 
 // Pestaña PreciosHist, que llena el modulo de precios de competencia
-// (parte 2 de Code.gs). El GID lo imprime crearHojasPrecios() en el registro de Apps
+// (parte 2 de Code.gs). El GID lo imprime verificarHojasPrecios() en el registro de Apps
 // Script. Si se deja vacio, el modulo se muestra pero avisa que falta configurar.
 const SPREADSHEET_PRECIOS_GID = "1840508986";
+
+// Pestaña PreciosMapa. Solo hace falta si se usa la columna DrCare para fijar el
+// precio propio; sin ella el modulo funciona igual y toma el PREUNI de la ultima
+// venta de cada codigo. El GID tambien lo imprime verificarHojasPrecios().
+//
+// Se lee la pestaña en vivo en vez de copiar el precio al historial a proposito:
+// asi un cambio en DrCare se ve en el dashboard al recargar, y no recien cuando
+// vuelva a correr el scraper seis horas despues.
+const SPREADSHEET_PRECIOSMAPA_GID = "";
 
 // Configuración de Auto-Actualización y Sincronización Automática en Segundo Plano
 const ENABLE_AUTO_REFRESH = true;        // Habilita auto-refresco automático
