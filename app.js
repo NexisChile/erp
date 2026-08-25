@@ -1237,7 +1237,7 @@ function themeChartColors() {
   const claro = getTheme() === 'light';
   const lee = (v, alt) => (cs.getPropertyValue(v) || '').trim() || alt;
   return {
-    tick:    lee('--ax-text-tertiary', claro ? '#64748B' : '#94a3b8'),
+    tick:    lee('--ax-text-tertiary', claro ? '#8B95B9' : '#94a3b8'),
     leyenda: lee('--ax-text-secondary', claro ? '#475569' : '#cbd5e1'),
     rejilla: claro ? 'rgba(15, 23, 42, 0.10)' : 'rgba(255, 255, 255, 0.06)'
   };
@@ -1755,8 +1755,8 @@ function renderProdProjectionCurveChart(initialQty, monthlySpeed, totalMonths) {
       datasets: [{
         label: 'Stock Proyectado (Unidades)',
         data: dataPoints,
-        borderColor: '#9B93C4',
-        backgroundColor: 'rgba(155, 147, 196, 0.15)',
+        borderColor: '#A78BFA',
+        backgroundColor: 'rgba(167, 139, 250, 0.15)',
         fill: true,
         tension: 0.35,
         pointBackgroundColor: '#c084fc',
@@ -1809,7 +1809,7 @@ function renderProdYearlyAnalytics(byYearMap, totalNetoGlobal) {
       prodYearlyChartInstance = null;
     }
 
-    const palette = ['#74A6B8', '#5FA98D', '#C2A06B', '#9B93C4', '#C57C89'];
+    const palette = ['#2DD4CE', '#3DDC97', '#FFC46B', '#A78BFA', '#FF6B8A'];
     const datasets = years.map((y, idx) => {
       const color = palette[idx % palette.length];
       const isQty = currentProdChartMetric === 'qty';
@@ -1895,7 +1895,7 @@ function renderProdYearlyAnalytics(byYearMap, totalNetoGlobal) {
           <td style="text-align: right; color: var(--ax-accent-rose);">${typeof formatCLP === 'function' ? formatCLP(y.costo) : '$'+Math.round(y.costo).toLocaleString('es-CL')}</td>
           <td style="text-align: right; font-weight: 700; color: var(--ax-accent-emerald);">${typeof formatCLP === 'function' ? formatCLP(y.util) : '$'+Math.round(y.util).toLocaleString('es-CL')}</td>
           <td style="text-align: right; font-weight: 800; color: ${Number(marg) >= 30 ? 'var(--ax-accent-emerald)' : 'var(--ax-accent-gold)'};">${marg}%</td>
-          <td style="text-align: right; font-weight: 700; color: #a855f7;">${part}%</td>
+          <td style="text-align: right; font-weight: 700; color: #A78BFA;">${part}%</td>
           <td style="text-align: center; color: var(--ax-text-secondary);">${monthFull[maxMonthIdx]}</td>
         </tr>
       `;
@@ -1965,7 +1965,7 @@ function renderProdCustomerBreakdown(skuRows, totalSkuQty) {
         <td style="text-align: right; font-weight: 800; color: var(--ax-accent-sky);">${typeof formatCLP === 'function' ? formatCLP(c.netoTotal) : '$'+Math.round(c.netoTotal).toLocaleString('es-CL')}</td>
         <td style="text-align: right; font-weight: 700; color: var(--ax-accent-emerald);">${typeof formatCLP === 'function' ? formatCLP(c.utilidadTotal) : '$'+Math.round(c.utilidadTotal).toLocaleString('es-CL')}</td>
         <td style="text-align: right; font-weight: 700; color: ${Number(marg) >= 30 ? 'var(--ax-accent-emerald)' : 'var(--ax-accent-gold)'};">${marg}%</td>
-        <td style="text-align: right; font-weight: 700; color: #a855f7;">${part}%</td>
+        <td style="text-align: right; font-weight: 700; color: #A78BFA;">${part}%</td>
       </tr>
     `;
   }).join('');
@@ -2163,9 +2163,9 @@ function updateMixSugeridoView() {
 
     const displayList = skuList.slice(0, 100);
     tbody.innerHTML = displayList.map((p, idx) => {
-      let badgeStyle = 'background: rgba(95, 169, 141, 0.15); color: var(--ax-accent-emerald); border: 1px solid rgba(95, 169, 141, 0.3);';
-      if (p.clasificacion.includes('Rentable')) badgeStyle = 'background: rgba(114, 147, 192, 0.15); color: var(--ax-accent); border: 1px solid rgba(114, 147, 192, 0.3);';
-      else if (p.clasificacion.includes('Volumen')) badgeStyle = 'background: rgba(194, 160, 107, 0.15); color: var(--ax-accent-gold); border: 1px solid rgba(194, 160, 107, 0.3);';
+      let badgeStyle = 'background: rgba(61, 220, 151, 0.15); color: var(--ax-accent-emerald); border: 1px solid rgba(61, 220, 151, 0.3);';
+      if (p.clasificacion.includes('Rentable')) badgeStyle = 'background: rgba(77, 159, 236, 0.15); color: var(--ax-accent); border: 1px solid rgba(77, 159, 236, 0.3);';
+      else if (p.clasificacion.includes('Volumen')) badgeStyle = 'background: rgba(255, 196, 107, 0.15); color: var(--ax-accent-gold); border: 1px solid rgba(255, 196, 107, 0.3);';
       else if (p.clasificacion.includes('Rotación')) badgeStyle = 'background: rgba(148, 163, 184, 0.15); color: var(--ax-text-secondary); border: 1px solid rgba(148, 163, 184, 0.3);';
 
       return `
@@ -2179,7 +2179,7 @@ function updateMixSugeridoView() {
           <td style="text-align: right; font-weight: 800; color: var(--ax-accent-sky);">${typeof formatCLP === 'function' ? formatCLP(p.neto) : '$'+Math.round(p.neto).toLocaleString('es-CL')}</td>
           <td style="text-align: right; font-weight: 700; color: var(--ax-accent-emerald);">${typeof formatCLP === 'function' ? formatCLP(p.utilidad) : '$'+Math.round(p.utilidad).toLocaleString('es-CL')}</td>
           <td style="text-align: right; font-weight: 800; color: ${p.marg >= 30 ? 'var(--ax-accent-emerald)' : 'var(--ax-accent-gold)'};">${p.marg.toFixed(1)}%</td>
-          <td style="text-align: right; font-weight: 800; color: #a855f7;">${p.part.toFixed(1)}%</td>
+          <td style="text-align: right; font-weight: 800; color: #A78BFA;">${p.part.toFixed(1)}%</td>
         </tr>
       `;
     }).join('');
@@ -3475,15 +3475,17 @@ let chartVendedorInst = null;
 /* Paleta categorica mate. Los ocho tonos se separan por matiz, no por
    intensidad: a saturacion pareja (~35%) ninguna serie pesa mas que otra,
    que era lo que pasaba cuando el ambar y el rosa iban al 90%. */
+/* Orden tomado del referente: el turquesa lleva la voz cantante y el coral
+   entra como contrapunto calido. Los ocho superan 4.5:1 sobre la tarjeta. */
 const luxuryPalette = [
-  '#7293C0', // Azul
-  '#5FA98D', // Verde
-  '#C2A06B', // Ambar
-  '#9B93C4', // Violeta
-  '#74A6B8', // Turquesa
-  '#C57C89', // Rosa
-  '#B08AA8', // Malva
-  '#8792A1'  // Pizarra
+  '#2DD4CE', // Turquesa
+  '#FF7F63', // Coral
+  '#A78BFA', // Violeta
+  '#4D9FEC', // Azul
+  '#3DDC97', // Verde
+  '#FFC46B', // Ambar
+  '#FF6B8A', // Rosa
+  '#8B95B9'  // Pizarra
 ];
 
 function setupChartPeriodListeners() {
@@ -3714,14 +3716,14 @@ function renderCharts() {
 
     const ctx = mesCanvas.getContext('2d');
     const gradBlue = ctx.createLinearGradient(0, 0, 0, 320);
-    gradBlue.addColorStop(0, 'rgba(114, 147, 192, 0.45)');
-    gradBlue.addColorStop(0.65, 'rgba(114, 147, 192, 0.12)');
-    gradBlue.addColorStop(1, 'rgba(114, 147, 192, 0.0)');
+    gradBlue.addColorStop(0, 'rgba(77, 159, 236, 0.45)');
+    gradBlue.addColorStop(0.65, 'rgba(77, 159, 236, 0.12)');
+    gradBlue.addColorStop(1, 'rgba(77, 159, 236, 0.0)');
 
     const gradRed = ctx.createLinearGradient(0, 0, 0, 320);
-    gradRed.addColorStop(0, 'rgba(197, 124, 137, 0.40)'); // Tonalidad roja elegante (Rose/Crimson)
-    gradRed.addColorStop(0.65, 'rgba(197, 124, 137, 0.10)');
-    gradRed.addColorStop(1, 'rgba(197, 124, 137, 0.0)');
+    gradRed.addColorStop(0, 'rgba(255, 107, 138, 0.40)'); // Tonalidad roja elegante (Rose/Crimson)
+    gradRed.addColorStop(0.65, 'rgba(255, 107, 138, 0.10)');
+    gradRed.addColorStop(1, 'rgba(255, 107, 138, 0.0)');
 
     const pointRadius = timeSorted.length > 25 ? 2.5 : 4.5;
 
@@ -3734,7 +3736,7 @@ function renderCharts() {
           {
             label: `Ventas ${activeY} ($)`,
             data: timeSorted.map(m => m.totalNeto),
-            borderColor: '#7293C0',
+            borderColor: '#4D9FEC',
             backgroundColor: gradBlue,
             fill: true,
             tension: 0.42,
@@ -3742,14 +3744,14 @@ function renderCharts() {
             borderWidth: 3.2,
             pointRadius: pointRadius,
             pointHoverRadius: 7,
-            pointBackgroundColor: '#8AA6CB',
-            pointBorderColor: '#0f172a',
+            pointBackgroundColor: '#6FB4F0',
+            pointBorderColor: '#1B2342',
             pointBorderWidth: 2
           },
           {
             label: `Ventas ${prevY} ($)`,
             data: timeSorted.map(m => m.totalPrev),
-            borderColor: '#C57C89',
+            borderColor: '#FF6B8A',
             backgroundColor: gradRed,
             fill: true,
             tension: 0.42,
@@ -3757,8 +3759,8 @@ function renderCharts() {
             borderWidth: 2.8,
             pointRadius: pointRadius,
             pointHoverRadius: 7,
-            pointBackgroundColor: '#fb7185',
-            pointBorderColor: '#0f172a',
+            pointBackgroundColor: '#FF6B8A',
+            pointBorderColor: '#1B2342',
             pointBorderWidth: 2
           }
         ]
@@ -3916,12 +3918,12 @@ function renderCharts() {
           label: 'Facturación ($)',
           data: sortedFam.map(f => f[1]),
           backgroundColor: [
-            '#9B93C4',
-            '#8A88BE',
-            '#7293C0',
-            '#74A6B8',
-            '#5FA98D',
-            '#C2A06B'
+            '#A78BFA',
+            '#8B7FE8',
+            '#4D9FEC',
+            '#2DD4CE',
+            '#3DDC97',
+            '#FFC46B'
           ].slice(0, sortedFam.length),
           borderRadius: 8,
           borderSkipped: false,
@@ -3976,7 +3978,7 @@ function renderCharts() {
         datasets: [{
           label: 'Ventas por Sucursal ($)',
           data: sortedTienda.map(t => t[1]),
-          backgroundColor: '#5FA98D',
+          backgroundColor: '#3DDC97',
           borderRadius: 8,
           borderSkipped: false,
           barThickness: 16
@@ -4030,7 +4032,7 @@ function renderCharts() {
         datasets: [{
           label: 'Facturación ($)',
           data: sortedVend.map(v => v[1]),
-          backgroundColor: '#C2A06B',
+          backgroundColor: '#FFC46B',
           borderRadius: 8,
           borderSkipped: false,
           barThickness: 16
@@ -4472,12 +4474,12 @@ function renderRFMGrid() {
       <span class="rfm-card-count" style="color:var(--ax-accent);">${loyalCount}</span>
       <span class="rfm-card-sub">Compras recurrentes</span>
     </div>
-    <div class="rfm-card" style="border-color:rgba(197, 124, 137, 0.4);">
+    <div class="rfm-card" style="border-color:rgba(255, 107, 138, 0.4);">
       <span class="rfm-card-title">⚠️ En Riesgo</span>
       <span class="rfm-card-count" style="color:var(--ax-accent-rose);">${atRiskCount}</span>
       <span class="rfm-card-sub">Inactivos > 60 días</span>
     </div>
-    <div class="rfm-card" style="border-color:rgba(194, 160, 107, 0.4);">
+    <div class="rfm-card" style="border-color:rgba(255, 196, 107, 0.4);">
       <span class="rfm-card-title">🌱 Oportunidad / Nuevos</span>
       <span class="rfm-card-count" style="color:var(--ax-accent-gold);">${newCount}</span>
       <span class="rfm-card-sub">Primeras ventas</span>
@@ -5214,7 +5216,7 @@ async function refreshCotizacionesLive(silent = false) {
 
   const syncPill = document.getElementById('syncStatus');
   if (syncPill && !silent) {
-    syncPill.innerHTML = `<span class="dot" style="background:#fbbf24;"></span> <span>Sincronizando Google Sheets...</span>`;
+    syncPill.innerHTML = `<span class="dot" style="background:#FFC46B;"></span> <span>Sincronizando Google Sheets...</span>`;
   }
 
   try {
@@ -5240,7 +5242,7 @@ async function refreshCotizacionesLive(silent = false) {
     isCotizSyncing = false;
     if (syncPill) {
       const nowStr = new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      syncPill.innerHTML = `<span class="dot" style="background:#10b981;"></span> <span>En vivo (${nowStr})</span>`;
+      syncPill.innerHTML = `<span class="dot" style="background:#3DDC97;"></span> <span>En vivo (${nowStr})</span>`;
     }
   }
 }
@@ -5440,7 +5442,7 @@ function renderCotizacionesHeroCards(data) {
     if (summaryStrip) {
       summaryStrip.innerHTML = `
         <div class="cotiz-summary-card">
-          <div class="cotiz-summary-icon" style="background: rgba(114, 147, 192, 0.15); color: var(--ax-accent);">💰</div>
+          <div class="cotiz-summary-icon" style="background: rgba(77, 159, 236, 0.15); color: var(--ax-accent);">💰</div>
           <div>
             <div class="cotiz-summary-lbl">Cartera Total Cotizada</div>
             <div class="cotiz-summary-val" style="color: var(--ax-accent);">$0</div>
@@ -5448,7 +5450,7 @@ function renderCotizacionesHeroCards(data) {
           </div>
         </div>
         <div class="cotiz-summary-card">
-          <div class="cotiz-summary-icon" style="background: rgba(95, 169, 141, 0.15); color: var(--ax-accent-emerald);">🏆</div>
+          <div class="cotiz-summary-icon" style="background: rgba(61, 220, 151, 0.15); color: var(--ax-accent-emerald);">🏆</div>
           <div>
             <div class="cotiz-summary-lbl">Negocios Ganados</div>
             <div class="cotiz-summary-val" style="color: var(--ax-accent-emerald);">$0</div>
@@ -5456,7 +5458,7 @@ function renderCotizacionesHeroCards(data) {
           </div>
         </div>
         <div class="cotiz-summary-card">
-          <div class="cotiz-summary-icon" style="background: rgba(194, 160, 107, 0.15); color: var(--ax-accent-gold);">⏳</div>
+          <div class="cotiz-summary-icon" style="background: rgba(255, 196, 107, 0.15); color: var(--ax-accent-gold);">⏳</div>
           <div>
             <div class="cotiz-summary-lbl">En Seguimiento Activo</div>
             <div class="cotiz-summary-val" style="color: var(--ax-accent-gold);">$0</div>
@@ -5552,7 +5554,7 @@ function renderCotizacionesHeroCards(data) {
   if (summaryStrip) {
     summaryStrip.innerHTML = `
       <div class="cotiz-summary-card">
-        <div class="cotiz-summary-icon" style="background: rgba(114, 147, 192, 0.15); color: var(--ax-accent);">💰</div>
+        <div class="cotiz-summary-icon" style="background: rgba(77, 159, 236, 0.15); color: var(--ax-accent);">💰</div>
         <div>
           <div class="cotiz-summary-lbl">Cartera Total Cotizada</div>
           <div class="cotiz-summary-val" style="color: var(--ax-accent);">${formatCLP(grandTotalMonto)}</div>
@@ -5561,7 +5563,7 @@ function renderCotizacionesHeroCards(data) {
       </div>
 
       <div class="cotiz-summary-card">
-        <div class="cotiz-summary-icon" style="background: rgba(95, 169, 141, 0.15); color: var(--ax-accent-emerald);">🏆</div>
+        <div class="cotiz-summary-icon" style="background: rgba(61, 220, 151, 0.15); color: var(--ax-accent-emerald);">🏆</div>
         <div>
           <div class="cotiz-summary-lbl">Negocios Ganados</div>
           <div class="cotiz-summary-val" style="color: var(--ax-accent-emerald);">${formatCLP(grandAceptadasMonto)}</div>
@@ -5570,7 +5572,7 @@ function renderCotizacionesHeroCards(data) {
       </div>
 
       <div class="cotiz-summary-card">
-        <div class="cotiz-summary-icon" style="background: rgba(194, 160, 107, 0.15); color: var(--ax-accent-gold);">⏳</div>
+        <div class="cotiz-summary-icon" style="background: rgba(255, 196, 107, 0.15); color: var(--ax-accent-gold);">⏳</div>
         <div>
           <div class="cotiz-summary-lbl">En Seguimiento Activo</div>
           <div class="cotiz-summary-val" style="color: var(--ax-accent-gold);">${formatCLP(grandEnviadasMonto)}</div>
@@ -5579,7 +5581,7 @@ function renderCotizacionesHeroCards(data) {
       </div>
 
       <div class="cotiz-summary-card">
-        <div class="cotiz-summary-icon" style="background: rgba(155, 147, 196, 0.15); color: var(--ax-accent-purple);">📈</div>
+        <div class="cotiz-summary-icon" style="background: rgba(167, 139, 250, 0.15); color: var(--ax-accent-purple);">📈</div>
         <div>
           <div class="cotiz-summary-lbl">Tasa Global de Conversión</div>
           <div class="cotiz-summary-val" style="color: var(--ax-accent-purple);">${grandWinRate}%</div>
@@ -5630,7 +5632,7 @@ function renderCotizacionesHeroCards(data) {
             <span class="cotiz-tipo-badge-icon">${icon}</span>
             <span>${item.tipo}</span>
           </span>
-          <span class="cotiz-win-badge" style="background: ${isHighWin ? 'rgba(95, 169, 141, 0.2)' : 'rgba(114, 147, 192, 0.2)'}; color: ${isHighWin ? 'var(--ax-accent-emerald)' : 'var(--ax-accent)'}; border: 1px solid ${isHighWin ? 'rgba(95, 169, 141, 0.4)' : 'rgba(114, 147, 192, 0.4)'};">
+          <span class="cotiz-win-badge" style="background: ${isHighWin ? 'rgba(61, 220, 151, 0.2)' : 'rgba(77, 159, 236, 0.2)'}; color: ${isHighWin ? 'var(--ax-accent-emerald)' : 'var(--ax-accent)'}; border: 1px solid ${isHighWin ? 'rgba(61, 220, 151, 0.4)' : 'rgba(77, 159, 236, 0.4)'};">
             ${winRate}% Aprobación
           </span>
         </div>
@@ -5645,25 +5647,25 @@ function renderCotizacionesHeroCards(data) {
 
         <!-- Cuadrícula 2x2 de Contadores con Alta Legibilidad -->
         <div class="cotiz-counters-grid">
-          <div class="cotiz-counter-box" style="border-left: 3px solid #10b981;">
+          <div class="cotiz-counter-box" style="border-left: 3px solid #3DDC97;">
             <span class="cotiz-counter-lbl" style="color: var(--ax-accent-emerald);">✅ Aceptadas</span>
             <span class="cotiz-counter-main-num">${item.aceptadasCnt.toLocaleString('es-CL')}</span>
             <span class="cotiz-counter-money" style="color: var(--ax-accent-emerald);">${formatCLP(item.aceptadasMonto)}</span>
           </div>
 
-          <div class="cotiz-counter-box" style="border-left: 3px solid #f59e0b;">
+          <div class="cotiz-counter-box" style="border-left: 3px solid #FFC46B;">
             <span class="cotiz-counter-lbl" style="color: var(--ax-accent-gold);">⏳ En Proceso</span>
             <span class="cotiz-counter-main-num">${item.enviadasCnt.toLocaleString('es-CL')}</span>
             <span class="cotiz-counter-money" style="color: var(--ax-accent-gold);">${formatCLP(item.enviadasMonto)}</span>
           </div>
 
-          <div class="cotiz-counter-box" style="border-left: 3px solid #ef4444;">
+          <div class="cotiz-counter-box" style="border-left: 3px solid #FF6B8A;">
             <span class="cotiz-counter-lbl" style="color: var(--ax-accent-rose);">❌ Perdidas</span>
             <span class="cotiz-counter-main-num">${item.perdidasCnt.toLocaleString('es-CL')}</span>
             <span class="cotiz-counter-money" style="color: var(--ax-accent-rose);">${formatCLP(item.perdidasMonto)}</span>
           </div>
 
-          <div class="cotiz-counter-box" style="border-left: 3px solid #a855f7;">
+          <div class="cotiz-counter-box" style="border-left: 3px solid #A78BFA;">
             <span class="cotiz-counter-lbl" style="color: var(--ax-accent-purple);">📦 Pend / Stock</span>
             <span class="cotiz-counter-main-num">${item.otrasCnt.toLocaleString('es-CL')}</span>
             <span class="cotiz-counter-money" style="color: var(--ax-accent-purple);">${formatCLP(item.otrasMonto)}</span>
@@ -5677,7 +5679,7 @@ function renderCotizacionesHeroCards(data) {
             <strong style="color:${isHighWin ? 'var(--ax-accent-emerald)' : 'var(--ax-accent)'}; font-size:0.875rem;">${winRate}%</strong>
           </div>
           <div class="cotiz-progress-bar-wrap">
-            <div class="cotiz-progress-bar-fill" style="width: ${Math.min(100, Math.max(0, Number(winRate)))}%; background: ${isHighWin ? 'linear-gradient(90deg, #10b981, #34d399)' : 'linear-gradient(90deg, #3b82f6, #60a5fa)'}; box-shadow: 0 0 10px ${isHighWin ? 'rgba(95, 169, 141, 0.4)' : 'rgba(114, 147, 192, 0.4)'};"></div>
+            <div class="cotiz-progress-bar-fill" style="width: ${Math.min(100, Math.max(0, Number(winRate)))}%; background: ${isHighWin ? 'linear-gradient(90deg, #3DDC97, #3DDC97)' : 'linear-gradient(90deg, #4D9FEC, #6FB4F0)'}; box-shadow: 0 0 10px ${isHighWin ? 'rgba(61, 220, 151, 0.4)' : 'rgba(77, 159, 236, 0.4)'};"></div>
           </div>
         </div>
       </div>
@@ -5728,22 +5730,22 @@ function renderCotizacionesCharts(data) {
           {
             label: 'Aceptadas ($)',
             data: aceptadasByMonth,
-            backgroundColor: 'rgba(95, 169, 141, 0.85)',
-            borderColor: '#5FA98D',
+            backgroundColor: 'rgba(61, 220, 151, 0.85)',
+            borderColor: '#3DDC97',
             borderRadius: 6
           },
           {
             label: 'Enviadas / Proceso ($)',
             data: enviadasByMonth,
-            backgroundColor: 'rgba(194, 160, 107, 0.85)',
-            borderColor: '#C2A06B',
+            backgroundColor: 'rgba(255, 196, 107, 0.85)',
+            borderColor: '#FFC46B',
             borderRadius: 6
           },
           {
             label: 'Perdidas ($)',
             data: perdidasByMonth,
-            backgroundColor: 'rgba(197, 124, 137, 0.85)',
-            borderColor: '#C57C89',
+            backgroundColor: 'rgba(255, 107, 138, 0.85)',
+            borderColor: '#FF6B8A',
             borderRadius: 6
           }
         ]
@@ -5802,7 +5804,7 @@ function renderCotizacionesCharts(data) {
     const values = sortedEstados.map(e => e[1]);
 
     const colorPalette = [
-      '#10b981', '#3b82f6', '#fbbf24', '#f87171', '#a855f7', '#06b6d4', '#ec4899', '#64748b'
+      '#3DDC97', '#4D9FEC', '#FFC46B', '#FF6B8A', '#A78BFA', '#2DD4CE', '#E58BB8', '#8B95B9'
     ];
 
     chartCotizEstadoInstance = new Chart(ctxEstado, {
@@ -5813,7 +5815,7 @@ function renderCotizacionesCharts(data) {
           data: values,
           backgroundColor: colorPalette.slice(0, labels.length),
           borderWidth: 2,
-          borderColor: '#0f172a'
+          borderColor: '#1B2342'
         }]
       },
       options: {
@@ -5867,8 +5869,8 @@ function renderCotizacionesCharts(data) {
         datasets: [{
           label: 'Total Cotizado ($)',
           data: totals,
-          backgroundColor: 'rgba(114, 147, 192, 0.85)',
-          borderColor: '#7293C0',
+          backgroundColor: 'rgba(77, 159, 236, 0.85)',
+          borderColor: '#4D9FEC',
           borderRadius: 6
         }]
       },
@@ -5945,7 +5947,7 @@ function renderCotizacionesTopProducts(data) {
   container.innerHTML = top10.map((p, idx) => {
     const pct = Math.min(100, Math.max(5, (p.total / maxTotal) * 100));
     let rankBadge = `<span class="badge badge-blue">#${idx + 1}</span>`;
-    if (idx === 0) rankBadge = `<span class="badge badge-amber" style="background: rgba(194, 160, 107, 0.2); color: var(--ax-accent-gold);">🥇 1°</span>`;
+    if (idx === 0) rankBadge = `<span class="badge badge-amber" style="background: rgba(255, 196, 107, 0.2); color: var(--ax-accent-gold);">🥇 1°</span>`;
     if (idx === 1) rankBadge = `<span class="badge" style="background: rgba(203, 213, 225, 0.2); color: var(--ax-text-secondary);">🥈 2°</span>`;
     if (idx === 2) rankBadge = `<span class="badge" style="background: rgba(217, 119, 6, 0.2); color: var(--ax-accent-gold);">🥉 3°</span>`;
 
@@ -5973,7 +5975,7 @@ function renderCotizacionesTopProducts(data) {
         <div style="text-align: right; min-width: 130px;">
           <strong style="color: var(--ax-accent); font-size: 1rem; font-weight: 800;">${formatCLP(p.total)}</strong>
           <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.08); border-radius: 4px; margin-top: 5px; overflow: hidden;">
-            <div style="width: ${pct}%; height: 100%; background: linear-gradient(90deg, #3b82f6, #10b981); border-radius: 4px;"></div>
+            <div style="width: ${pct}%; height: 100%; background: linear-gradient(90deg, #4D9FEC, #3DDC97); border-radius: 4px;"></div>
           </div>
         </div>
       </div>
@@ -6043,7 +6045,7 @@ function renderCotizacionesTable(data) {
         <td style="text-align:center; font-size:0.875rem; color:var(--ax-text-secondary);">${escapeHtml(r.fecha || '—')}</td>
         <td style="text-align:left;"><strong style="color:var(--ax-text-primary); font-size:0.875rem;">${escapeHtml(r.cliente)}</strong></td>
         <td style="text-align:left; font-size:0.8125rem; color:var(--ax-text-secondary);">${escapeHtml(r.rut || '—')}</td>
-        <td style="text-align:left;"><span class="sku-badge-pill" style="background:rgba(114, 147, 192,0.18); color:var(--ax-accent); border-color:rgba(114, 147, 192,0.35); font-weight:700; font-size:0.8125rem;">${escapeHtml(r.sku)}</span></td>
+        <td style="text-align:left;"><span class="sku-badge-pill" style="background:rgba(77, 159, 236,0.18); color:var(--ax-accent); border-color:rgba(77, 159, 236,0.35); font-weight:700; font-size:0.8125rem;">${escapeHtml(r.sku)}</span></td>
         <td style="text-align:left; max-width:280px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(r.producto)}"><span style="font-size:0.875rem; font-weight:500;">${escapeHtml(r.producto)}</span></td>
         <td style="text-align:center; font-weight:800; font-size:0.875rem;" class="num-cell">${Math.round(r.cantidad).toLocaleString('es-CL')}</td>
         <td style="text-align:right; font-weight:900; color:var(--ax-accent); font-size:1rem;" class="num-cell">${formatCLP(r.total)}</td>
@@ -6640,7 +6642,7 @@ function recalcCotizTotals() {
     if (margEl) {
       margEl.textContent = lineMargen.toFixed(1) + '%';
       margEl.style.color = lineMargen >= 30 ? 'var(--ax-accent-emerald)' : (lineMargen >= 15 ? 'var(--ax-accent-gold)' : 'var(--ax-accent-rose)');
-      margEl.style.background = lineMargen >= 30 ? 'rgba(95, 169, 141, 0.2)' : (lineMargen >= 15 ? 'rgba(194, 160, 107, 0.2)' : 'rgba(197, 124, 137, 0.2)');
+      margEl.style.background = lineMargen >= 30 ? 'rgba(61, 220, 151, 0.2)' : (lineMargen >= 15 ? 'rgba(255, 196, 107, 0.2)' : 'rgba(255, 107, 138, 0.2)');
     }
   });
 
@@ -7562,7 +7564,7 @@ function selectFtProductSku(sku) {
   if (!container) return;
 
   if (!prod) {
-    container.innerHTML = '<div style="text-align: center; color: var(--ax-accent-rose); padding: 3rem; background: rgba(197, 124, 137, 0.05); border: 1px dashed #ef4444; border-radius: 12px;">⚠️ No se encontraron datos técnicos para el SKU seleccionado.</div>';
+    container.innerHTML = '<div style="text-align: center; color: var(--ax-accent-rose); padding: 3rem; background: rgba(255, 107, 138, 0.05); border: 1px dashed #FF6B8A; border-radius: 12px;">⚠️ No se encontraron datos técnicos para el SKU seleccionado.</div>';
     return;
   }
 
@@ -7585,7 +7587,7 @@ function selectFtProductSku(sku) {
         <td style="text-align: right;">
           <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
             <div style="width: 60px; height: 6px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden;">
-              <div style="width: ${pctNum}%; height: 100%; background: linear-gradient(90deg, #74A6B8, #9B93C4);"></div>
+              <div style="width: ${pctNum}%; height: 100%; background: linear-gradient(90deg, #2DD4CE, #A78BFA);"></div>
             </div>
             <span class="ft-tag ft-tag-purple" style="font-size: 0.75rem;">${b.participacion}</span>
           </div>
@@ -7634,7 +7636,7 @@ function selectFtProductSku(sku) {
     <div class="ft-card">
       <div class="ft-card-header" style="justify-content: space-between;">
         <div style="display: flex; align-items: center; gap: 8px;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2DD4CE" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
           <span style="font-weight: 700; color: var(--ax-text-primary);">REGISTRO FOTOGRÁFICO OFICIAL</span>
         </div>
         <span class="ft-tag ft-tag-blue">Glomax HD Asset</span>
@@ -7648,11 +7650,11 @@ function selectFtProductSku(sku) {
   ` : `
     <div class="ft-card">
       <div class="ft-card-header">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2DD4CE" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
         <span style="font-weight: 700; color: var(--ax-text-primary);">ESQUEMA TÉCNICO CAD 3D</span>
       </div>
-      <div style="background: linear-gradient(135deg, var(--surf-3), var(--surf-3)); border: 1px dashed rgba(116, 166, 184, 0.4); border-radius: 12px; padding: 2.5rem 1.5rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center;">
-        <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+      <div style="background: linear-gradient(135deg, var(--surf-3), var(--surf-3)); border: 1px dashed rgba(45, 212, 206, 0.4); border-radius: 12px; padding: 2.5rem 1.5rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center;">
+        <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="#2DD4CE" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
         <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.875rem; color: var(--ax-accent-sky); font-weight: 700; letter-spacing: 1px;">DIAGRAMA TÉCNICO CAD #${escapeHtml(prod.sku)}</div>
         <div style="font-size: 0.8125rem; color: var(--ax-text-tertiary);">Glomax SA Industrial Engineering Standard</div>
       </div>
@@ -7661,12 +7663,12 @@ function selectFtProductSku(sku) {
 
   const html = `
     <!-- MEMBRETE OFICIAL DE LICITACIONES Y CERTIFICACIÓN -->
-    <div class="ft-header-card" style="background: linear-gradient(135deg, var(--surf-3), var(--surf-3)); border: 1px solid rgba(116, 166, 184, 0.4); border-radius: 16px; padding: 1.75rem; box-shadow: 0 12px 36px rgba(0,0,0,0.5);">
+    <div class="ft-header-card" style="background: linear-gradient(135deg, var(--surf-3), var(--surf-3)); border: 1px solid rgba(45, 212, 206, 0.4); border-radius: 16px; padding: 1.75rem; box-shadow: 0 12px 36px rgba(0,0,0,0.5);">
       
       <!-- FRANJA SUPREMA DE CERTIFICACIÓN Y MEMBRETE -->
       <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 1rem; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
         <div style="display: flex; align-items: center; gap: 12px;">
-          <div style="background: linear-gradient(135deg, #3b82f6, #2563eb); width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(114, 147, 192,0.4);">
+          <div style="background: linear-gradient(135deg, #4D9FEC, #2563B8); width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(77, 159, 236,0.4);">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
           </div>
           <div>
@@ -7690,7 +7692,7 @@ function selectFtProductSku(sku) {
       <div class="ft-title-bar" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1.5rem; flex-wrap: wrap;">
         <div style="flex: 1; min-width: 280px;">
           <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 8px;">
-            <span class="ft-sku-badge" style="background: rgba(116, 166, 184, 0.2); color: var(--ax-accent-sky); border: 1px solid rgba(116, 166, 184, 0.4); padding: 4px 10px; border-radius: 6px; font-weight: 800; font-family: 'JetBrains Mono', monospace;">SKU: ${escapeHtml(prod.sku)}</span>
+            <span class="ft-sku-badge" style="background: rgba(45, 212, 206, 0.2); color: var(--ax-accent-sky); border: 1px solid rgba(45, 212, 206, 0.4); padding: 4px 10px; border-radius: 6px; font-weight: 800; font-family: 'JetBrains Mono', monospace;">SKU: ${escapeHtml(prod.sku)}</span>
             ${isCustomized ? '<span class="ft-tag ft-tag-gold">✏️ Spec Editada / Personalizada</span>' : '<span class="ft-tag ft-tag-blue">🛡️ Especificación Oficial Glomax</span>'}
             <span class="ft-tag ft-tag-purple">📂 ${prod.categoria || 'Sin Categoría'}</span>
             <span class="ft-tag ft-tag-green">🏷️ ${prod.marca || 'Glomax Standard'}</span>
@@ -7719,17 +7721,17 @@ function selectFtProductSku(sku) {
 
       <!-- MÉTRICAS COMERCIALES & LOGÍSTICAS DE CABECERA -->
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-top: 1.25rem;">
-        <div style="background: var(--surf-2); padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(116, 166, 184, 0.25);">
+        <div style="background: var(--surf-2); padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(45, 212, 206, 0.25);">
           <div style="font-size: 0.75rem; color: var(--ax-text-tertiary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Precio Lista Prom.</div>
           <div style="font-size: 1.25rem; font-weight: 800; color: var(--ax-accent-sky); font-family: 'JetBrains Mono', monospace;">${formatCLP(prod.precioPromedio)}</div>
         </div>
 
-        <div style="background: var(--surf-2); padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(155, 147, 196, 0.25);">
+        <div style="background: var(--surf-2); padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(167, 139, 250, 0.25);">
           <div style="font-size: 0.75rem; color: var(--ax-text-tertiary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Costo Neto Unitario</div>
           <div style="font-size: 1.25rem; font-weight: 800; color: var(--ax-accent-purple); font-family: 'JetBrains Mono', monospace;">${formatCLP(prod.costoUnitario)}</div>
         </div>
 
-        <div style="background: var(--surf-2); padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(95, 169, 141, 0.25);">
+        <div style="background: var(--surf-2); padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(61, 220, 151, 0.25);">
           <div style="font-size: 0.75rem; color: var(--ax-text-tertiary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Margen Prom. (%)</div>
           <div style="font-size: 1.25rem; font-weight: 800; color: ${prod.margenPct >= 30 ? 'var(--ax-accent-emerald)' : 'var(--ax-accent-gold)'}; font-family: 'JetBrains Mono', monospace;">${prod.margenPct.toFixed(1)}%</div>
         </div>
@@ -7761,7 +7763,7 @@ function selectFtProductSku(sku) {
               <tr><th style="padding: 8px 0; color: var(--ax-text-tertiary);">Peso Bruto Empacado:</th><td style="color: var(--ax-text-primary); font-weight: 600;">${escapeHtml(spec.pesoBruto)}</td></tr>
               <tr><th style="padding: 8px 0; color: var(--ax-text-tertiary);">Volumen Unitario (m³):</th><td style="color: var(--ax-accent-sky); font-weight: 700;">${escapeHtml(spec.volumen)}</td></tr>
               <tr><th style="padding: 8px 0; color: var(--ax-text-tertiary);">Capacidad Cajas x Pallet:</th><td style="color: var(--ax-text-primary); font-weight: 600;">${escapeHtml(spec.cajasPallet)}</td></tr>
-              <tr><th style="padding: 8px 0; color: var(--ax-text-tertiary);">Código Arancelario (HS):</th><td><code style="background: rgba(116, 166, 184,0.15); color: var(--ax-accent-sky); padding: 2px 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace;">${escapeHtml(spec.hsCode)}</code></td></tr>
+              <tr><th style="padding: 8px 0; color: var(--ax-text-tertiary);">Código Arancelario (HS):</th><td><code style="background: rgba(45, 212, 206,0.15); color: var(--ax-accent-sky); padding: 2px 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace;">${escapeHtml(spec.hsCode)}</code></td></tr>
               <tr><th style="padding: 8px 0; color: var(--ax-text-tertiary);">País de Origen / Fabricación:</th><td style="color: var(--ax-text-primary); font-weight: 600;">${escapeHtml(spec.origen)}</td></tr>
             </tbody>
           </table>
@@ -7816,7 +7818,7 @@ function selectFtProductSku(sku) {
         ${camposCustomHtml}
 
         <!-- IV. TIMBRE DE LICITACIÓN & APROBACIÓN DE CALIDAD -->
-        <div class="ft-card" style="background: var(--surf-3); border: 1px solid rgba(116, 166, 184, 0.4); border-radius: 12px; padding: 1.25rem;">
+        <div class="ft-card" style="background: var(--surf-3); border: 1px solid rgba(45, 212, 206, 0.4); border-radius: 12px; padding: 1.25rem;">
           <div class="ft-card-header" style="display: flex; align-items: center; gap: 8px; color: var(--ax-accent-sky); font-weight: 700; margin-bottom: 8px;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
             <span>IV. ENSAYOS, SEGURIDAD & TIMBRE DE APORBACIÓN LICITACIONES</span>
@@ -8268,7 +8270,7 @@ function exportFtPdf() {
       <tr style="border-bottom: 1px solid #e2e8f0;">
         <td style="padding: 6px 10px; font-weight: 600; color: #1e293b;">${idx + 1}. ${b.parte}</td>
         <td style="padding: 6px 10px; text-align: center; color: #475569;">${b.cant} und.</td>
-        <td style="padding: 6px 10px; text-align: right; font-weight: 700; color: #0284c7;">${b.participacion}</td>
+        <td style="padding: 6px 10px; text-align: right; font-weight: 700; color: #2DD4CE;">${b.participacion}</td>
       </tr>
     `;
   });
@@ -8279,7 +8281,7 @@ function exportFtPdf() {
   const photoPdfHtml = photoUrl ? `
     <div style="text-align: center; margin-bottom: 15px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; background: #fafafa;">
       <img src="${escapeHtml(photoUrl)}" style="max-height: 180px; max-width: 100%; object-fit: contain;" />
-      <div style="font-size: 0.75rem; color: #64748b; margin-top: 4px; font-weight: 700;">FOTOGRAFÍA OFICIAL DE PRODUCTO GLOMAX</div>
+      <div style="font-size: 0.75rem; color: #8B95B9; margin-top: 4px; font-weight: 700;">FOTOGRAFÍA OFICIAL DE PRODUCTO GLOMAX</div>
       ${secundariasPdf.length ? `
         <div style="display: flex; gap: 6px; justify-content: center; margin-top: 8px; flex-wrap: wrap;">
           ${secundariasPdf.map(f => `<img src="${escapeHtml(f)}" style="width: 74px; height: 74px; object-fit: cover; border: 1px solid #cbd5e1; border-radius: 4px;" />`).join('')}
@@ -8290,12 +8292,12 @@ function exportFtPdf() {
   const camposValidosPdf = (spec.camposCustom || []).filter(c => c && (c.etiqueta || c.valor));
   const camposCustomPdfHtml = camposValidosPdf.length ? `
     <div style="margin-top: 12px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px;">
-      <div style="font-size: 0.8125rem; font-weight: 800; color: #0284c7; text-transform: uppercase; margin-bottom: 6px;">Especificaciones Adicionales</div>
+      <div style="font-size: 0.8125rem; font-weight: 800; color: #2DD4CE; text-transform: uppercase; margin-bottom: 6px;">Especificaciones Adicionales</div>
       <table style="width: 100%; border-collapse: collapse; font-size: 0.8125rem;">
         <tbody>
           ${camposValidosPdf.map(c => `
             <tr style="border-bottom: 1px solid #f1f5f9;">
-              <th style="text-align: left; padding: 5px 0; color: #64748b; width: 45%;">${escapeHtml(c.etiqueta)}</th>
+              <th style="text-align: left; padding: 5px 0; color: #8B95B9; width: 45%;">${escapeHtml(c.etiqueta)}</th>
               <td style="padding: 5px 0; font-weight: 600; color: #0f172a;">${escapeHtml(c.valor)}</td>
             </tr>
           `).join('')}
@@ -8313,15 +8315,15 @@ function exportFtPdf() {
 
   pdfContainer.innerHTML = `
     <!-- CABECERA PDF DE FICHA TÉCNICA -->
-    <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0284c7; padding-bottom: 15px; margin-bottom: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #2DD4CE; padding-bottom: 15px; margin-bottom: 20px;">
       <div>
-        <div style="font-size: 1.5rem; font-weight: 900; color: #0284c7; letter-spacing: -0.5px;">GLOMAX S.A.</div>
+        <div style="font-size: 1.5rem; font-weight: 900; color: #2DD4CE; letter-spacing: -0.5px;">GLOMAX S.A.</div>
         <div style="font-size: 0.875rem; font-weight: 700; color: #475569; text-transform: uppercase;">División de Ingeniería & Control de Calidad</div>
-        <div style="font-size: 0.8125rem; color: #64748b; margin-top: 2px;">Casa Matriz · Santiago de Chile | www.glomax.cl</div>
+        <div style="font-size: 0.8125rem; color: #8B95B9; margin-top: 2px;">Casa Matriz · Santiago de Chile | www.glomax.cl</div>
       </div>
       <div style="text-align: right;">
-        <div style="font-size: 0.8125rem; font-weight: 800; color: #0284c7; text-transform: uppercase;">Ficha Técnica Oficial</div>
-        <div style="font-size: 0.75rem; color: #64748b;">Fecha Emisión: ${todayStr}</div>
+        <div style="font-size: 0.8125rem; font-weight: 800; color: #2DD4CE; text-transform: uppercase;">Ficha Técnica Oficial</div>
+        <div style="font-size: 0.75rem; color: #8B95B9;">Fecha Emisión: ${todayStr}</div>
         <div style="background: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 6px; font-weight: 800; font-family: monospace; display: inline-block; margin-top: 6px;">
           SKU: ${escapeHtml(prod.sku)}
         </div>
@@ -8329,7 +8331,7 @@ function exportFtPdf() {
     </div>
 
     <!-- TITULO PRODUCTO -->
-    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-left: 5px solid #0284c7; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-left: 5px solid #2DD4CE; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
       <h1 style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0;">${escapeHtml(prod.descripcion)}</h1>
       <div style="font-size: 0.8125rem; color: #475569; display: flex; gap: 15px; flex-wrap: wrap;">
         <span>Categoría: <strong>${prod.categoria || 'General'}</strong></span>
@@ -8346,32 +8348,32 @@ function exportFtPdf() {
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
       <!-- COLUMNA 1: PARAMETROS TECNICOS -->
       <div style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 14px;">
-        <div style="font-size: 0.875rem; font-weight: 800; color: #0284c7; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 10px; text-transform: uppercase;">
+        <div style="font-size: 0.875rem; font-weight: 800; color: #2DD4CE; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 10px; text-transform: uppercase;">
           🛠️ Especificaciones Técnicas
         </div>
         <table style="width: 100%; border-collapse: collapse; font-size: 0.8125rem;">
-          <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #64748b;">Material:</th><td style="padding: 5px 0; font-weight: 600; color: #0f172a;">${escapeHtml(spec.material)}</td></tr>
-          <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #64748b;">Acabado:</th><td style="padding: 5px 0; color: #0f172a;">${escapeHtml(spec.acabado)}</td></tr>
-          <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #64748b;">Temperatura:</th><td style="padding: 5px 0; color: #0f172a;">${escapeHtml(spec.tempRango)}</td></tr>
-          <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #64748b;">Certificaciones:</th><td style="padding: 5px 0; font-weight: 700; color: #059669;">${escapeHtml(spec.certificaciones)}</td></tr>
-          <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #64748b;">Protección IP:</th><td style="padding: 5px 0; font-weight: 700; color: #0284c7;">${escapeHtml(spec.gradoIP)}</td></tr>
-          <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #64748b;">Eléctrico:</th><td style="padding: 5px 0; color: #0f172a;">${escapeHtml(spec.electrico)}</td></tr>
-          <tr><th style="text-align: left; padding: 5px 0; color: #64748b;">Garantía:</th><td style="padding: 5px 0; font-weight: 700; color: #059669;">${escapeHtml(spec.garantia)}</td></tr>
+          <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #8B95B9;">Material:</th><td style="padding: 5px 0; font-weight: 600; color: #0f172a;">${escapeHtml(spec.material)}</td></tr>
+          <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #8B95B9;">Acabado:</th><td style="padding: 5px 0; color: #0f172a;">${escapeHtml(spec.acabado)}</td></tr>
+          <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #8B95B9;">Temperatura:</th><td style="padding: 5px 0; color: #0f172a;">${escapeHtml(spec.tempRango)}</td></tr>
+          <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #8B95B9;">Certificaciones:</th><td style="padding: 5px 0; font-weight: 700; color: #35C486;">${escapeHtml(spec.certificaciones)}</td></tr>
+          <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #8B95B9;">Protección IP:</th><td style="padding: 5px 0; font-weight: 700; color: #2DD4CE;">${escapeHtml(spec.gradoIP)}</td></tr>
+          <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #8B95B9;">Eléctrico:</th><td style="padding: 5px 0; color: #0f172a;">${escapeHtml(spec.electrico)}</td></tr>
+          <tr><th style="text-align: left; padding: 5px 0; color: #8B95B9;">Garantía:</th><td style="padding: 5px 0; font-weight: 700; color: #35C486;">${escapeHtml(spec.garantia)}</td></tr>
         </table>
       </div>
 
       <!-- COLUMNA 2: LOGISTICA Y EMPAQUE -->
       <div style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 14px;">
-        <div style="font-size: 0.875rem; font-weight: 800; color: #0284c7; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 10px; text-transform: uppercase;">
+        <div style="font-size: 0.875rem; font-weight: 800; color: #2DD4CE; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 10px; text-transform: uppercase;">
           📦 Logística, Empaque & Código
         </div>
         <table style="width: 100%; border-collapse: collapse; font-size: 0.8125rem;">
-          <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #64748b;">Dimensiones:</th><td style="padding: 5px 0; font-weight: 600; color: #0f172a;">${escapeHtml(spec.dimensiones)}</td></tr>
-          <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #64748b;">Peso Neto / Bruto:</th><td style="padding: 5px 0; color: #0f172a;">${escapeHtml(spec.pesoNeto)} / ${escapeHtml(spec.pesoBruto)}</td></tr>
-          <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #64748b;">Volumen:</th><td style="padding: 5px 0; color: #0f172a;">${escapeHtml(spec.volumen)}</td></tr>
-          <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #64748b;">Cajas x Pallet:</th><td style="padding: 5px 0; color: #0f172a;">${escapeHtml(spec.cajasPallet)}</td></tr>
-          <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #64748b;">HS Code:</th><td style="padding: 5px 0; font-family: monospace; font-weight: 700;">${escapeHtml(spec.hsCode)}</td></tr>
-          <tr><th style="text-align: left; padding: 5px 0; color: #64748b;">Origen:</th><td style="padding: 5px 0; color: #0f172a;">${escapeHtml(spec.origen)}</td></tr>
+          <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #8B95B9;">Dimensiones:</th><td style="padding: 5px 0; font-weight: 600; color: #0f172a;">${escapeHtml(spec.dimensiones)}</td></tr>
+          <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #8B95B9;">Peso Neto / Bruto:</th><td style="padding: 5px 0; color: #0f172a;">${escapeHtml(spec.pesoNeto)} / ${escapeHtml(spec.pesoBruto)}</td></tr>
+          <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #8B95B9;">Volumen:</th><td style="padding: 5px 0; color: #0f172a;">${escapeHtml(spec.volumen)}</td></tr>
+          <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #8B95B9;">Cajas x Pallet:</th><td style="padding: 5px 0; color: #0f172a;">${escapeHtml(spec.cajasPallet)}</td></tr>
+          <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #8B95B9;">HS Code:</th><td style="padding: 5px 0; font-family: monospace; font-weight: 700;">${escapeHtml(spec.hsCode)}</td></tr>
+          <tr><th style="text-align: left; padding: 5px 0; color: #8B95B9;">Origen:</th><td style="padding: 5px 0; color: #0f172a;">${escapeHtml(spec.origen)}</td></tr>
         </table>
 
         <!-- BARCODE EN PDF -->
@@ -8388,7 +8390,7 @@ function exportFtPdf() {
 
     <!-- BOM / LISTA DE COMPONENTES -->
     <div style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 14px; margin-bottom: 20px;">
-      <div style="font-size: 0.875rem; font-weight: 800; color: #0284c7; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 10px; text-transform: uppercase;">
+      <div style="font-size: 0.875rem; font-weight: 800; color: #2DD4CE; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 10px; text-transform: uppercase;">
         ⚙️ Bill of Materials (Componentes & Estructura Interna)
       </div>
       <table style="width: 100%; border-collapse: collapse; font-size: 0.8125rem;">
@@ -8408,13 +8410,13 @@ function exportFtPdf() {
     ${camposCustomPdfHtml}
 
     <!-- CONTROL DE CALIDAD & TIMBRE -->
-    <div style="border: 1px solid #0284c7; background: #f0f9ff; border-radius: 8px; padding: 14px; margin: 20px 0;">
+    <div style="border: 1px solid #2DD4CE; background: #f0f9ff; border-radius: 8px; padding: 14px; margin: 20px 0;">
       <div style="font-size: 0.875rem; font-weight: 800; color: #0369a1; margin-bottom: 4px;">🛡️ Control de Calidad & Normas de Seguridad:</div>
       <div style="font-size: 0.8125rem; color: #334155; line-height: 1.5;">${escapeHtml(spec.notas)}</div>
     </div>
 
     <!-- PIE DE PAGINA PDF -->
-    <div style="border-top: 1px solid #cbd5e1; padding-top: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: #64748b;">
+    <div style="border-top: 1px solid #cbd5e1; padding-top: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: #8B95B9;">
       <div>Documento Generado por <strong>Glomax BI Suite v2026.4</strong></div>
       <div>Certificación ISO 9001 · Glomax S.A. Todos los derechos reservados</div>
     </div>
@@ -8504,7 +8506,7 @@ function updateImportPhotoPreview(url) {
 
   const cleanUrl = (url || '').trim();
   if (cleanUrl) {
-    container.innerHTML = `<img src="${cleanUrl}" style="max-height: 140px; max-width: 100%; border-radius: 8px; border: 1px solid rgba(116, 166, 184, 0.4); box-shadow: 0 4px 12px rgba(0,0,0,0.4);" onerror="this.parentElement.innerHTML='<span style=\'color:var(--ax-accent-rose); font-size:0.8125rem;\'>⚠️ Foto no accesible en esa URL</span>';" />`;
+    container.innerHTML = `<img src="${cleanUrl}" style="max-height: 140px; max-width: 100%; border-radius: 8px; border: 1px solid rgba(45, 212, 206, 0.4); box-shadow: 0 4px 12px rgba(0,0,0,0.4);" onerror="this.parentElement.innerHTML='<span style=\'color:var(--ax-accent-rose); font-size:0.8125rem;\'>⚠️ Foto no accesible en esa URL</span>';" />`;
   } else {
     container.innerHTML = '';
   }
@@ -8893,13 +8895,13 @@ function setSyncStatus(status, customText) {
   el.className = 'sync-status-pill';
   if (status === 'ok') {
     el.classList.add('synced');
-    el.innerHTML = '<span class="dot" style="background:#10b981;box-shadow:0 0 10px rgba(95, 169, 141,0.6);"></span> <span>Sincronizado</span>';
+    el.innerHTML = '<span class="dot" style="background:#3DDC97;box-shadow:0 0 10px rgba(61, 220, 151,0.6);"></span> <span>Sincronizado</span>';
   } else if (status === 'loading') {
     el.classList.add('syncing');
-    el.innerHTML = '<span class="dot" style="background:#f59e0b;box-shadow:0 0 10px rgba(194, 160, 107,0.6);"></span> <span>Sincronizando...</span>';
+    el.innerHTML = '<span class="dot" style="background:#FFC46B;box-shadow:0 0 10px rgba(255, 196, 107,0.6);"></span> <span>Sincronizando...</span>';
   } else if (status === 'error') {
     el.classList.add('error');
-    el.innerHTML = '<span class="dot" style="background:#ef4444;box-shadow:0 0 10px rgba(197, 124, 137,0.6);"></span> <span>Desconectado</span>';
+    el.innerHTML = '<span class="dot" style="background:#FF6B8A;box-shadow:0 0 10px rgba(255, 107, 138,0.6);"></span> <span>Desconectado</span>';
   }
 }
 
