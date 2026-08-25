@@ -9263,8 +9263,7 @@ let preciosFallidos = [];      // filas que el scraper no pudo leer
 let preciosMisPrecios = new Map(); // codigo -> { DRCARE: n, MELI: n, ... }
 let preciosCanalPorUrl = new Map(); // url -> canal marcado a mano en PreciosMapa
 let preciosCanalSinReconocer = [];  // textos de la columna CANAL que no se entienden
-let preciosCanal = 'DRCARE';        // tienda elegida en el desplegable
-let preciosSoloCanal = true;        // filtrar competidores por ese canal
+let preciosCanal = 'DRCARE';        // tienda elegida: filtra competidores y tu precio
 let preciosTab = 'todos';
 let preciosCargando = false;
 /* Codigos desplegados. Vive fuera del render porque la tabla se vuelve a pintar
@@ -9719,9 +9718,9 @@ function preciosEnlace(competidor, url, canalClave) {
       escapeHtml(competidor) + '</a>'
     : escapeHtml(competidor);
   /* El rotulo solo aparece cuando la lectura NO es de la tienda que estas
-     mirando. Si ya elegiste Meli y filtraste por Meli, poner "Meli" en cada
-     fila no agrega nada: repite el encabezado del que ya vienes. Sirve cuando
-     miras varias tiendas juntas, que es cuando de verdad hay que distinguir. */
+     mirando. Hoy no deberia salir nunca, porque la tabla ya viene filtrada por
+     canal; queda como red: si alguna vez se colara una lectura de otra tienda,
+     se ve en la fila en vez de pasar por buena. */
   const clave = canalClave !== undefined ? canalClave : preciosCanalDeUrl(url);
   const canal = clave === preciosCanal ? '' : preciosEtiquetaDeCanal(clave);
   return base + (canal
@@ -9743,15 +9742,14 @@ function renderPreciosView() {
      salir de un canal que no estas mirando y la fila resumen diria algo que no
      corresponde a la tienda elegida.
 
-     El filtro es estricto: si no hay lecturas de esa tienda, la tabla queda
-     vacia. Antes se mostraban todas para no dejarla en blanco, y era peor
-     remedio que enfermedad: comparar el precio de Meli contra paginas que no
-     son de Meli parece un resultado y no lo es. */
-  const enCanal = todas.filter(preciosLecturaEsDelCanal);
-  const usadas = preciosSoloCanal ? enCanal : todas;
-  const filtroActivo = preciosSoloCanal;
-  const fallidosUsados = preciosSoloCanal
-    ? preciosFallidos.filter(preciosLecturaEsDelCanal) : preciosFallidos;
+     El filtro no se puede apagar: elegir una tienda ES el filtro. Si no hay
+     lecturas de esa tienda, la tabla queda vacia y lo dice. Mostrar las demas
+     para no dejarla en blanco era peor remedio que enfermedad: comparar tu
+     precio de Meli contra paginas que no son de Meli parece un resultado y no
+     lo es. */
+  const usadas = todas.filter(preciosLecturaEsDelCanal);
+  const enCanal = usadas;
+  const fallidosUsados = preciosFallidos.filter(preciosLecturaEsDelCanal);
 
   const items = usadas.map(l => {
     const mio = mios.get(l.codigo);
@@ -9839,17 +9837,10 @@ function renderPreciosView() {
 
   const avisos = [];
   const titulos = [];
-  if (filtroActivo && todas.length) {
+  if (todas.length) {
     avisos.push(enCanal.length + ' de ' + todas.length + ' lecturas son de ' + etiqueta);
-    titulos.push('Solo se comparan las páginas publicadas en ' + etiqueta + '.');
-  } else if (!preciosSoloCanal && enCanal.length < todas.length && todas.length) {
-    /* Filtro apagado a proposito, pero hay que decirlo igual: comparar el
-       precio de una tienda contra paginas de otra es exactamente el error que
-       el filtro evita, y sin aviso no se nota que esta apagado. */
-    avisos.push('sin filtrar: ' + (todas.length - enCanal.length) + ' de ' +
-      todas.length + ' lecturas no son de ' + etiqueta);
-    titulos.push('Estás comparando tu precio de ' + etiqueta + ' contra páginas de ' +
-      'otro canal. Marca "Solo esa tienda" para dejar únicamente las de ' + etiqueta + '.');
+    titulos.push('Solo se comparan las páginas publicadas en ' + etiqueta + '. ' +
+      'El resto de las lecturas queda fuera hasta que elijas su tienda.');
   }
   if (sinFijar) {
     avisos.push(sinFijar + (sinFijar === 1 ? ' producto sin tu precio en ' : ' productos sin tu precio en ') + etiqueta);
@@ -9911,7 +9902,7 @@ function renderPreciosView() {
   if (!visibles.length) {
     /* Vacio por filtrar y vacio por no tener datos son cosas distintas, y la
        diferencia es lo unico que dice que hacer a continuacion. */
-    const sinLecturasDelCanal = filtroActivo && !enCanal.length && todas.length;
+    const sinLecturasDelCanal = !enCanal.length && todas.length;
     tbody.innerHTML = '<tr><td colspan="8" class="precios-vacio">' +
       (sinLecturasDelCanal
         ? '<strong>Ninguna lectura es de ' + escapeHtml(etiqueta) + '</strong>' +
@@ -9919,7 +9910,7 @@ function renderPreciosView() {
           ' de otras tiendas. Para comparar en ' + escapeHtml(etiqueta) + ', carga en ' +
           '<code>PreciosMapa</code> la URL del competidor dentro de ' + escapeHtml(etiqueta) +
           ' y escribe <code>' + escapeHtml(etiqueta) + '</code> en la columna CANAL.</span>' +
-          '<span>O desmarca <em>Solo esa tienda</em> para ver todas.</span>'
+          '<span>O elige arriba la tienda de esas otras lecturas.</span>'
         : 'Ningún producto en esta vista.') +
       '</td></tr>';
     return;
@@ -10036,20 +10027,10 @@ function setupPreciosListeners() {
     });
   }
 
-  const solo = document.getElementById('preciosSoloCanal');
-  if (solo && !solo._bound) {
-    solo._bound = true;
-    let guardado = null;
-    try { guardado = localStorage.getItem(PRECIOS_SOLO_GUARDADO); } catch (e) { guardado = null; }
-    if (guardado !== null) preciosSoloCanal = guardado === '1';
-    solo.checked = preciosSoloCanal;
-
-    solo.addEventListener('change', () => {
-      preciosSoloCanal = solo.checked;
-      try { localStorage.setItem(PRECIOS_SOLO_GUARDADO, preciosSoloCanal ? '1' : '0'); } catch (e) { /* modo privado */ }
-      renderPreciosView();
-    });
-  }
+  /* Se borra el interruptor "Solo esa tienda" que hubo aqui: quien lo dejo
+     apagado una vez lo arrastraba en cada visita sin recordarlo, y la tabla
+     mezclaba canales pareciendo filtrada. */
+  try { localStorage.removeItem(PRECIOS_SOLO_GUARDADO); } catch (e) { /* modo privado */ }
 
   /* El listener va en el tbody y no en cada boton: la tabla se rehace completa
      en cada filtro, y enganchar fila por fila obligaria a volver a atarlos

@@ -10134,29 +10134,6 @@ button, input, select, textarea, optgroup {
   vertical-align: middle;
 }
 
-/* Interruptor de "solo esta tienda". Junto al desplegable porque los dos
-   controlan la misma pregunta: contra quien me estoy comparando. */
-.precios-solo {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  color: var(--ax-text-secondary);
-  font-size: 0.78rem;
-  white-space: nowrap;
-  cursor: pointer;
-  user-select: none;
-}
-.precios-solo input {
-  width: 0.95rem;
-  height: 0.95rem;
-  accent-color: var(--ax-accent-sky);
-  cursor: pointer;
-}
-.precios-solo input:focus-visible {
-  outline: 2px solid var(--ax-accent-sky);
-  outline-offset: 2px;
-}
-
 /* Estado vacio de la tabla de precios. Con dos o tres frases hace falta que
    respiren: apiladas en una linea se leen como un error del sistema. */
 .precios-vacio {
