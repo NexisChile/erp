@@ -24,7 +24,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <!-- Stylesheets & Libraries -->
-  <link rel="stylesheet" href="style.css?v=20260825_PRECIOS_V40" />
+  <link rel="stylesheet" href="style.css?v=20260825_PRECIOS_V42" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -1839,6 +1839,10 @@
                   <option value="HITES">Hites</option>
                 </select>
               </label>
+              <label class="precios-solo" title="Comparar solo contra competidores publicados en esa tienda">
+                <input type="checkbox" id="preciosSoloCanal" checked />
+                <span>Solo esa tienda</span>
+              </label>
               <span id="preciosCanalAviso" class="precios-canal__aviso"></span>
               <span id="preciosUpdated" class="precios-updated">&mdash;</span>
               <button type="button" class="btn-secondary" id="preciosReload">Actualizar</button>
@@ -2702,7 +2706,7 @@
   </div>
 
   <!-- Scripts -->
-  <script src="config.js?v=20260825_PRECIOS_V40"></script>
-  <script src="app.js?v=20260825_PRECIOS_V40"></script>
+  <script src="config.js?v=20260825_PRECIOS_V42"></script>
+  <script src="app.js?v=20260825_PRECIOS_V42"></script>
 </body>
 </html>
