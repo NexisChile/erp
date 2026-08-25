@@ -10116,3 +10116,20 @@ button, input, select, textarea, optgroup {
   .precios-canal__select { flex: 1; margin-left: 0.5rem; }
   .precios-canal__aviso { white-space: normal; }
 }
+
+/* Etiqueta del marketplace donde publica el competidor. Discreta: el dato que
+   importa es que exista, no que grite. */
+.precios-canal-tag {
+  display: inline-block;
+  margin-left: 0.45rem;
+  padding: 0.05rem 0.4rem;
+  border: 1px solid var(--ax-border);
+  border-radius: 999px;
+  background: var(--surf-3);
+  color: var(--ax-text-secondary);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  vertical-align: middle;
+}

@@ -9308,6 +9308,54 @@ const PRECIOS_CANAL_POR_DEFECTO = 'DRCARE';
 const PRECIOS_CANAL_GUARDADO = 'glomax_precios_canal';
 
 /**
+ * De que canal es la pagina de un competidor, deducido del dominio.
+ *
+ * La columna COMPETIDOR no sirve para esto: es texto libre que escribe una
+ * persona -"BLUNDING" es en realidad medishop.cl- y nombra a la empresa, no al
+ * sitio donde publica. El dominio si es un dato duro y viene en la propia URL,
+ * asi que no hay nada que mantener a mano.
+ *
+ * Un dominio que no sea de estos es la tienda del competidor. Eso no es un
+ * fallo ni un caso raro: es lo mas comun, y por eso se distingue en vez de
+ * dejarlo sin etiqueta.
+ */
+const PRECIOS_DOMINIOS = [
+  { clave: 'MELI',      dominios: ['mercadolibre.cl', 'mercadolibre.com', 'mercadolibre.com.ar'] },
+  { clave: 'FALABELLA', dominios: ['falabella.com', 'falabella.cl'] },
+  { clave: 'RIPLEY',    dominios: ['ripley.cl', 'ripley.com'] },
+  { clave: 'PARIS',     dominios: ['paris.cl'] },
+  { clave: 'WALMART',   dominios: ['lider.cl', 'walmart.cl'] },
+  { clave: 'EASY',      dominios: ['easy.cl'] },
+  { clave: 'ABCDIN',    dominios: ['abcdin.cl'] },
+  { clave: 'HITES',     dominios: ['hites.com', 'hites.cl'] },
+  { clave: 'DRCARE',    dominios: ['drcare.cl'] }
+];
+
+/** Clave de canal de una URL, o null si es el sitio propio del competidor. */
+function preciosCanalDeUrl(url) {
+  let host = '';
+  try {
+    host = new URL(String(url)).hostname.toLowerCase().replace(/^www\./, '');
+  } catch (e) {
+    return null; // URL mal formada: no se inventa un canal
+  }
+  if (!host) return null;
+  const encontrado = PRECIOS_DOMINIOS.find(d =>
+    /* El sufijo se compara con punto delante para que "nofalabella.com" no
+       cuente como Falabella. */
+    d.dominios.some(dom => host === dom || host.endsWith('.' + dom)));
+  return encontrado ? encontrado.clave : null;
+}
+
+/** Nombre corto del canal de una URL, para mostrar junto al competidor. */
+function preciosEtiquetaCanalUrl(url) {
+  const clave = preciosCanalDeUrl(url);
+  if (!clave) return '';
+  const canal = PRECIOS_CANALES.find(c => c.clave === clave);
+  return canal ? canal.etiqueta : clave;
+}
+
+/**
  * Lee de PreciosMapa el precio de cada codigo en CADA tienda.
  *
  * Se leen todas de una vez y no solo la elegida: cambiar de tienda en el
@@ -9578,10 +9626,19 @@ function preciosDifTexto(dif) {
 }
 
 function preciosEnlace(competidor, url) {
-  return url
+  const base = url
     ? '<a href="' + escapeHtml(url) + '" target="_blank" rel="noopener noreferrer nofollow">' +
       escapeHtml(competidor) + '</a>'
     : escapeHtml(competidor);
+  /* Solo se rotula el marketplace. Que un competidor venda en su propia web es
+     el caso normal y ponerle etiqueta a cada fila seria ruido; lo que hay que
+     poder ver de un golpe es cuando el precio viene de un canal donde tu
+     tambien vendes, porque ahi la comparacion es directa. */
+  const canal = url ? preciosEtiquetaCanalUrl(url) : '';
+  return base + (canal
+    ? '<span class="precios-canal-tag" title="Publicado en ' + escapeHtml(canal) + '">' +
+      escapeHtml(canal) + '</span>'
+    : '');
 }
 
 function renderPreciosView() {
@@ -9664,20 +9721,35 @@ function renderPreciosView() {
     ? 'Última lectura: ' + ultima.toLocaleDateString('es-CL')
     : 'Sin lecturas';
 
-  /* Cuantos productos no tienen precio en la tienda elegida. Sin este aviso,
-     una columna vacia se ve igual que una llena -la tabla muestra el PREUNI de
-     la ultima venta- y darias por comparado un canal que no lo esta. */
+  /* Dos huecos distintos, y conviene no confundirlos: uno es que falte TU
+     precio en esa tienda, el otro es que no haya ninguna lectura de un
+     competidor publicando ahi. Sin decirlos, una columna vacia se ve igual que
+     una llena y darias por comparado un canal que no lo esta. */
+  const etiqueta = preciosCanalActual().etiqueta;
   const sinFijar = grupos.filter(g => !g.miPrecioFijado).length;
+  const enCanal = items.filter(i => preciosCanalDeUrl(i.url) === preciosCanal).length;
+
+  const avisos = [];
+  const titulos = [];
+  if (sinFijar) {
+    avisos.push(sinFijar + (sinFijar === 1 ? ' producto sin tu precio en ' : ' productos sin tu precio en ') + etiqueta);
+    titulos.push('Esos productos muestran el precio de su última venta, no el de ' +
+      etiqueta + '. Complétalos en PreciosMapa.');
+  }
+  if (!enCanal && items.length) {
+    avisos.push('ninguna lectura es de ' + etiqueta);
+    titulos.push('Comparas tu precio de ' + etiqueta + ' contra páginas que no están en ' +
+      etiqueta + '. Para una comparación directa, carga en PreciosMapa la URL del ' +
+      'competidor dentro de ' + etiqueta + '.');
+  } else if (enCanal && enCanal < items.length) {
+    avisos.push(enCanal + ' de ' + items.length + ' lecturas son de ' + etiqueta);
+    titulos.push('El resto son de la web propia del competidor u otro canal.');
+  }
+
   const elAviso = document.getElementById('preciosCanalAviso');
   if (elAviso) {
-    elAviso.textContent = sinFijar
-      ? sinFijar + (sinFijar === 1 ? ' producto sin precio en ' : ' productos sin precio en ') +
-        preciosCanalActual().etiqueta
-      : '';
-    elAviso.title = sinFijar
-      ? 'Esos productos muestran el precio de su última venta, no el de ' +
-        preciosCanalActual().etiqueta + '. Complétalos en PreciosMapa.'
-      : '';
+    elAviso.textContent = avisos.join(' · ');
+    elAviso.title = titulos.join(' ');
   }
 
   const texto = (document.getElementById('preciosFiltro') || {}).value || '';
