@@ -4523,185 +4523,279 @@ select#comprasStrategySelect {
   color: var(--ax-text-tertiary) !important;
 }
 
+/* ==========================================================================
+   TARJETAS POR TIPO DE SOLICITUD (Cotizaciones)
+
+   Se reparten en 4, 2 o 1 columna, nunca en 3. Con cuatro tarjetas, tres
+   columnas dejan una sola abajo y un hueco del tamano de dos: la fila rota
+   se lee como si faltara algo.
+   ========================================================================== */
 .cotiz-tipo-cards-grid {
   display: grid !important;
   grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-  gap: 1.35rem !important;
+  gap: 1.25rem !important;
   margin-bottom: 2rem !important;
+  align-items: stretch !important;
 }
 
-@media (max-width: 1400px) {
-  .cotiz-tipo-cards-grid,
-  .cotiz-summary-strip {
-    grid-template-columns: repeat(2, 1fr) !important;
+/* El corte a 2 columnas esta en 1440 y no en 1280 por una medida concreta:
+   con la barra lateral abierta, cuatro columnas por debajo de eso dejan la
+   tarjeta en 228px y la fila de estado necesita 195. Lo primero que cedia era
+   la etiqueta, que aparecia como "Aceptad...". Antes de recortar el nombre de
+   un estado o encoger las cifras, es mejor pasar a 2x2, que ademas se lee
+   mas holgado. */
+@media (max-width: 1439px) {
+  .cotiz-tipo-cards-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 }
 
-@media (max-width: 768px) {
-  .cotiz-tipo-cards-grid,
-  .cotiz-summary-strip {
-    grid-template-columns: 1fr !important;
+@media (max-width: 700px) {
+  .cotiz-tipo-cards-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
   }
 }
 
 .cotiz-tipo-card {
-  background: linear-gradient(145deg, rgba(20, 29, 47, 0.95), rgba(15, 23, 42, 0.98)) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  border-radius: 20px !important;
-  padding: 1.5rem 1.5rem 1.35rem 1.5rem !important;
+  background: var(--surf-2) !important;
+  border: 1px solid var(--ax-border-subtle) !important;
+  border-radius: 18px !important;
+  padding: 1.35rem 1.35rem 1.15rem !important;
   position: relative !important;
   overflow: hidden !important;
-  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+  box-shadow: var(--el-2) !important;
   backdrop-filter: blur(20px) !important;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.25s ease, box-shadow 0.25s ease !important;
   display: flex !important;
   flex-direction: column !important;
-  justify-content: space-between !important;
 }
 
+/* Filete de color arriba: identifica el tipo sin gastar una linea de texto. */
 .cotiz-tipo-card::before {
   content: '' !important;
   position: absolute !important;
   top: 0 !important;
   left: 0 !important;
   right: 0 !important;
-  height: 4px !important;
-  background: linear-gradient(90deg, #2563B8, #3B7FD4) !important;
-  border-radius: 20px 20px 0 0 !important;
+  height: 3px !important;
+  background: var(--ax-accent) !important;
 }
-
-.cotiz-tipo-card--cyber::before {
-  background: linear-gradient(90deg, #0E7C79, #2563B8) !important;
-}
-
-.cotiz-tipo-card--promocion::before {
-  background: linear-gradient(90deg, #9A6410, #A87018) !important;
-}
-
-.cotiz-tipo-card--especial::before {
-  background: linear-gradient(90deg, #5B3FC4, #C4384F) !important;
-}
+.cotiz-tipo-card--cyber::before   { background: var(--ax-accent-sky) !important; }
+.cotiz-tipo-card--promocion::before { background: var(--ax-accent-gold) !important; }
+.cotiz-tipo-card--especial::before  { background: var(--ax-accent-purple) !important; }
 
 .cotiz-tipo-card:hover {
-  transform: translateY(-5px) !important;
-  border-color: rgba(77, 159, 236, 0.5) !important;
-  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.5), 0 0 28px rgba(77, 159, 236, 0.2) !important;
+  transform: translateY(-3px) !important;
+  border-color: var(--ax-card-hover-border, rgba(77, 159, 236, 0.4)) !important;
+  box-shadow: var(--el-3) !important;
 }
 
+/* --- Cabecera ------------------------------------------------------------
+   Solo el nombre del tipo. El porcentaje de aprobacion estaba aqui y otra vez
+   al pie; ademas "63.5% Aprobación" no cabia en una linea y partia la cabecera
+   en dos, dejando esa tarjeta desalineada respecto de las otras tres. */
 .cotiz-tipo-card-header {
   display: flex !important;
   align-items: center !important;
-  justify-content: space-between !important;
-  margin-bottom: 0.85rem !important;
-  padding-bottom: 0.75rem !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07) !important;
+  gap: 0.5rem !important;
+  min-height: 1.75rem !important;
+  margin-bottom: 0.75rem !important;
+  padding-bottom: 0.7rem !important;
+  border-bottom: 1px solid var(--ax-border-subtle) !important;
 }
 
 .cotiz-tipo-badge {
-  font-size: 1.125rem !important;
-  font-weight: 800 !important;
-  letter-spacing: -0.2px !important;
+  font-size: 1rem !important;
+  font-weight: 600 !important;
   color: var(--ax-text-primary) !important;
   display: inline-flex !important;
   align-items: center !important;
   gap: 8px !important;
+  white-space: nowrap !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
 }
 
 .cotiz-tipo-badge-icon {
-  font-size: 1.25rem !important;
-  display: inline-block !important;
+  font-size: 1.15rem !important;
+  line-height: 1 !important;
+  flex: 0 0 auto !important;
 }
 
-.cotiz-win-badge {
-  font-size: 0.875rem !important;
-  font-weight: 800 !important;
-  padding: 0.35rem 0.85rem !important;
-  border-radius: 20px !important;
-  letter-spacing: 0.3px !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 4px !important;
-}
-
+/* --- Monto del tipo ------------------------------------------------------ */
 .cotiz-tipo-monto {
-  font-size: 1.75rem !important;
-  font-weight: 900 !important;
+  font-size: 1.6rem !important;
+  font-weight: 600 !important;
   color: var(--ax-text-primary) !important;
-  letter-spacing: -0.5px !important;
+  letter-spacing: -0.02em !important;
   line-height: 1.15 !important;
-  margin: 0.35rem 0 0.25rem 0 !important;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.4) !important;
+  font-variant-numeric: tabular-nums !important;
+  margin: 0 0 0.2rem !important;
 }
 
 .cotiz-tipo-subtitle {
-  font-size: 0.875rem !important;
-  font-weight: 600 !important;
+  font-size: 0.8125rem !important;
+  font-weight: 400 !important;
   color: var(--ax-text-tertiary) !important;
-  margin-bottom: 1.15rem !important;
+  margin-bottom: 0.9rem !important;
+  white-space: nowrap !important;
+  font-variant-numeric: tabular-nums !important;
+}
+.cotiz-tipo-subtitle strong {
+  font-weight: 600 !important;
+  color: var(--ax-text-secondary) !important;
+}
+.cotiz-tipo-subtitle__sep { margin: 0 0.3rem !important; opacity: 0.5 !important; }
+
+/* --- Reparto del monto ---------------------------------------------------
+   Una sola barra con los cuatro estados a escala. Es lo unico que las cifras
+   sueltas no dicen: donde esta el dinero. Un tipo puede cerrar el 45% de las
+   solicitudes y aun asi tener mas pesos perdidos que ganados, y eso solo se
+   ve cuando los tramos estan uno al lado del otro. */
+.cotiz-mezcla-lbl {
+  font-size: 0.6875rem !important;
+  font-weight: 400 !important;
+  color: var(--ax-text-tertiary) !important;
+  letter-spacing: 0.02em !important;
+  margin-bottom: 4px !important;
+  white-space: nowrap !important;
+}
+
+.cotiz-mezcla {
   display: flex !important;
-  align-items: center !important;
-  gap: 6px !important;
+  height: 8px !important;
+  border-radius: 999px !important;
+  overflow: hidden !important;
+  background: var(--ax-border-subtle) !important;
+  margin-bottom: 0.9rem !important;
 }
 
-.cotiz-counters-grid {
-  display: grid !important;
-  grid-template-columns: repeat(2, 1fr) !important;
-  gap: 0.65rem !important;
-  background: var(--surf-2) !important;
-  border-radius: 12px !important;
-  padding: 0.9rem !important;
-  border: 1px solid rgba(255, 255, 255, 0.06) !important;
-  margin-bottom: 1rem !important;
-}
+.cotiz-mezcla__seg { display: block !important; height: 100% !important; }
+.cotiz-mezcla__seg.is-aceptada  { background: var(--ax-accent-emerald) !important; }
+.cotiz-mezcla__seg.is-proceso   { background: var(--ax-accent-gold) !important; }
+.cotiz-mezcla__seg.is-perdida   { background: var(--ax-accent-rose) !important; }
+.cotiz-mezcla__seg.is-pendiente { background: var(--ax-accent-purple) !important; }
 
-.cotiz-counter-box {
+/* --- Los cuatro estados, en filas ----------------------------------------
+   En cuadricula 2x2 cada monto empezaba en una x distinta y no habia forma de
+   compararlos de un vistazo, ni dentro de la tarjeta ni entre tarjetas. En
+   columna, con cifras de ancho fijo, se alinean solos. Ademas "En proceso" y
+   "Pend / Stock" ya no parten en dos lineas. */
+.cotiz-estados {
+  list-style: none !important;
+  margin: 0 0 1rem !important;
+  padding: 0 !important;
   display: flex !important;
   flex-direction: column !important;
-  gap: 3px !important;
-  padding: 0.45rem 0.55rem !important;
-  border-radius: 8px !important;
-  background: rgba(255, 255, 255, 0.02) !important;
+  gap: 1px !important;
+  background: var(--ax-border-subtle) !important;
+  border-radius: 10px !important;
+  overflow: hidden !important;
 }
 
-.cotiz-counter-lbl {
+.cotiz-estado {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto auto !important;
+  align-items: baseline !important;
+  column-gap: 0.5rem !important;
+  padding: 0.5rem 0.6rem 0.5rem 0.75rem !important;
+  background: var(--surf-1, rgba(255, 255, 255, 0.02)) !important;
+  position: relative !important;
+}
+
+/* Filete de color a la izquierda de cada fila, en vez del borde de la caja. */
+.cotiz-estado::before {
+  content: '' !important;
+  position: absolute !important;
+  left: 0 !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  width: 3px !important;
+}
+.cotiz-estado.is-aceptada::before  { background: var(--ax-accent-emerald) !important; }
+.cotiz-estado.is-proceso::before   { background: var(--ax-accent-gold) !important; }
+.cotiz-estado.is-perdida::before   { background: var(--ax-accent-rose) !important; }
+.cotiz-estado.is-pendiente::before { background: var(--ax-accent-purple) !important; }
+
+.cotiz-estado__lbl {
   font-size: 0.75rem !important;
-  font-weight: 800 !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.4px !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 4px !important;
+  font-weight: 500 !important;
+  color: var(--ax-text-secondary) !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
 }
 
-.cotiz-counter-main-num {
-  font-size: 1.25rem !important;
-  font-weight: 900 !important;
-  color: var(--ax-text-primary) !important;
-  line-height: 1.1 !important;
-}
-
-.cotiz-counter-money {
+/* El monto en el color del estado: es la cifra que se busca al mirar la fila. */
+.cotiz-estado__monto {
   font-size: 0.8125rem !important;
-  font-weight: 700 !important;
-  line-height: 1.1 !important;
+  font-weight: 600 !important;
+  font-variant-numeric: tabular-nums !important;
+  white-space: nowrap !important;
+  text-align: right !important;
+}
+.cotiz-estado.is-aceptada  .cotiz-estado__monto { color: var(--ax-accent-emerald) !important; }
+.cotiz-estado.is-proceso   .cotiz-estado__monto { color: var(--ax-accent-gold) !important; }
+.cotiz-estado.is-perdida   .cotiz-estado__monto { color: var(--ax-accent-rose) !important; }
+.cotiz-estado.is-pendiente .cotiz-estado__monto { color: var(--ax-accent-purple) !important; }
+
+/* El recuento va en una columna de ancho fijo para que las cuatro filas
+   terminen en la misma vertical aunque una tenga 4 digitos y otra 1. */
+.cotiz-estado__n {
+  font-size: 0.8125rem !important;
+  font-weight: 500 !important;
+  color: var(--ax-text-tertiary) !important;
+  font-variant-numeric: tabular-nums !important;
+  min-width: 3.1em !important;
+  text-align: right !important;
+  white-space: nowrap !important;
 }
 
-.cotiz-progress-section {
+/* --- Efectividad de cierre -----------------------------------------------
+   La barra va en azul y no en verde. Verde es un veredicto, y este numero
+   cuenta solicitudes, no pesos: puede marcar 65,9% en una tarjeta que pierde
+   mas dinero del que gana. El veredicto lo da la barra de reparto de arriba,
+   que si mira los montos. */
+.cotiz-tipo-cierre {
   margin-top: auto !important;
-  padding-top: 0.4rem !important;
+  padding-top: 0.15rem !important;
+}
+
+.cotiz-tipo-cierre__fila {
+  display: flex !important;
+  align-items: baseline !important;
+  justify-content: space-between !important;
+  gap: 0.5rem !important;
+  margin-bottom: 5px !important;
+}
+
+.cotiz-tipo-cierre__lbl {
+  font-size: 0.75rem !important;
+  font-weight: 400 !important;
+  color: var(--ax-text-tertiary) !important;
+  white-space: nowrap !important;
+}
+
+.cotiz-tipo-cierre__val {
+  font-size: 0.9375rem !important;
+  font-weight: 600 !important;
+  color: var(--ax-text-primary) !important;
+  font-variant-numeric: tabular-nums !important;
 }
 
 .cotiz-progress-bar-wrap {
-  height: 8px !important;
-  background: rgba(255, 255, 255, 0.08) !important;
-  border-radius: 6px !important;
+  height: 6px !important;
+  background: var(--ax-border-subtle) !important;
+  border-radius: 999px !important;
   overflow: hidden !important;
-  margin-top: 5px !important;
 }
 
 .cotiz-progress-bar-fill {
   height: 100% !important;
-  border-radius: 6px !important;
+  border-radius: 999px !important;
+  background: var(--ax-accent) !important;
   transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
@@ -8328,27 +8422,8 @@ html, body {
   .cotiz-summary-strip { grid-template-columns: 1fr !important; }
 }
 
-.cotiz-tipo-cards-grid {
-  display: grid !important;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
-  gap: 1.25rem !important;
-}
-
-.cotiz-tipo-card {
-  background: var(--surf-2) !important;
-  backdrop-filter: blur(20px) !important;
-  border: 1px solid var(--ax-border-subtle) !important;
-  border-radius: 20px !important;
-  padding: 1.35rem !important;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.35) !important;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
-}
-
-.cotiz-tipo-card:hover {
-  transform: translateY(-3px) !important;
-  border-color: rgba(77, 159, 236, 0.4) !important;
-  box-shadow: 0 14px 35px rgba(0, 0, 0, 0.45), 0 0 20px rgba(77, 159, 236, 0.15) !important;
-}
+/* El reparto en columnas lo fija el bloque de mas arriba. Aqui habia un
+   auto-fill de 280px que con cuatro tarjetas daba 3 + 1 y un hueco enorme. */
 
 /* --- 13. Products & Stock Forecasting Luxury UI --- */
 .prod-suggestions-dropdown {
@@ -9265,8 +9340,7 @@ body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; 
 .today-badge,
 .proj-badge,
 .ax-nav__badge,
-.ft-tag,
-.cotiz-win-badge {
+.ft-tag {
   border: none !important;
   font-weight: 600 !important;
   letter-spacing: 0.06em !important;

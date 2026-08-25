@@ -5624,71 +5624,85 @@ function renderCotizacionesHeroCards(data) {
     'Especial': 'cotiz-tipo-card--especial'
   };
 
+  /* Los cuatro estados, en el orden en que se leen: lo ganado arriba, lo
+     perdido despues, y lo que aun no se decide al final. */
+  const estadosDe = (item) => [
+    { clave: 'aceptada', etiqueta: 'Aceptadas',   n: item.aceptadasCnt, monto: item.aceptadasMonto },
+    { clave: 'proceso',  etiqueta: 'En proceso',  n: item.enviadasCnt,  monto: item.enviadasMonto },
+    { clave: 'perdida',  etiqueta: 'Perdidas',    n: item.perdidasCnt,  monto: item.perdidasMonto },
+    { clave: 'pendiente',etiqueta: 'Pend / Stock',n: item.otrasCnt,     monto: item.otrasMonto }
+  ];
+
   container.innerHTML = sortedTipos.map(item => {
     const winRate = item.count > 0 ? ((item.aceptadasCnt / item.count) * 100).toFixed(1) : '0';
     const icon = tipoIcons[item.tipo] || '📑';
     const cardClass = tipoClasses[item.tipo] || '';
-    const isHighWin = Number(winRate) >= 40;
+    const estados = estadosDe(item);
+
+    /* La mezcla se calcula sobre la suma de los cuatro estados y no sobre
+       totalMonto: si algun dia dejan de cubrirlo todo, la barra se quedaria
+       corta en vez de mentir sobre las proporciones. */
+    const sumaEstados = estados.reduce((a, e) => a + e.monto, 0);
+
+    const mezcla = sumaEstados > 0 ? estados.filter(e => e.monto > 0).map(e => {
+      const pct = (e.monto / sumaEstados) * 100;
+      return `<span class="cotiz-mezcla__seg is-${e.clave}" style="width:${pct.toFixed(2)}%"
+        title="${e.etiqueta}: ${formatCLP(e.monto)} (${pct.toFixed(1)}% del monto)"></span>`;
+    }).join('') : '';
+
+    const filas = estados.map(e => `
+      <li class="cotiz-estado is-${e.clave}">
+        <span class="cotiz-estado__lbl">${e.etiqueta}</span>
+        <span class="cotiz-estado__monto">${formatCLP(e.monto)}</span>
+        <span class="cotiz-estado__n">${e.n.toLocaleString('es-CL')}</span>
+      </li>`).join('');
 
     return `
-      <div class="cotiz-tipo-card ${cardClass}">
-        <!-- Cabecera de Tarjeta -->
-        <div class="cotiz-tipo-card-header">
+      <article class="cotiz-tipo-card ${cardClass}">
+        <!-- Solo el nombre: el porcentaje vivia aqui y tambien abajo, y en
+             "Promoción" el distintivo se partia en dos lineas y desalineaba
+             la tarjeta entera respecto de sus vecinas. -->
+        <header class="cotiz-tipo-card-header">
           <span class="cotiz-tipo-badge">
-            <span class="cotiz-tipo-badge-icon">${icon}</span>
+            <span class="cotiz-tipo-badge-icon" aria-hidden="true">${icon}</span>
             <span>${item.tipo}</span>
           </span>
-          <span class="cotiz-win-badge" style="background: ${isHighWin ? 'rgba(61, 220, 151, 0.2)' : 'rgba(77, 159, 236, 0.2)'}; color: ${isHighWin ? 'var(--ax-accent-emerald)' : 'var(--ax-accent)'}; border: 1px solid ${isHighWin ? 'rgba(61, 220, 151, 0.4)' : 'rgba(77, 159, 236, 0.4)'};">
-            ${winRate}% Aprobación
-          </span>
-        </div>
+        </header>
 
-        <!-- Monto Principal -->
         <div class="cotiz-tipo-monto">${formatCLP(item.totalMonto)}</div>
         <div class="cotiz-tipo-subtitle">
-          <span>📦 <strong>${item.count.toLocaleString('es-CL')}</strong> solicitudes</span>
-          <span>•</span>
-          <span><strong>${Math.round(item.unidades).toLocaleString('es-CL')}</strong> un.</span>
+          <strong>${item.count.toLocaleString('es-CL')}</strong> solicitudes
+          <span class="cotiz-tipo-subtitle__sep" aria-hidden="true">·</span>
+          <strong>${Math.round(item.unidades).toLocaleString('es-CL')}</strong> un.
         </div>
 
-        <!-- Cuadrícula 2x2 de Contadores con Alta Legibilidad -->
-        <div class="cotiz-counters-grid">
-          <div class="cotiz-counter-box" style="border-left: 3px solid #3DDC97;">
-            <span class="cotiz-counter-lbl" style="color: var(--ax-accent-emerald);">✅ Aceptadas</span>
-            <span class="cotiz-counter-main-num">${item.aceptadasCnt.toLocaleString('es-CL')}</span>
-            <span class="cotiz-counter-money" style="color: var(--ax-accent-emerald);">${formatCLP(item.aceptadasMonto)}</span>
-          </div>
-
-          <div class="cotiz-counter-box" style="border-left: 3px solid #FFC46B;">
-            <span class="cotiz-counter-lbl" style="color: var(--ax-accent-gold);">⏳ En Proceso</span>
-            <span class="cotiz-counter-main-num">${item.enviadasCnt.toLocaleString('es-CL')}</span>
-            <span class="cotiz-counter-money" style="color: var(--ax-accent-gold);">${formatCLP(item.enviadasMonto)}</span>
-          </div>
-
-          <div class="cotiz-counter-box" style="border-left: 3px solid #FF6B8A;">
-            <span class="cotiz-counter-lbl" style="color: var(--ax-accent-rose);">❌ Perdidas</span>
-            <span class="cotiz-counter-main-num">${item.perdidasCnt.toLocaleString('es-CL')}</span>
-            <span class="cotiz-counter-money" style="color: var(--ax-accent-rose);">${formatCLP(item.perdidasMonto)}</span>
-          </div>
-
-          <div class="cotiz-counter-box" style="border-left: 3px solid #A78BFA;">
-            <span class="cotiz-counter-lbl" style="color: var(--ax-accent-purple);">📦 Pend / Stock</span>
-            <span class="cotiz-counter-main-num">${item.otrasCnt.toLocaleString('es-CL')}</span>
-            <span class="cotiz-counter-money" style="color: var(--ax-accent-purple);">${formatCLP(item.otrasMonto)}</span>
-          </div>
+        <!-- Que parte del dinero esta en cada estado. Es lo unico que no se
+             podia ver antes: cuatro cifras sueltas no dicen la proporcion, y
+             aqui un tipo puede tener buen porcentaje de cierre y aun asi
+             perder mas pesos de los que gana. -->
+        <div class="cotiz-mezcla-lbl">Reparto del monto</div>
+        <div class="cotiz-mezcla" role="img"
+          aria-label="Reparto del monto: ${estados.map(e => e.etiqueta + ' ' +
+            (sumaEstados > 0 ? ((e.monto / sumaEstados) * 100).toFixed(0) : 0) + '%').join(', ')}">
+          ${mezcla}
         </div>
 
-        <!-- Barra de Conversión con Mayor Grosor e Iluminación -->
-        <div class="cotiz-progress-section">
-          <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.8125rem; margin-bottom:4px;">
-            <span style="color: var(--ax-text-tertiary); font-weight: 600;">Efectividad de Cierre</span>
-            <strong style="color:${isHighWin ? 'var(--ax-accent-emerald)' : 'var(--ax-accent)'}; font-size:0.875rem;">${winRate}%</strong>
+        <!-- En filas y no en cuadricula 2x2: asi los montos caen en una sola
+             columna y se comparan de un vistazo, dentro de la tarjeta y entre
+             tarjetas. En la cuadricula cada cifra empezaba en otro sitio. -->
+        <ul class="cotiz-estados">${filas}</ul>
+
+        <footer class="cotiz-tipo-cierre">
+          <div class="cotiz-tipo-cierre__fila">
+            <span class="cotiz-tipo-cierre__lbl">Efectividad de cierre</span>
+            <span class="cotiz-tipo-cierre__val">${winRate}%</span>
           </div>
           <div class="cotiz-progress-bar-wrap">
-            <div class="cotiz-progress-bar-fill" style="width: ${Math.min(100, Math.max(0, Number(winRate)))}%; background: ${isHighWin ? 'linear-gradient(90deg, #3DDC97, #3DDC97)' : 'linear-gradient(90deg, #4D9FEC, #6FB4F0)'}; box-shadow: 0 0 10px ${isHighWin ? 'rgba(61, 220, 151, 0.4)' : 'rgba(77, 159, 236, 0.4)'};"></div>
+            <div class="cotiz-progress-bar-fill"
+              style="width: ${Math.min(100, Math.max(0, Number(winRate)))}%"></div>
           </div>
-        </div>
-      </div>
+        </footer>
+      </article>
     `;
   }).join('');
 }
