@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="3 3 26 26">
+  <title>Glomax S.A.</title>
+  <defs>
+    <linearGradient id="g" x1="2" y1="2" x2="30" y2="30" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4D9FEC"/>
+      <stop offset="0.5" stop-color="#4D9FEC"/>
+      <stop offset="1" stop-color="#A78BFA"/>
+    </linearGradient>
+  </defs>
+  <!-- Mismo trazado que el logo del sidebar. El punto va como subtrazado con
+       fill-rule evenodd para que quede calado y deje ver la pestana, en vez de
+       ser un lunar oscuro que sobre fondo blanco se ve como una mancha. -->
+  <path fill="url(#g)" fill-rule="evenodd"
+    d="M4 4 H16 A12 12 0 0 1 28 16 V28 H16 A12 12 0 0 1 4 16 V4 Z
+       M20.5 8.9 A2.6 2.6 0 1 0 20.5 14.1 A2.6 2.6 0 1 0 20.5 8.9 Z"/>
+</svg>
