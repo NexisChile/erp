@@ -9241,7 +9241,7 @@ if (document.readyState === 'loading') {
 /* ============================================================================
    MODULO DE PRECIOS DE COMPETENCIA
    ----------------------------------------------------------------------------
-   Lee la pestana PreciosHist que llena Precios.gs y la cruza con el precio de
+   Lee la pestana PreciosHist que llena Code.gs (parte 2) y la cruza con el precio de
    venta propio para responder una sola pregunta: donde estoy mas caro que la
    competencia y cuanto.
 
@@ -9322,10 +9322,11 @@ async function loadPrecios(forzar) {
       '<h3>Falta un paso de configuración</h3>' +
       '<p>El módulo está instalado pero todavía no sabe de qué pestaña leer.</p>' +
       '<ol>' +
-      '<li>Pega <code>Precios.gs</code> en el mismo proyecto de Apps Script que <code>Code.gs</code>.</li>' +
-      '<li>Ejecuta <code>crearHojasPrecios()</code>. En el registro te va a imprimir un GID.</li>' +
+      '<li>Pega <code>Code.gs</code> completo en tu proyecto de Apps Script.</li>' +
+      '<li>Crea a mano dos pestañas en el Sheet: <code>PreciosMapa</code> y <code>PreciosHist</code>.</li>' +
+      '<li>Ejecuta <code>verificarHojasPrecios()</code>: te dice los encabezados que faltan y te da el GID.</li>' +
       '<li>Copia ese número en <code>SPREADSHEET_PRECIOS_GID</code> dentro de <code>config.js</code>.</li>' +
-      '<li>Llena la pestaña <code>PreciosMapa</code> con tu código y la URL del competidor.</li>' +
+      '<li>Llena <code>PreciosMapa</code> con tu código y la URL del competidor.</li>' +
       '<li>Ejecuta <code>instalarDisparadorPrecios()</code> para que se actualice solo.</li>' +
       '</ol>' +
       '<p class="precios-setup__nota">Antes de cargar un sitio nuevo en la hoja, prueba su URL con ' +

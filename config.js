@@ -7,9 +7,9 @@ const SPREADSHEET_GID = "999482111"; // Pestaña Ventas
 const SPREADSHEET_COTIZACIONES_GID = "2001859242"; // Pestaña Cotizaciones
 
 // Pestaña PreciosHist, que llena el modulo de precios de competencia
-// (Precios.gs). El GID lo imprime crearHojasPrecios() en el registro de Apps
+// (parte 2 de Code.gs). El GID lo imprime crearHojasPrecios() en el registro de Apps
 // Script. Si se deja vacio, el modulo se muestra pero avisa que falta configurar.
-const SPREADSHEET_PRECIOS_GID = "";
+const SPREADSHEET_PRECIOS_GID = "1840508986";
 
 // Configuración de Auto-Actualización y Sincronización Automática en Segundo Plano
 const ENABLE_AUTO_REFRESH = true;        // Habilita auto-refresco automático
