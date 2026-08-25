@@ -9950,3 +9950,115 @@ button, input, select, textarea, optgroup {
   margin-left: 0.3em;
   font-weight: 700;
 }
+
+/* ===== Precios · agrupado por SKU ======================================== */
+
+.precios-codigo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Ancho fijo, tenga o no triangulo: si el hueco se encoge en las filas de un
+   solo competidor, la columna de codigos queda en zigzag. */
+.precios-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  min-width: 2.9em;
+  min-height: 1.7rem;
+  padding: 0.15rem 0.4rem;
+  border: 1px solid var(--ax-border);
+  border-radius: 5px;
+  background: transparent;
+  color: var(--ax-text-secondary);
+  font: inherit;
+  /* En rem y no en em: la celda del codigo ya viene con la letra reducida y un
+     em encima lo dejaba en 8px, ilegible. */
+  font-size: 0.72rem;
+  line-height: 1.4;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.precios-toggle:hover {
+  background: var(--surf-3);
+  border-color: var(--ax-accent-sky);
+  color: var(--ax-text-primary);
+}
+.precios-toggle:focus-visible {
+  outline: 2px solid var(--ax-accent-sky);
+  outline-offset: 1px;
+}
+.precios-toggle--vacio {
+  border-color: transparent;
+  background: none;
+  cursor: default;
+  pointer-events: none;
+}
+
+.precios-toggle__icono {
+  display: inline-block;
+  font-size: 1.05em;
+  transition: transform 0.15s ease;
+}
+.precios-toggle[aria-expanded="true"] .precios-toggle__icono {
+  transform: rotate(90deg);
+}
+.precios-toggle__n {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.precios-fila.is-abierta > td {
+  background: var(--surf-3);
+}
+
+.precios-detalle > td {
+  background: color-mix(in srgb, var(--surf-3) 55%, transparent);
+  font-size: 0.94em;
+  padding-top: 0.45rem;
+  padding-bottom: 0.45rem;
+}
+/* La linea vertical marca de un vistazo donde empieza y termina el grupo. */
+.precios-detalle > td:first-child {
+  border-left: 2px solid var(--ax-accent-sky);
+}
+.precios-detalle .precios-pill {
+  opacity: 0.85;
+}
+
+/* Etiqueta de contexto: aclara por que en la fila resumen figura esa tienda y
+   no otra, sin obligar a desplegar para entenderlo. */
+.precios-mas {
+  display: inline-block;
+  margin-left: 0.5rem;
+  color: var(--ax-text-tertiary);
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+
+.precios-aviso {
+  display: inline-block;
+  margin-left: 0.45rem;
+  width: 1.2rem;
+  height: 1.2rem;
+  line-height: 1.2rem;
+  text-align: center;
+  border-radius: 50%;
+  background: var(--ax-accent-gold);
+  color: #121931;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: help;
+}
+/* En tema claro el oro es oscuro (#9A6410) y el texto casi negro encima se
+   quedaba en 3,5:1. El fondo no puede aclararse -perderia contra el blanco de
+   la tarjeta- asi que se invierte la letra. */
+[data-ax-theme="light"] .precios-aviso {
+  color: #FFFFFF;
+}
+
+@media (max-width: 720px) {
+  .precios-mas { display: none; }
+}

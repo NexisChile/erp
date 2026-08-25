@@ -9255,6 +9255,10 @@ let preciosFallidos = [];      // filas que el scraper no pudo leer
 let preciosMisPrecios = new Map(); // precio propio fijado a mano en PreciosMapa
 let preciosTab = 'todos';
 let preciosCargando = false;
+/* Codigos desplegados. Vive fuera del render porque la tabla se vuelve a pintar
+   entera al filtrar o cambiar de pestana, y perder lo que estabas mirando cada
+   vez que escribes una letra en el buscador seria insufrible. */
+let preciosAbiertos = new Set();
 
 /* A partir de esta brecha, en porcentaje, la lectura se trata como sospechosa y
    no como una diferencia de precio real. 500% es holgado a proposito: deja
@@ -9442,6 +9446,82 @@ async function loadPrecios(forzar) {
   }
 }
 
+/**
+ * Agrupa las lecturas por codigo.
+ *
+ * La fila que se ve resume el producto contra el competidor MAS BARATO, porque
+ * es el que fija el precio de referencia: si estas por encima de ese, da igual
+ * que haya otros mas caros. El resto queda desplegable, que es donde se ve si
+ * la brecha es contra todo el mercado o contra una sola tienda.
+ *
+ * Las lecturas marcadas como dudosas no pueden ganar el puesto de mas barato:
+ * un precio mal leido es siempre el menor de todos y taparia al competidor de
+ * verdad. Se muestran igual al desplegar, para que se puedan corregir.
+ */
+function preciosAgrupar(items) {
+  const grupos = new Map();
+  items.forEach(i => {
+    let g = grupos.get(i.codigo);
+    if (!g) {
+      g = {
+        codigo: i.codigo,
+        descripcion: i.descripcion,
+        miPrecio: i.miPrecio,
+        miPrecioFijado: i.miPrecioFijado,
+        lecturas: []
+      };
+      grupos.set(i.codigo, g);
+    }
+    if (!g.descripcion && i.descripcion) g.descripcion = i.descripcion;
+    g.lecturas.push(i);
+  });
+
+  grupos.forEach(g => {
+    g.lecturas.sort((a, b) => a.suPrecio - b.suPrecio);
+
+    const fiables = g.lecturas.filter(l => l.suPrecio > 0 && !l.dudoso);
+    const mejor = fiables.length ? fiables[0] : null;
+
+    g.mejor = mejor;
+    g.competidores = g.lecturas.length;
+    g.dudosas = g.lecturas.filter(l => l.dudoso).length;
+    g.suPrecio = mejor ? mejor.suPrecio : 0;
+    g.competidor = mejor ? mejor.competidor : (g.lecturas[0] || {}).competidor || '—';
+    g.url = mejor ? mejor.url : (g.lecturas[0] || {}).url || '';
+    g.estado = mejor ? mejor.estado : (g.lecturas[0] || {}).estado || '';
+    g.dif = mejor ? mejor.dif : null;
+    g.dudoso = !mejor && g.lecturas.some(l => l.dudoso);
+    g.fecha = g.lecturas.map(l => l.fecha).filter(Boolean).sort((a, b) => b - a)[0] || null;
+  });
+
+  return Array.from(grupos.values());
+}
+
+/** Etiqueta y color de la situacion, igual para la fila resumen y el detalle. */
+function preciosSituacion(i) {
+  if (i.dudoso) return { texto: 'Revisar lectura', clase: 'is-nulo' };
+  if (i.dif === null) {
+    return {
+      texto: i.suPrecio > 0 ? 'Sin venta previa' : escapeHtml(i.estado || 'Sin dato'),
+      clase: 'is-nulo'
+    };
+  }
+  if (i.dif > 0.5) return { texto: 'Más caro', clase: 'is-caro' };
+  if (i.dif < -0.5) return { texto: 'Más barato', clase: 'is-barato' };
+  return { texto: 'A la par', clase: 'is-par' };
+}
+
+function preciosDifTexto(dif) {
+  return dif === null ? '—' : (dif > 0 ? '+' : '') + dif.toFixed(1) + '%';
+}
+
+function preciosEnlace(competidor, url) {
+  return url
+    ? '<a href="' + escapeHtml(url) + '" target="_blank" rel="noopener noreferrer nofollow">' +
+      escapeHtml(competidor) + '</a>'
+    : escapeHtml(competidor);
+}
+
 function renderPreciosView() {
   const setup = document.getElementById('preciosSetup');
   const body = document.getElementById('preciosBody');
@@ -9466,6 +9546,7 @@ function renderPreciosView() {
       miPrecioFijado: propio > 0,
       suPrecio: l.precio,
       dif: dif,
+      dudoso: dif !== null && Math.abs(dif) > PRECIOS_DIF_ABSURDA,
       disponible: l.disponible,
       fecha: l.fecha,
       url: l.url,
@@ -9473,17 +9554,14 @@ function renderPreciosView() {
     };
   });
 
-  /* Una brecha de miles por ciento no es una situacion comercial, es una
-     lectura mala: el sitio publico el precio en otro formato, o lo que se leyo
-     era el despacho. Si entra al promedio, una sola fila lo arrastra y la
-     "Brecha promedio" deja de servir para decidir nada. Se aparta y se marca,
-     que es distinto de esconderla. */
-  const dudosos = items.filter(i => i.dif !== null && Math.abs(i.dif) > PRECIOS_DIF_ABSURDA);
-  items.forEach(i => { i.dudoso = i.dif !== null && Math.abs(i.dif) > PRECIOS_DIF_ABSURDA; });
+  const grupos = preciosAgrupar(items);
 
-  const comparables = items.filter(i => i.dif !== null && !i.dudoso);
-  const caros = comparables.filter(i => i.dif > 0.5);
-  const baratos = comparables.filter(i => i.dif < -0.5);
+  /* Los KPI cuentan productos, no lecturas, para que cuadren con lo que se ve
+     en la tabla: cada fila es un producto. Un SKU con tres competidores es un
+     riesgo, no tres. */
+  const comparables = grupos.filter(g => g.dif !== null);
+  const caros = comparables.filter(g => g.dif > 0.5);
+  const baratos = comparables.filter(g => g.dif < -0.5);
 
   if (!items.length && !preciosFallidos.length) {
     preciosMostrarAviso(
@@ -9497,12 +9575,8 @@ function renderPreciosView() {
   if (setup) setup.style.display = 'none';
   if (body) body.style.display = '';
 
-  /* Un mismo codigo puede estar cargado en varios competidores y cada par
-     genera su propia fila. Contar filas y llamarlas "productos" inflaba el
-     numero: con un SKU en tres sitios decia tres productos monitoreados. */
   const fuentes = new Set(items.map(i => i.competidor));
-  const productos = new Set(items.map(i => i.codigo));
-  document.getElementById('preciosKpiTotal').textContent = formatNum(productos.size);
+  document.getElementById('preciosKpiTotal').textContent = formatNum(grupos.length);
   document.getElementById('preciosKpiFuentes').textContent =
     formatNum(items.length) + (items.length === 1 ? ' comparación' : ' comparaciones') +
     ' · ' + fuentes.size + (fuentes.size === 1 ? ' competidor' : ' competidores');
@@ -9510,12 +9584,12 @@ function renderPreciosView() {
   document.getElementById('preciosKpiBarato').textContent = formatNum(baratos.length);
 
   const holgura = baratos.length
-    ? baratos.reduce((a, i) => a + Math.abs(i.dif), 0) / baratos.length : 0;
+    ? baratos.reduce((a, g) => a + Math.abs(g.dif), 0) / baratos.length : 0;
   document.getElementById('preciosKpiHolgura').textContent =
     baratos.length ? holgura.toFixed(1) + '% de holgura media' : '—';
 
   const brecha = comparables.length
-    ? comparables.reduce((a, i) => a + i.dif, 0) / comparables.length : null;
+    ? comparables.reduce((a, g) => a + g.dif, 0) / comparables.length : null;
   const elBrecha = document.getElementById('preciosKpiBrecha');
   elBrecha.textContent = brecha === null ? '—'
     : (brecha > 0 ? '+' : '') + brecha.toFixed(1) + '%';
@@ -9533,26 +9607,34 @@ function renderPreciosView() {
 
   let visibles;
   if (preciosTab === 'fallo') {
+    /* Los fallos van sin agrupar: aqui interesa cada URL que no se pudo leer,
+       no un resumen por producto. */
     visibles = preciosFallidos.map(f => ({
       codigo: f.codigo,
       descripcion: (mios.get(f.codigo) || {}).descripcion || '',
       competidor: f.competidor,
-      miPrecio: (mios.get(f.codigo) || {}).preuni || 0,
-      suPrecio: 0, dif: null, fecha: f.fecha, url: f.url, estado: f.estado
+      miPrecio: preciosMisPrecios.get(f.codigo) || (mios.get(f.codigo) || {}).preuni || 0,
+      miPrecioFijado: (preciosMisPrecios.get(f.codigo) || 0) > 0,
+      suPrecio: 0, dif: null, dudoso: false, fecha: f.fecha, url: f.url,
+      estado: f.estado, lecturas: []
     }));
   } else if (preciosTab === 'caro') {
     visibles = caros.slice();
   } else if (preciosTab === 'barato') {
     visibles = baratos.slice();
   } else {
-    visibles = items.slice();
+    visibles = grupos.slice();
   }
 
+  /* El filtro mira tambien los competidores de dentro del grupo: buscar
+     "PROMSA" tiene que encontrar el producto aunque en la fila resumen figure
+     otra tienda por ser mas barata. */
   if (q) {
-    visibles = visibles.filter(i =>
-      i.codigo.toLowerCase().includes(q) ||
-      (i.descripcion || '').toLowerCase().includes(q) ||
-      (i.competidor || '').toLowerCase().includes(q));
+    visibles = visibles.filter(g =>
+      g.codigo.toLowerCase().includes(q) ||
+      (g.descripcion || '').toLowerCase().includes(q) ||
+      (g.competidor || '').toLowerCase().includes(q) ||
+      (g.lecturas || []).some(l => (l.competidor || '').toLowerCase().includes(q)));
   }
 
   /* Se ordena por brecha descendente: arriba queda donde mas caro estoy, que
@@ -9566,46 +9648,67 @@ function renderPreciosView() {
     return;
   }
 
-  tbody.innerHTML = visibles.map(i => {
-    let situacion, clase;
-    if (i.dif === null) {
-      /* Dos causas distintas que no hay que mezclar: o el scraper no pudo leer
-         la pagina, o la leyo bien pero yo nunca le he vendido ese producto y no
-         tengo precio propio con que comparar. Mostrar el estado del scraper en
-         el segundo caso hacia leer "OK/texto" como si fuera una situacion
-         comercial, que no significa nada para quien mira la tabla. */
-      situacion = i.suPrecio > 0 ? 'Sin venta previa' : escapeHtml(i.estado || 'Sin dato');
-      clase = 'is-nulo';
-    } else if (i.dudoso) {
-      situacion = 'Revisar lectura'; clase = 'is-nulo';
-    } else if (i.dif > 0.5) {
-      situacion = 'Más caro'; clase = 'is-caro';
-    } else if (i.dif < -0.5) {
-      situacion = 'Más barato'; clase = 'is-barato';
-    } else {
-      situacion = 'A la par'; clase = 'is-par';
-    }
-    const difTxt = i.dif === null ? '—'
-      : (i.dif > 0 ? '+' : '') + i.dif.toFixed(1) + '%';
-    const enlace = i.url
-      ? '<a href="' + escapeHtml(i.url) + '" target="_blank" rel="noopener noreferrer nofollow">' +
-        escapeHtml(i.competidor) + '</a>'
-      : escapeHtml(i.competidor);
-    return '<tr>' +
-      '<td class="mono">' + escapeHtml(i.codigo) + '</td>' +
-      '<td>' + escapeHtml(i.descripcion || '—') + '</td>' +
-      '<td>' + enlace + '</td>' +
-      '<td class="num" title="' + (i.miPrecio <= 0 ? 'Sin precio propio'
-        : i.miPrecioFijado ? 'Precio fijado en PreciosMapa'
+  tbody.innerHTML = visibles.map(g => {
+    const s = preciosSituacion(g);
+    const varios = (g.lecturas || []).length > 1;
+    const abierto = varios && preciosAbiertos.has(g.codigo);
+
+    /* Con un solo competidor no hay nada que desplegar y el triangulo seria
+       una promesa vacia; se deja el hueco para que la columna no baile. */
+    const control = varios
+      ? '<button type="button" class="precios-toggle" data-precio-grupo="' +
+        escapeHtml(g.codigo) + '" aria-expanded="' + (abierto ? 'true' : 'false') +
+        '" title="' + (abierto ? 'Ocultar' : 'Ver') + ' los ' + g.competidores +
+        ' competidores">' +
+        '<span class="precios-toggle__icono" aria-hidden="true">▸</span>' +
+        '<span class="precios-toggle__n">' + g.competidores + '</span>' +
+        '</button>'
+      : '<span class="precios-toggle precios-toggle--vacio" aria-hidden="true"></span>';
+
+    const aviso = g.dudosas
+      ? '<span class="precios-aviso" title="' + g.dudosas +
+        ' lectura(s) fuera de rango, apartadas del cálculo">!</span>'
+      : '';
+
+    const filaResumen = '<tr class="precios-fila' + (abierto ? ' is-abierta' : '') + '">' +
+      '<td class="mono"><span class="precios-codigo">' + control +
+        escapeHtml(g.codigo) + '</span></td>' +
+      '<td>' + escapeHtml(g.descripcion || '—') + aviso + '</td>' +
+      '<td>' + preciosEnlace(g.competidor, g.url) +
+        (varios ? '<span class="precios-mas">más barato de ' + g.competidores +
+          '</span>' : '') + '</td>' +
+      '<td class="num" title="' + (g.miPrecio <= 0 ? 'Sin precio propio'
+        : g.miPrecioFijado ? 'Precio fijado en PreciosMapa'
         : 'PREUNI de la última venta de este código') + '">' +
-        (i.miPrecio > 0 ? formatCLP(i.miPrecio) : '—') +
-        (i.miPrecioFijado ? '<span class="precios-fijado" aria-hidden="true">·</span>' : '') +
+        (g.miPrecio > 0 ? formatCLP(g.miPrecio) : '—') +
+        (g.miPrecioFijado ? '<span class="precios-fijado" aria-hidden="true">·</span>' : '') +
       '</td>' +
-      '<td class="num">' + (i.suPrecio > 0 ? formatCLP(i.suPrecio) : '—') + '</td>' +
-      '<td class="num ' + clase + '">' + difTxt + '</td>' +
-      '<td><span class="precios-pill ' + clase + '">' + situacion + '</span></td>' +
-      '<td>' + (i.fecha ? i.fecha.toLocaleDateString('es-CL') : '—') + '</td>' +
+      '<td class="num">' + (g.suPrecio > 0 ? formatCLP(g.suPrecio) : '—') + '</td>' +
+      '<td class="num ' + s.clase + '">' + preciosDifTexto(g.dif) + '</td>' +
+      '<td><span class="precios-pill ' + s.clase + '">' + s.texto + '</span></td>' +
+      '<td>' + (g.fecha ? g.fecha.toLocaleDateString('es-CL') : '—') + '</td>' +
       '</tr>';
+
+    if (!varios) return filaResumen;
+
+    const detalle = g.lecturas.map(l => {
+      const sl = preciosSituacion(l);
+      const esMejor = g.mejor && l === g.mejor;
+      return '<tr class="precios-detalle" data-precio-detalle="' +
+          escapeHtml(g.codigo) + '"' + (abierto ? '' : ' hidden') + '>' +
+        '<td></td>' +
+        '<td class="precios-detalle__hueco"></td>' +
+        '<td>' + preciosEnlace(l.competidor, l.url) +
+          (esMejor ? '<span class="precios-mas">el más barato</span>' : '') + '</td>' +
+        '<td class="num">' + (l.miPrecio > 0 ? formatCLP(l.miPrecio) : '—') + '</td>' +
+        '<td class="num">' + (l.suPrecio > 0 ? formatCLP(l.suPrecio) : '—') + '</td>' +
+        '<td class="num ' + sl.clase + '">' + preciosDifTexto(l.dif) + '</td>' +
+        '<td><span class="precios-pill ' + sl.clase + '">' + sl.texto + '</span></td>' +
+        '<td>' + (l.fecha ? l.fecha.toLocaleDateString('es-CL') : '—') + '</td>' +
+        '</tr>';
+    }).join('');
+
+    return filaResumen + detalle;
   }).join('');
 }
 
@@ -9633,5 +9736,36 @@ function setupPreciosListeners() {
   if (recargar && !recargar._bound) {
     recargar._bound = true;
     recargar.addEventListener('click', () => loadPrecios(true));
+  }
+
+  /* El listener va en el tbody y no en cada boton: la tabla se rehace completa
+     en cada filtro, y enganchar fila por fila obligaria a volver a atarlos
+     todos cada vez. */
+  const tbody = document.getElementById('preciosTableBody');
+  if (tbody && !tbody._bound) {
+    tbody._bound = true;
+    tbody.addEventListener('click', ev => {
+      const btn = ev.target.closest('[data-precio-grupo]');
+      if (!btn) return;
+      const codigo = btn.getAttribute('data-precio-grupo');
+      if (preciosAbiertos.has(codigo)) preciosAbiertos.delete(codigo);
+      else preciosAbiertos.add(codigo);
+      preciosAlternarGrupo(codigo, preciosAbiertos.has(codigo), btn);
+    });
+  }
+}
+
+/* Se muestran u ocultan las filas ya pintadas en vez de repintar la tabla:
+   repintar por abrir un grupo pierde el foco del teclado y hace saltar el
+   scroll cuando hay muchas filas. */
+function preciosAlternarGrupo(codigo, abierto, btn) {
+  document.querySelectorAll('[data-precio-detalle]').forEach(tr => {
+    if (tr.getAttribute('data-precio-detalle') !== codigo) return;
+    tr.hidden = !abierto;
+  });
+  if (btn) {
+    btn.setAttribute('aria-expanded', abierto ? 'true' : 'false');
+    const fila = btn.closest('tr');
+    if (fila) fila.classList.toggle('is-abierta', abierto);
   }
 }
