@@ -24,7 +24,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <!-- Stylesheets & Libraries -->
-  <link rel="stylesheet" href="style.css?v=20260825_COTIZ_V46" />
+  <link rel="stylesheet" href="style.css?v=20260825_MPUB_V47" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -395,6 +395,12 @@
           <svg class="ax-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
           <span class="ax-nav__label">Precios Competencia</span>
           <span class="ax-nav__badge ax-nav__badge--ficha">VS</span>
+        </button>
+
+        <button class="ax-nav__item" data-view="mercadopublico">
+          <svg class="ax-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M5 21V10l7-6 7 6v11"/><path d="M9 21v-6h6v6"/></svg>
+          <span class="ax-nav__label">Mercado Público</span>
+          <span class="ax-nav__badge ax-nav__badge--prod" style="background: rgba(167, 139, 250, 0.2); color: var(--ax-accent-purple); border: 1px solid rgba(167, 139, 250, 0.4);">Licit</span>
         </button>
 
         <p class="ax-sidebar__section">Seguridad & Sesión</p>
@@ -1908,6 +1914,230 @@
           </div>
         </div>
 
+        <!-- VISTA MERCADO PÚBLICO -->
+        <div class="view" id="view-mercadopublico">
+          <div class="dashboard-section-header" style="margin-top: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <div class="section-title-wrap">
+                <span class="section-badge-dot" style="background: #A78BFA; box-shadow: 0 0 12px rgba(167, 139, 250, 0.6);"></span>
+                <h2 class="dashboard-section-title">Mercado Público</h2>
+              </div>
+              <span class="section-subtitle">Oportunidades detectadas, lo que se ofertó y cómo terminó</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+              <span id="mpUpdated" class="precios-updated">&mdash;</span>
+              <button type="button" class="btn-secondary" id="mpExportar" disabled
+                title="Exportar a Excel lo que estás viendo">
+                <span aria-hidden="true">📊</span> Excel
+              </button>
+              <button type="button" class="btn-secondary" id="mpReload">Actualizar</button>
+            </div>
+          </div>
+
+          <!-- FILTROS -->
+          <div class="ax-card filters-bar" id="mpFiltersBar" style="margin-bottom: 1.25rem;">
+            <div class="filter-controls">
+              <div class="filter-group">
+                <label for="mpFoco">Vista</label>
+                <select id="mpFoco" class="filter-select">
+                  <option value="">Todas</option>
+                  <option value="abiertas">Abiertas (cierran después de hoy)</option>
+                  <option value="ofertadas">Ofertadas</option>
+                  <option value="ganadas">Adjudicadas</option>
+                  <option value="perdidas">Perdidas</option>
+                  <option value="sinresolver">Ofertadas sin cerrar</option>
+                </select>
+              </div>
+              <div class="filter-group">
+                <label for="fltMpAnio">Año</label>
+                <select id="fltMpAnio" class="filter-select"><option value="">Todos los años</option></select>
+              </div>
+              <div class="filter-group">
+                <label for="fltMpTipo">Tipo</label>
+                <select id="fltMpTipo" class="filter-select"><option value="">Todos los tipos</option></select>
+              </div>
+              <div class="filter-group">
+                <label for="fltMpSeguimiento">Seguimiento</label>
+                <select id="fltMpSeguimiento" class="filter-select"><option value="">Todo seguimiento</option></select>
+              </div>
+              <div class="filter-group">
+                <label for="fltMpEtiqueta">Etiqueta</label>
+                <select id="fltMpEtiqueta" class="filter-select"><option value="">Todas las etiquetas</option></select>
+              </div>
+              <div class="filter-group">
+                <label for="fltMpAsignado">Asignado</label>
+                <select id="fltMpAsignado" class="filter-select"><option value="">Todos los responsables</option></select>
+              </div>
+              <div class="filter-group">
+                <label for="fltMpLinea">Línea de negocio</label>
+                <select id="fltMpLinea" class="filter-select"><option value="">Todas las líneas</option></select>
+              </div>
+              <div class="filter-group" style="flex: 2; min-width: 240px;">
+                <label for="mpSearchBox">Buscar</label>
+                <input type="text" id="mpSearchBox" class="filter-input" placeholder="ID, nombre, organismo, descripción&hellip;" />
+              </div>
+              <div class="filter-group filter-group--accion">
+                <label>&nbsp;</label>
+                <button type="button" class="btn-secondary btn-sm" id="btnMpLimpiar">Limpiar filtros</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- KPIs -->
+          <div class="mp-kpis">
+            <div class="ax-card mp-kpi">
+              <span class="mp-kpi__label">Oportunidades detectadas</span>
+              <span class="mp-kpi__value" id="mpKpiDetectadas">0</span>
+              <span class="mp-kpi__sub" id="mpKpiDetectadasSub">&mdash;</span>
+            </div>
+            <div class="ax-card mp-kpi mp-kpi--oferta">
+              <span class="mp-kpi__label">Ofertadas</span>
+              <span class="mp-kpi__value" id="mpKpiOfertadas">0</span>
+              <span class="mp-kpi__sub" id="mpKpiOfertadasSub">&mdash;</span>
+            </div>
+            <div class="ax-card mp-kpi mp-kpi--ok">
+              <span class="mp-kpi__label">Adjudicadas</span>
+              <span class="mp-kpi__value" id="mpKpiGanadas">0</span>
+              <span class="mp-kpi__sub" id="mpKpiGanadasSub">&mdash;</span>
+            </div>
+            <div class="ax-card mp-kpi">
+              <span class="mp-kpi__label">Tasa de adjudicación</span>
+              <span class="mp-kpi__value" id="mpKpiTasa">&mdash;</span>
+              <span class="mp-kpi__sub" id="mpKpiTasaSub">&mdash;</span>
+            </div>
+          </div>
+
+          <div class="mp-aviso" id="mpAvisoPendientes" style="display:none;"></div>
+
+          <!-- EMBUDO + CIERRES PRÓXIMOS -->
+          <div class="mp-fila-doble">
+            <div class="ax-card chart-card">
+              <div class="chart-card-header">
+                <div>
+                  <span class="chart-tag">EMBUDO DE PARTICIPACIÓN</span>
+                  <h3 class="chart-main-title">De la oportunidad detectada a la orden adjudicada</h3>
+                </div>
+              </div>
+              <div class="mp-embudo" id="mpEmbudo"></div>
+            </div>
+
+            <div class="ax-card chart-card">
+              <div class="chart-card-header">
+                <div>
+                  <span class="chart-tag">TODAVÍA SE PUEDE ACTUAR</span>
+                  <h3 class="chart-main-title">Próximos cierres</h3>
+                </div>
+                <span class="mp-cierres-resumen" id="mpCierresResumen">&mdash;</span>
+              </div>
+              <ul class="mp-cierres" id="mpCierres"></ul>
+            </div>
+          </div>
+
+          <!-- GRÁFICOS -->
+          <div class="charts-grid" style="margin-bottom: 1.25rem;">
+            <div class="ax-card chart-card">
+              <div class="chart-card-header">
+                <div>
+                  <span class="chart-tag">EVOLUCIÓN</span>
+                  <h3 class="chart-main-title">Detectadas, ofertadas y adjudicadas por periodo</h3>
+                </div>
+              </div>
+              <div class="chart-container">
+                <canvas id="chartMpEvolucion"></canvas>
+              </div>
+            </div>
+
+            <div class="ax-card chart-card">
+              <div class="chart-card-header">
+                <div>
+                  <span class="chart-tag">ESTADO DE SEGUIMIENTO</span>
+                  <h3 class="chart-main-title">En qué estado quedó cada oportunidad</h3>
+                </div>
+              </div>
+              <div class="chart-container">
+                <canvas id="chartMpSeguimiento"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <div class="charts-grid" style="margin-bottom: 1.25rem;">
+            <div class="ax-card chart-card">
+              <div class="chart-card-header">
+                <div>
+                  <span class="chart-tag">PLATA QUE SE DEJÓ PASAR</span>
+                  <h3 class="chart-main-title">Motivo por el que no se ofertó, medido en pesos</h3>
+                </div>
+              </div>
+              <div class="chart-container">
+                <canvas id="chartMpMotivos"></canvas>
+              </div>
+            </div>
+
+            <div class="ax-card chart-card">
+              <div class="chart-card-header">
+                <div>
+                  <span class="chart-tag">TIPO DE COMPRA</span>
+                  <h3 class="chart-main-title">Dónde se participa y dónde se adjudica</h3>
+                </div>
+              </div>
+              <div class="chart-container">
+                <canvas id="chartMpTipo"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <div class="charts-grid" style="margin-bottom: 1.25rem;">
+            <div class="ax-card chart-card">
+              <div class="chart-card-header">
+                <div>
+                  <span class="chart-tag">ORGANISMOS COMPRADORES</span>
+                  <h3 class="chart-main-title">Top 10 por oportunidades detectadas</h3>
+                </div>
+              </div>
+              <div class="mp-organismos" id="mpTopOrganismos"></div>
+            </div>
+          </div>
+
+          <!-- TABLA -->
+          <div class="ax-card chart-card" id="mpTablaCard">
+            <div class="chart-card-header">
+              <div>
+                <span class="chart-tag">REGISTROS DETALLADOS (PESTAÑA MERCADOPUBLICO)</span>
+                <h3 class="chart-main-title">Listado de oportunidades</h3>
+              </div>
+            </div>
+            <div class="table-container">
+              <table class="data-table mp-table">
+                <thead>
+                  <tr>
+                    <th data-mp-sort="id">ID</th>
+                    <th data-mp-sort="nombre">NOMBRE / ORGANISMO</th>
+                    <th data-mp-sort="tipo">TIPO</th>
+                    <th data-mp-sort="cierre" class="is-sorted">CIERRE</th>
+                    <th data-mp-sort="neto" class="num">MONTO NETO</th>
+                    <th data-mp-sort="netoOfertado" class="num">OFERTADO NETO</th>
+                    <th>RESULTADO</th>
+                    <th data-mp-sort="etiqueta">ETIQUETA</th>
+                    <th data-mp-sort="asignado">ASIGNADO</th>
+                    <th>LÍNEAS</th>
+                  </tr>
+                </thead>
+                <tbody id="mpTableBody">
+                  <tr><td colspan="10" style="text-align:center; padding:2.5rem; color: var(--ax-text-tertiary);">Cargando oportunidades&hellip;</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="pagination" style="margin-top: 1rem;">
+              <span id="mpPageInfo">Página 1 de 1</span>
+              <div class="pagination-controls">
+                <button type="button" class="btn-secondary btn-sm" id="btnMpPrevPage">Anterior</button>
+                <button type="button" class="btn-secondary btn-sm" id="btnMpNextPage">Siguiente</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- VISTA FICHA TÉCNICA -->
         <div class="view" id="view-fichatecnica">
           <div class="dashboard-section-header" style="margin-top: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
@@ -2706,7 +2936,7 @@
   </div>
 
   <!-- Scripts -->
-  <script src="config.js?v=20260825_COTIZ_V46"></script>
-  <script src="app.js?v=20260825_COTIZ_V46"></script>
+  <script src="config.js?v=20260825_MPUB_V47"></script>
+  <script src="app.js?v=20260825_MPUB_V47"></script>
 </body>
 </html>

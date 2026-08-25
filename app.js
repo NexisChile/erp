@@ -1150,6 +1150,12 @@ function switchView(viewName) {
            propio loadPrecios corta si ya hay una carga en curso. */
         if (typeof setupPreciosListeners === 'function') setupPreciosListeners();
         if (typeof loadPrecios === 'function') loadPrecios();
+      } else if (viewName === 'mercadopublico') {
+        /* Como precios: los datos viven en otra pestana y no dependen de los
+           filtros globales, asi que no se cachea por revision. loadMercadoPublico
+           corta solo si ya hay una descarga en curso o si ya tiene las filas. */
+        if (typeof setupMercadoPublicoListeners === 'function') setupMercadoPublicoListeners();
+        if (typeof loadMercadoPublico === 'function') loadMercadoPublico();
       } else if (viewName === 'fichatecnica') {
         if (!isCached) {
           if (typeof renderFichaTecnicaView === 'function') renderFichaTecnicaView();
@@ -10232,8 +10238,22 @@ function xlsxSerialFecha(fecha) {
   return Math.round((utc - Date.UTC(1899, 11, 30)) / 86400000);
 }
 
-/* Estilos: 0 normal, 1 encabezado, 2 pesos, 3 porcentaje, 4 fecha. */
-const XLSX_ESTILO = { texto: 0, clp: 2, pct: 3, fecha: 4 };
+/* Estilos: 0 normal, 1 encabezado, 2 pesos, 3 porcentaje, 4 fecha,
+   5 fecha con hora. 'numero' usa el 0 porque un entero suelto no lleva
+   formato, pero necesita rama propia en xlsxCelda para no escribirse como
+   texto: un ano guardado como cadena no se puede ordenar ni sumar. */
+/* Igual que xlsxSerialFecha pero conservando la hora en la parte decimal.
+   En una licitacion el cierre es a las 10:00 o a las 15:30 del mismo dia, y
+   redondear al dia borra justamente el dato que decide si alcanzas a ofertar. */
+function xlsxSerialFechaHora(fecha) {
+  const dia = xlsxSerialFecha(fecha);
+  const frac = (fecha.getHours() * 3600 + fecha.getMinutes() * 60 + fecha.getSeconds()) / 86400;
+  /* 1e9 y no 1e6: a seis decimales de dia el redondeo deja 29 ms de deriva, y
+     un cierre grabado a las 13:00:00 puede volver como 12:59:59. */
+  return Math.round((dia + frac) * 1e9) / 1e9;
+}
+
+const XLSX_ESTILO = { texto: 0, clp: 2, pct: 3, fecha: 4, fechahora: 5, numero: 0 };
 
 function xlsxCelda(ref, valor, tipo) {
   if (valor === null || valor === undefined || valor === '') return '';
@@ -10243,9 +10263,14 @@ function xlsxCelda(ref, valor, tipo) {
     if (typeof valor !== 'number' || !isFinite(valor)) return '';
     return '<c r="' + ref + '"' + attrS + '><v>' + valor + '</v></c>';
   }
-  if (tipo === 'fecha') {
+  if (tipo === 'numero') {
+    if (typeof valor !== 'number' || !isFinite(valor)) return '';
+    return '<c r="' + ref + '"' + attrS + '><v>' + valor + '</v></c>';
+  }
+  if (tipo === 'fecha' || tipo === 'fechahora') {
     if (!(valor instanceof Date) || isNaN(valor)) return '';
-    return '<c r="' + ref + '"' + attrS + '><v>' + xlsxSerialFecha(valor) + '</v></c>';
+    const serie = tipo === 'fechahora' ? xlsxSerialFechaHora(valor) : xlsxSerialFecha(valor);
+    return '<c r="' + ref + '"' + attrS + '><v>' + serie + '</v></c>';
   }
   return '<c r="' + ref + '"' + attrS + ' t="inlineStr"><is><t xml:space="preserve">' +
     xlsxTexto(valor) + '</t></is></c>';
@@ -10332,6 +10357,7 @@ function xlsxCrearLibro(hojas) {
        confunden de un vistazo y significan cosas opuestas. */
     '<numFmt numFmtId="165" formatCode="+0.0%;-0.0%;0.0%"/>' +
     '<numFmt numFmtId="166" formatCode="dd-mm-yyyy"/>' +
+    '<numFmt numFmtId="167" formatCode="dd-mm-yyyy hh:mm"/>' +
     '</numFmts>' +
     '<fonts count="2">' +
     '<font><sz val="11"/><name val="Calibri"/></font>' +
@@ -10344,12 +10370,13 @@ function xlsxCrearLibro(hojas) {
     '</fills>' +
     '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>' +
     '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>' +
-    '<cellXfs count="5">' +
+    '<cellXfs count="6">' +
     '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>' +
     '<xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment vertical="center"/></xf>' +
     '<xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>' +
     '<xf numFmtId="165" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>' +
     '<xf numFmtId="166" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>' +
+    '<xf numFmtId="167" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>' +
     '</cellXfs>' +
     '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>' +
     '</styleSheet>';
@@ -10492,4 +10519,1220 @@ function exportarPreciosExcel() {
     console.error('[precios] no se pudo armar el Excel', e);
     if (typeof showToast === 'function') showToast('⚠️ No se pudo generar el Excel');
   }
+}
+
+
+/* ==========================================================================
+   MODULO MERCADO PUBLICO
+   Pestana "MercadoPublico" del mismo libro. Una fila por oportunidad de
+   compra publica detectada, con lo que se oferto y como termino.
+
+   Las 19 columnas se leen por POSICION (A..S) y no por nombre de encabezado:
+   asi es como estan especificadas y asi sobreviven a que alguien renombre un
+   titulo en la hoja. Si algun dia se inserta una columna al medio, esto se
+   rompe de forma ruidosa y visible, que es preferible a leer el dato
+   equivocado en silencio.
+   ========================================================================== */
+
+const MP_COL = {
+  id: 0, nombre: 1, descripcion: 2, organismo: 3, tipo: 4,
+  monto: 5, montoOfertado: 6, cierre: 7, estadoOportunidad: 8, asignado: 9,
+  etiqueta: 10, seguimiento: 11, comentario: 12, lineas: 13, cod: 14,
+  mes: 15, anio: 16, montoNeto: 17, montoOfertadoNeto: 18
+};
+
+let mpRows = [];
+let mpFiltrado = [];
+let mpPagina = 1;
+const MP_TAM_PAGINA = 50;
+let mpCargando = false;
+let mpUltimaCarga = null;
+let mpOrden = { col: 'cierre', dir: 'desc' };
+
+let mpChartEvolucion = null;
+let mpChartSeguimiento = null;
+let mpChartMotivos = null;
+let mpChartTipo = null;
+
+/* Etiquetas que significan "la vimos y decidimos no ofertar". Se separan de
+   las demas porque su suma es plata que se dejo pasar a proposito, y el motivo
+   dice si fue una decision comercial (NO VENDEMOS) o una falla propia que se
+   puede corregir (SIN STOCK, FALTA TIEMPO). */
+const MP_MOTIVOS_DESCARTE = {
+  'NO VENDEMOS':  { texto: 'No vendemos el producto', tipo: 'catalogo' },
+  'NO CUMPLE':    { texto: 'No cumple las bases',     tipo: 'catalogo' },
+  'NO POSTULA':   { texto: 'Se decidio no postular',  tipo: 'catalogo' },
+  'SOBRE PTO':    { texto: 'Sobre presupuesto',       tipo: 'precio' },
+  'SIN STOCK':    { texto: 'Sin stock',               tipo: 'propio' },
+  'FALTA TIEMPO': { texto: 'Falto tiempo',            tipo: 'propio' },
+  'INCOMPLETA':   { texto: 'Postulacion incompleta',  tipo: 'propio' },
+  'CANCELADA':    { texto: 'Cancelada por el organismo', tipo: 'externo' }
+};
+
+/* -------------------------------------------------------------------------
+   Lectura de celdas
+   ------------------------------------------------------------------------- */
+
+function mpTexto(v) {
+  if (v === undefined || v === null) return '';
+  return String(v).trim();
+}
+
+function mpNumero(v) {
+  if (v === undefined || v === null || v === '') return 0;
+  if (typeof v === 'number') return isFinite(v) ? v : 0;
+  /* Por CSV los montos netos llegan como "2.396.143": punto de miles chileno,
+     no decimal. parseChileanNumber ya distingue los dos casos. */
+  if (typeof parseChileanNumber === 'function') return parseChileanNumber(v);
+  const n = Number(String(v).replace(/[^0-9,-]/g, '').replace(',', '.'));
+  return isFinite(n) ? n : 0;
+}
+
+/* La fecha de cierre llega en tres formatos segun por donde entro el dato:
+   GViz manda la cadena "Date(2025,4,30,15,10,0)" (mes 0-based, igual que JS),
+   el CSV manda "30-05-25 15:10" y una lectura ya normalizada manda un Date.
+   La hora importa: en una licitacion el cierre es a las 10:00 o a las 15:30,
+   no "ese dia". */
+function mpFecha(v) {
+  if (!v) return null;
+  if (v instanceof Date) return isNaN(v.getTime()) ? null : v;
+
+  const s = String(v).trim();
+
+  const gviz = s.match(/^Date\((\d+),(\d+),(\d+)(?:,(\d+),(\d+),(\d+))?\)$/);
+  if (gviz) {
+    const d = new Date(
+      Number(gviz[1]), Number(gviz[2]), Number(gviz[3]),
+      Number(gviz[4] || 0), Number(gviz[5] || 0), Number(gviz[6] || 0)
+    );
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  /* dd-mm-yy o dd-mm-yyyy, con hora opcional. El ano de dos digitos se lee
+     como 20xx: la hoja parte en 2023 y no hay registros del siglo pasado. */
+  const cl = s.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{2,4})(?:[ T](\d{1,2}):(\d{2}))?/);
+  if (cl) {
+    let anio = Number(cl[3]);
+    if (anio < 100) anio += 2000;
+    const d = new Date(anio, Number(cl[2]) - 1, Number(cl[1]),
+      Number(cl[4] || 0), Number(cl[5] || 0));
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  /* Sin respaldo a new Date(s): con una celda que dice "0" el constructor libre
+     devuelve el 1 de enero de 2000 tan campante, y esa fecha inventada entra al
+     filtro por ano y a la linea de tiempo como si fuera un cierre real. Lo que
+     no calza con ninguno de los dos formatos conocidos es un dato roto de la
+     hoja y se marca como tal. */
+  return null;
+}
+
+/* La columna N trae varias lineas separadas por coma y en cualquier orden:
+   "Movilidad, Dormitorio" y "Dormitorio, Movilidad" son la misma combinacion.
+   Se devuelve la lista para poder contar cada linea por separado en vez de
+   tratar cada combinacion como si fuera una categoria distinta. */
+function mpLineas(v) {
+  return mpTexto(v).split(',')
+    .map(x => x.trim())
+    .filter(Boolean);
+}
+
+/* La etiqueta vacia y "noTag" son lo mismo escrito de dos maneras. */
+function mpEtiqueta(v) {
+  const e = mpTexto(v);
+  return (!e || e.toLowerCase() === 'notag') ? '' : e.toUpperCase();
+}
+
+/* El desenlace sale de la columna L. "Aceptada" y "Postulada" no son victorias:
+   son ofertas vivas todavia sin resolver, y contarlas como ganadas inflaria la
+   tasa de adjudicacion con plata que aun no esta. */
+function mpResultado(seguimiento) {
+  const s = mpTexto(seguimiento).toLowerCase();
+  if (s === 'ganada') return 'ganada';
+  if (s === 'perdida' || s === 'rechazada') return 'perdida';
+  if (s === 'aceptada' || s === 'postulada') return 'enJuego';
+  return 'abierta';
+}
+
+/* -------------------------------------------------------------------------
+   Normalizacion
+   ------------------------------------------------------------------------- */
+
+function normalizeMercadoPublicoRows(rawRows) {
+  if (!rawRows || !rawRows.length) return [];
+
+  const salida = [];
+
+  for (let i = 0; i < rawRows.length; i++) {
+    const raw = rawRows[i];
+    if (!raw) continue;
+
+    /* Las dos rutas de descarga entregan formas distintas: JSONP deja las
+       celdas en _col_0.._col_18 y el CSV entrega un arreglo plano. */
+    const celda = (n) => {
+      if (Array.isArray(raw)) return raw[n];
+      const v = raw['_col_' + n];
+      return v === undefined ? '' : v;
+    };
+
+    const id = mpTexto(celda(MP_COL.id));
+    const nombre = mpTexto(celda(MP_COL.nombre));
+    const organismo = mpTexto(celda(MP_COL.organismo));
+    if (!id && !nombre && !organismo) continue;
+
+    /* El encabezado se cuela cuando la descarga viene por CSV sin cabecera
+       declarada; se reconoce porque la columna A dice literalmente "ID". */
+    if (id.toUpperCase() === 'ID' && nombre.toLowerCase() === 'nombre') continue;
+
+    const monto = Math.max(0, mpNumero(celda(MP_COL.monto)));
+    const montoOfertado = Math.max(0, mpNumero(celda(MP_COL.montoOfertado)));
+
+    /* R y S son exactamente F y G divididos por 1,19 (verificado sobre las
+       16.356 filas con monto). Cuando la hoja no los trae se recalculan, para
+       que ninguna cifra de la vista quede en cero por una celda en blanco. */
+    let neto = Math.round(mpNumero(celda(MP_COL.montoNeto)));
+    let netoOfertado = Math.round(mpNumero(celda(MP_COL.montoOfertadoNeto)));
+    if (!neto && monto) neto = Math.round(monto / 1.19);
+    if (!netoOfertado && montoOfertado) netoOfertado = Math.round(montoOfertado / 1.19);
+
+    const cierre = mpFecha(celda(MP_COL.cierre));
+    const seguimiento = mpTexto(celda(MP_COL.seguimiento));
+
+    salida.push({
+      id: id,
+      nombre: nombre,
+      descripcion: mpTexto(celda(MP_COL.descripcion)),
+      organismo: organismo,
+      tipo: mpTexto(celda(MP_COL.tipo)) || 'Sin tipo',
+      monto: monto,
+      montoOfertado: montoOfertado,
+      cierre: cierre,
+      /* Mes y ano (P y Q) se derivan del cierre, comprobado fila por fila. Se
+         recalculan aqui en vez de leerlos para que el filtro por periodo no
+         dependa de que esas dos columnas esten al dia. */
+      anio: cierre ? cierre.getFullYear() : mpNumero(celda(MP_COL.anio)) || null,
+      mes: cierre ? cierre.getMonth() + 1 : null,
+      estadoOportunidad: mpTexto(celda(MP_COL.estadoOportunidad)) || 'Sin estado',
+      asignado: mpTexto(celda(MP_COL.asignado)) || 'Sin asignar',
+      etiqueta: mpEtiqueta(celda(MP_COL.etiqueta)),
+      seguimiento: seguimiento || 'Sin seguimiento',
+      comentario: mpTexto(celda(MP_COL.comentario)),
+      lineas: mpLineas(celda(MP_COL.lineas)),
+      lineasTexto: mpTexto(celda(MP_COL.lineas)),
+      cod: mpTexto(celda(MP_COL.cod)),
+      neto: neto,
+      netoOfertado: netoOfertado,
+      resultado: mpResultado(seguimiento),
+      /* Se oferto = hay un monto ofertado registrado. Es el unico dato duro de
+         participacion que tiene la hoja; la etiqueta PARTICIPADA es manual y
+         no siempre acompana. */
+      oferto: montoOfertado > 0,
+      _row: (raw && raw._row) ? raw._row : i + 2
+    });
+  }
+
+  return salida;
+}
+
+/* -------------------------------------------------------------------------
+   Descarga
+   ------------------------------------------------------------------------- */
+
+async function fetchMercadoPublicoData() {
+  const spId = typeof SPREADSHEET_ID !== 'undefined' ? SPREADSHEET_ID
+    : '16bU5xUuPDvI6xIpuBabK9j_EiUFgcgMTq1T0S2LeVgQ';
+  /* Sin GID configurado se pide por nombre de pestana, que GViz tambien
+     acepta. Ahorra tener que ir a buscar el numero para que el modulo ande. */
+  const gid = (typeof SPREADSHEET_MERCADOPUBLICO_GID !== 'undefined'
+    && SPREADSHEET_MERCADOPUBLICO_GID) ? SPREADSHEET_MERCADOPUBLICO_GID : 'MercadoPublico';
+  const esGitHub = window.location.hostname.includes('github') || window.location.protocol === 'file:';
+
+  console.log('[MercadoPublico] Conectando a la pestana (' + gid + ')...');
+
+  /* 45s de espera y no los 8s que usan los otros modulos: son 17.000 filas y
+     unos 13 MB por JSONP. Con 8s la descarga se cancelaba justo antes de
+     llegar y el modulo caia al proxy sin necesidad. */
+  try {
+    if (typeof fetchGVizViaJSONP === 'function') {
+      const filas = await fetchGVizViaJSONP(spId, gid, 45000);
+      if (filas && filas.length) {
+        console.log('[MercadoPublico] ' + filas.length.toLocaleString('es-CL') + ' filas por JSONP');
+        return normalizeMercadoPublicoRows(filas);
+      }
+    }
+  } catch (err) {
+    console.warn('[MercadoPublico] JSONP fallo, se prueba el proxy:', err.message || err);
+  }
+
+  const gidNumerico = /^\d+$/.test(String(gid)) ? gid : '488176235';
+
+  if (!esGitHub) {
+    const proxies = [
+      '/api/proxy?spreadsheet_id=' + spId + '&gid=' + gidNumerico,
+      '/api/csv?spreadsheet_id=' + spId + '&gid=' + gidNumerico
+    ];
+    for (const url of proxies) {
+      try {
+        const resp = await fetch(url, { signal: AbortSignal.timeout(30000) });
+        if (!resp.ok) continue;
+        const texto = await resp.text();
+        if (!texto || texto.length < 200 || texto.trim().startsWith('<')) continue;
+        if (typeof parseCsvText !== 'function') continue;
+        const filas = parseCsvText(texto);
+        if (filas && filas.length) {
+          console.log('[MercadoPublico] ' + filas.length.toLocaleString('es-CL') + ' filas por proxy local');
+          return normalizeMercadoPublicoRows(filas);
+        }
+      } catch (err) {
+        console.warn('[MercadoPublico] Fallo ' + url + ':', err.message || err);
+      }
+    }
+  }
+
+  const exportUrl = 'https://docs.google.com/spreadsheets/d/' + spId +
+    '/export?format=csv&gid=' + gidNumerico;
+  const cors = [
+    'https://api.allorigins.win/raw?url=' + encodeURIComponent(exportUrl),
+    'https://corsproxy.io/?' + encodeURIComponent(exportUrl)
+  ];
+  for (const url of cors) {
+    try {
+      const resp = await fetch(url, { signal: AbortSignal.timeout(30000) });
+      if (!resp.ok) continue;
+      const texto = await resp.text();
+      if (!texto || texto.length < 200 || texto.trim().startsWith('<')) continue;
+      if (typeof parseCsvText !== 'function') continue;
+      const filas = parseCsvText(texto);
+      if (filas && filas.length) {
+        console.log('[MercadoPublico] ' + filas.length.toLocaleString('es-CL') + ' filas por proxy publico');
+        return normalizeMercadoPublicoRows(filas);
+      }
+    } catch (e) { /* se intenta el siguiente */ }
+  }
+
+  return [];
+}
+
+/* No se guarda copia en localStorage a proposito: la pestana pesa unos 13 MB
+   y el cupo del navegador son 5. Guardar un recorte daria un modulo que a
+   veces muestra 2.000 filas y a veces 17.000 sin decir cual de las dos, que es
+   peor que esperar la descarga. */
+async function loadMercadoPublico(forzar) {
+  if (mpCargando) return;
+  if (mpRows.length && !forzar) {
+    renderMercadoPublicoView();
+    return;
+  }
+
+  mpCargando = true;
+  mpEstadoCarga('Descargando oportunidades desde Google Sheets&hellip;');
+
+  try {
+    const filas = await fetchMercadoPublicoData();
+    mpRows = filas || [];
+    mpUltimaCarga = new Date();
+    if (!mpRows.length) {
+      mpEstadoCarga('No se pudo leer la pestana <strong>MercadoPublico</strong>. ' +
+        'Revisa que el libro este compartido como "cualquier persona con el enlace".', true);
+      return;
+    }
+    mpPoblarFiltros();
+    mpAplicarFiltros();
+  } catch (err) {
+    console.error('[MercadoPublico] Error de carga:', err);
+    mpEstadoCarga('Error al cargar: ' + escapeHtml(err.message || String(err)), true);
+  } finally {
+    mpCargando = false;
+    mpSincronizarExportar();
+  }
+}
+
+function mpEstadoCarga(html, esError) {
+  const cuerpo = document.getElementById('mpTableBody');
+  if (cuerpo) {
+    cuerpo.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:2.5rem; color:' +
+      (esError ? 'var(--ax-accent-rose)' : 'var(--ax-text-tertiary)') + ';">' + html + '</td></tr>';
+  }
+  const sello = document.getElementById('mpUpdated');
+  if (sello && !esError) sello.textContent = 'Cargando…';
+}
+
+/* -------------------------------------------------------------------------
+   Filtros
+   ------------------------------------------------------------------------- */
+
+function mpPoblarFiltros() {
+  const llenar = (id, valores, etiquetaTodos) => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const previo = sel.value;
+    const ordenadas = Array.from(valores).filter(Boolean).sort((a, b) =>
+      String(a).localeCompare(String(b), 'es'));
+    sel.innerHTML = '<option value="">' + etiquetaTodos + '</option>' +
+      ordenadas.map(v => '<option value="' + escapeHtml(v) + '">' + escapeHtml(v) + '</option>').join('');
+    if (previo && ordenadas.indexOf(previo) !== -1) sel.value = previo;
+  };
+
+  const anios = new Set(), tipos = new Set(), seguimientos = new Set();
+  const asignados = new Set(), etiquetas = new Set(), lineas = new Set();
+
+  mpRows.forEach(r => {
+    if (r.anio) anios.add(String(r.anio));
+    tipos.add(r.tipo);
+    seguimientos.add(r.seguimiento);
+    asignados.add(r.asignado);
+    if (r.etiqueta) etiquetas.add(r.etiqueta);
+    r.lineas.forEach(l => lineas.add(l));
+  });
+
+  const selAnio = document.getElementById('fltMpAnio');
+  if (selAnio) {
+    const previo = selAnio.value;
+    const lista = Array.from(anios).sort((a, b) => Number(b) - Number(a));
+    selAnio.innerHTML = '<option value="">Todos los años</option>' +
+      lista.map(v => '<option value="' + escapeHtml(v) + '">' + escapeHtml(v) + '</option>').join('');
+    if (previo && lista.indexOf(previo) !== -1) selAnio.value = previo;
+  }
+
+  llenar('fltMpTipo', tipos, 'Todos los tipos');
+  llenar('fltMpSeguimiento', seguimientos, 'Todo seguimiento');
+  llenar('fltMpAsignado', asignados, 'Todos los responsables');
+  llenar('fltMpEtiqueta', etiquetas, 'Todas las etiquetas');
+  llenar('fltMpLinea', lineas, 'Todas las líneas');
+}
+
+function mpValor(id) {
+  const el = document.getElementById(id);
+  return el ? el.value.trim() : '';
+}
+
+function mpAplicarFiltros() {
+  const anio = mpValor('fltMpAnio');
+  const tipo = mpValor('fltMpTipo');
+  const seg = mpValor('fltMpSeguimiento');
+  const asig = mpValor('fltMpAsignado');
+  const etiq = mpValor('fltMpEtiqueta');
+  const linea = mpValor('fltMpLinea');
+  const busca = mpValor('mpSearchBox').toLowerCase();
+  const foco = mpValor('mpFoco');
+
+  const ahora = new Date();
+
+  mpFiltrado = mpRows.filter(r => {
+    if (anio && String(r.anio) !== anio) return false;
+    if (tipo && r.tipo !== tipo) return false;
+    if (seg && r.seguimiento !== seg) return false;
+    if (asig && r.asignado !== asig) return false;
+    if (etiq && r.etiqueta !== etiq) return false;
+    if (linea && r.lineas.indexOf(linea) === -1) return false;
+
+    if (foco === 'abiertas' && !(r.cierre && r.cierre > ahora)) return false;
+    if (foco === 'ofertadas' && !r.oferto) return false;
+    if (foco === 'ganadas' && r.resultado !== 'ganada') return false;
+    if (foco === 'perdidas' && r.resultado !== 'perdida') return false;
+    if (foco === 'sinresolver' && !(r.oferto && r.resultado === 'abierta')) return false;
+
+    if (busca) {
+      const heno = (r.id + ' ' + r.nombre + ' ' + r.organismo + ' ' + r.etiqueta + ' ' +
+        r.asignado + ' ' + r.lineasTexto + ' ' + r.descripcion).toLowerCase();
+      if (heno.indexOf(busca) === -1) return false;
+    }
+    return true;
+  });
+
+  mpPagina = 1;
+  renderMercadoPublicoView();
+}
+
+function limpiarMpFiltros() {
+  ['fltMpAnio', 'fltMpTipo', 'fltMpSeguimiento', 'fltMpAsignado', 'fltMpEtiqueta',
+    'fltMpLinea', 'mpSearchBox', 'mpFoco'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  mpAplicarFiltros();
+}
+
+/* -------------------------------------------------------------------------
+   Metricas
+   ------------------------------------------------------------------------- */
+
+function mpResumen(datos) {
+  const r = {
+    total: datos.length,
+    netoTotal: 0,
+    ofertadas: 0, netoOfertado: 0,
+    ganadas: 0, netoGanado: 0, ganadasSinMonto: 0,
+    perdidas: 0, netoPerdido: 0,
+    enJuego: 0, netoEnJuego: 0,
+    sinResolver: 0, netoSinResolver: 0,
+    descartadas: 0, netoDescartado: 0
+  };
+
+  datos.forEach(d => {
+    r.netoTotal += d.neto;
+    if (d.oferto) { r.ofertadas++; r.netoOfertado += d.netoOfertado; }
+
+    /* Solo el monto ofertado, sin caer al monto del llamado cuando falta. Son
+       dos cifras distintas: lo que ofertamos y lo que el organismo publico que
+       pensaba gastar, y esta ultima es varias veces mayor. Sustituir una por
+       otra hundia la tasa por monto del 16,6% al 6,3%, porque las 190 perdidas
+       sin monto anotado entraban valoradas al precio del llamado completo.
+       Cuando el dato no esta, la fila suma cero aqui y sigue contando en la
+       tasa por cantidad; se avisa aparte con ganadasSinMonto. */
+    if (d.resultado === 'ganada') {
+      r.ganadas++;
+      r.netoGanado += d.netoOfertado;
+      if (!d.netoOfertado) r.ganadasSinMonto++;
+    } else if (d.resultado === 'perdida') {
+      r.perdidas++;
+      r.netoPerdido += d.netoOfertado;
+    } else if (d.resultado === 'enJuego') {
+      r.enJuego++;
+      r.netoEnJuego += d.netoOfertado;
+    }
+
+    /* Ofertas presentadas que nunca se cerraron a ganada ni perdida: son plata
+       comprometida sin desenlace anotado. */
+    if (d.oferto && d.resultado === 'abierta') {
+      r.sinResolver++; r.netoSinResolver += d.netoOfertado;
+    }
+    if (!d.oferto && MP_MOTIVOS_DESCARTE[d.etiqueta]) {
+      r.descartadas++; r.netoDescartado += d.neto;
+    }
+  });
+
+  const decididas = r.ganadas + r.perdidas;
+  r.decididas = decididas;
+  r.tasaCantidad = decididas > 0 ? (r.ganadas / decididas) * 100 : 0;
+  const netoDecidido = r.netoGanado + r.netoPerdido;
+  r.tasaMonto = netoDecidido > 0 ? (r.netoGanado / netoDecidido) * 100 : 0;
+  r.tasaOferta = r.total > 0 ? (r.ofertadas / r.total) * 100 : 0;
+
+  return r;
+}
+
+/* -------------------------------------------------------------------------
+   Render
+   ------------------------------------------------------------------------- */
+
+function renderMercadoPublicoView() {
+  const datos = mpFiltrado;
+  const res = mpResumen(datos);
+
+  mpRenderKpis(res, datos);
+  mpRenderCierres(datos);
+  mpRenderCharts(datos);
+  mpRenderOrganismos(datos);
+  mpRenderTabla(datos);
+  mpSincronizarExportar();
+
+  const sello = document.getElementById('mpUpdated');
+  if (sello) {
+    sello.textContent = mpUltimaCarga
+      ? 'Actualizado ' + mpUltimaCarga.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })
+      : '—';
+  }
+}
+
+function mpRenderKpis(res, datos) {
+  const set = (id, valor, sub) => {
+    const v = document.getElementById(id);
+    if (v) v.textContent = valor;
+    if (sub !== undefined) {
+      const s = document.getElementById(id + 'Sub');
+      if (s) s.innerHTML = sub;
+    }
+  };
+
+  set('mpKpiDetectadas', formatNum(res.total),
+    formatCLP(res.netoTotal) + ' publicados (neto)');
+
+  set('mpKpiOfertadas', formatNum(res.ofertadas),
+    '<strong>' + mpPct(res.tasaOferta) + '</strong> de las detectadas · ' +
+    formatCLP(res.netoOfertado));
+
+  set('mpKpiGanadas', formatNum(res.ganadas), formatCLP(res.netoGanado) + ' adjudicados');
+
+  /* Dos tasas y no una: por cantidad y por monto. Cuando difieren mucho es que
+     se gana lo chico y se pierde lo grande, y una sola cifra lo esconde. */
+  set('mpKpiTasa', mpPct(res.tasaCantidad),
+    '<strong>' + mpPct(res.tasaMonto) + '</strong> del monto · sobre ' +
+    formatNum(res.decididas) + ' resueltas');
+
+  /* El embudo: detectadas -> ofertadas -> adjudicadas, a escala. */
+  const embudo = document.getElementById('mpEmbudo');
+  if (embudo) {
+    const pasos = [
+      { etiqueta: 'Detectadas', n: res.total, monto: res.netoTotal, clase: 'is-detectadas',
+        nota: 'valor publicado del llamado' },
+      { etiqueta: 'Ofertadas', n: res.ofertadas, monto: res.netoOfertado, clase: 'is-ofertadas',
+        nota: 'con monto ofertado registrado' },
+      { etiqueta: 'Adjudicadas', n: res.ganadas, monto: res.netoGanado, clase: 'is-ganadas',
+        nota: res.ganadasSinMonto
+          ? 'seguimiento en Ganada · ' + formatNum(res.ganadasSinMonto) + ' sin monto anotado'
+          : 'seguimiento en Ganada' }
+    ];
+    const base = res.total || 1;
+    embudo.innerHTML = pasos.map((p, i) => {
+      const ancho = Math.max(2, (p.n / base) * 100);
+      const previo = i > 0 ? pasos[i - 1].n : 0;
+      const conversion = i > 0 && previo > 0 ? mpPct((p.n / previo) * 100) + ' del paso anterior' : '';
+      return '<div class="mp-embudo__paso ' + p.clase + '">' +
+        '<div class="mp-embudo__cabecera">' +
+          '<span class="mp-embudo__etiqueta">' + p.etiqueta + '</span>' +
+          '<span class="mp-embudo__n">' + formatNum(p.n) + '</span>' +
+        '</div>' +
+        '<div class="mp-embudo__barra"><span style="width:' + ancho.toFixed(2) + '%"></span></div>' +
+        '<div class="mp-embudo__pie">' +
+          '<span class="mp-embudo__monto">' + formatCLP(p.monto) + '</span>' +
+          (conversion ? '<span class="mp-embudo__conv">' + conversion + '</span>' : '') +
+        '</div>' +
+        '<div class="mp-embudo__nota">' + p.nota + '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  /* Aviso de ofertas sin desenlace. No es decoracion: son ofertas presentadas
+     que nadie cerro, y su monto no aparece ni en ganado ni en perdido, asi que
+     sin este cartel la tasa de adjudicacion se calcula sobre menos casos de
+     los que en realidad hay. */
+  const aviso = document.getElementById('mpAvisoPendientes');
+  if (aviso) {
+    if (res.sinResolver > 0) {
+      aviso.style.display = '';
+      aviso.innerHTML = '<span class="mp-aviso__icono" aria-hidden="true">◷</span>' +
+        '<span><strong>' + formatNum(res.sinResolver) + ' ofertas presentadas siguen sin desenlace</strong> ' +
+        '(' + formatCLP(res.netoSinResolver) + ' ofertados). Quedaron en «En seguimiento» sin pasar ' +
+        'a Ganada ni a Perdida, por lo que no entran en la tasa de adjudicación.</span>';
+    } else {
+      aviso.style.display = 'none';
+    }
+  }
+}
+
+/* Lo que cierra de aqui en adelante, primero lo mas cercano. Es la unica parte
+   del modulo sobre la que todavia se puede actuar; el resto ya paso. */
+function mpRenderCierres(datos) {
+  const cont = document.getElementById('mpCierres');
+  const resumen = document.getElementById('mpCierresResumen');
+  if (!cont) return;
+
+  const ahora = new Date();
+  const abiertas = datos.filter(d => d.cierre && d.cierre > ahora)
+    .sort((a, b) => a.cierre - b.cierre);
+
+  if (!abiertas.length) {
+    cont.innerHTML = '<p class="mp-vacio">Ninguna oportunidad del filtro actual cierra después de hoy.</p>';
+    if (resumen) resumen.textContent = '—';
+    return;
+  }
+
+  /* "Sin decidir" = no se oferto y no hay una etiqueta que diga que se
+     descarto. Son las que se pueden perder por no mirarlas a tiempo. */
+  const sinDecidir = abiertas.filter(d => !d.oferto && !MP_MOTIVOS_DESCARTE[d.etiqueta]);
+  const netoSinDecidir = sinDecidir.reduce((a, d) => a + d.neto, 0);
+
+  if (resumen) {
+    resumen.innerHTML = '<strong>' + formatNum(abiertas.length) + '</strong> abiertas · ' +
+      '<strong>' + formatNum(sinDecidir.length) + '</strong> sin decidir por ' +
+      formatCLP(netoSinDecidir);
+  }
+
+  cont.innerHTML = abiertas.slice(0, 12).map(d => {
+    const restan = mpDiasHasta(d.cierre, ahora);
+    const urgente = restan <= 1;
+    const decidida = d.oferto || !!MP_MOTIVOS_DESCARTE[d.etiqueta];
+    const cuando = restan <= 0 ? 'hoy' : (restan === 1 ? 'mañana' : 'en ' + restan + ' días');
+
+    return '<li class="mp-cierre' + (urgente ? ' is-urgente' : '') +
+        (decidida ? ' is-decidida' : '') + '">' +
+      '<div class="mp-cierre__cuando">' +
+        '<span class="mp-cierre__plazo">' + cuando + '</span>' +
+        '<span class="mp-cierre__fecha">' + mpFechaTexto(d.cierre, true) + '</span>' +
+      '</div>' +
+      '<div class="mp-cierre__que">' +
+        '<span class="mp-cierre__nombre" title="' + escapeHtml(d.nombre) + '">' +
+          escapeHtml(d.nombre || d.id) + '</span>' +
+        '<span class="mp-cierre__organismo" title="' + escapeHtml(d.organismo) + '">' +
+          escapeHtml(d.organismo) + '</span>' +
+      '</div>' +
+      '<span class="mp-cierre__monto">' + formatCLP(d.neto) + '</span>' +
+      '<span class="mp-cierre__estado">' +
+        (d.oferto ? '<span class="mp-chip is-ok">Ofertada</span>'
+          : MP_MOTIVOS_DESCARTE[d.etiqueta]
+            ? '<span class="mp-chip is-neutro">' + escapeHtml(MP_MOTIVOS_DESCARTE[d.etiqueta].texto) + '</span>'
+            : '<span class="mp-chip is-pendiente">Sin decidir</span>') +
+      '</span>' +
+    '</li>';
+  }).join('');
+}
+
+/* Dias de calendario entre dos fechas, no horas transcurridas divididas por 24.
+   Un cierre hoy a las 15:00 visto a las 13:59 da una hora de diferencia, y al
+   redondear hacia arriba salia "manana" para algo que vence en la tarde. */
+function mpDiasHasta(fecha, ahora) {
+  if (!fecha) return null;
+  const a = Date.UTC(fecha.getFullYear(), fecha.getMonth(), fecha.getDate());
+  const b = Date.UTC(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
+  return Math.round((a - b) / 86400000);
+}
+
+function mpFechaTexto(fecha, conHora) {
+  if (!fecha) return '—';
+  const f = fecha.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: '2-digit' });
+  if (!conHora) return f;
+  /* 24 horas: "15:00" y no "03:00 p. m.". Es una hora de cierre, se lee de un
+     vistazo y ocupa la mitad en una columna estrecha. */
+  return f + ' ' + fecha.toLocaleTimeString('es-CL',
+    { hour: '2-digit', minute: '2-digit', hour12: false });
+}
+
+function mpRenderOrganismos(datos) {
+  const cont = document.getElementById('mpTopOrganismos');
+  if (!cont) return;
+
+  const mapa = new Map();
+  datos.forEach(d => {
+    if (!d.organismo) return;
+    if (!mapa.has(d.organismo)) mapa.set(d.organismo, { n: 0, ganadas: 0, ganado: 0, publicado: 0 });
+    const o = mapa.get(d.organismo);
+    o.n++;
+    o.publicado += d.neto;
+    if (d.resultado === 'ganada') { o.ganadas++; o.ganado += d.netoOfertado || d.neto; }
+  });
+
+  const top = Array.from(mapa.entries())
+    .sort((a, b) => b[1].n - a[1].n)
+    .slice(0, 10);
+
+  if (!top.length) {
+    cont.innerHTML = '<p class="mp-vacio">Sin organismos para el filtro actual.</p>';
+    return;
+  }
+
+  const maxN = top[0][1].n || 1;
+  cont.innerHTML = top.map(([nombre, o]) => {
+    const tasa = o.n > 0 ? (o.ganadas / o.n) * 100 : 0;
+    return '<div class="mp-org">' +
+      '<div class="mp-org__fila">' +
+        '<span class="mp-org__nombre" title="' + escapeHtml(nombre) + '">' + escapeHtml(nombre) + '</span>' +
+        '<span class="mp-org__n">' + formatNum(o.n) + '</span>' +
+      '</div>' +
+      '<div class="mp-org__barra"><span style="width:' + ((o.n / maxN) * 100).toFixed(1) + '%"></span></div>' +
+      '<div class="mp-org__pie">' +
+        '<span>' + formatNum(o.ganadas) + ' adjudicadas (' + mpPct(tasa) + ')</span>' +
+        '<span class="mp-org__monto">' + formatCLP(o.ganado) + '</span>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function mpRenderCharts(datos) {
+  if (typeof Chart === 'undefined') return;
+  const col = (typeof themeChartColors === 'function')
+    ? themeChartColors()
+    : { tick: '#94a3b8', leyenda: '#cbd5e1', rejilla: 'rgba(255,255,255,0.06)' };
+
+  const ejes = (moneda) => ({
+    x: { ticks: { color: col.tick, font: { size: 11 } }, grid: { display: false } },
+    y: {
+      beginAtZero: true,
+      ticks: {
+        color: col.tick, font: { size: 11 },
+        callback: (v) => moneda ? mpCorto(v) : formatNum(v)
+      },
+      grid: { color: col.rejilla }
+    }
+  });
+
+  /* --- 1. Evolucion por periodo ------------------------------------------
+     Si el filtro deja un solo ano se muestra mes a mes; si hay varios, ano a
+     ano. Doce barras de un ano y cuatro de cuatro anos responden preguntas
+     distintas y no caben en el mismo eje. */
+  const ctxEvo = document.getElementById('chartMpEvolucion');
+  if (ctxEvo) {
+    const anios = new Set(datos.map(d => d.anio).filter(Boolean));
+    const porMes = anios.size <= 1;
+    const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+    const mapa = new Map();
+    datos.forEach(d => {
+      const clave = porMes ? d.mes : d.anio;
+      if (!clave) return;
+      if (!mapa.has(clave)) mapa.set(clave, { det: 0, ofe: 0, gan: 0, montoGan: 0 });
+      const m = mapa.get(clave);
+      m.det++;
+      if (d.oferto) m.ofe++;
+      if (d.resultado === 'ganada') { m.gan++; m.montoGan += d.netoOfertado || d.neto; }
+    });
+
+    const claves = Array.from(mapa.keys()).sort((a, b) => a - b);
+    const etiquetas = claves.map(k => porMes ? MESES[k - 1] : String(k));
+
+    if (mpChartEvolucion) mpChartEvolucion.destroy();
+    mpChartEvolucion = new Chart(ctxEvo.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: etiquetas,
+        datasets: [
+          { label: 'Detectadas', data: claves.map(k => mapa.get(k).det),
+            backgroundColor: 'rgba(77, 159, 236, 0.35)', borderRadius: 4, order: 3 },
+          { label: 'Ofertadas', data: claves.map(k => mapa.get(k).ofe),
+            backgroundColor: 'rgba(255, 196, 107, 0.75)', borderRadius: 4, order: 2 },
+          { label: 'Adjudicadas', data: claves.map(k => mapa.get(k).gan),
+            backgroundColor: '#3DDC97', borderRadius: 4, order: 1 }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'top', labels: { color: col.leyenda, boxWidth: 12, font: { size: 11 } } },
+          tooltip: {
+            callbacks: {
+              afterBody: (items) => {
+                const k = claves[items[0].dataIndex];
+                const m = mapa.get(k);
+                return m.gan ? 'Adjudicado: ' + formatCLP(m.montoGan) : '';
+              }
+            }
+          }
+        },
+        scales: ejes(false)
+      }
+    });
+  }
+
+  /* --- 2. Estado de seguimiento ------------------------------------------ */
+  const ctxSeg = document.getElementById('chartMpSeguimiento');
+  if (ctxSeg) {
+    /* Los estados que la hoja usa de verdad. Todo lo demas se junta en "Otros":
+       hay filas con las columnas corridas donde esta celda guarda un comentario
+       entero, y cada una se llevaba una linea completa de la leyenda para
+       representar un solo registro de 17.464. */
+    const CONOCIDOS = ['Ganada', 'Aceptada', 'Postulada', 'En seguimiento', 'Perdida', 'Rechazada'];
+    const mapa = new Map();
+    let otros = 0;
+    datos.forEach(d => {
+      if (CONOCIDOS.indexOf(d.seguimiento) !== -1) {
+        mapa.set(d.seguimiento, (mapa.get(d.seguimiento) || 0) + 1);
+      } else {
+        otros++;
+      }
+    });
+    const orden = Array.from(mapa.entries()).sort((a, b) => b[1] - a[1]);
+    if (otros) orden.push(['Otros', otros]);
+    const tonos = {
+      'Ganada': '#3DDC97', 'Aceptada': '#2DD4CE', 'Postulada': '#4D9FEC',
+      'En seguimiento': '#8B95B9', 'Perdida': '#FF6B8A', 'Rechazada': '#E05E7B',
+      'Otros': '#5A6488'
+    };
+
+    if (mpChartSeguimiento) mpChartSeguimiento.destroy();
+    mpChartSeguimiento = new Chart(ctxSeg.getContext('2d'), {
+      type: 'doughnut',
+      data: {
+        labels: orden.map(e => e[0]),
+        datasets: [{
+          data: orden.map(e => e[1]),
+          backgroundColor: orden.map(e => tonos[e[0]] || '#A78BFA'),
+          borderWidth: 2,
+          borderColor: 'transparent'
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, cutout: '66%',
+        plugins: {
+          legend: { position: 'right', labels: { color: col.leyenda, boxWidth: 12, font: { size: 11 } } },
+          tooltip: {
+            callbacks: {
+              label: (c) => {
+                const total = orden.reduce((a, e) => a + e[1], 0) || 1;
+                return c.label + ': ' + formatNum(c.raw) + ' (' + mpPct((c.raw / total) * 100) + ')';
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  /* --- 3. Por que no se oferto -------------------------------------------
+     Se mide en pesos del llamado y no en cantidad: 400 licitaciones chicas
+     descartadas pesan menos que 40 grandes, y la decision de si el motivo
+     duele o no depende del monto. */
+  const ctxMot = document.getElementById('chartMpMotivos');
+  if (ctxMot) {
+    const mapa = new Map();
+    datos.forEach(d => {
+      if (d.oferto) return;
+      const info = MP_MOTIVOS_DESCARTE[d.etiqueta];
+      if (!info) return;
+      if (!mapa.has(d.etiqueta)) mapa.set(d.etiqueta, { n: 0, monto: 0, info: info });
+      const m = mapa.get(d.etiqueta);
+      m.n++; m.monto += d.neto;
+    });
+
+    const orden = Array.from(mapa.entries()).sort((a, b) => b[1].monto - a[1].monto);
+    /* Rojo para lo que se pudo evitar (sin stock, falta de tiempo, postulacion
+       incompleta), gris para lo que era decision de catalogo o del organismo.
+       El color separa "hay que arreglarlo" de "esta bien asi". */
+    const tono = { propio: '#FF6B8A', precio: '#FFC46B', catalogo: '#8B95B9', externo: '#5A6488' };
+
+    if (mpChartMotivos) mpChartMotivos.destroy();
+    mpChartMotivos = new Chart(ctxMot.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: orden.map(e => e[1].info.texto),
+        datasets: [{
+          label: 'Monto neto no ofertado',
+          data: orden.map(e => e[1].monto),
+          backgroundColor: orden.map(e => tono[e[1].info.tipo] || '#8B95B9'),
+          borderRadius: 4
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (c) => formatCLP(c.raw),
+              afterLabel: (c) => formatNum(orden[c.dataIndex][1].n) + ' oportunidades'
+            }
+          }
+        },
+        scales: {
+          /* maxTicksLimit: con diez marcas de "$18.000M" Chart.js las inclinaba 28
+             grados y quedaban ilegibles. Seis caben derechas. */
+          x: { beginAtZero: true,
+               ticks: { color: col.tick, font: { size: 11 }, maxTicksLimit: 6,
+                        maxRotation: 0, callback: (v) => mpCorto(v) },
+               grid: { color: col.rejilla } },
+          y: { ticks: { color: col.tick, font: { size: 11 } }, grid: { display: false } }
+        }
+      }
+    });
+  }
+
+  /* --- 4. Tipo de compra -------------------------------------------------- */
+  const ctxTipo = document.getElementById('chartMpTipo');
+  if (ctxTipo) {
+    const mapa = new Map();
+    datos.forEach(d => {
+      if (!mapa.has(d.tipo)) mapa.set(d.tipo, { det: 0, gan: 0 });
+      const m = mapa.get(d.tipo);
+      m.det++;
+      if (d.resultado === 'ganada') m.gan++;
+    });
+    const orden = Array.from(mapa.entries()).sort((a, b) => b[1].det - a[1].det).slice(0, 8);
+
+    if (mpChartTipo) mpChartTipo.destroy();
+    mpChartTipo = new Chart(ctxTipo.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: orden.map(e => e[0]),
+        datasets: [
+          { label: 'Detectadas', data: orden.map(e => e[1].det),
+            backgroundColor: 'rgba(77, 159, 236, 0.45)', borderRadius: 4 },
+          { label: 'Adjudicadas', data: orden.map(e => e[1].gan),
+            backgroundColor: '#3DDC97', borderRadius: 4 }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'top', labels: { color: col.leyenda, boxWidth: 12, font: { size: 11 } } },
+          tooltip: {
+            callbacks: {
+              afterBody: (items) => {
+                const e = orden[items[0].dataIndex][1];
+                return e.det ? 'Tasa: ' + mpPct((e.gan / e.det) * 100) : '';
+              }
+            }
+          }
+        },
+        scales: ejes(false)
+      }
+    });
+  }
+}
+
+/* Porcentaje con coma decimal. En una tarjeta donde los montos ya usan el punto
+   como separador de miles ("$197.030.180.145"), un "18.1%" con punto decimal
+   lee como si fueran dos numeros distintos de la misma familia. */
+function mpPct(n, decimales) {
+  const d = decimales === undefined ? 1 : decimales;
+  return (Number(n) || 0).toFixed(d).replace('.', ',') + '%';
+}
+
+/* Los montos de compra publica llegan a los miles de millones y no caben en
+   un eje: 1.454.290.803 ocupa mas que la barra que etiqueta. */
+function mpCorto(v) {
+  const n = Number(v) || 0;
+  const a = Math.abs(n);
+  /* Todo en millones, con el separador de miles chileno: 17.000 millones se
+     escribe "$17.000M". Antes esa cifra salia como "$17,0MM", que en Chile se
+     lee como diecisiete millones (MM$ = millones): un error de mil veces en el
+     eje de un grafico de plata. El monto exacto va siempre en el tooltip. */
+  if (a >= 1e6) return '$' + Math.round(n / 1e6).toLocaleString('es-CL') + 'M';
+  if (a >= 1e3) return '$' + Math.round(n / 1e3).toLocaleString('es-CL') + 'k';
+  return '$' + Math.round(n).toLocaleString('es-CL');
+}
+
+/* -------------------------------------------------------------------------
+   Tabla
+   ------------------------------------------------------------------------- */
+
+function mpOrdenar(datos) {
+  const dir = mpOrden.dir === 'asc' ? 1 : -1;
+  const col = mpOrden.col;
+  return datos.slice().sort((a, b) => {
+    let va = a[col], vb = b[col];
+    if (col === 'cierre') {
+      va = va ? va.getTime() : 0;
+      vb = vb ? vb.getTime() : 0;
+    }
+    if (typeof va === 'string' || typeof vb === 'string') {
+      return String(va || '').localeCompare(String(vb || ''), 'es') * dir;
+    }
+    return ((va || 0) - (vb || 0)) * dir;
+  });
+}
+
+function mpChipResultado(d) {
+  if (d.resultado === 'ganada') return '<span class="mp-chip is-ok">Adjudicada</span>';
+  if (d.resultado === 'perdida') return '<span class="mp-chip is-malo">Perdida</span>';
+  if (d.resultado === 'enJuego') return '<span class="mp-chip is-juego">En juego</span>';
+  if (d.oferto) return '<span class="mp-chip is-pendiente">Ofertada sin cerrar</span>';
+  return '<span class="mp-chip is-neutro">' + escapeHtml(d.seguimiento) + '</span>';
+}
+
+function mpRenderTabla(datos) {
+  const cuerpo = document.getElementById('mpTableBody');
+  const info = document.getElementById('mpPageInfo');
+  const prev = document.getElementById('btnMpPrevPage');
+  const next = document.getElementById('btnMpNextPage');
+  if (!cuerpo) return;
+
+  if (!datos.length) {
+    cuerpo.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:2.5rem; color:var(--ax-text-tertiary);">' +
+      (mpRows.length ? 'Ningún registro coincide con los filtros.' : 'Sin datos cargados.') + '</td></tr>';
+    if (info) info.textContent = 'Página 1 de 1';
+    if (prev) prev.disabled = true;
+    if (next) next.disabled = true;
+    return;
+  }
+
+  const ordenados = mpOrdenar(datos);
+  const paginas = Math.ceil(ordenados.length / MP_TAM_PAGINA) || 1;
+  if (mpPagina < 1) mpPagina = 1;
+  if (mpPagina > paginas) mpPagina = paginas;
+
+  const desde = (mpPagina - 1) * MP_TAM_PAGINA;
+  const pagina = ordenados.slice(desde, desde + MP_TAM_PAGINA);
+
+  if (info) {
+    info.innerHTML = 'Página <strong>' + mpPagina + '</strong> de <strong>' + paginas + '</strong> ' +
+      '(<span style="color: var(--ax-accent); font-weight:700;">' + formatNum(ordenados.length) +
+      '</span> oportunidades)';
+  }
+  if (prev) prev.disabled = mpPagina <= 1;
+  if (next) next.disabled = mpPagina >= paginas;
+
+  cuerpo.innerHTML = pagina.map(d => {
+    const lineas = d.lineas.length
+      ? d.lineas.map(l => '<span class="mp-linea">' + escapeHtml(l) + '</span>').join('')
+      : '<span class="mp-linea is-vacia">—</span>';
+
+    return '<tr>' +
+      '<td class="mp-td-id"><span title="' + escapeHtml(d.id) + '">' + escapeHtml(d.id) + '</span></td>' +
+      '<td class="mp-td-nombre">' +
+        '<span class="mp-nombre" title="' + escapeHtml(d.descripcion || d.nombre) + '">' +
+          escapeHtml(d.nombre) + '</span>' +
+        '<span class="mp-organismo">' + escapeHtml(d.organismo) + '</span>' +
+      '</td>' +
+      '<td>' + escapeHtml(d.tipo) + '</td>' +
+      '<td class="mp-td-fecha">' + mpFechaTexto(d.cierre, true) + '</td>' +
+      '<td class="num">' + formatCLP(d.neto) + '</td>' +
+      '<td class="num">' + (d.netoOfertado ? formatCLP(d.netoOfertado) : '<span class="mp-nulo">—</span>') + '</td>' +
+      '<td>' + mpChipResultado(d) + '</td>' +
+      '<td>' + (d.etiqueta ? '<span class="mp-tag">' + escapeHtml(d.etiqueta) + '</span>' : '<span class="mp-nulo">—</span>') + '</td>' +
+      '<td>' + escapeHtml(d.asignado) + '</td>' +
+      '<td class="mp-td-lineas">' + lineas + '</td>' +
+    '</tr>';
+  }).join('');
+}
+
+function cambiarMpPagina(dir) {
+  mpPagina += dir;
+  mpRenderTabla(mpFiltrado);
+  const tabla = document.getElementById('mpTablaCard');
+  if (tabla) tabla.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* -------------------------------------------------------------------------
+   Exportacion a Excel
+   ------------------------------------------------------------------------- */
+
+const MP_COLUMNAS_EXCEL = [
+  { titulo: 'ID',                  ancho: 20, tipo: 'texto' },
+  { titulo: 'NOMBRE',              ancho: 46, tipo: 'texto' },
+  { titulo: 'DESCRIPCIÓN',         ancho: 60, tipo: 'texto' },
+  { titulo: 'ORGANISMO',           ancho: 40, tipo: 'texto' },
+  { titulo: 'TIPO',                ancho: 12, tipo: 'texto' },
+  { titulo: 'MONTO',               ancho: 15, tipo: 'clp' },
+  { titulo: 'MONTO OFERTADO',      ancho: 16, tipo: 'clp' },
+  { titulo: 'CIERRE',              ancho: 17, tipo: 'fechahora' },
+  { titulo: 'ESTADO OPORTUNIDAD',  ancho: 20, tipo: 'texto' },
+  { titulo: 'ASIGNADO',            ancho: 14, tipo: 'texto' },
+  { titulo: 'ETIQUETA',            ancho: 14, tipo: 'texto' },
+  { titulo: 'ESTADO DE SEGUIMIENTO', ancho: 19, tipo: 'texto' },
+  { titulo: 'COMENTARIO',          ancho: 40, tipo: 'texto' },
+  { titulo: 'LÍNEAS DE NEGOCIO',   ancho: 34, tipo: 'texto' },
+  { titulo: 'COD',                 ancho: 8,  tipo: 'texto' },
+  { titulo: 'MES',                 ancho: 12, tipo: 'texto' },
+  { titulo: 'AÑO',                 ancho: 8,  tipo: 'numero' },
+  { titulo: 'MONTO NETO',          ancho: 15, tipo: 'clp' },
+  { titulo: 'MONTO OFERTADO NETO', ancho: 17, tipo: 'clp' },
+  /* Las tres ultimas no estan en la hoja: son la lectura del modulo. Van al
+     final para que las 19 primeras queden en el mismo orden que el original y
+     se puedan pegar de vuelta sin recolocar nada. */
+  { titulo: 'RESULTADO',           ancho: 18, tipo: 'texto' },
+  { titulo: '¿SE OFERTÓ?',         ancho: 11, tipo: 'texto' },
+  { titulo: 'DÍAS PARA EL CIERRE', ancho: 17, tipo: 'numero' }
+];
+
+const MP_MESES_NOMBRE = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+
+function mpResultadoTexto(d) {
+  if (d.resultado === 'ganada') return 'Adjudicada';
+  if (d.resultado === 'perdida') return 'Perdida';
+  if (d.resultado === 'enJuego') return 'En juego';
+  if (d.oferto) return 'Ofertada sin cerrar';
+  const info = MP_MOTIVOS_DESCARTE[d.etiqueta];
+  return info ? info.texto : (d.seguimiento || 'Sin resolver');
+}
+
+function mpFilaExcel(d, ahora) {
+  const dias = mpDiasHasta(d.cierre, ahora);
+  return [
+    d.id, d.nombre, d.descripcion, d.organismo, d.tipo,
+    d.monto || null, d.montoOfertado || null,
+    d.cierre, d.estadoOportunidad, d.asignado, d.etiqueta, d.seguimiento,
+    d.comentario, d.lineasTexto, d.cod,
+    d.mes ? MP_MESES_NOMBRE[d.mes - 1] : '', d.anio || null,
+    d.neto || null, d.netoOfertado || null,
+    mpResultadoTexto(d), d.oferto ? 'Sí' : 'No', dias
+  ];
+}
+
+function mpSincronizarExportar() {
+  const btn = document.getElementById('mpExportar');
+  if (!btn) return;
+  const n = mpFiltrado.length;
+  btn.disabled = !n;
+  btn.title = n
+    ? 'Exportar a Excel ' + formatNum(n) + (n === 1 ? ' oportunidad' : ' oportunidades') + ' del filtro actual'
+    : 'No hay oportunidades que exportar';
+}
+
+function exportarMercadoPublicoExcel() {
+  if (!mpFiltrado.length) {
+    if (typeof showToast === 'function') showToast('No hay oportunidades que exportar', 'warn');
+    return;
+  }
+  if (typeof xlsxCrearLibro !== 'function') {
+    if (typeof showToast === 'function') showToast('El generador de Excel no está disponible', 'error');
+    return;
+  }
+
+  const ahora = new Date();
+  const ordenados = mpOrdenar(mpFiltrado);
+  const hojas = [{
+    nombre: 'Mercado Publico',
+    columnas: MP_COLUMNAS_EXCEL,
+    filas: ordenados.map(d => mpFilaExcel(d, ahora))
+  }];
+
+  /* Segunda hoja con lo que todavia esta abierto. Es la lista sobre la que se
+     puede hacer algo, y en un archivo de 17.000 filas se pierde. */
+  const abiertas = ordenados.filter(d => d.cierre && d.cierre > ahora);
+  if (abiertas.length) {
+    hojas.push({
+      nombre: 'Abiertas',
+      columnas: MP_COLUMNAS_EXCEL,
+      filas: abiertas.map(d => mpFilaExcel(d, ahora))
+    });
+  }
+
+  const sello = ahora.toISOString().slice(0, 10);
+  try {
+    const blob = xlsxCrearLibro(hojas);
+    xlsxDescargar(blob, 'Glomax_MercadoPublico_' + sello + '.xlsx');
+    if (typeof showToast === 'function') {
+      showToast(formatNum(ordenados.length) + ' oportunidades exportadas', 'success');
+    }
+  } catch (err) {
+    console.error('[MercadoPublico] Error al exportar:', err);
+    if (typeof showToast === 'function') showToast('No se pudo generar el Excel', 'error');
+  }
+}
+
+/* -------------------------------------------------------------------------
+   Listeners
+   ------------------------------------------------------------------------- */
+
+function setupMercadoPublicoListeners() {
+  const enlazar = (id, evento, fn) => {
+    const el = document.getElementById(id);
+    if (!el || el._mpBound) return;
+    el._mpBound = true;
+    el.addEventListener(evento, fn);
+  };
+
+  ['fltMpAnio', 'fltMpTipo', 'fltMpSeguimiento', 'fltMpAsignado', 'fltMpEtiqueta',
+    'fltMpLinea', 'mpFoco'].forEach(id => enlazar(id, 'change', mpAplicarFiltros));
+
+  /* La busqueda se retrasa: son 17.000 filas y filtrar en cada tecla deja el
+     campo trabado mientras se escribe. */
+  const caja = document.getElementById('mpSearchBox');
+  if (caja && !caja._mpBound) {
+    caja._mpBound = true;
+    let temporizador = null;
+    caja.addEventListener('input', () => {
+      clearTimeout(temporizador);
+      temporizador = setTimeout(mpAplicarFiltros, 260);
+    });
+  }
+
+  enlazar('btnMpPrevPage', 'click', () => cambiarMpPagina(-1));
+  enlazar('btnMpNextPage', 'click', () => cambiarMpPagina(1));
+  enlazar('mpExportar', 'click', exportarMercadoPublicoExcel);
+  enlazar('mpReload', 'click', () => loadMercadoPublico(true));
+  enlazar('btnMpLimpiar', 'click', limpiarMpFiltros);
+
+  document.querySelectorAll('#mpTablaCard th[data-mp-sort]').forEach(th => {
+    if (th._mpBound) return;
+    th._mpBound = true;
+    th.addEventListener('click', () => {
+      const col = th.dataset.mpSort;
+      if (mpOrden.col === col) {
+        mpOrden.dir = mpOrden.dir === 'asc' ? 'desc' : 'asc';
+      } else {
+        mpOrden.col = col;
+        mpOrden.dir = (col === 'nombre' || col === 'organismo' || col === 'tipo') ? 'asc' : 'desc';
+      }
+      document.querySelectorAll('#mpTablaCard th[data-mp-sort]').forEach(o => {
+        o.classList.toggle('is-sorted', o.dataset.mpSort === mpOrden.col);
+        o.classList.toggle('is-asc', o.dataset.mpSort === mpOrden.col && mpOrden.dir === 'asc');
+      });
+      mpPagina = 1;
+      mpRenderTabla(mpFiltrado);
+    });
+  });
+
+  mpSincronizarExportar();
 }

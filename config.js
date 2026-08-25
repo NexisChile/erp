@@ -22,6 +22,13 @@ const SPREADSHEET_PRECIOS_GID = "1840508986";
 // vuelva a correr el scraper seis horas despues.
 const SPREADSHEET_PRECIOSMAPA_GID = "";
 
+// Pestaña MercadoPublico, que alimenta el módulo de Mercado Público.
+//
+// Igual que PreciosMapa, se puede dejar VACÍO: sin GID el módulo pide la
+// pestaña por nombre, que GViz también acepta. El número está aquí porque ya
+// se conocía y ahorra una resolución de nombre en cada carga.
+const SPREADSHEET_MERCADOPUBLICO_GID = "488176235";
+
 // Configuración de Auto-Actualización y Sincronización Automática en Segundo Plano
 const ENABLE_AUTO_REFRESH = true;        // Habilita auto-refresco automático
 // Una recarga completa tarda ~3s por el proxy local, pero ~45s en GitHub Pages (JSONP).

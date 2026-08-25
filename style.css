@@ -10258,3 +10258,461 @@ button, input, select, textarea, optgroup {
   transform: none !important;
   box-shadow: none !important;
 }
+
+/* ==========================================================================
+   MODULO MERCADO PUBLICO
+   ========================================================================== */
+
+.mp-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+@media (max-width: 1100px) {
+  .mp-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 620px) {
+  .mp-kpis { grid-template-columns: minmax(0, 1fr); }
+}
+
+.mp-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 1.15rem 1.25rem;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Filete superior: distingue las tarjetas sin gastar una linea de texto. */
+.mp-kpi::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--ax-accent-purple);
+}
+.mp-kpi--oferta::before { background: var(--ax-accent-gold); }
+.mp-kpi--ok::before     { background: var(--ax-accent-emerald); }
+
+.mp-kpi__label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--ax-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.mp-kpi__value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--ax-text-primary);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.mp-kpi__sub {
+  font-size: 0.8125rem;
+  color: var(--ax-text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+.mp-kpi__sub strong { color: var(--ax-text-secondary); font-weight: 600; }
+
+/* --- Aviso de ofertas sin desenlace -------------------------------------- */
+.mp-aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.85rem 1.1rem;
+  margin-bottom: 1.25rem;
+  border-radius: 12px;
+  background: var(--ax-accent-gold-soft, rgba(255, 196, 107, 0.12));
+  border: 1px solid rgba(255, 196, 107, 0.4);
+  color: var(--ax-text-secondary);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+.mp-aviso strong { color: var(--ax-text-primary); font-weight: 600; }
+.mp-aviso__icono {
+  color: var(--ax-accent-gold);
+  font-size: 1rem;
+  line-height: 1.35;
+  flex: 0 0 auto;
+}
+
+/* --- Embudo + cierres ----------------------------------------------------
+   Dos tarjetas lado a lado. Por debajo de 1100px se apilan: el embudo necesita
+   ancho para que las barras se distingan entre si. */
+.mp-fila-doble {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+@media (max-width: 1100px) {
+  .mp-fila-doble { grid-template-columns: minmax(0, 1fr); }
+}
+
+.mp-embudo {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  padding: 0.35rem 0 0.25rem;
+}
+
+.mp-embudo__paso { display: flex; flex-direction: column; gap: 0.3rem; }
+
+.mp-embudo__cabecera {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.mp-embudo__etiqueta {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--ax-text-secondary);
+}
+
+.mp-embudo__n {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--ax-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.mp-embudo__barra {
+  height: 10px;
+  border-radius: 999px;
+  background: var(--ax-border-subtle);
+  overflow: hidden;
+}
+.mp-embudo__barra > span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.is-detectadas .mp-embudo__barra > span { background: var(--ax-accent); }
+.is-ofertadas  .mp-embudo__barra > span { background: var(--ax-accent-gold); }
+.is-ganadas    .mp-embudo__barra > span { background: var(--ax-accent-emerald); }
+
+.mp-embudo__pie {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.8125rem;
+}
+.mp-embudo__monto {
+  font-weight: 600;
+  color: var(--ax-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.mp-embudo__conv { color: var(--ax-text-tertiary); font-variant-numeric: tabular-nums; }
+
+.mp-embudo__nota {
+  font-size: 0.6875rem;
+  color: var(--ax-text-tertiary);
+  opacity: 0.85;
+}
+
+/* --- Proximos cierres ---------------------------------------------------- */
+.mp-cierres-resumen {
+  font-size: 0.8125rem;
+  color: var(--ax-text-tertiary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.mp-cierres-resumen strong { color: var(--ax-text-primary); font-weight: 600; }
+
+.mp-cierres {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--ax-border-subtle);
+  border-radius: 10px;
+  overflow: hidden;
+  max-height: 340px;
+  overflow-y: auto;
+}
+
+.mp-cierre {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr) auto auto;
+  align-items: center;
+  column-gap: 0.75rem;
+  padding: 0.55rem 0.7rem 0.55rem 0.85rem;
+  background: var(--surf-1, rgba(255, 255, 255, 0.02));
+  position: relative;
+}
+
+/* Filete izquierdo por urgencia. Lo ya decidido va apagado: la lista existe
+   para encontrar lo que falta decidir, no para repasar lo resuelto. */
+.mp-cierre::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--ax-accent-gold);
+}
+.mp-cierre.is-urgente::before  { background: var(--ax-accent-rose); }
+.mp-cierre.is-decidida::before { background: var(--ax-border-subtle); }
+.mp-cierre.is-decidida { opacity: 0.62; }
+
+.mp-cierre__cuando { display: flex; flex-direction: column; min-width: 0; }
+.mp-cierre__plazo {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--ax-text-secondary);
+  white-space: nowrap;
+}
+.mp-cierre.is-urgente .mp-cierre__plazo { color: var(--ax-accent-rose); }
+.mp-cierre__fecha {
+  font-size: 0.6875rem;
+  color: var(--ax-text-tertiary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.mp-cierre__que { display: flex; flex-direction: column; min-width: 0; }
+.mp-cierre__nombre {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--ax-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mp-cierre__organismo {
+  font-size: 0.6875rem;
+  color: var(--ax-text-tertiary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mp-cierre__monto {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--ax-text-secondary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.mp-cierre__estado { white-space: nowrap; }
+
+/* En movil las cuatro celdas se reparten en tres bandas explicitas. Con
+   colocacion automatica la primera columna se quedaba en 11px y "manana"
+   desaparecia detras de los puntos suspensivos, que es justo el dato por el
+   que se mira esta lista. */
+@media (max-width: 560px) {
+  .mp-cierre {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "cuando estado"
+      "que    que"
+      "monto  monto";
+    row-gap: 0.3rem;
+  }
+  .mp-cierre__cuando {
+    grid-area: cuando;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 0.4rem;
+  }
+  .mp-cierre__estado { grid-area: estado; }
+  .mp-cierre__que    { grid-area: que; }
+  .mp-cierre__monto  { grid-area: monto; text-align: left; }
+}
+
+/* --- Chips --------------------------------------------------------------- */
+.mp-chip {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+.mp-chip.is-ok {
+  background: var(--ax-accent-emerald-soft, rgba(61, 220, 151, 0.15));
+  color: var(--ax-accent-emerald);
+  border-color: rgba(61, 220, 151, 0.35);
+}
+.mp-chip.is-malo {
+  background: var(--ax-accent-rose-soft, rgba(255, 107, 138, 0.15));
+  color: var(--ax-accent-rose);
+  border-color: rgba(255, 107, 138, 0.35);
+}
+.mp-chip.is-juego {
+  background: rgba(45, 212, 206, 0.15);
+  color: var(--ax-accent-sky);
+  border-color: rgba(45, 212, 206, 0.35);
+}
+.mp-chip.is-pendiente {
+  background: rgba(255, 196, 107, 0.15);
+  color: var(--ax-accent-gold);
+  border-color: rgba(255, 196, 107, 0.35);
+}
+.mp-chip.is-neutro {
+  background: var(--el-1, rgba(139, 149, 185, 0.12));
+  color: var(--ax-text-tertiary);
+  border-color: var(--ax-border-subtle);
+}
+
+.mp-tag {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 5px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  background: var(--el-1, rgba(139, 149, 185, 0.12));
+  color: var(--ax-text-secondary);
+  border: 1px solid var(--ax-border-subtle);
+  white-space: nowrap;
+}
+
+.mp-nulo { color: var(--ax-text-tertiary); opacity: 0.6; }
+
+.mp-vacio {
+  padding: 1.5rem 0.5rem;
+  text-align: center;
+  color: var(--ax-text-tertiary);
+  font-size: 0.8125rem;
+  margin: 0;
+}
+
+/* --- Organismos ---------------------------------------------------------- */
+.mp-organismos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem 1.5rem;
+  padding-top: 0.35rem;
+}
+@media (max-width: 880px) {
+  .mp-organismos { grid-template-columns: minmax(0, 1fr); }
+}
+
+.mp-org { display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; }
+
+.mp-org__fila {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+.mp-org__nombre {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--ax-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.mp-org__n {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--ax-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.mp-org__barra {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--ax-border-subtle);
+  overflow: hidden;
+}
+.mp-org__barra > span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--ax-accent-purple);
+}
+
+.mp-org__pie {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+  font-size: 0.6875rem;
+  color: var(--ax-text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+.mp-org__monto { color: var(--ax-accent-emerald); font-weight: 600; }
+
+/* --- Tabla --------------------------------------------------------------- */
+.mp-table th[data-mp-sort] { cursor: pointer; user-select: none; white-space: nowrap; }
+.mp-table th[data-mp-sort]:hover { color: var(--ax-text-primary); }
+
+/* La flecha solo aparece en la columna que ordena: una flecha en cada
+   encabezado no dice cual esta activa. */
+.mp-table th[data-mp-sort].is-sorted::after {
+  content: ' ▼';
+  font-size: 0.625rem;
+  opacity: 0.8;
+}
+.mp-table th[data-mp-sort].is-sorted.is-asc::after { content: ' ▲'; }
+
+.mp-table td { vertical-align: middle; }
+
+.mp-td-id {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.mp-td-nombre { min-width: 260px; max-width: 380px; }
+.mp-nombre {
+  display: block;
+  font-weight: 500;
+  color: var(--ax-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mp-organismo {
+  display: block;
+  font-size: 0.6875rem;
+  color: var(--ax-text-tertiary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mp-td-fecha { white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+.mp-td-lineas { max-width: 200px; }
+.mp-linea {
+  display: inline-block;
+  margin: 1px 3px 1px 0;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.625rem;
+  /* 0,08 y no 0,14: en tema oscuro el tinte violeta aclara el fondo y dejaba
+     la etiqueta en 4,48:1, apenas por debajo del 4,5 que pide un texto de este
+     tamano. Con menos tinte el fondo vuelve a oscurecerse y pasa. */
+  background: rgba(167, 139, 250, 0.08);
+  color: var(--ax-accent-purple);
+  border: 1px solid rgba(167, 139, 250, 0.3);
+  white-space: nowrap;
+}
+.mp-linea.is-vacia {
+  background: transparent;
+  border-color: transparent;
+  color: var(--ax-text-tertiary);
+}
+
+/* El boton de limpiar se alinea con los selects, no con sus etiquetas. */
+.filter-group--accion { display: flex; flex-direction: column; justify-content: flex-end; }
