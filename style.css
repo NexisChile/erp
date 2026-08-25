@@ -3,7 +3,7 @@
    GLOMAX S.A. — OBSIDIAN GLASSMORPHISM EXECUTIVE BI SYSTEM (2026 UI/UX)
    ========================================================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
 /* --- Reset & Base --- */
 *, *::before, *::after {
@@ -21,18 +21,18 @@
   --ax-surface-hover: #334155;
   --ax-card-bg: rgba(30, 41, 59, 0.65); /* Translucent Glass Card */
   --ax-card-border: rgba(255, 255, 255, 0.09);
-  --ax-card-hover-border: #3B82F6;
+  --ax-card-hover-border: #7293C0;
   
   /* Accents */
-  --ax-accent: #3B82F6;            /* Electric Sapphire */
-  --ax-accent-hover: #2563EB;
-  --ax-accent-glow: rgba(59, 130, 246, 0.3);
-  --ax-accent-purple: #818CF8;     /* Modern Indigo */
-  --ax-accent-purple-glow: rgba(129, 140, 248, 0.25);
-  --ax-accent-gold: #F59E0B;       /* Warm Amber Glow */
-  --ax-accent-gold-glow: rgba(245, 158, 11, 0.25);
-  --ax-accent-emerald: #10B981;    /* Neon Growth Emerald */
-  --ax-accent-rose: #F43F5E;       /* Radiant Rose */
+  --ax-accent: #7293C0;            /* Electric Sapphire */
+  --ax-accent-hover: #6A8CBA;
+  --ax-accent-glow: rgba(114, 147, 192, 0.3);
+  --ax-accent-purple: #9B93C4;     /* Modern Indigo */
+  --ax-accent-purple-glow: rgba(155, 147, 196, 0.25);
+  --ax-accent-gold: #C2A06B;       /* Warm Amber Glow */
+  --ax-accent-gold-glow: rgba(194, 160, 107, 0.25);
+  --ax-accent-emerald: #5FA98D;    /* Neon Growth Emerald */
+  --ax-accent-rose: #C57C89;       /* Radiant Rose */
   
   /* Text & Border Tokens */
   --ax-text-primary: #F8FAFC;
@@ -43,7 +43,7 @@
   
   /* Typography */
   --ax-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  --ax-font-display: 'Space Grotesk', sans-serif;
+  --ax-font-display: 'Inter Tight', 'Inter', sans-serif;
   --ax-font-mono: 'JetBrains Mono', monospace;
   
   /* Border Radii */
@@ -55,7 +55,7 @@
   /* Shadows & Glass Effects */
   --ax-shadow-glass: 0 16px 40px rgba(0, 0, 0, 0.45);
   --ax-shadow-card: 0 6px 24px rgba(0, 0, 0, 0.28);
-  --ax-shadow-glow: 0 0 28px rgba(59, 130, 246, 0.25);
+  --ax-shadow-glow: 0 0 28px rgba(114, 147, 192, 0.25);
 }
 
 [data-ax-theme="light"], .is-pdf-export {
@@ -66,7 +66,7 @@
   --ax-surface-hover: #E2E8F0;
   --ax-card-bg: #FFFFFF;
   --ax-card-border: #E2E8F0;
-  --ax-card-hover-border: #2563EB;
+  --ax-card-hover-border: #3D5F8F;
 }
 
 [data-ax-theme="light"] .table-card,
@@ -87,7 +87,7 @@
 
 [data-ax-theme="light"] .bi-insights-briefing {
 
-  background: linear-gradient(135deg, rgba(37, 99, 235, 0.06) 0%, rgba(79, 70, 229, 0.06) 100%) !important;
+  background: linear-gradient(135deg, rgba(106, 140, 186, 0.06) 0%, rgba(79, 70, 229, 0.06) 100%) !important;
 
   border: 1px solid #CBD5E1 !important;
 
@@ -612,11 +612,11 @@ body.presentation-mode .ax-main {
 
 .ax-nav__badge--hot {
 
-  background: rgba(239, 68, 68, 0.15);
+  background: rgba(197, 124, 137, 0.15);
 
   color: var(--ax-accent-rose);
 
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  border: 1px solid rgba(197, 124, 137, 0.3);
 
 }
 
@@ -632,11 +632,11 @@ body.presentation-mode .ax-main {
 
 .ax-nav__badge--bi {
 
-  background: rgba(99, 102, 241, 0.15);
+  background: rgba(155, 147, 196, 0.15);
 
   color: var(--ax-accent-purple);
 
-  border: 1px solid rgba(99, 102, 241, 0.3);
+  border: 1px solid rgba(155, 147, 196, 0.3);
 
 }
 
@@ -854,11 +854,11 @@ body.presentation-mode .ax-main {
 
   border-radius: 20px;
 
-  background: rgba(59, 130, 246, 0.12);
+  background: rgba(114, 147, 192, 0.12);
 
   color: var(--ax-accent);
 
-  border: 1px solid rgba(59, 130, 246, 0.25);
+  border: 1px solid rgba(114, 147, 192, 0.25);
 
   cursor: help;
 
@@ -1020,9 +1020,9 @@ body.presentation-mode .ax-main {
 
   margin-bottom: 1.5rem;
 
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(15, 23, 42, 0.9) 100%);
+  background: linear-gradient(135deg, rgba(114, 147, 192, 0.08) 0%, rgba(15, 23, 42, 0.9) 100%);
 
-  border: 1px solid rgba(59, 130, 246, 0.25);
+  border: 1px solid rgba(114, 147, 192, 0.25);
 
 }
 
@@ -1058,11 +1058,11 @@ body.presentation-mode .ax-main {
 
   border-radius: 4px;
 
-  background: rgba(59, 130, 246, 0.2);
+  background: rgba(114, 147, 192, 0.2);
 
   color: var(--ax-accent);
 
-  border: 1px solid rgba(59, 130, 246, 0.35);
+  border: 1px solid rgba(114, 147, 192, 0.35);
 
 }
 
@@ -1164,7 +1164,7 @@ body.presentation-mode .ax-main {
 
   transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 
-  box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
+  box-shadow: 0 0 12px rgba(95, 169, 141, 0.4);
 
 }
 
@@ -1758,11 +1758,11 @@ body.presentation-mode .ax-main {
 
   border-radius: 4px;
 
-  background: rgba(59, 130, 246, 0.15);
+  background: rgba(114, 147, 192, 0.15);
 
   color: var(--ax-accent);
 
-  border: 1px solid rgba(59, 130, 246, 0.3);
+  border: 1px solid rgba(114, 147, 192, 0.3);
 
   letter-spacing: 0.05em;
 
@@ -1770,21 +1770,21 @@ body.presentation-mode .ax-main {
 
 .badge-purple {
 
-  background: rgba(99, 102, 241, 0.15);
+  background: rgba(155, 147, 196, 0.15);
 
   color: var(--ax-accent-purple);
 
-  border-color: rgba(99, 102, 241, 0.3);
+  border-color: rgba(155, 147, 196, 0.3);
 
 }
 
 .badge-gold {
 
-  background: rgba(245, 158, 11, 0.15);
+  background: rgba(194, 160, 107, 0.15);
 
   color: var(--ax-accent-gold);
 
-  border-color: rgba(245, 158, 11, 0.3);
+  border-color: rgba(194, 160, 107, 0.3);
 
 }
 
@@ -1854,21 +1854,21 @@ body.presentation-mode .ax-main {
 
 .hero-compare-badge.pos {
 
-  background: rgba(16, 185, 129, 0.15);
+  background: rgba(95, 169, 141, 0.15);
 
   color: var(--ax-accent-emerald);
 
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  border: 1px solid rgba(95, 169, 141, 0.3);
 
 }
 
 .hero-compare-badge.neg {
 
-  background: rgba(239, 68, 68, 0.15);
+  background: rgba(197, 124, 137, 0.15);
 
   color: var(--ax-accent-rose);
 
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  border: 1px solid rgba(197, 124, 137, 0.3);
 
 }
 
@@ -1894,11 +1894,11 @@ body.presentation-mode .ax-main {
 
 .proj-badge {
 
-  background: rgba(99, 102, 241, 0.15);
+  background: rgba(155, 147, 196, 0.15);
 
   color: var(--ax-accent-purple);
 
-  border-color: rgba(99, 102, 241, 0.3);
+  border-color: rgba(155, 147, 196, 0.3);
 
 }
 
@@ -1914,11 +1914,11 @@ body.presentation-mode .ax-main {
 
 .proj-badge-gold {
 
-  background: rgba(251, 191, 36, 0.15);
+  background: rgba(194, 160, 107, 0.15);
 
   color: var(--ax-accent-gold);
 
-  border-color: rgba(251, 191, 36, 0.3);
+  border-color: rgba(194, 160, 107, 0.3);
 
 }
 
@@ -2454,9 +2454,9 @@ body.presentation-mode .ax-main {
 
   margin-bottom: 1.5rem;
 
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(99, 102, 241, 0.08) 100%);
+  background: linear-gradient(135deg, rgba(114, 147, 192, 0.08) 0%, rgba(155, 147, 196, 0.08) 100%);
 
-  border: 1px solid rgba(59, 130, 246, 0.25);
+  border: 1px solid rgba(114, 147, 192, 0.25);
 
 }
 
@@ -2484,11 +2484,11 @@ body.presentation-mode .ax-main {
 
   border-radius: 20px;
 
-  background: rgba(59, 130, 246, 0.18);
+  background: rgba(114, 147, 192, 0.18);
 
   color: var(--ax-accent);
 
-  border: 1px solid rgba(59, 130, 246, 0.35);
+  border: 1px solid rgba(114, 147, 192, 0.35);
 
   letter-spacing: 0.06em;
 
@@ -2496,11 +2496,11 @@ body.presentation-mode .ax-main {
 
 .badge-amber {
 
-  background: rgba(245, 158, 11, 0.18);
+  background: rgba(194, 160, 107, 0.18);
 
   color: var(--ax-accent-gold);
 
-  border-color: rgba(245, 158, 11, 0.35);
+  border-color: rgba(194, 160, 107, 0.35);
 
 }
 
@@ -2676,9 +2676,9 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
 .sim-res-box.highlight {
 
-  background: rgba(16, 185, 129, 0.12);
+  background: rgba(95, 169, 141, 0.12);
 
-  border-color: rgba(16, 185, 129, 0.35);
+  border-color: rgba(95, 169, 141, 0.35);
 
 }
 
@@ -3195,9 +3195,9 @@ input[type="range"]::-webkit-slider-thumb:hover {
    ========================================================================== */
 
 .ax-nav__badge--compras {
-  background: rgba(16, 185, 129, 0.15) !important;
+  background: rgba(95, 169, 141, 0.15) !important;
   color: var(--ax-accent-emerald) !important;
-  border: 1px solid rgba(16, 185, 129, 0.3) !important;
+  border: 1px solid rgba(95, 169, 141, 0.3) !important;
 }
 
 .compras-header-card {
@@ -3266,7 +3266,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .sku-badge {
   display: inline-block;
   padding: 0.2rem 0.6rem;
-  background: rgba(59, 130, 246, 0.12);
+  background: rgba(114, 147, 192, 0.12);
   color: var(--ax-accent);
   border-radius: 6px;
 }
@@ -3306,7 +3306,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   text-transform: uppercase;
   letter-spacing: 0.07em;
   color: var(--ax-text-tertiary);
-  border-bottom: 2px solid rgba(59, 130, 246, 0.4);
+  border-bottom: 2px solid rgba(114, 147, 192, 0.4);
   background: var(--surf-2);
   user-select: none;
 }
@@ -3323,7 +3323,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 .ax-table tbody tr:hover {
-  background-color: rgba(59, 130, 246, 0.12) !important;
+  background-color: rgba(114, 147, 192, 0.12) !important;
 }
 
 .num-cell {
@@ -3335,9 +3335,9 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .sku-badge {
   display: inline-block;
   padding: 0.25rem 0.6rem;
-  background: rgba(59, 130, 246, 0.16);
+  background: rgba(114, 147, 192, 0.16);
   color: var(--ax-accent);
-  border: 1px solid rgba(59, 130, 246, 0.35);
+  border: 1px solid rgba(114, 147, 192, 0.35);
   border-radius: 6px;
   font-family: var(--ax-font-mono, monospace);
   font-size: 0.8125rem;
@@ -3370,21 +3370,21 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 .badge-green {
-  background: rgba(16, 185, 129, 0.16);
+  background: rgba(95, 169, 141, 0.16);
   color: var(--ax-accent-emerald);
-  border: 1px solid rgba(16, 185, 129, 0.35);
+  border: 1px solid rgba(95, 169, 141, 0.35);
 }
 
 .badge-amber {
-  background: rgba(245, 158, 11, 0.16);
+  background: rgba(194, 160, 107, 0.16);
   color: var(--ax-accent-gold);
-  border: 1px solid rgba(245, 158, 11, 0.35);
+  border: 1px solid rgba(194, 160, 107, 0.35);
 }
 
 .badge-red {
-  background: rgba(239, 68, 68, 0.16);
+  background: rgba(197, 124, 137, 0.16);
   color: var(--ax-accent-rose);
-  border: 1px solid rgba(239, 68, 68, 0.35);
+  border: 1px solid rgba(197, 124, 137, 0.35);
 }
 
 .compras-breakdown-list {
@@ -3453,10 +3453,10 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 .rank-badge.rank-gold {
-  background: rgba(245, 158, 11, 0.2);
+  background: rgba(194, 160, 107, 0.2);
   color: var(--ax-accent-gold);
-  border-color: rgba(245, 158, 11, 0.5);
-  box-shadow: 0 0 8px rgba(245, 158, 11, 0.3);
+  border-color: rgba(194, 160, 107, 0.5);
+  box-shadow: 0 0 8px rgba(194, 160, 107, 0.3);
 }
 
 .rank-badge.rank-silver {
@@ -3477,9 +3477,9 @@ input[type="range"]::-webkit-slider-thumb:hover {
   font-weight: 700;
   padding: 2px 7px;
   border-radius: 6px;
-  background: rgba(59, 130, 246, 0.18);
+  background: rgba(114, 147, 192, 0.18);
   color: var(--ax-accent);
-  border: 1px solid rgba(59, 130, 246, 0.3);
+  border: 1px solid rgba(114, 147, 192, 0.3);
   letter-spacing: 0.3px;
   flex-shrink: 0;
 }
@@ -3517,9 +3517,9 @@ input[type="range"]::-webkit-slider-thumb:hover {
   font-weight: 700;
   padding: 2px 6px;
   border-radius: 6px;
-  background: rgba(99, 102, 241, 0.18);
+  background: rgba(155, 147, 196, 0.18);
   color: var(--ax-accent-purple);
-  border: 1px solid rgba(99, 102, 241, 0.3);
+  border: 1px solid rgba(155, 147, 196, 0.3);
 }
 
 .compras-breakdown-bar {
@@ -3536,18 +3536,18 @@ input[type="range"]::-webkit-slider-thumb:hover {
   height: 100%;
   border-radius: 999px;
   transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 0 10px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 0 10px rgba(155, 147, 196, 0.3);
 }
 
 .compras-breakdown-fill.bar-coral {
-  background: linear-gradient(90deg, #f43f5e, #fb7185, #ff6b6b);
-  box-shadow: 0 0 10px rgba(244, 63, 94, 0.35);
+  background: linear-gradient(90deg, #8E3B48, #8E3B48, #8E3B48);
+  box-shadow: 0 0 10px rgba(197, 124, 137, 0.35);
 }
 
 /* --- BI INVESTMENT ADVISOR STYLING --- */
 .bi-compras-advisor-card {
   background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9));
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  border: 1px solid rgba(95, 169, 141, 0.3);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08);
   padding: 1.5rem;
   border-radius: 12px;
@@ -3606,12 +3606,12 @@ input[type="range"]::-webkit-slider-thumb:hover {
   font-weight: 800 !important;
   color: var(--ax-accent-emerald) !important;
   background: var(--surf-1) !important;
-  border-color: rgba(16, 185, 129, 0.4) !important;
+  border-color: rgba(95, 169, 141, 0.4) !important;
 }
 
 .num-input:focus {
   border-color: var(--ax-accent-emerald) !important;
-  box-shadow: 0 0 12px rgba(16, 185, 129, 0.3) !important;
+  box-shadow: 0 0 12px rgba(95, 169, 141, 0.3) !important;
 }
 
 .advisor-presets {
@@ -3640,10 +3640,10 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 .budget-pill:hover, .budget-pill.active {
-  background: rgba(16, 185, 129, 0.2);
+  background: rgba(95, 169, 141, 0.2);
   border-color: var(--ax-accent-emerald);
   color: var(--ax-accent-emerald);
-  box-shadow: 0 0 10px rgba(16, 185, 129, 0.25);
+  box-shadow: 0 0 10px rgba(95, 169, 141, 0.25);
 }
 
 .advisor-strategy-group {
@@ -3676,9 +3676,9 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 .proj-card.highlight-green {
-  background: rgba(16, 185, 129, 0.12);
-  border-color: rgba(16, 185, 129, 0.35);
-  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.15);
+  background: rgba(95, 169, 141, 0.12);
+  border-color: rgba(95, 169, 141, 0.35);
+  box-shadow: 0 4px 15px rgba(95, 169, 141, 0.15);
 }
 
 .proj-label {
@@ -3721,9 +3721,9 @@ input[type="range"]::-webkit-slider-thumb:hover {
   font-weight: 700;
   padding: 3px 10px;
   border-radius: 20px;
-  background: rgba(16, 185, 129, 0.15);
+  background: rgba(95, 169, 141, 0.15);
   color: var(--ax-accent-emerald);
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  border: 1px solid rgba(95, 169, 141, 0.3);
 }
 
 .advisor-table th {
@@ -3731,9 +3731,9 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 .badge-emerald {
-  background: rgba(16, 185, 129, 0.16);
+  background: rgba(95, 169, 141, 0.16);
   color: var(--ax-accent-emerald);
-  border: 1px solid rgba(16, 185, 129, 0.35);
+  border: 1px solid rgba(95, 169, 141, 0.35);
 }
 
 /* ==========================================================================
@@ -3788,8 +3788,8 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .bi-sim-card:hover,
 .advisor-card:hover {
   transform: translateY(-3px);
-  border-color: rgba(59, 130, 246, 0.35) !important;
-  box-shadow: 0 10px 28px rgba(11, 15, 25, 0.45), 0 0 18px rgba(59, 130, 246, 0.12) !important;
+  border-color: rgba(114, 147, 192, 0.35) !important;
+  box-shadow: 0 10px 28px rgba(11, 15, 25, 0.45), 0 0 18px rgba(114, 147, 192, 0.12) !important;
 }
 
 /* 3. Active Filter Chips Bar */
@@ -3827,14 +3827,14 @@ input[type="range"]::-webkit-slider-thumb:hover {
   border-radius: 20px;
   font-size: 0.8125rem;
   font-weight: 600;
-  background: rgba(59, 130, 246, 0.14);
+  background: rgba(114, 147, 192, 0.14);
   color: var(--ax-accent);
-  border: 1px solid rgba(59, 130, 246, 0.3);
+  border: 1px solid rgba(114, 147, 192, 0.3);
   transition: all 0.18s ease;
 }
 
 .filter-chip:hover {
-  background: rgba(59, 130, 246, 0.22);
+  background: rgba(114, 147, 192, 0.22);
   border-color: var(--ax-accent);
 }
 
@@ -3855,7 +3855,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 .chip-remove-btn:hover {
-  background: #ef4444;
+  background: #8E3B48;
 }
 
 /* 4. Purchasing BI Advisor Visual Strategy Selector & Presets */
@@ -3880,16 +3880,16 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 .preset-pill-btn:hover {
-  background: rgba(59, 130, 246, 0.18);
+  background: rgba(114, 147, 192, 0.18);
   color: var(--ax-accent);
-  border-color: rgba(59, 130, 246, 0.4);
+  border-color: rgba(114, 147, 192, 0.4);
 }
 
 .preset-pill-btn.active {
-  background: #3b82f6;
+  background: #3E6698;
   color: #ffffff;
   border-color: var(--ax-accent);
-  box-shadow: 0 0 12px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 0 12px rgba(114, 147, 192, 0.4);
 }
 
 .strategy-cards-grid {
@@ -3914,14 +3914,14 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 .strategy-card-btn:hover {
-  background: rgba(59, 130, 246, 0.1);
-  border-color: rgba(59, 130, 246, 0.3);
+  background: rgba(114, 147, 192, 0.1);
+  border-color: rgba(114, 147, 192, 0.3);
 }
 
 .strategy-card-btn.active {
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.22) 0%, rgba(99, 102, 241, 0.18) 100%);
+  background: linear-gradient(135deg, rgba(114, 147, 192, 0.22) 0%, rgba(155, 147, 196, 0.18) 100%);
   border-color: var(--ax-accent);
-  box-shadow: 0 0 14px rgba(59, 130, 246, 0.25);
+  box-shadow: 0 0 14px rgba(114, 147, 192, 0.25);
 }
 
 .strategy-icon {
@@ -3998,9 +3998,9 @@ input[type="range"]::-webkit-slider-thumb:hover {
 /* Main Card */
 .bi-compras-advisor-card {
   background: var(--surf-2) !important;
-  border: 1px solid rgba(59, 130, 246, 0.25) !important;
+  border: 1px solid rgba(114, 147, 192, 0.25) !important;
   border-radius: 16px !important;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), 0 0 24px rgba(59, 130, 246, 0.12) !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), 0 0 24px rgba(114, 147, 192, 0.12) !important;
   padding: 1.5rem !important;
   backdrop-filter: blur(16px);
 }
@@ -4067,7 +4067,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   font-weight: 700 !important;
   font-family: var(--ax-font-sans) !important;
   background: var(--surf-3) !important;
-  border: 1px solid rgba(59, 130, 246, 0.4) !important;
+  border: 1px solid rgba(114, 147, 192, 0.4) !important;
   color: #ffffff !important;
   border-radius: 12px !important;
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
@@ -4076,7 +4076,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
 .input-with-icon input#comprasBudgetInput:focus {
   border-color: var(--ax-accent) !important;
-  box-shadow: 0 0 16px rgba(59, 130, 246, 0.35) !important;
+  box-shadow: 0 0 16px rgba(114, 147, 192, 0.35) !important;
   outline: none;
 }
 
@@ -4110,16 +4110,16 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 .budget-pill:hover {
-  background: rgba(59, 130, 246, 0.2) !important;
+  background: rgba(114, 147, 192, 0.2) !important;
   color: var(--ax-accent) !important;
   border-color: var(--ax-accent) !important;
 }
 
 .budget-pill.active {
-  background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+  background: linear-gradient(135deg, #3E6698, #35597F) !important;
   color: #ffffff !important;
   border-color: var(--ax-accent) !important;
-  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4) !important;
+  box-shadow: 0 4px 14px rgba(114, 147, 192, 0.4) !important;
 }
 
 .advisor-strategy-group label {
@@ -4167,13 +4167,13 @@ select#comprasStrategySelect {
 
 .proj-card:hover {
   transform: translateY(-2px) !important;
-  border-color: rgba(59, 130, 246, 0.4) !important;
+  border-color: rgba(114, 147, 192, 0.4) !important;
 }
 
 .proj-card.highlight-green {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.14) 0%, rgba(15, 23, 42, 0.85) 100%) !important;
-  border-color: rgba(16, 185, 129, 0.4) !important;
-  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.18) !important;
+  background: linear-gradient(135deg, rgba(95, 169, 141, 0.14) 0%, rgba(15, 23, 42, 0.85) 100%) !important;
+  border-color: rgba(95, 169, 141, 0.4) !important;
+  box-shadow: 0 8px 24px rgba(95, 169, 141, 0.18) !important;
 }
 
 .proj-label {
@@ -4216,9 +4216,9 @@ select#comprasStrategySelect {
   border-radius: 20px !important;
   font-size: 0.8125rem !important;
   font-weight: 700 !important;
-  background: rgba(16, 185, 129, 0.15) !important;
+  background: rgba(95, 169, 141, 0.15) !important;
   color: var(--ax-accent-emerald) !important;
-  border: 1px solid rgba(16, 185, 129, 0.3) !important;
+  border: 1px solid rgba(95, 169, 141, 0.3) !important;
 }
 
 .advisor-table {
@@ -4249,7 +4249,7 @@ select#comprasStrategySelect {
 }
 
 .advisor-table tr:hover td {
-  background: rgba(59, 130, 246, 0.12) !important;
+  background: rgba(114, 147, 192, 0.12) !important;
 }
 
 .advisor-row {
@@ -4257,16 +4257,16 @@ select#comprasStrategySelect {
 }
 
 .advisor-row:hover {
-  box-shadow: inset 3px 0 0 #3b82f6 !important;
+  box-shadow: inset 3px 0 0 #7293C0 !important;
 }
 
 .suggested-units-pill {
   display: inline-block !important;
   padding: 4px 10px !important;
   border-radius: 12px !important;
-  background: rgba(59, 130, 246, 0.16) !important;
+  background: rgba(114, 147, 192, 0.16) !important;
   color: var(--ax-accent) !important;
-  border: 1px solid rgba(59, 130, 246, 0.35) !important;
+  border: 1px solid rgba(114, 147, 192, 0.35) !important;
   font-weight: 800 !important;
   font-size: 0.8125rem !important;
   font-family: var(--ax-font-sans) !important;
@@ -4284,18 +4284,18 @@ select#comprasStrategySelect {
   gap: 4px !important;
   padding: 4px 10px !important;
   border-radius: 12px !important;
-  background: rgba(16, 185, 129, 0.16) !important;
+  background: rgba(95, 169, 141, 0.16) !important;
   color: var(--ax-accent-emerald) !important;
-  border: 1px solid rgba(16, 185, 129, 0.35) !important;
+  border: 1px solid rgba(95, 169, 141, 0.35) !important;
   font-weight: 800 !important;
   font-size: 0.8125rem !important;
 }
 
 /* MÓDULO DE COTIZACIONES STYLES */
 .ax-nav__badge--cotiz {
-  background: linear-gradient(135deg, #10b981, #059669) !important;
+  background: linear-gradient(135deg, #2F6B55, #2A6250) !important;
   color: #ffffff !important;
-  border: 1px solid rgba(16, 185, 129, 0.4) !important;
+  border: 1px solid rgba(95, 169, 141, 0.4) !important;
   padding: 2px 8px !important;
   border-radius: 12px !important;
   font-size: 0.6875rem !important;
@@ -4309,9 +4309,9 @@ select#comprasStrategySelect {
   gap: 4px !important;
   padding: 4px 10px !important;
   border-radius: 12px !important;
-  background: rgba(251, 191, 36, 0.15) !important;
+  background: rgba(194, 160, 107, 0.15) !important;
   color: var(--ax-accent-gold) !important;
-  border: 1px solid rgba(251, 191, 36, 0.35) !important;
+  border: 1px solid rgba(194, 160, 107, 0.35) !important;
   font-weight: 700 !important;
   font-size: 0.8125rem !important;
 }
@@ -4322,9 +4322,9 @@ select#comprasStrategySelect {
   gap: 4px !important;
   padding: 4px 10px !important;
   border-radius: 12px !important;
-  background: rgba(16, 185, 129, 0.15) !important;
+  background: rgba(95, 169, 141, 0.15) !important;
   color: var(--ax-accent-emerald) !important;
-  border: 1px solid rgba(16, 185, 129, 0.35) !important;
+  border: 1px solid rgba(95, 169, 141, 0.35) !important;
   font-weight: 700 !important;
   font-size: 0.8125rem !important;
 }
@@ -4335,9 +4335,9 @@ select#comprasStrategySelect {
   gap: 4px !important;
   padding: 4px 10px !important;
   border-radius: 12px !important;
-  background: rgba(239, 68, 68, 0.15) !important;
+  background: rgba(197, 124, 137, 0.15) !important;
   color: var(--ax-accent-rose) !important;
-  border: 1px solid rgba(239, 68, 68, 0.35) !important;
+  border: 1px solid rgba(197, 124, 137, 0.35) !important;
   font-weight: 700 !important;
   font-size: 0.8125rem !important;
 }
@@ -4348,7 +4348,7 @@ select#comprasStrategySelect {
 
 .cotiz-hero-card {
   background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85)) !important;
-  border: 1px solid rgba(59, 130, 246, 0.25) !important;
+  border: 1px solid rgba(114, 147, 192, 0.25) !important;
   border-radius: 20px !important;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.1) !important;
   padding: 1.5rem 1.75rem !important;
@@ -4363,7 +4363,7 @@ select#comprasStrategySelect {
   left: 0 !important;
   right: 0 !important;
   height: 3px !important;
-  background: linear-gradient(90deg, #3b82f6, #10b981, #6366f1) !important;
+  background: linear-gradient(90deg, #3E6698, #2F6B55, #5A4F8C) !important;
 }
 
 .cotiz-kpi-grid {
@@ -4392,8 +4392,8 @@ select#comprasStrategySelect {
 
 .cotiz-kpi-item:hover {
   transform: translateY(-4px) !important;
-  border-color: rgba(59, 130, 246, 0.4) !important;
-  box-shadow: 0 16px 40px rgba(59, 130, 246, 0.15) !important;
+  border-color: rgba(114, 147, 192, 0.4) !important;
+  box-shadow: 0 16px 40px rgba(114, 147, 192, 0.15) !important;
 }
 
 .cotiz-kpi-icon {
@@ -4407,21 +4407,21 @@ select#comprasStrategySelect {
 }
 
 .cotiz-kpi-icon--blue {
-  background: rgba(59, 130, 246, 0.15) !important;
+  background: rgba(114, 147, 192, 0.15) !important;
   color: var(--ax-accent) !important;
-  border: 1px solid rgba(59, 130, 246, 0.3) !important;
+  border: 1px solid rgba(114, 147, 192, 0.3) !important;
 }
 
 .cotiz-kpi-icon--emerald {
-  background: rgba(16, 185, 129, 0.15) !important;
+  background: rgba(95, 169, 141, 0.15) !important;
   color: var(--ax-accent-emerald) !important;
-  border: 1px solid rgba(16, 185, 129, 0.3) !important;
+  border: 1px solid rgba(95, 169, 141, 0.3) !important;
 }
 
 .cotiz-kpi-icon--amber {
-  background: rgba(245, 158, 11, 0.15) !important;
+  background: rgba(194, 160, 107, 0.15) !important;
   color: var(--ax-accent-gold) !important;
-  border: 1px solid rgba(245, 158, 11, 0.3) !important;
+  border: 1px solid rgba(194, 160, 107, 0.3) !important;
 }
 
 .cotiz-kpi-icon--purple {
@@ -4449,27 +4449,27 @@ select#comprasStrategySelect {
 }
 
 .cotiz-status--aceptada {
-  background: rgba(16, 185, 129, 0.16) !important;
+  background: rgba(95, 169, 141, 0.16) !important;
   color: var(--ax-accent-emerald) !important;
-  border: 1px solid rgba(16, 185, 129, 0.35) !important;
+  border: 1px solid rgba(95, 169, 141, 0.35) !important;
 }
 
 .cotiz-status--enviada {
-  background: rgba(245, 158, 11, 0.16) !important;
+  background: rgba(194, 160, 107, 0.16) !important;
   color: var(--ax-accent-gold) !important;
-  border: 1px solid rgba(245, 158, 11, 0.35) !important;
+  border: 1px solid rgba(194, 160, 107, 0.35) !important;
 }
 
 .cotiz-status--preparacion {
-  background: rgba(59, 130, 246, 0.16) !important;
+  background: rgba(114, 147, 192, 0.16) !important;
   color: var(--ax-accent) !important;
-  border: 1px solid rgba(59, 130, 246, 0.35) !important;
+  border: 1px solid rgba(114, 147, 192, 0.35) !important;
 }
 
 .cotiz-status--perdida {
-  background: rgba(239, 68, 68, 0.16) !important;
+  background: rgba(197, 124, 137, 0.16) !important;
   color: var(--ax-accent-rose) !important;
-  border: 1px solid rgba(239, 68, 68, 0.35) !important;
+  border: 1px solid rgba(197, 124, 137, 0.35) !important;
 }
 
 .cotiz-status--pendiente {
@@ -4566,26 +4566,26 @@ select#comprasStrategySelect {
   left: 0 !important;
   right: 0 !important;
   height: 4px !important;
-  background: linear-gradient(90deg, #3b82f6, #60a5fa) !important;
+  background: linear-gradient(90deg, #3E6698, #4A7099) !important;
   border-radius: 20px 20px 0 0 !important;
 }
 
 .cotiz-tipo-card--cyber::before {
-  background: linear-gradient(90deg, #06b6d4, #3b82f6) !important;
+  background: linear-gradient(90deg, #33636F, #3E6698) !important;
 }
 
 .cotiz-tipo-card--promocion::before {
-  background: linear-gradient(90deg, #f97316, #fbbf24) !important;
+  background: linear-gradient(90deg, #7E5C28, #8A6730) !important;
 }
 
 .cotiz-tipo-card--especial::before {
-  background: linear-gradient(90deg, #a855f7, #ec4899) !important;
+  background: linear-gradient(90deg, #5A4F8C, #8E3B48) !important;
 }
 
 .cotiz-tipo-card:hover {
   transform: translateY(-5px) !important;
-  border-color: rgba(96, 165, 250, 0.5) !important;
-  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.5), 0 0 28px rgba(59, 130, 246, 0.2) !important;
+  border-color: rgba(114, 147, 192, 0.5) !important;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.5), 0 0 28px rgba(114, 147, 192, 0.2) !important;
 }
 
 .cotiz-tipo-card-header {
@@ -4713,9 +4713,9 @@ select#comprasStrategySelect {
   font-weight: 800 !important;
   letter-spacing: 0.5px !important;
   text-transform: uppercase !important;
-  background: rgba(59, 130, 246, 0.15) !important;
+  background: rgba(114, 147, 192, 0.15) !important;
   color: var(--ax-accent) !important;
-  border: 1px solid rgba(59, 130, 246, 0.3) !important;
+  border: 1px solid rgba(114, 147, 192, 0.3) !important;
   width: fit-content !important;
   margin-bottom: 0.5rem !important;
 }
@@ -4818,8 +4818,8 @@ select#comprasStrategySelect {
     align-items: center !important;
     justify-content: center !important;
     gap: 6px !important;
-    background: rgba(37, 99, 235, 0.25) !important;
-    border: 1px solid rgba(59, 130, 246, 0.5) !important;
+    background: rgba(106, 140, 186, 0.25) !important;
+    border: 1px solid rgba(114, 147, 192, 0.5) !important;
     color: #ffffff !important;
     padding: 6px 14px !important;
     border-radius: 8px !important;
@@ -4878,12 +4878,12 @@ select#comprasStrategySelect {
   left: 0 !important;
   right: 0 !important;
   background: var(--surf-3) !important;
-  border: 1px solid rgba(168, 85, 247, 0.4) !important;
+  border: 1px solid rgba(155, 147, 196, 0.4) !important;
   border-radius: 12px !important;
   max-height: 280px !important;
   overflow-y: auto !important;
   z-index: 1000 !important;
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.8), 0 0 20px rgba(168, 85, 247, 0.2) !important;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.8), 0 0 20px rgba(155, 147, 196, 0.2) !important;
   margin-top: 4px !important;
   backdrop-filter: blur(8px) !important;
 }
@@ -4900,13 +4900,13 @@ select#comprasStrategySelect {
 }
 
 .prod-suggestion-item:hover {
-  background: rgba(168, 85, 247, 0.2) !important;
+  background: rgba(155, 147, 196, 0.2) !important;
 }
 
 .ax-nav__badge--prod {
-  background: rgba(168, 85, 247, 0.2) !important;
+  background: rgba(155, 147, 196, 0.2) !important;
   color: var(--ax-accent-purple) !important;
-  border: 1px solid rgba(168, 85, 247, 0.4) !important;
+  border: 1px solid rgba(155, 147, 196, 0.4) !important;
 }
 
 /* ==========================================================================
@@ -4956,7 +4956,7 @@ select#comprasStrategySelect {
 
 .ax-mobile-toggle:hover,
 .ax-mobile-toggle:active {
-  background: #2563EB;
+  background: #35597F;
   color: #FFFFFF;
   border-color: var(--ax-accent);
 }
@@ -5035,8 +5035,8 @@ select#comprasStrategySelect {
   }
 
   .ax-sidebar-close-btn:hover {
-    background: rgba(239, 68, 68, 0.25) !important;
-    color: #F43F5E !important;
+    background: rgba(197, 124, 137, 0.25) !important;
+    color: #C57C89 !important;
   }
 
   .ax-sidebar__section {
@@ -5061,15 +5061,15 @@ select#comprasStrategySelect {
 
   .ax-nav__item:hover,
   .ax-nav__item:active {
-    background: rgba(59, 130, 246, 0.18) !important;
+    background: rgba(114, 147, 192, 0.18) !important;
     color: #FFFFFF !important;
   }
 
   .ax-nav__item.active {
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.35), rgba(37, 99, 235, 0.45)) !important;
+    background: linear-gradient(135deg, rgba(114, 147, 192, 0.35), rgba(106, 140, 186, 0.45)) !important;
     color: #FFFFFF !important;
     border-color: var(--ax-accent) !important;
-    box-shadow: 0 4px 14px rgba(59, 130, 246, 0.35) !important;
+    box-shadow: 0 4px 14px rgba(114, 147, 192, 0.35) !important;
   }
 
   .ax-nav__icon {
@@ -5136,8 +5136,8 @@ select#comprasStrategySelect {
   .sync-status-pill {
     padding: 0.35rem 0.65rem !important;
     font-size: 0.75rem !important;
-    background: rgba(16, 185, 129, 0.15) !important;
-    border: 1px solid rgba(16, 185, 129, 0.3) !important;
+    background: rgba(95, 169, 141, 0.15) !important;
+    border: 1px solid rgba(95, 169, 141, 0.3) !important;
     color: var(--ax-accent-emerald) !important;
     border-radius: 20px !important;
   }
@@ -5225,8 +5225,8 @@ select#comprasStrategySelect {
     display: inline-flex !important;
     align-items: center !important;
     gap: 0.35rem !important;
-    background: rgba(59, 130, 246, 0.18) !important;
-    border: 1px solid rgba(59, 130, 246, 0.4) !important;
+    background: rgba(114, 147, 192, 0.18) !important;
+    border: 1px solid rgba(114, 147, 192, 0.4) !important;
     color: var(--ax-accent) !important;
     font-weight: 700 !important;
     padding: 0.4rem 0.85rem !important;
@@ -5234,7 +5234,7 @@ select#comprasStrategySelect {
   }
 
   .mobile-filter-toggle-btn.active {
-    background: #2563EB !important;
+    background: #35597F !important;
     color: #FFFFFF !important;
   }
 
@@ -5468,14 +5468,14 @@ select#comprasStrategySelect {
 
 /* Botón Emitir Cotización Pill (Desktop & Mobile) */
 .btn-emitir-cotizacion {
-  background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%) !important;
+  background: linear-gradient(135deg, #3E6698 0%, #35597F 100%) !important;
   color: #FFFFFF !important;
   font-weight: 700 !important;
   font-size: 0.875rem !important;
   padding: 0.5rem 1.15rem !important;
   border-radius: 20px !important;
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4) !important;
+  box-shadow: 0 4px 14px rgba(114, 147, 192, 0.4) !important;
   display: inline-flex !important;
   align-items: center !important;
   gap: 0.35rem !important;
@@ -5486,9 +5486,9 @@ select#comprasStrategySelect {
 
 .btn-emitir-cotizacion:hover,
 .btn-emitir-cotizacion:active {
-  background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%) !important;
+  background: linear-gradient(135deg, #35597F 0%, #2E5175 100%) !important;
   transform: translateY(-1px) !important;
-  box-shadow: 0 6px 18px rgba(59, 130, 246, 0.5) !important;
+  box-shadow: 0 6px 18px rgba(114, 147, 192, 0.5) !important;
 }
 
 /* Modal Backdrop System */
@@ -5527,7 +5527,7 @@ select#comprasStrategySelect {
 
 .cotiz-image-preview-card {
   background: var(--surf-3);
-  border: 1px solid rgba(59, 130, 246, 0.3);
+  border: 1px solid rgba(114, 147, 192, 0.3);
   border-radius: 12px;
   padding: 1rem;
   display: flex;
@@ -5542,7 +5542,7 @@ select#comprasStrategySelect {
 
 .cotiz-image-preview-card:hover {
   border-color: var(--ax-accent);
-  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.2);
+  box-shadow: 0 8px 24px rgba(114, 147, 192, 0.2);
 }
 
 .cotiz-image-placeholder {
@@ -5595,7 +5595,7 @@ select#comprasStrategySelect {
   gap: 0.75rem;
   padding: 4px 10px 4px 6px;
   background: var(--surf-2);
-  border: 1px solid rgba(59, 130, 246, 0.3);
+  border: 1px solid rgba(114, 147, 192, 0.3);
   border-radius: 20px;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
   margin-left: 0.5rem;
@@ -5603,15 +5603,15 @@ select#comprasStrategySelect {
 }
 
 .user-profile-badge:hover {
-  border-color: rgba(59, 130, 246, 0.6);
-  box-shadow: 0 6px 18px rgba(59, 130, 246, 0.2);
+  border-color: rgba(114, 147, 192, 0.6);
+  box-shadow: 0 6px 18px rgba(114, 147, 192, 0.2);
 }
 
 .user-avatar {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #3b82f6, #6366f1);
+  background: linear-gradient(135deg, #3E6698, #5A4F8C);
   color: #ffffff;
   font-weight: 800;
   font-size: 0.875rem;
@@ -5619,7 +5619,7 @@ select#comprasStrategySelect {
   align-items: center;
   justify-content: center;
   text-transform: uppercase;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 2px 8px rgba(114, 147, 192, 0.4);
 }
 
 .user-info {
@@ -5649,9 +5649,9 @@ select#comprasStrategySelect {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  background: rgba(239, 68, 68, 0.15);
+  background: rgba(197, 124, 137, 0.15);
   color: var(--ax-accent-rose);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  border: 1px solid rgba(197, 124, 137, 0.3);
   padding: 5px 10px;
   border-radius: 20px;
   font-size: 0.75rem;
@@ -5661,11 +5661,11 @@ select#comprasStrategySelect {
 }
 
 .btn-logout:hover {
-  background: rgba(239, 68, 68, 0.28);
+  background: rgba(197, 124, 137, 0.28);
   color: #ffffff;
   border-color: var(--ax-accent-rose);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+  box-shadow: 0 4px 12px rgba(197, 124, 137, 0.3);
 }
 
 /* Login Backdrop & Card */
@@ -5695,12 +5695,12 @@ select#comprasStrategySelect {
 
 .login-modal-card {
   background: linear-gradient(145deg, rgba(20, 30, 50, 0.96), rgba(10, 16, 30, 0.99));
-  border: 1px solid rgba(59, 130, 246, 0.35);
+  border: 1px solid rgba(114, 147, 192, 0.35);
   border-radius: 20px;
   padding: 2.5rem 2.25rem;
   width: 100%;
   max-width: 440px;
-  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.75), 0 0 50px rgba(59, 130, 246, 0.2);
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.75), 0 0 50px rgba(114, 147, 192, 0.2);
   animation: loginModalEntrance 0.38s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
   overflow: hidden;
@@ -5727,7 +5727,7 @@ select#comprasStrategySelect {
   align-items: center;
   justify-content: center;
   margin-bottom: 0.75rem;
-  filter: drop-shadow(0 6px 16px rgba(59, 130, 246, 0.4));
+  filter: drop-shadow(0 6px 16px rgba(114, 147, 192, 0.4));
   animation: floatLogo 3s ease-in-out infinite alternate;
 }
 
@@ -5805,7 +5805,7 @@ select#comprasStrategySelect {
   outline: none;
   border-color: var(--ax-accent);
   background: var(--surf-3);
-  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.25);
+  box-shadow: 0 0 0 4px rgba(114, 147, 192, 0.25);
 }
 
 .login-toggle-pw {
@@ -5827,8 +5827,8 @@ select#comprasStrategySelect {
 }
 
 .login-error-msg {
-  background: rgba(239, 68, 68, 0.15);
-  border: 1px solid rgba(239, 68, 68, 0.35);
+  background: rgba(197, 124, 137, 0.15);
+  border: 1px solid rgba(197, 124, 137, 0.35);
   color: var(--ax-accent-rose);
   padding: 0.75rem 1rem;
   border-radius: 12px;
@@ -5846,21 +5846,21 @@ select#comprasStrategySelect {
   width: 100%;
   height: 50px;
   margin-top: 0.5rem;
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  background: linear-gradient(135deg, #3E6698, #35597F);
   color: #ffffff;
   border: none;
   border-radius: 12px;
   font-size: 1rem;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 8px 24px rgba(114, 147, 192, 0.4);
   transition: all 0.25s ease;
 }
 
 .login-btn-submit:hover {
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  background: linear-gradient(135deg, #35597F, #2E5175);
   transform: translateY(-2px);
-  box-shadow: 0 12px 30px rgba(59, 130, 246, 0.55);
+  box-shadow: 0 12px 30px rgba(114, 147, 192, 0.55);
 }
 
 .login-btn-submit:active {
@@ -5907,8 +5907,8 @@ select#comprasStrategySelect {
 }
 
 .quick-pill:hover {
-  background: rgba(59, 130, 246, 0.14);
-  border-color: rgba(59, 130, 246, 0.4);
+  background: rgba(114, 147, 192, 0.14);
+  border-color: rgba(114, 147, 192, 0.4);
   color: #ffffff;
   transform: translateX(3px);
 }
@@ -5918,15 +5918,15 @@ select#comprasStrategySelect {
   font-weight: 800;
   padding: 2px 8px;
   border-radius: 12px;
-  background: rgba(59, 130, 246, 0.2);
+  background: rgba(114, 147, 192, 0.2);
   color: var(--ax-accent);
-  border: 1px solid rgba(59, 130, 246, 0.3);
+  border: 1px solid rgba(114, 147, 192, 0.3);
 }
 
 /* Locked Channel Visual State */
 .filter-select.locked-channel {
   background-color: var(--surf-3) !important;
-  border-color: rgba(59, 130, 246, 0.5) !important;
+  border-color: rgba(114, 147, 192, 0.5) !important;
   color: var(--ax-accent) !important;
   font-weight: 700 !important;
   cursor: not-allowed !important;
@@ -5939,10 +5939,10 @@ select#comprasStrategySelect {
   font-size: 0.75rem;
   font-weight: 700;
   color: var(--ax-accent);
-  background: rgba(59, 130, 246, 0.12);
+  background: rgba(114, 147, 192, 0.12);
   padding: 4px 10px;
   border-radius: 12px;
-  border: 1px solid rgba(59, 130, 246, 0.25);
+  border: 1px solid rgba(114, 147, 192, 0.25);
   margin-top: 4px;
 }
 
@@ -5955,9 +5955,9 @@ select#comprasStrategySelect {
   border-radius: 12px;
   font-size: 0.75rem;
   font-weight: 800;
-  background: rgba(245, 158, 11, 0.18);
+  background: rgba(194, 160, 107, 0.18);
   color: var(--ax-accent-gold);
-  border: 1px solid rgba(245, 158, 11, 0.4);
+  border: 1px solid rgba(194, 160, 107, 0.4);
 }
 
 .mix-tag-profit {
@@ -5968,9 +5968,9 @@ select#comprasStrategySelect {
   border-radius: 12px;
   font-size: 0.75rem;
   font-weight: 800;
-  background: rgba(16, 185, 129, 0.18);
+  background: rgba(95, 169, 141, 0.18);
   color: var(--ax-accent-emerald);
-  border: 1px solid rgba(16, 185, 129, 0.4);
+  border: 1px solid rgba(95, 169, 141, 0.4);
 }
 
 .mix-tag-volume {
@@ -5981,9 +5981,9 @@ select#comprasStrategySelect {
   border-radius: 12px;
   font-size: 0.75rem;
   font-weight: 800;
-  background: rgba(59, 130, 246, 0.18);
+  background: rgba(114, 147, 192, 0.18);
   color: var(--ax-accent);
-  border: 1px solid rgba(59, 130, 246, 0.4);
+  border: 1px solid rgba(114, 147, 192, 0.4);
 }
 
 .mix-progress-bar-container {
@@ -6000,7 +6000,7 @@ select#comprasStrategySelect {
 
 .mix-progress-bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, #10b981, #34d399);
+  background: linear-gradient(90deg, #2F6B55, #3A7A63);
   border-radius: 4px;
 }
 
@@ -6009,14 +6009,14 @@ select#comprasStrategySelect {
    ========================================================================== */
 
 .ax-nav__badge--ficha {
-  background: rgba(56, 189, 248, 0.2) !important;
+  background: rgba(116, 166, 184, 0.2) !important;
   color: var(--ax-accent-sky) !important;
-  border: 1px solid rgba(56, 189, 248, 0.4) !important;
+  border: 1px solid rgba(116, 166, 184, 0.4) !important;
 }
 
 .ft-header-card {
   background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9));
-  border: 1px solid rgba(56, 189, 248, 0.35);
+  border: 1px solid rgba(116, 166, 184, 0.35);
   border-radius: var(--ax-radius-lg);
   padding: 1.5rem;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
@@ -6037,9 +6037,9 @@ select#comprasStrategySelect {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: rgba(56, 189, 248, 0.15);
+  background: rgba(116, 166, 184, 0.15);
   color: var(--ax-accent-sky);
-  border: 1px solid rgba(56, 189, 248, 0.35);
+  border: 1px solid rgba(116, 166, 184, 0.35);
   padding: 4px 12px;
   border-radius: 8px;
   font-family: 'JetBrains Mono', monospace;
@@ -6076,7 +6076,7 @@ select#comprasStrategySelect {
   color: var(--ax-text-primary);
   margin-bottom: 1rem;
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid rgba(56, 189, 248, 0.2);
+  border-bottom: 1px solid rgba(116, 166, 184, 0.2);
 }
 
 .ft-spec-table {
@@ -6104,7 +6104,7 @@ select#comprasStrategySelect {
 }
 
 .ft-spec-table tr:hover td {
-  background: rgba(56, 189, 248, 0.05);
+  background: rgba(116, 166, 184, 0.05);
 }
 
 .ft-barcode-box {
@@ -6141,10 +6141,10 @@ select#comprasStrategySelect {
   text-transform: uppercase;
 }
 
-.ft-tag-blue { background: rgba(56, 189, 248, 0.2); color: var(--ax-accent-sky); border: 1px solid rgba(56, 189, 248, 0.4); }
-.ft-tag-green { background: rgba(16, 185, 129, 0.2); color: var(--ax-accent-emerald); border: 1px solid rgba(16, 185, 129, 0.4); }
-.ft-tag-purple { background: rgba(168, 85, 247, 0.2); color: var(--ax-accent-purple); border: 1px solid rgba(168, 85, 247, 0.4); }
-.ft-tag-gold { background: rgba(245, 158, 11, 0.2); color: var(--ax-accent-gold); border: 1px solid rgba(245, 158, 11, 0.4); }
+.ft-tag-blue { background: rgba(116, 166, 184, 0.2); color: var(--ax-accent-sky); border: 1px solid rgba(116, 166, 184, 0.4); }
+.ft-tag-green { background: rgba(95, 169, 141, 0.2); color: var(--ax-accent-emerald); border: 1px solid rgba(95, 169, 141, 0.4); }
+.ft-tag-purple { background: rgba(155, 147, 196, 0.2); color: var(--ax-accent-purple); border: 1px solid rgba(155, 147, 196, 0.4); }
+.ft-tag-gold { background: rgba(194, 160, 107, 0.2); color: var(--ax-accent-gold); border: 1px solid rgba(194, 160, 107, 0.4); }
 
 /* ==========================================================================
    ESTILOS OPTIMIZADOS PARA IMPRESIÓN Y PDF DE FICHA TÉCNICA
@@ -6204,7 +6204,7 @@ select#comprasStrategySelect {
   .ft-card-header,
   .dashboard-section-title {
     color: #0f172a !important;
-    border-bottom-color: #0284c7 !important;
+    border-bottom-color: #6C9EB0 !important;
   }
 
   .ft-spec-table th {
@@ -6227,7 +6227,7 @@ select#comprasStrategySelect {
   min-height: 220px;
   max-height: 320px;
   background: var(--ax-canvas);
-  border: 1px solid rgba(56, 189, 248, 0.3);
+  border: 1px solid rgba(116, 166, 184, 0.3);
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -6256,7 +6256,7 @@ select#comprasStrategySelect {
   right: 10px;
   background: var(--surf-2);
   color: var(--ax-accent-sky);
-  border: 1px solid rgba(56, 189, 248, 0.4);
+  border: 1px solid rgba(116, 166, 184, 0.4);
   padding: 3px 8px;
   border-radius: 6px;
   font-size: 0.75rem;
@@ -6270,8 +6270,8 @@ select#comprasStrategySelect {
   max-height: 90vh;
   overflow-y: auto;
   padding: 1.75rem;
-  border: 1px solid rgba(96, 165, 250, 0.35);
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 30px rgba(96, 165, 250, 0.15);
+  border: 1px solid rgba(114, 147, 192, 0.35);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 30px rgba(114, 147, 192, 0.15);
 }
 
 .modal-section-card {
@@ -6312,16 +6312,16 @@ select#comprasStrategySelect {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: #3b82f6;
+  background: #3E6698;
   color: #ffffff;
   font-size: 0.75rem;
   font-weight: 900;
 }
 
 .folio-live-badge {
-  background: rgba(96, 165, 250, 0.15);
+  background: rgba(114, 147, 192, 0.15);
   color: var(--ax-accent);
-  border: 1px solid rgba(96, 165, 250, 0.35);
+  border: 1px solid rgba(114, 147, 192, 0.35);
   padding: 2px 8px;
   border-radius: 6px;
   font-size: 0.75rem;
@@ -6412,7 +6412,7 @@ select#comprasStrategySelect {
 .cotiz-item-input:focus {
   border-color: var(--ax-accent);
   outline: none;
-  box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.25);
+  box-shadow: 0 0 0 2px rgba(114, 147, 192, 0.25);
 }
 
 .cotiz-item-thumb {
@@ -6440,7 +6440,7 @@ select#comprasStrategySelect {
 
 .cotiz-totals-box {
   background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.8));
-  border: 1px solid rgba(96, 165, 250, 0.25);
+  border: 1px solid rgba(114, 147, 192, 0.25);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -6486,8 +6486,8 @@ select#comprasStrategySelect {
 }
 
 .totals-margin-badge {
-  background: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  background: rgba(95, 169, 141, 0.1);
+  border: 1px solid rgba(95, 169, 141, 0.3);
   border-radius: 8px;
   padding: 8px 12px;
   margin-top: 8px;
@@ -6499,7 +6499,7 @@ select#comprasStrategySelect {
 }
 
 .margin-pill {
-  background: rgba(16, 185, 129, 0.2);
+  background: rgba(95, 169, 141, 0.2);
   color: var(--ax-accent-emerald);
   font-weight: 800;
   padding: 2px 8px;
@@ -6528,9 +6528,9 @@ select#comprasStrategySelect {
   background: var(--surf-3);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(96, 165, 250, 0.45);
+  border: 1px solid rgba(114, 147, 192, 0.45);
   border-radius: 8px;
-  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.7), 0 0 15px rgba(96, 165, 250, 0.15);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.7), 0 0 15px rgba(114, 147, 192, 0.15);
   z-index: 120;
   max-height: 230px;
   overflow-y: auto;
@@ -6559,7 +6559,7 @@ select#comprasStrategySelect {
 }
 
 .cotiz-pred-item:hover, .cotiz-pred-item.active {
-  background: rgba(96, 165, 250, 0.18);
+  background: rgba(114, 147, 192, 0.18);
 }
 
 .cotiz-pred-rut {
@@ -6595,8 +6595,8 @@ select#comprasStrategySelect {
   gap: 4px;
   font-size: 0.75rem;
   color: var(--ax-accent-emerald);
-  background: rgba(16, 185, 129, 0.15);
-  border: 1px solid rgba(16, 185, 129, 0.35);
+  background: rgba(95, 169, 141, 0.15);
+  border: 1px solid rgba(95, 169, 141, 0.35);
   padding: 2px 8px;
   border-radius: 12px;
   margin-left: 6px;
@@ -6626,7 +6626,7 @@ select#comprasStrategySelect {
   position: absolute;
   inset: -15%;
   background-image: 
-    radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.08) 0%, transparent 60%),
+    radial-gradient(circle at 50% 50%, rgba(114, 147, 192, 0.08) 0%, transparent 60%),
     linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
   background-size: 100% 100%, 48px 48px, 48px 48px;
@@ -6640,7 +6640,7 @@ select#comprasStrategySelect {
 
 [data-ax-theme="light"] .parallax-bg-mesh {
   background-image: 
-    radial-gradient(circle at 50% 50%, rgba(37, 99, 235, 0.05) 0%, transparent 60%),
+    radial-gradient(circle at 50% 50%, rgba(106, 140, 186, 0.05) 0%, transparent 60%),
     linear-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px),
     linear-gradient(90deg, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
 }
@@ -6661,7 +6661,7 @@ select#comprasStrategySelect {
   height: 520px;
   top: -100px;
   right: -50px;
-  background: radial-gradient(circle, rgba(59, 130, 246, 0.35) 0%, rgba(37, 99, 235, 0.1) 70%, transparent 100%);
+  background: radial-gradient(circle, rgba(114, 147, 192, 0.35) 0%, rgba(106, 140, 186, 0.1) 70%, transparent 100%);
 }
 
 .parallax-orb-2 {
@@ -6669,7 +6669,7 @@ select#comprasStrategySelect {
   height: 480px;
   bottom: 5%;
   left: -80px;
-  background: radial-gradient(circle, rgba(129, 140, 248, 0.3) 0%, rgba(99, 102, 241, 0.08) 70%, transparent 100%);
+  background: radial-gradient(circle, rgba(155, 147, 196, 0.3) 0%, rgba(155, 147, 196, 0.08) 70%, transparent 100%);
 }
 
 .parallax-orb-3 {
@@ -6677,7 +6677,7 @@ select#comprasStrategySelect {
   height: 380px;
   top: 35%;
   left: 40%;
-  background: radial-gradient(circle, rgba(16, 185, 129, 0.22) 0%, rgba(6, 182, 212, 0.06) 70%, transparent 100%);
+  background: radial-gradient(circle, rgba(95, 169, 141, 0.22) 0%, rgba(6, 182, 212, 0.06) 70%, transparent 100%);
 }
 
 .parallax-orb-4 {
@@ -6685,7 +6685,7 @@ select#comprasStrategySelect {
   height: 340px;
   bottom: 20%;
   right: 15%;
-  background: radial-gradient(circle, rgba(245, 158, 11, 0.2) 0%, rgba(244, 63, 94, 0.05) 70%, transparent 100%);
+  background: radial-gradient(circle, rgba(194, 160, 107, 0.2) 0%, rgba(197, 124, 137, 0.05) 70%, transparent 100%);
 }
 
 [data-ax-theme="light"] .parallax-orb {
@@ -6698,9 +6698,9 @@ select#comprasStrategySelect {
   position: absolute;
   width: 4px;
   height: 4px;
-  background: #60a5fa;
+  background: #4A7099;
   border-radius: 50%;
-  box-shadow: 0 0 10px #3b82f6, 0 0 20px #60a5fa;
+  box-shadow: 0 0 10px #7293C0, 0 0 20px #7293C0;
   opacity: 0.5;
   will-change: transform;
   pointer-events: none;
@@ -6731,7 +6731,7 @@ select#comprasStrategySelect {
 [data-tilt]:hover {
   z-index: 10;
   box-shadow: 0 20px 48px -12px rgba(0, 0, 0, 0.65), 0 0 32px -4px var(--ax-accent-glow) !important;
-  border-color: rgba(96, 165, 250, 0.45) !important;
+  border-color: rgba(114, 147, 192, 0.45) !important;
 }
 
 /* Card Glare (Dynamic Specular Light Reflection) */
@@ -6869,7 +6869,7 @@ select#comprasStrategySelect {
   inset: -1px;
   border-radius: inherit;
   padding: 1px;
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.35), rgba(99, 102, 241, 0.25), rgba(16, 185, 129, 0.3), transparent 70%);
+  background: linear-gradient(135deg, rgba(114, 147, 192, 0.35), rgba(155, 147, 196, 0.25), rgba(95, 169, 141, 0.3), transparent 70%);
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
@@ -6882,7 +6882,7 @@ select#comprasStrategySelect {
 .hero-kpi-card:hover::after,
 .proj-card:hover::after {
   opacity: 1;
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.85), rgba(129, 140, 248, 0.75), rgba(52, 211, 153, 0.8), rgba(245, 158, 11, 0.45));
+  background: linear-gradient(135deg, rgba(114, 147, 192, 0.85), rgba(155, 147, 196, 0.75), rgba(95, 169, 141, 0.8), rgba(194, 160, 107, 0.45));
 }
 
 /* --- 3. Animación Pop de Contadores Numéricos (CountUp Easing) --- */
@@ -6943,8 +6943,8 @@ select#comprasStrategySelect {
 .neon-progress-fill {
   height: 100%;
   border-radius: 20px;
-  background: linear-gradient(90deg, #3b82f6 0%, #6366f1 50%, #10b981 100%);
-  box-shadow: 0 0 12px rgba(16, 185, 129, 0.5);
+  background: linear-gradient(90deg, #3E6698 0%, #5A4F8C 50%, #2F6B55 100%);
+  box-shadow: 0 0 12px rgba(95, 169, 141, 0.5);
   transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
 }
@@ -6958,7 +6958,7 @@ select#comprasStrategySelect {
   width: 8px;
   background: #ffffff;
   border-radius: 50%;
-  box-shadow: 0 0 8px #ffffff, 0 0 14px #34d399;
+  box-shadow: 0 0 8px #ffffff, 0 0 14px #5FA98D;
 }
 
 /* --- 6. Tooltips en Cristal (Chart.js Luxury Overlay) --- */
@@ -6967,13 +6967,13 @@ select#comprasStrategySelect {
   background: var(--ax-canvas) !important;
   backdrop-filter: blur(16px) !important;
   -webkit-backdrop-filter: blur(16px) !important;
-  border: 1px solid rgba(59, 130, 246, 0.4) !important;
+  border: 1px solid rgba(114, 147, 192, 0.4) !important;
   border-radius: 12px !important;
   padding: 10px 14px !important;
   color: var(--ax-text-primary) !important;
   font-family: var(--ax-font-sans) !important;
   font-size: 0.8125rem !important;
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.65), 0 0 24px rgba(59, 130, 246, 0.25) !important;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.65), 0 0 24px rgba(114, 147, 192, 0.25) !important;
   pointer-events: none !important;
   z-index: 9999 !important;
   transition: all 0.12s ease-out !important;
@@ -6981,7 +6981,7 @@ select#comprasStrategySelect {
 
 [data-ax-theme="light"] #chartjs-custom-tooltip {
   background: rgba(255, 255, 255, 0.95) !important;
-  border-color: rgba(59, 130, 246, 0.3) !important;
+  border-color: rgba(114, 147, 192, 0.3) !important;
   color: #0f172a !important;
   box-shadow: 0 16px 36px rgba(0, 0, 0, 0.15) !important;
 }
@@ -7047,8 +7047,8 @@ select#comprasStrategySelect {
 .mini-kpi-card:hover,
 .kpi-card:hover {
   transform: translateY(-3px) scale(1.01) !important;
-  border-color: rgba(96, 165, 250, 0.45) !important;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), 0 0 24px rgba(59, 130, 246, 0.18) !important;
+  border-color: rgba(114, 147, 192, 0.45) !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), 0 0 24px rgba(114, 147, 192, 0.18) !important;
 }
 
 /* --- Card Header & Icon Wrappers --- */
@@ -7073,7 +7073,7 @@ select#comprasStrategySelect {
 
 [data-ax-theme="light"] .kpi-card__label,
 [data-ax-theme="light"] .mini-kpi-label {
-  color: #64748b !important;
+  color: #5A6474 !important;
 }
 
 .kpi-icon-badge {
@@ -7091,33 +7091,33 @@ select#comprasStrategySelect {
 
 /* Accent Badge Variations */
 .kpi-icon-badge.theme-blue {
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.25), rgba(37, 99, 235, 0.12)) !important;
-  border-color: rgba(59, 130, 246, 0.45) !important;
-  box-shadow: 0 0 16px rgba(59, 130, 246, 0.25) !important;
+  background: linear-gradient(135deg, rgba(114, 147, 192, 0.25), rgba(106, 140, 186, 0.12)) !important;
+  border-color: rgba(114, 147, 192, 0.45) !important;
+  box-shadow: 0 0 16px rgba(114, 147, 192, 0.25) !important;
 }
 
 .kpi-icon-badge.theme-green {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(5, 150, 105, 0.12)) !important;
-  border-color: rgba(16, 185, 129, 0.45) !important;
-  box-shadow: 0 0 16px rgba(16, 185, 129, 0.25) !important;
+  background: linear-gradient(135deg, rgba(95, 169, 141, 0.25), rgba(85, 160, 132, 0.12)) !important;
+  border-color: rgba(95, 169, 141, 0.45) !important;
+  box-shadow: 0 0 16px rgba(95, 169, 141, 0.25) !important;
 }
 
 .kpi-icon-badge.theme-purple {
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.25), rgba(109, 40, 217, 0.12)) !important;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.25), rgba(138, 129, 181, 0.12)) !important;
   border-color: rgba(139, 92, 246, 0.45) !important;
   box-shadow: 0 0 16px rgba(139, 92, 246, 0.25) !important;
 }
 
 .kpi-icon-badge.theme-amber {
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(217, 119, 6, 0.12)) !important;
-  border-color: rgba(245, 158, 11, 0.45) !important;
-  box-shadow: 0 0 16px rgba(245, 158, 11, 0.25) !important;
+  background: linear-gradient(135deg, rgba(194, 160, 107, 0.25), rgba(217, 119, 6, 0.12)) !important;
+  border-color: rgba(194, 160, 107, 0.45) !important;
+  box-shadow: 0 0 16px rgba(194, 160, 107, 0.25) !important;
 }
 
 /* --- Card Values (Large & Stylized) --- */
 .kpi-card__value,
 .mini-kpi-value {
-  font-family: var(--ax-font-display), 'Space Grotesk', 'Inter', sans-serif !important;
+  font-family: var(--ax-font-display) !important;
   font-size: 1.5rem !important;
   font-weight: 800 !important;
   color: var(--ax-text-primary) !important;
@@ -7169,7 +7169,7 @@ select#comprasStrategySelect {
 [data-ax-theme="light"] .mini-kpi-sub {
   background: rgba(0, 0, 0, 0.04) !important;
   border-color: rgba(0, 0, 0, 0.08) !important;
-  color: #64748b !important;
+  color: #5A6474 !important;
 }
 
 /* ==========================================================================
@@ -7235,8 +7235,8 @@ select#comprasStrategySelect {
   align-items: center !important;
   justify-content: center !important;
   font-size: 1.125rem !important;
-  background: rgba(59, 130, 246, 0.15) !important;
-  border: 1px solid rgba(59, 130, 246, 0.3) !important;
+  background: rgba(114, 147, 192, 0.15) !important;
+  border: 1px solid rgba(114, 147, 192, 0.3) !important;
 }
 
 .chart-main-title {
@@ -7281,9 +7281,9 @@ select#comprasStrategySelect {
 }
 
 .period-pill.active {
-  background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+  background: linear-gradient(135deg, #3E6698, #35597F) !important;
   color: #ffffff !important;
-  box-shadow: 0 2px 10px rgba(59, 130, 246, 0.4) !important;
+  box-shadow: 0 2px 10px rgba(114, 147, 192, 0.4) !important;
 }
 
 /* Chart Container & Doughnut Center Metric */
@@ -7313,7 +7313,7 @@ select#comprasStrategySelect {
 }
 
 .center-metric-val {
-  font-family: var(--ax-font-display), 'Space Grotesk', sans-serif !important;
+  font-family: var(--ax-font-display) !important;
   font-size: 1.25rem !important;
   font-weight: 800 !important;
   color: var(--ax-text-primary) !important;
@@ -7356,8 +7356,8 @@ select#comprasStrategySelect {
 }
 
 .legend-chip:hover {
-  background: rgba(59, 130, 246, 0.15) !important;
-  border-color: rgba(59, 130, 246, 0.35) !important;
+  background: rgba(114, 147, 192, 0.15) !important;
+  border-color: rgba(114, 147, 192, 0.35) !important;
   color: #ffffff !important;
 }
 
@@ -7418,18 +7418,18 @@ select#comprasStrategySelect {
 }
 
 .preset-btn:hover {
-  background: rgba(59, 130, 246, 0.15) !important;
-  border-color: rgba(59, 130, 246, 0.35) !important;
+  background: rgba(114, 147, 192, 0.15) !important;
+  border-color: rgba(114, 147, 192, 0.35) !important;
   color: #ffffff !important;
   transform: translateY(-1px) !important;
 }
 
 .preset-btn.active {
-  background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
-  border-color: rgba(96, 165, 250, 0.6) !important;
+  background: linear-gradient(135deg, #3E6698, #35597F) !important;
+  border-color: rgba(114, 147, 192, 0.6) !important;
   color: #ffffff !important;
   font-weight: 700 !important;
-  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.45) !important;
+  box-shadow: 0 4px 14px rgba(114, 147, 192, 0.45) !important;
 }
 
 /* Active Filter Chips Bar */
@@ -7447,8 +7447,8 @@ select#comprasStrategySelect {
   display: inline-flex !important;
   align-items: center !important;
   gap: 8px !important;
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.18), rgba(99, 102, 241, 0.12)) !important;
-  border: 1px solid rgba(59, 130, 246, 0.35) !important;
+  background: linear-gradient(135deg, rgba(114, 147, 192, 0.18), rgba(155, 147, 196, 0.12)) !important;
+  border: 1px solid rgba(114, 147, 192, 0.35) !important;
   color: var(--ax-text-secondary) !important;
   font-size: 0.75rem !important;
   font-weight: 600 !important;
@@ -7474,7 +7474,7 @@ select#comprasStrategySelect {
 }
 
 .chip-remove-btn:hover {
-  background: #ef4444 !important;
+  background: #8E3B48 !important;
   color: #ffffff !important;
   transform: scale(1.15) !important;
 }
@@ -7497,9 +7497,9 @@ select#comprasStrategySelect {
 }
 
 .hero-compare-badge.trend-positive {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.12)) !important;
-  border: 1px solid rgba(16, 185, 129, 0.45) !important;
-  box-shadow: 0 0 12px rgba(16, 185, 129, 0.2) !important;
+  background: linear-gradient(135deg, rgba(95, 169, 141, 0.2), rgba(85, 160, 132, 0.12)) !important;
+  border: 1px solid rgba(95, 169, 141, 0.45) !important;
+  box-shadow: 0 0 12px rgba(95, 169, 141, 0.2) !important;
 }
 
 .hero-compare-badge.trend-positive .compare-growth-tag {
@@ -7508,9 +7508,9 @@ select#comprasStrategySelect {
 }
 
 .hero-compare-badge.trend-negative {
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(220, 38, 38, 0.12)) !important;
-  border: 1px solid rgba(239, 68, 68, 0.45) !important;
-  box-shadow: 0 0 12px rgba(239, 68, 68, 0.2) !important;
+  background: linear-gradient(135deg, rgba(197, 124, 137, 0.2), rgba(220, 38, 38, 0.12)) !important;
+  border: 1px solid rgba(197, 124, 137, 0.45) !important;
+  box-shadow: 0 0 12px rgba(197, 124, 137, 0.2) !important;
 }
 
 .hero-compare-badge.trend-negative .compare-growth-tag {
@@ -7545,7 +7545,7 @@ html, body {
   background-clip: content-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(59, 130, 246, 0.6);
+  background: rgba(114, 147, 192, 0.6);
   background-clip: content-box;
 }
 
@@ -7557,10 +7557,10 @@ html, body {
   z-index: 0;
   overflow: hidden;
   background: 
-    radial-gradient(circle at 12% 18%, rgba(59, 130, 246, 0.16) 0%, transparent 45%),
-    radial-gradient(circle at 88% 22%, rgba(99, 102, 241, 0.14) 0%, transparent 40%),
-    radial-gradient(circle at 50% 85%, rgba(16, 185, 129, 0.09) 0%, transparent 50%),
-    radial-gradient(circle at 75% 65%, rgba(245, 158, 11, 0.08) 0%, transparent 45%),
+    radial-gradient(circle at 12% 18%, rgba(114, 147, 192, 0.16) 0%, transparent 45%),
+    radial-gradient(circle at 88% 22%, rgba(155, 147, 196, 0.14) 0%, transparent 40%),
+    radial-gradient(circle at 50% 85%, rgba(95, 169, 141, 0.09) 0%, transparent 50%),
+    radial-gradient(circle at 75% 65%, rgba(194, 160, 107, 0.08) 0%, transparent 45%),
     #080c14;
 }
 
@@ -7583,14 +7583,14 @@ html, body {
 .parallax-orb-1 {
   width: 500px;
   height: 500px;
-  background: radial-gradient(circle, rgba(59, 130, 246, 0.35) 0%, rgba(37, 99, 235, 0) 70%);
+  background: radial-gradient(circle, rgba(114, 147, 192, 0.35) 0%, rgba(106, 140, 186, 0) 70%);
   top: -100px;
   left: -50px;
 }
 .parallax-orb-2 {
   width: 450px;
   height: 450px;
-  background: radial-gradient(circle, rgba(99, 102, 241, 0.3) 0%, rgba(79, 70, 229, 0) 70%);
+  background: radial-gradient(circle, rgba(155, 147, 196, 0.3) 0%, rgba(79, 70, 229, 0) 70%);
   top: 30%;
   right: -80px;
   animation-duration: 22s;
@@ -7599,7 +7599,7 @@ html, body {
 .parallax-orb-3 {
   width: 380px;
   height: 380px;
-  background: radial-gradient(circle, rgba(16, 185, 129, 0.25) 0%, rgba(5, 150, 105, 0) 70%);
+  background: radial-gradient(circle, rgba(95, 169, 141, 0.25) 0%, rgba(85, 160, 132, 0) 70%);
   bottom: -50px;
   left: 30%;
   animation-duration: 25s;
@@ -7608,7 +7608,7 @@ html, body {
 .parallax-orb-4 {
   width: 320px;
   height: 320px;
-  background: radial-gradient(circle, rgba(244, 63, 94, 0.2) 0%, rgba(225, 29, 72, 0) 70%);
+  background: radial-gradient(circle, rgba(197, 124, 137, 0.2) 0%, rgba(225, 29, 72, 0) 70%);
   top: 60%;
   left: 10%;
   animation-duration: 20s;
@@ -7637,11 +7637,11 @@ html, body {
 }
 
 .ax-sidebar__wordmark {
-  font-family: 'Space Grotesk', sans-serif !important;
+  font-family: var(--ax-font-display) !important;
   font-size: 1.125rem !important;
   font-weight: 800 !important;
   letter-spacing: 0.8px !important;
-  background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 60%, #60a5fa 100%) !important;
+  background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 60%, #4A7099 100%) !important;
   -webkit-background-clip: text !important;
   -webkit-text-fill-color: transparent !important;
 }
@@ -7673,7 +7673,7 @@ html, body {
   outline: none !important;
   border-color: var(--ax-accent) !important;
   background: var(--surf-3) !important;
-  box-shadow: 0 0 16px rgba(59, 130, 246, 0.35) !important;
+  box-shadow: 0 0 16px rgba(114, 147, 192, 0.35) !important;
 }
 
 .ax-sidebar__section {
@@ -7712,9 +7712,9 @@ html, body {
 
 .ax-nav__item.active {
   color: var(--ax-text-primary) !important;
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.22) 0%, rgba(99, 102, 241, 0.16) 100%) !important;
-  border: 1px solid rgba(59, 130, 246, 0.45) !important;
-  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.25), inset 0 1px 0 var(--ax-border) !important;
+  background: linear-gradient(135deg, rgba(114, 147, 192, 0.22) 0%, rgba(155, 147, 196, 0.16) 100%) !important;
+  border: 1px solid rgba(114, 147, 192, 0.45) !important;
+  box-shadow: 0 4px 16px rgba(114, 147, 192, 0.25), inset 0 1px 0 var(--ax-border) !important;
 }
 
 .ax-nav__item.active::before {
@@ -7724,9 +7724,9 @@ html, body {
   top: 20% !important;
   height: 60% !important;
   width: 4px !important;
-  background: linear-gradient(180deg, #60a5fa 0%, #3b82f6 100%) !important;
+  background: linear-gradient(180deg, #4A7099 0%, #3E6698 100%) !important;
   border-radius: 4px !important;
-  box-shadow: 0 0 10px #3b82f6 !important;
+  box-shadow: 0 0 10px #7293C0 !important;
 }
 
 .ax-nav__icon {
@@ -7753,21 +7753,21 @@ html, body {
 }
 
 .ax-nav__badge--hot {
-  background: rgba(239, 68, 68, 0.18) !important;
+  background: rgba(197, 124, 137, 0.18) !important;
   color: var(--ax-accent-rose) !important;
-  border: 1px solid rgba(239, 68, 68, 0.35) !important;
+  border: 1px solid rgba(197, 124, 137, 0.35) !important;
 }
 
 .ax-nav__badge--bi {
-  background: rgba(129, 140, 248, 0.18) !important;
+  background: rgba(155, 147, 196, 0.18) !important;
   color: var(--ax-accent-purple) !important;
-  border: 1px solid rgba(129, 140, 248, 0.4) !important;
+  border: 1px solid rgba(155, 147, 196, 0.4) !important;
 }
 
 .ax-nav__badge--compras {
-  background: rgba(245, 158, 11, 0.18) !important;
+  background: rgba(194, 160, 107, 0.18) !important;
   color: var(--ax-accent-gold) !important;
-  border: 1px solid rgba(245, 158, 11, 0.4) !important;
+  border: 1px solid rgba(194, 160, 107, 0.4) !important;
 }
 
 .ax-nav__badge--count {
@@ -7788,8 +7788,8 @@ html, body {
   align-items: center !important;
   gap: 8px !important;
   padding: 6px 12px !important;
-  background: rgba(16, 185, 129, 0.12) !important;
-  border: 1px solid rgba(16, 185, 129, 0.3) !important;
+  background: rgba(95, 169, 141, 0.12) !important;
+  border: 1px solid rgba(95, 169, 141, 0.3) !important;
   border-radius: 20px !important;
   color: var(--ax-accent-emerald) !important;
   font-size: 0.75rem !important;
@@ -7800,8 +7800,8 @@ html, body {
   width: 8px !important;
   height: 8px !important;
   border-radius: 50% !important;
-  background: #10b981 !important;
-  box-shadow: 0 0 10px #10b981 !important;
+  background: #2F6B55 !important;
+  box-shadow: 0 0 10px #5FA98D !important;
   animation: pulseNeon 2s cubic-bezier(0.4, 0, 0.6, 1) infinite !important;
 }
 
@@ -7821,11 +7821,11 @@ html, body {
 }
 
 .ax-header__title {
-  font-family: 'Space Grotesk', sans-serif !important;
+  font-family: var(--ax-font-display) !important;
   font-size: 1.25rem !important;
   font-weight: 800 !important;
   letter-spacing: -0.3px !important;
-  background: linear-gradient(135deg, #ffffff 0%, #e2e8f0 70%, #93c5fd 100%) !important;
+  background: linear-gradient(135deg, #ffffff 0%, #e2e8f0 70%, #A8BDD8 100%) !important;
   -webkit-background-clip: text !important;
   -webkit-text-fill-color: transparent !important;
 }
@@ -7854,13 +7854,13 @@ html, body {
   align-items: center !important;
   padding: 6px 12px !important;
   border-radius: 20px !important;
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.16) 0%, rgba(5, 150, 105, 0.08) 100%) !important;
-  border: 1px solid rgba(16, 185, 129, 0.35) !important;
+  background: linear-gradient(135deg, rgba(95, 169, 141, 0.16) 0%, rgba(85, 160, 132, 0.08) 100%) !important;
+  border: 1px solid rgba(95, 169, 141, 0.35) !important;
   color: var(--ax-accent-emerald) !important;
   font-size: 0.8125rem !important;
   font-weight: 700 !important;
   font-family: 'JetBrains Mono', monospace !important;
-  box-shadow: 0 0 14px rgba(16, 185, 129, 0.15) !important;
+  box-shadow: 0 0 14px rgba(95, 169, 141, 0.15) !important;
 }
 
 .ax-search-pill {
@@ -7882,7 +7882,7 @@ html, body {
   background: var(--surf-3) !important;
   border-color: var(--ax-accent) !important;
   color: var(--ax-text-primary) !important;
-  box-shadow: 0 0 16px rgba(59, 130, 246, 0.3) !important;
+  box-shadow: 0 0 16px rgba(114, 147, 192, 0.3) !important;
 }
 
 .ax-kbd {
@@ -7935,7 +7935,7 @@ html, body {
 }
 
 .ax-btn-icon:hover {
-  background: rgba(59, 130, 246, 0.2) !important;
+  background: rgba(114, 147, 192, 0.2) !important;
   border-color: var(--ax-accent) !important;
   color: var(--ax-text-primary) !important;
   transform: scale(1.06) !important;
@@ -7986,10 +7986,10 @@ html, body {
 }
 
 .preset-btn.active {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+  background: linear-gradient(135deg, #3E6698 0%, #35597F 100%) !important;
   border-color: var(--ax-accent) !important;
   color: var(--ax-text-primary) !important;
-  box-shadow: 0 3px 12px rgba(59, 130, 246, 0.45) !important;
+  box-shadow: 0 3px 12px rgba(114, 147, 192, 0.45) !important;
 }
 
 .filter-group label {
@@ -8018,7 +8018,7 @@ html, body {
 .filter-input:focus, .filter-select:focus {
   outline: none !important;
   border-color: var(--ax-accent) !important;
-  box-shadow: 0 0 14px rgba(59, 130, 246, 0.35) !important;
+  box-shadow: 0 0 14px rgba(114, 147, 192, 0.35) !important;
   background: var(--surf-3) !important;
 }
 
@@ -8056,26 +8056,26 @@ html, body {
   left: 0 !important;
   right: 0 !important;
   height: 3px !important;
-  background: linear-gradient(90deg, #3b82f6, #6366f1, #10b981) !important;
+  background: linear-gradient(90deg, #3E6698, #5A4F8C, #2F6B55) !important;
   opacity: 0.8 !important;
 }
 
 #todayCard::before {
-  background: linear-gradient(90deg, #3b82f6, #60a5fa) !important;
+  background: linear-gradient(90deg, #3E6698, #4A7099) !important;
 }
 
 #monthCard::before {
-  background: linear-gradient(90deg, #818cf8, #a855f7) !important;
+  background: linear-gradient(90deg, #5A4F8C, #5A4F8C) !important;
 }
 
 #yearCard::before {
-  background: linear-gradient(90deg, #f59e0b, #fbbf24) !important;
+  background: linear-gradient(90deg, #7E5C28, #8A6730) !important;
 }
 
 .hero-kpi-card:hover {
   transform: translateY(-4px) scale(1.01) !important;
-  border-color: rgba(59, 130, 246, 0.5) !important;
-  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.5), 0 0 24px rgba(59, 130, 246, 0.25) !important;
+  border-color: rgba(114, 147, 192, 0.5) !important;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.5), 0 0 24px rgba(114, 147, 192, 0.25) !important;
 }
 
 .today-header {
@@ -8092,21 +8092,21 @@ html, body {
   font-weight: 800 !important;
   letter-spacing: 0.6px !important;
   text-transform: uppercase !important;
-  background: rgba(59, 130, 246, 0.18) !important;
+  background: rgba(114, 147, 192, 0.18) !important;
   color: var(--ax-accent) !important;
-  border: 1px solid rgba(59, 130, 246, 0.35) !important;
+  border: 1px solid rgba(114, 147, 192, 0.35) !important;
 }
 
 .badge-purple {
-  background: rgba(168, 85, 247, 0.18) !important;
+  background: rgba(155, 147, 196, 0.18) !important;
   color: var(--ax-accent-purple) !important;
-  border: 1px solid rgba(168, 85, 247, 0.35) !important;
+  border: 1px solid rgba(155, 147, 196, 0.35) !important;
 }
 
 .badge-gold {
-  background: rgba(245, 158, 11, 0.18) !important;
+  background: rgba(194, 160, 107, 0.18) !important;
   color: var(--ax-accent-gold) !important;
-  border: 1px solid rgba(245, 158, 11, 0.35) !important;
+  border: 1px solid rgba(194, 160, 107, 0.35) !important;
 }
 
 .today-label {
@@ -8118,7 +8118,7 @@ html, body {
 }
 
 .today-value {
-  font-family: 'JetBrains Mono', 'Space Grotesk', sans-serif !important;
+  font-family: 'JetBrains Mono', var(--ax-font-display) !important;
   font-size: 2rem !important;
   font-weight: 800 !important;
   letter-spacing: -0.5px !important;
@@ -8168,8 +8168,8 @@ html, body {
 .progress-bar-fill {
   height: 100% !important;
   border-radius: 999px !important;
-  background: linear-gradient(90deg, #3b82f6, #60a5fa, #34d399) !important;
-  box-shadow: 0 0 14px rgba(59, 130, 246, 0.5) !important;
+  background: linear-gradient(90deg, #3E6698, #4A7099, #3A7A63) !important;
+  box-shadow: 0 0 14px rgba(114, 147, 192, 0.5) !important;
   transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
@@ -8200,7 +8200,7 @@ html, body {
 }
 
 .chart-title, .chart-main-title {
-  font-family: 'Space Grotesk', sans-serif !important;
+  font-family: var(--ax-font-display) !important;
   font-size: 1rem !important;
   font-weight: 700 !important;
   color: var(--ax-text-primary) !important;
@@ -8232,7 +8232,7 @@ html, body {
   text-transform: uppercase !important;
   letter-spacing: 0.6px !important;
   padding: 0.9rem 1.1rem !important;
-  border-bottom: 1px solid rgba(59, 130, 246, 0.25) !important;
+  border-bottom: 1px solid rgba(114, 147, 192, 0.25) !important;
   position: sticky !important;
   top: 0 !important;
   z-index: 10 !important;
@@ -8247,7 +8247,7 @@ html, body {
 }
 
 .data-table tbody tr:hover td, .bi-table tbody tr:hover td {
-  background: rgba(59, 130, 246, 0.1) !important;
+  background: rgba(114, 147, 192, 0.1) !important;
   color: var(--ax-text-primary) !important;
 }
 
@@ -8260,9 +8260,9 @@ html, body {
 
 .command-palette-modal {
   background: var(--surf-3) !important;
-  border: 1px solid rgba(59, 130, 246, 0.4) !important;
+  border: 1px solid rgba(114, 147, 192, 0.4) !important;
   border-radius: 20px !important;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7), 0 0 35px rgba(59, 130, 246, 0.25) !important;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7), 0 0 35px rgba(114, 147, 192, 0.25) !important;
   overflow: hidden !important;
 }
 
@@ -8287,9 +8287,9 @@ html, body {
 }
 
 .command-item:hover, .command-item.selected {
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.25) 0%, rgba(99, 102, 241, 0.15) 100%) !important;
+  background: linear-gradient(135deg, rgba(114, 147, 192, 0.25) 0%, rgba(155, 147, 196, 0.15) 100%) !important;
   color: var(--ax-text-primary) !important;
-  border: 1px solid rgba(59, 130, 246, 0.4) !important;
+  border: 1px solid rgba(114, 147, 192, 0.4) !important;
 }
 
 /* --- 11. View Transitions & Performance Optimization --- */
@@ -8346,8 +8346,8 @@ html, body {
 
 .cotiz-tipo-card:hover {
   transform: translateY(-3px) !important;
-  border-color: rgba(59, 130, 246, 0.4) !important;
-  box-shadow: 0 14px 35px rgba(0, 0, 0, 0.45), 0 0 20px rgba(59, 130, 246, 0.15) !important;
+  border-color: rgba(114, 147, 192, 0.4) !important;
+  box-shadow: 0 14px 35px rgba(0, 0, 0, 0.45), 0 0 20px rgba(114, 147, 192, 0.15) !important;
 }
 
 /* --- 13. Products & Stock Forecasting Luxury UI --- */
@@ -8358,7 +8358,7 @@ html, body {
   right: 0 !important;
   background: var(--surf-3) !important;
   backdrop-filter: blur(24px) !important;
-  border: 1px solid rgba(168, 85, 247, 0.4) !important;
+  border: 1px solid rgba(155, 147, 196, 0.4) !important;
   border-radius: 12px !important;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7) !important;
   max-height: 280px !important;
@@ -8376,17 +8376,17 @@ html, body {
 }
 
 .prod-suggestion-item:hover {
-  background: rgba(168, 85, 247, 0.18) !important;
+  background: rgba(155, 147, 196, 0.18) !important;
   color: var(--ax-text-primary) !important;
 }
 
 /* --- 14. Mix Sugerido AI Luxury UI --- */
 .mix-advisor-card {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, var(--surf-3) 100%) !important;
-  border: 1px solid rgba(16, 185, 129, 0.3) !important;
+  background: linear-gradient(135deg, rgba(95, 169, 141, 0.12) 0%, var(--surf-3) 100%) !important;
+  border: 1px solid rgba(95, 169, 141, 0.3) !important;
   border-radius: 20px !important;
   padding: 1.5rem !important;
-  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.4), 0 0 24px rgba(16, 185, 129, 0.12) !important;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.4), 0 0 24px rgba(95, 169, 141, 0.12) !important;
 }
 
 .mix-catalog-grid {
@@ -8406,8 +8406,8 @@ html, body {
 
 .mix-card:hover {
   transform: translateY(-4px) !important;
-  border-color: rgba(16, 185, 129, 0.45) !important;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(16, 185, 129, 0.18) !important;
+  border-color: rgba(95, 169, 141, 0.45) !important;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(95, 169, 141, 0.18) !important;
 }
 
 /* --- 15. Toast & Modal Refinement --- */
@@ -8424,13 +8424,13 @@ html, body {
 .toast-msg {
   background: var(--surf-3) !important;
   backdrop-filter: blur(20px) !important;
-  border: 1px solid rgba(59, 130, 246, 0.4) !important;
+  border: 1px solid rgba(114, 147, 192, 0.4) !important;
   border-radius: 12px !important;
   padding: 0.9rem 1.3rem !important;
   color: var(--ax-text-primary) !important;
   font-size: 0.875rem !important;
   font-weight: 600 !important;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6), 0 0 16px rgba(59, 130, 246, 0.2) !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6), 0 0 16px rgba(114, 147, 192, 0.2) !important;
   animation: toastSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
@@ -8449,15 +8449,15 @@ html, body {
   gap: 12px;
   flex-wrap: wrap;
   padding: 14px 16px;
-  border: 1px dashed rgba(56, 189, 248, 0.45);
+  border: 1px dashed rgba(116, 166, 184, 0.45);
   border-radius: 12px;
-  background: rgba(56, 189, 248, 0.05);
+  background: rgba(116, 166, 184, 0.05);
   transition: background 0.18s ease, border-color 0.18s ease;
 }
 
 .ft-photo-dropzone.dragover {
-  background: rgba(56, 189, 248, 0.14);
-  border-color: rgba(56, 189, 248, 0.85);
+  background: rgba(116, 166, 184, 0.14);
+  border-color: rgba(116, 166, 184, 0.85);
 }
 
 .ft-photo-hint {
@@ -8507,17 +8507,17 @@ html, body {
   cursor: pointer;
 }
 
-.ft-photo-thumb .ft-photo-remove:hover { background: #ef4444; color: var(--ax-text-primary); }
+.ft-photo-thumb .ft-photo-remove:hover { background: #8E3B48; color: var(--ax-text-primary); }
 
 /* Marca cuál es la foto principal (la que encabeza la ficha y el PDF) */
-.ft-photo-thumb.is-main { border-color: var(--ax-accent-sky); box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.35); }
+.ft-photo-thumb.is-main { border-color: var(--ax-accent-sky); box-shadow: 0 0 0 2px rgba(116, 166, 184, 0.35); }
 
 .ft-photo-thumb .ft-photo-main-tag {
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
-  background: rgba(56, 189, 248, 0.9);
+  background: rgba(116, 166, 184, 0.9);
   color: #030712;
   font-size: 0.625rem;
   font-weight: 800;
@@ -8574,7 +8574,7 @@ html, body {
   font-weight: 700;
 }
 
-.ft-custom-field-row .ft-custom-remove:hover { background: #ef4444; color: var(--ax-text-primary); }
+.ft-custom-field-row .ft-custom-remove:hover { background: #8E3B48; color: var(--ax-text-primary); }
 
 @media (max-width: 620px) {
   .ft-custom-field-row { grid-template-columns: 1fr; }
@@ -8928,7 +8928,7 @@ body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; 
   --surf-1: rgba(18, 24, 42, 0.75);   /* tarjetas */
   --surf-2: rgba(15, 23, 42, 0.85);   /* header, sidebar, barra de filtros */
   --surf-3: rgba(18, 24, 42, 0.95);   /* modales y desplegables */
-  --ax-accent-sky: #38BDF8;
+  --ax-accent-sky: #74A6B8;
 }
 
 [data-ax-theme="light"], .is-pdf-export {
@@ -8940,7 +8940,7 @@ body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; 
      asi que --ax-text-primary seguia siendo #F8FAFC (casi blanco). */
   --ax-text-primary:   #0F172A;
   --ax-text-secondary: #475569;
-  --ax-text-tertiary:  #64748B;
+  --ax-text-tertiary:  #5A6474;
 
   --ax-border:        #E2E8F0;
   --ax-border-subtle: #F1F5F9;
@@ -9004,38 +9004,38 @@ body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; 
    Sobre blanco caian a contraste 1,7-2,6. Estos son sus equivalentes oscuros,
    todos por encima de 4,5:1 sobre blanco. */
 [data-ax-theme="light"] {
-  --ax-accent:         #1D4ED8;
-  --ax-accent-purple:  #6D28D9;
-  --ax-accent-gold:    #B45309;
-  --ax-accent-emerald: #047857;
-  --ax-accent-rose:    #BE123C;
-  --ax-accent-sky:     #0E7490;
+  --ax-accent:         #3D5F8F;
+  --ax-accent-purple:  #5E5192;
+  --ax-accent-gold:    #7E5C28;
+  --ax-accent-emerald: #2C6952;
+  --ax-accent-rose:    #98394A;
+  --ax-accent-sky:     #33636F;
 }
 
-[data-ax-theme="light"] .today-badge          { background: #EFF6FF !important; color: #1D4ED8 !important; border-color: #BFDBFE !important; }
-[data-ax-theme="light"] .today-badge.badge-purple { background: #F5F3FF !important; color: #6D28D9 !important; border-color: #DDD6FE !important; }
-[data-ax-theme="light"] .today-badge.badge-gold   { background: #FFFBEB !important; color: #B45309 !important; border-color: #FDE68A !important; }
+[data-ax-theme="light"] .today-badge          { background: #EFF6FF !important; color: #3D5F8F !important; border-color: #AFC0D6 !important; }
+[data-ax-theme="light"] .today-badge.badge-purple { background: #F5F3FF !important; color: #5E5192 !important; border-color: #BFB9D6 !important; }
+[data-ax-theme="light"] .today-badge.badge-gold   { background: #FFFBEB !important; color: #7E5C28 !important; border-color: #D8C79A !important; }
 
-[data-ax-theme="light"] .ax-nav__badge          { color: #1D4ED8 !important; background: #EFF6FF !important; }
-[data-ax-theme="light"] .ax-nav__badge--hot     { color: #BE123C !important; background: #FFF1F2 !important; }
-[data-ax-theme="light"] .ax-nav__badge--bi      { color: #4338CA !important; background: #EEF2FF !important; }
-[data-ax-theme="light"] .ax-nav__badge--compras { color: #B45309 !important; background: #FFFBEB !important; }
-[data-ax-theme="light"] .ax-nav__badge--prod    { color: #6D28D9 !important; background: #F5F3FF !important; }
-[data-ax-theme="light"] .ax-nav__badge--ficha   { color: #0E7490 !important; background: #ECFEFF !important; }
-[data-ax-theme="light"] .ax-nav__badge--cotiz   { color: #047857 !important; background: #ECFDF5 !important; }
+[data-ax-theme="light"] .ax-nav__badge          { color: #3D5F8F !important; background: #EFF6FF !important; }
+[data-ax-theme="light"] .ax-nav__badge--hot     { color: #98394A !important; background: #FFF1F2 !important; }
+[data-ax-theme="light"] .ax-nav__badge--bi      { color: #5E5192 !important; background: #EEF2FF !important; }
+[data-ax-theme="light"] .ax-nav__badge--compras { color: #7E5C28 !important; background: #FFFBEB !important; }
+[data-ax-theme="light"] .ax-nav__badge--prod    { color: #5E5192 !important; background: #F5F3FF !important; }
+[data-ax-theme="light"] .ax-nav__badge--ficha   { color: #33636F !important; background: #ECFEFF !important; }
+[data-ax-theme="light"] .ax-nav__badge--cotiz   { color: #2C6952 !important; background: #ECFDF5 !important; }
 
 [data-ax-theme="light"] .ax-sidebar__tagline { color: #475569 !important; }
 [data-ax-theme="light"] .ax-sidebar__footer-badge,
-[data-ax-theme="light"] .ax-sidebar__footer-badge span { color: #047857 !important; }
+[data-ax-theme="light"] .ax-sidebar__footer-badge span { color: #2C6952 !important; }
 
 [data-ax-theme="light"] .hero-compare-badge.trend-positive .compare-growth-tag,
-[data-ax-theme="light"] .trend-positive { color: #047857 !important; }
+[data-ax-theme="light"] .trend-positive { color: #2C6952 !important; }
 [data-ax-theme="light"] .hero-compare-badge.trend-negative .compare-growth-tag,
-[data-ax-theme="light"] .trend-negative { color: #BE123C !important; }
+[data-ax-theme="light"] .trend-negative { color: #98394A !important; }
 [data-ax-theme="light"] .hero-compare-badge .compare-prev-val { color: var(--ax-text-tertiary) !important; }
 
 /* El banner del modulo Mix usaba texto esmeralda claro sobre fondo casi blanco. */
-[data-ax-theme="light"] .banner-parallax { background: #F0FDF4 !important; border-color: #BBF7D0 !important; }
+[data-ax-theme="light"] .banner-parallax { background: #F0FDF4 !important; border-color: #AECFBF !important; }
 [data-ax-theme="light"] .banner-parallax h3,
 [data-ax-theme="light"] .banner-parallax strong { color: #065F46 !important; }
 [data-ax-theme="light"] .banner-parallax p:not(.btn-primary *),
@@ -9100,7 +9100,7 @@ body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; 
 
 [data-ax-theme="light"] .proj-card.highlight-blue {
   background: linear-gradient(135deg, #EFF6FF 0%, #FFFFFF 100%) !important;
-  border-color: #BFDBFE !important;
+  border-color: #AFC0D6 !important;
   box-shadow: var(--el-2) !important;
 }
 [data-ax-theme="light"] .proj-card.highlight-green {
@@ -9110,12 +9110,12 @@ body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; 
 }
 [data-ax-theme="light"] .proj-card.highlight-purple {
   background: linear-gradient(135deg, #F5F3FF 0%, #FFFFFF 100%) !important;
-  border-color: #DDD6FE !important;
+  border-color: #BFB9D6 !important;
   box-shadow: var(--el-2) !important;
 }
 [data-ax-theme="light"] .proj-card.highlight-amber {
   background: linear-gradient(135deg, #FFFBEB 0%, #FFFFFF 100%) !important;
-  border-color: #FDE68A !important;
+  border-color: #D8C79A !important;
   box-shadow: var(--el-2) !important;
 }
 
@@ -9124,8 +9124,8 @@ body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; 
 [data-ax-theme="light"] .proj-card .proj-val {
   color: var(--ax-text-primary) !important;
 }
-[data-ax-theme="light"] .proj-card.highlight-green .proj-val { color: #047857 !important; }
-[data-ax-theme="light"] .proj-card.highlight-blue  .proj-val { color: #1D4ED8 !important; }
+[data-ax-theme="light"] .proj-card.highlight-green .proj-val { color: #2C6952 !important; }
+[data-ax-theme="light"] .proj-card.highlight-blue  .proj-val { color: #3D5F8F !important; }
 
 /* --- 5.f Texto con degradado (background-clip: text) -----------------------
    El wordmark pinta el texto con un degradado que arranca en blanco y termina
@@ -9133,7 +9133,7 @@ body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; 
    primer 60% del texto desaparece. Se invierte el recorrido en tema claro.
    -------------------------------------------------------------------------- */
 [data-ax-theme="light"] .ax-sidebar__wordmark {
-  background-image: linear-gradient(135deg, #0F172A 0%, #1E3A8A 60%, #1D4ED8 100%) !important;
+  background-image: linear-gradient(135deg, #0F172A 0%, #1E3A8A 60%, #2E5175 100%) !important;
   -webkit-background-clip: text !important;
   background-clip: text !important;
   -webkit-text-fill-color: transparent !important;
@@ -9399,3 +9399,285 @@ body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; 
   color: var(--ax-text-tertiary) !important;
   margin: var(--sp-5) 0 var(--sp-2) 0 !important;
 }
+
+/* ============================================================================
+   7. PALETA MATE Y AFINADO TIPOGRAFICO
+   ----------------------------------------------------------------------------
+   Medicion previa: 43 colores cromaticos distintos con saturacion mediana del
+   84%. Eran los tonos 500 de Tailwind, pensados para captar la vista en una
+   pagina de marketing. En un tablero que se mira durante horas cansan y restan
+   autoridad a la cifra: el color gritaba mas fuerte que el dato.
+
+   Esta capa baja la saturacion mediana al 37% conservando el matiz, para que
+   siga siendo la misma aplicacion. Cada tono se verifico sobre su superficie
+   real: ninguno baja de 4.5:1.
+   ========================================================================== */
+
+/* --- 7.1 Lienzo y superficies ---------------------------------------------
+   El fondo era #0B0F19, un azul marino intenso. Se neutraliza: una superficie
+   mate no compite con el contenido que sostiene. Las tarjetas dejan de ser
+   translucidas -el cristal esmerilado dejaba pasar los orbes y ensuciaba las
+   cifras- y pasan a color solido. */
+:root,
+[data-ax-theme="dark"] {
+  --ax-canvas: #10151F;
+  --ax-surface: #1A2130;
+  --ax-surface-hover: #222B3C;
+  --surf-1: #161C28;
+  --surf-2: #131924;
+  --surf-3: #1A2130;
+  --ax-card-bg: #161C28;
+
+  --ax-border: rgba(255, 255, 255, 0.07);
+  --ax-border-subtle: rgba(255, 255, 255, 0.035);
+  --ax-card-border: rgba(255, 255, 255, 0.07);
+
+  --ax-text-primary: #E8EBF0;
+  --ax-text-secondary: #A9B2C1;
+  --ax-text-tertiary: #7A8595;
+
+  /* Dos tokens y no uno: el mismo azul no puede ser legible sobre un fondo
+     oscuro y a la vez llevar texto blanco encima. Se separan los dos usos. */
+  --ax-accent: #7293C0;          /* texto, iconos, bordes, estado activo */
+  --ax-accent-solid: #3E6698;    /* relleno de boton con etiqueta blanca */
+  --ax-accent-hover: #4A7099;
+  --ax-accent-purple: #9B93C4;
+  --ax-accent-gold: #C2A06B;
+  --ax-accent-emerald: #5FA98D;
+  --ax-accent-rose: #C57C89;
+  --ax-accent-sky: #74A6B8;
+
+  --ax-card-hover-border: rgba(114, 147, 192, 0.45);
+  --ax-accent-glow: rgba(114, 147, 192, 0.22);
+  --ax-accent-purple-glow: rgba(155, 147, 196, 0.18);
+  --ax-accent-gold-glow: rgba(194, 160, 107, 0.18);
+}
+
+[data-ax-theme="light"],
+.is-pdf-export {
+  --ax-canvas: #F4F5F7;
+  --ax-surface: #FFFFFF;
+  --ax-surface-hover: #F7F8FA;
+  --surf-1: #FFFFFF;
+  --surf-2: #FFFFFF;
+  --surf-3: #FFFFFF;
+  --ax-card-bg: #FFFFFF;
+
+  --ax-border: #E4E7EC;
+  --ax-border-subtle: #EFF1F4;
+  --ax-card-border: #E4E7EC;
+
+  --ax-text-primary: #161A21;
+  --ax-text-secondary: #4D5666;
+  --ax-text-tertiary: #6E7787;
+
+  --ax-accent: #3D5F8F;
+  --ax-accent-solid: #3D5F8F;
+  --ax-accent-hover: #33507A;
+  --ax-accent-purple: #5E5192;
+  --ax-accent-gold: #7E5C28;
+  --ax-accent-emerald: #2C6952;
+  --ax-accent-rose: #98394A;
+  --ax-accent-sky: #33636F;
+
+  --ax-card-hover-border: rgba(61, 95, 143, 0.35);
+  --ax-accent-glow: rgba(61, 95, 143, 0.14);
+  --ax-accent-purple-glow: rgba(94, 81, 146, 0.12);
+  --ax-accent-gold-glow: rgba(126, 92, 40, 0.12);
+}
+
+/* --- 7.2 Acabado mate -----------------------------------------------------
+   El desenfoque de fondo sobre superficies ya opacas solo cuesta rendimiento
+   y deja un halo lechoso en los bordes. Se retira. */
+.ax-card, .hero-kpi-card, .mini-kpi-card, .kpi-card, .chart-card,
+.table-card, .proj-card, .filters-bar, .ax-header, .ax-sidebar,
+.modal-content, .cmd-palette-card, .bi-sim-card {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background-image: none !important;
+}
+
+/* Los orbes de color detras del contenido no caben en un acabado mate. */
+[class*="parallax-orb"], .ax-ambient { display: none !important; }
+
+/* --- 7.3 Relleno solido ---------------------------------------------------
+   Los botones primarios usaban el mismo token que el texto de acento; con la
+   paleta mate ese tono ya no sostiene una etiqueta blanca. Pasan al solido. */
+.btn-primary, .ax-btn--primary, .btn-save, .btn-apply {
+  background: var(--ax-accent-solid) !important;
+  border-color: var(--ax-accent-solid) !important;
+}
+.btn-primary:hover, .ax-btn--primary:hover,
+.btn-save:hover, .btn-apply:hover {
+  background: var(--ax-accent-hover) !important;
+  border-color: var(--ax-accent-hover) !important;
+}
+.btn-primary, .btn-primary *,
+.ax-btn--primary, .ax-btn--primary * { color: #FFFFFF !important; }
+
+/* --- 7.4 Cifras tabulares -------------------------------------------------
+   Los digitos proporcionales hacian bailar las columnas de montos entre fila
+   y fila. `tnum` les da el mismo ancho y los alinea en vertical; `zero` marca
+   el cero con barra para no confundirlo con la O. */
+body, input, select, textarea, button, table {
+  font-feature-settings: "tnum" 1, "cv05" 1 !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+/* --- 7.5 Escala tipografica -----------------------------------------------
+   Inter Tight sustituye a Space Grotesk en los titulos: la geometria de Space
+   Grotesk pedia mucha atencion y desentonaba con la Inter del cuerpo. Al ser
+   la misma familia el conjunto es coherente, y el corte estrecho gana aire en
+   los titulares largos.
+
+   A partir de 1.25rem el interletrado por defecto se ve suelto. Se aprieta de
+   forma progresiva: cuanto mas grande el texto, mas negativo el tracking. */
+.ax-header__title, .dashboard-section-title, .chart-main-title,
+.hero-kpi-value, .today-value, .kpi .value, .mini-kpi-value,
+.target-current, .sim-res-val, .modal-content h2, .modal-content h3 {
+  font-family: var(--ax-font-display) !important;
+  letter-spacing: -0.021em !important;
+}
+.hero-kpi-value, .today-value, .kpi .value, .target-current {
+  letter-spacing: -0.032em !important;
+  font-weight: 600 !important;
+}
+
+/* Peso maximo 700, y solo en la cifra principal. El grosor no es la unica
+   forma de jerarquizar: el tamano y el color ya lo hacen. */
+[style*="font-weight: 800"], [style*="font-weight:800"] { font-weight: 600 !important; }
+
+/* --- 7.6 Versalitas -------------------------------------------------------
+   42 rotulos en mayuscula sostenida. La mayuscula sin interletrado se apelmaza
+   y a peso alto se vuelve un bloque. Se afinan: peso medio y aire entre letras. */
+.kpi .label, .mini-kpi-label, .today-label, .sim-res-label,
+.target-goal, .ax-nav__section-title, .chart-card .chart-subtitle {
+  font-weight: 500 !important;
+  letter-spacing: 0.07em !important;
+  color: var(--ax-text-tertiary) !important;
+}
+
+/* --- 7.7 Bordes -----------------------------------------------------------
+   Un borde a 1px con color claro sobre fondo oscuro se lee mas grueso de lo
+   que es. Con la superficie mate basta el contraste entre planos. */
+.ax-card, .hero-kpi-card, .mini-kpi-card, .kpi-card,
+.chart-card, .table-card, .proj-card {
+  border: 1px solid var(--ax-border) !important;
+}
+
+/* ============================================================================
+   8. CORRECCIONES DE CONTRASTE TRAS LA PALETA MATE
+   ----------------------------------------------------------------------------
+   Auditoria sobre 8 vistas x 2 temas despues del cambio de paleta. Lo que
+   sigue son los cuatro fallos reales que aparecieron.
+   ========================================================================== */
+
+/* --- 8.1 Texto terciario --------------------------------------------------
+   #7A8595 daba 4.31:1 sobre la superficie mas clara (#1A2130) y los rotulos
+   que usan este token son de 10.5px, que exigen 4.5:1. Se aclara un paso:
+   ahora el peor caso es 5.1:1.
+
+   Ojo con el selector: `:root` a secas tambien casa cuando el tema es claro,
+   y como este bloque va despues del de tema claro le ganaba por orden de
+   aparicion. El resultado era el gris claro del tema oscuro sobre la barra
+   blanca, 3.15:1 en todos los rotulos del menu. Hay que excluir el tema
+   claro de forma explicita. */
+:root:not([data-ax-theme="light"]),
+[data-ax-theme="dark"] { --ax-text-tertiary: #8792A1; }
+
+/* El equivalente para fondo claro, verificado sobre blanco y sobre #F4F5F7. */
+[data-ax-theme="light"] { --ax-text-tertiary: #626B7A; }
+
+/* --- 8.2 Distintivos del menu en tema claro -------------------------------
+   Estos colores eran los tonos oscuros correctos para fondo claro, pero la
+   pasada de desaturacion los trato como si fueran de tema oscuro y los
+   aclaro. Sobre su fondo palido caian a 2.9:1. Vuelven a la version oscura. */
+[data-ax-theme="light"] .ax-nav__badge          { color: #3D5F8F !important; background: #EEF3FA !important; }
+[data-ax-theme="light"] .ax-nav__badge--hot     { color: #98394A !important; background: #FBEFF1 !important; }
+[data-ax-theme="light"] .ax-nav__badge--bi      { color: #5E5192 !important; background: #F0EEF7 !important; }
+[data-ax-theme="light"] .ax-nav__badge--compras { color: #7E5C28 !important; background: #F9F4E9 !important; }
+[data-ax-theme="light"] .ax-nav__badge--prod    { color: #5E5192 !important; background: #F0EEF7 !important; }
+[data-ax-theme="light"] .ax-nav__badge--ficha   { color: #33636F !important; background: #ECF3F5 !important; }
+[data-ax-theme="light"] .ax-nav__badge--cotiz   { color: #2C6952 !important; background: #EBF4F0 !important; }
+
+/* --- 8.3 Texto con degradado en tema claro --------------------------------
+   El logotipo y el titulo de cabecera se pintan con `background-clip: text` y
+   el degradado arranca en blanco. Sobre la barra oscura funciona; en tema
+   claro era blanco sobre blanco (1.02:1), practicamente invisible.
+
+   En vez de inventar un degradado claro se retira el efecto en este tema: hay
+   que devolver `-webkit-text-fill-color` a `currentColor`, porque con la
+   transparencia puesta el `color` no llega a pintarse. */
+[data-ax-theme="light"] .ax-sidebar__wordmark,
+[data-ax-theme="light"] .ax-header__title,
+[data-ax-theme="light"] [style*="background-clip"] {
+  background: none !important;
+  background-image: none !important;
+  -webkit-text-fill-color: currentColor !important;
+  color: var(--ax-text-primary) !important;
+}
+
+/* --- 8.4 Degradado del logotipo en tema oscuro ----------------------------
+   Terminaba en un azul que la desaturacion dejo apagado contra el fondo de la
+   barra. Se acorta el recorrido para que el ultimo tramo siga siendo legible. */
+[data-ax-theme="dark"] .ax-sidebar__wordmark,
+:root:not([data-ax-theme="light"]) .ax-sidebar__wordmark {
+  background-image: linear-gradient(135deg, #FFFFFF 0%, #DDE3EC 65%, #A8BDD8 100%) !important;
+}
+
+/* --- 8.5 Boton de preajuste activo en tema claro --------------------------
+   Llevaba texto oscuro sobre un relleno de acento a media luz: 2.4:1. Sobre
+   un relleno solido la etiqueta tiene que ser blanca. */
+[data-ax-theme="light"] .preset-btn.active,
+[data-ax-theme="light"] .preset-btn.active * {
+  background: var(--ax-accent-solid) !important;
+  background-image: none !important;
+  border-color: var(--ax-accent-solid) !important;
+  color: #FFFFFF !important;
+  -webkit-text-fill-color: #FFFFFF !important;
+}
+
+/* --- 8.6 Acentos en atributos `style` -------------------------------------
+   Varias insignias traen el color en el atributo `style` del HTML, que gana a
+   cualquier hoja de estilos salvo por `!important`. En tema claro heredaban
+   el tono pensado para fondo oscuro. Se corrigen por token, no por elemento. */
+[data-ax-theme="light"] .today-badge,
+[data-ax-theme="light"] [class*="badge-"],
+[data-ax-theme="light"] .compare-growth-tag,
+[data-ax-theme="light"] .kpi-card__label,
+[data-ax-theme="light"] .kpi-card__sub {
+  -webkit-text-fill-color: currentColor !important;
+}
+[data-ax-theme="light"] .kpi-card__label,
+[data-ax-theme="light"] .kpi-card__sub { color: #5A6474 !important; }
+
+/* ============================================================================
+   9. HERENCIA TIPOGRAFICA EN CONTROLES DE FORMULARIO
+   ----------------------------------------------------------------------------
+   Hallazgo de la auditoria: 34 de los 36 controles visibles -el 94%- no se
+   estaban pintando con la tipografia de la aplicacion, sino en Arial.
+
+   No era un error de nadie en este proyecto: la hoja de estilos del navegador
+   asigna `font: 400 13.333px Arial` a `button`, `input`, `select` y
+   `textarea`, y esa declaracion no se hereda del padre como el resto del
+   texto. Habia que anularla de forma explicita y nunca se hizo.
+
+   Es la causa de fondo de buena parte del aspecto tosco: los diez rotulos del
+   menu lateral son `<button>`, o sea que el texto mas leido de la interfaz
+   estaba en Arial mientras el resto iba en Inter. Dos tipografias mezcladas
+   sin querer se notan aunque no se sepa senalar por que.
+
+   Solo se hereda la familia. El tamano se deja como esta: muchos controles ya
+   traen el suyo y tocarlo moveria la maqueta sin necesidad. */
+button, input, select, textarea, optgroup {
+  font-family: inherit;
+  letter-spacing: inherit;
+}
+
+/* La misma razon, en el unico rotulo que seguia en peso 800. */
+.presets-label { font-weight: 600 !important; }
+
+/* Dos botones de icono se habian quedado con el tamano por defecto del
+   navegador (13.333px). Se fija de forma explicita para que el icono no
+   dependa de un valor heredado de la hoja del navegador. */
+.ax-btn-icon { font-size: var(--fs-md) !important; line-height: 1 !important; }

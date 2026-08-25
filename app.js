@@ -1755,8 +1755,8 @@ function renderProdProjectionCurveChart(initialQty, monthlySpeed, totalMonths) {
       datasets: [{
         label: 'Stock Proyectado (Unidades)',
         data: dataPoints,
-        borderColor: '#a855f7',
-        backgroundColor: 'rgba(168, 85, 247, 0.15)',
+        borderColor: '#9B93C4',
+        backgroundColor: 'rgba(155, 147, 196, 0.15)',
         fill: true,
         tension: 0.35,
         pointBackgroundColor: '#c084fc',
@@ -1809,7 +1809,7 @@ function renderProdYearlyAnalytics(byYearMap, totalNetoGlobal) {
       prodYearlyChartInstance = null;
     }
 
-    const palette = ['#38bdf8', '#34d399', '#f59e0b', '#a855f7', '#f43f5e'];
+    const palette = ['#74A6B8', '#5FA98D', '#C2A06B', '#9B93C4', '#C57C89'];
     const datasets = years.map((y, idx) => {
       const color = palette[idx % palette.length];
       const isQty = currentProdChartMetric === 'qty';
@@ -2163,9 +2163,9 @@ function updateMixSugeridoView() {
 
     const displayList = skuList.slice(0, 100);
     tbody.innerHTML = displayList.map((p, idx) => {
-      let badgeStyle = 'background: rgba(16, 185, 129, 0.15); color: var(--ax-accent-emerald); border: 1px solid rgba(16, 185, 129, 0.3);';
-      if (p.clasificacion.includes('Rentable')) badgeStyle = 'background: rgba(59, 130, 246, 0.15); color: var(--ax-accent); border: 1px solid rgba(59, 130, 246, 0.3);';
-      else if (p.clasificacion.includes('Volumen')) badgeStyle = 'background: rgba(245, 158, 11, 0.15); color: var(--ax-accent-gold); border: 1px solid rgba(245, 158, 11, 0.3);';
+      let badgeStyle = 'background: rgba(95, 169, 141, 0.15); color: var(--ax-accent-emerald); border: 1px solid rgba(95, 169, 141, 0.3);';
+      if (p.clasificacion.includes('Rentable')) badgeStyle = 'background: rgba(114, 147, 192, 0.15); color: var(--ax-accent); border: 1px solid rgba(114, 147, 192, 0.3);';
+      else if (p.clasificacion.includes('Volumen')) badgeStyle = 'background: rgba(194, 160, 107, 0.15); color: var(--ax-accent-gold); border: 1px solid rgba(194, 160, 107, 0.3);';
       else if (p.clasificacion.includes('Rotación')) badgeStyle = 'background: rgba(148, 163, 184, 0.15); color: var(--ax-text-secondary); border: 1px solid rgba(148, 163, 184, 0.3);';
 
       return `
@@ -3472,15 +3472,18 @@ let chartFamiliaInst = null;
 let chartTiendaInst = null;
 let chartVendedorInst = null;
 
+/* Paleta categorica mate. Los ocho tonos se separan por matiz, no por
+   intensidad: a saturacion pareja (~35%) ninguna serie pesa mas que otra,
+   que era lo que pasaba cuando el ambar y el rosa iban al 90%. */
 const luxuryPalette = [
-  '#3b82f6', // Sapphire
-  '#10b981', // Emerald
-  '#f59e0b', // Amber
-  '#8b5cf6', // Indigo/Purple
-  '#06b6d4', // Cyan
-  '#f43f5e', // Rose
-  '#ec4899', // Pink
-  '#64748b'  // Slate
+  '#7293C0', // Azul
+  '#5FA98D', // Verde
+  '#C2A06B', // Ambar
+  '#9B93C4', // Violeta
+  '#74A6B8', // Turquesa
+  '#C57C89', // Rosa
+  '#B08AA8', // Malva
+  '#8792A1'  // Pizarra
 ];
 
 function setupChartPeriodListeners() {
@@ -3711,14 +3714,14 @@ function renderCharts() {
 
     const ctx = mesCanvas.getContext('2d');
     const gradBlue = ctx.createLinearGradient(0, 0, 0, 320);
-    gradBlue.addColorStop(0, 'rgba(59, 130, 246, 0.45)');
-    gradBlue.addColorStop(0.65, 'rgba(59, 130, 246, 0.12)');
-    gradBlue.addColorStop(1, 'rgba(59, 130, 246, 0.0)');
+    gradBlue.addColorStop(0, 'rgba(114, 147, 192, 0.45)');
+    gradBlue.addColorStop(0.65, 'rgba(114, 147, 192, 0.12)');
+    gradBlue.addColorStop(1, 'rgba(114, 147, 192, 0.0)');
 
     const gradRed = ctx.createLinearGradient(0, 0, 0, 320);
-    gradRed.addColorStop(0, 'rgba(244, 63, 94, 0.40)'); // Tonalidad roja elegante (Rose/Crimson)
-    gradRed.addColorStop(0.65, 'rgba(244, 63, 94, 0.10)');
-    gradRed.addColorStop(1, 'rgba(244, 63, 94, 0.0)');
+    gradRed.addColorStop(0, 'rgba(197, 124, 137, 0.40)'); // Tonalidad roja elegante (Rose/Crimson)
+    gradRed.addColorStop(0.65, 'rgba(197, 124, 137, 0.10)');
+    gradRed.addColorStop(1, 'rgba(197, 124, 137, 0.0)');
 
     const pointRadius = timeSorted.length > 25 ? 2.5 : 4.5;
 
@@ -3731,7 +3734,7 @@ function renderCharts() {
           {
             label: `Ventas ${activeY} ($)`,
             data: timeSorted.map(m => m.totalNeto),
-            borderColor: '#3b82f6',
+            borderColor: '#7293C0',
             backgroundColor: gradBlue,
             fill: true,
             tension: 0.42,
@@ -3739,14 +3742,14 @@ function renderCharts() {
             borderWidth: 3.2,
             pointRadius: pointRadius,
             pointHoverRadius: 7,
-            pointBackgroundColor: '#60a5fa',
+            pointBackgroundColor: '#8AA6CB',
             pointBorderColor: '#0f172a',
             pointBorderWidth: 2
           },
           {
             label: `Ventas ${prevY} ($)`,
             data: timeSorted.map(m => m.totalPrev),
-            borderColor: '#f43f5e',
+            borderColor: '#C57C89',
             backgroundColor: gradRed,
             fill: true,
             tension: 0.42,
@@ -3913,12 +3916,12 @@ function renderCharts() {
           label: 'Facturación ($)',
           data: sortedFam.map(f => f[1]),
           backgroundColor: [
-            '#8b5cf6',
-            '#6366f1',
-            '#3b82f6',
-            '#06b6d4',
-            '#10b981',
-            '#f59e0b'
+            '#9B93C4',
+            '#8A88BE',
+            '#7293C0',
+            '#74A6B8',
+            '#5FA98D',
+            '#C2A06B'
           ].slice(0, sortedFam.length),
           borderRadius: 8,
           borderSkipped: false,
@@ -3973,7 +3976,7 @@ function renderCharts() {
         datasets: [{
           label: 'Ventas por Sucursal ($)',
           data: sortedTienda.map(t => t[1]),
-          backgroundColor: '#10b981',
+          backgroundColor: '#5FA98D',
           borderRadius: 8,
           borderSkipped: false,
           barThickness: 16
@@ -4027,7 +4030,7 @@ function renderCharts() {
         datasets: [{
           label: 'Facturación ($)',
           data: sortedVend.map(v => v[1]),
-          backgroundColor: '#f59e0b',
+          backgroundColor: '#C2A06B',
           borderRadius: 8,
           borderSkipped: false,
           barThickness: 16
@@ -4469,12 +4472,12 @@ function renderRFMGrid() {
       <span class="rfm-card-count" style="color:var(--ax-accent);">${loyalCount}</span>
       <span class="rfm-card-sub">Compras recurrentes</span>
     </div>
-    <div class="rfm-card" style="border-color:rgba(244, 63, 94, 0.4);">
+    <div class="rfm-card" style="border-color:rgba(197, 124, 137, 0.4);">
       <span class="rfm-card-title">⚠️ En Riesgo</span>
       <span class="rfm-card-count" style="color:var(--ax-accent-rose);">${atRiskCount}</span>
       <span class="rfm-card-sub">Inactivos > 60 días</span>
     </div>
-    <div class="rfm-card" style="border-color:rgba(245, 158, 11, 0.4);">
+    <div class="rfm-card" style="border-color:rgba(194, 160, 107, 0.4);">
       <span class="rfm-card-title">🌱 Oportunidad / Nuevos</span>
       <span class="rfm-card-count" style="color:var(--ax-accent-gold);">${newCount}</span>
       <span class="rfm-card-sub">Primeras ventas</span>
@@ -5437,7 +5440,7 @@ function renderCotizacionesHeroCards(data) {
     if (summaryStrip) {
       summaryStrip.innerHTML = `
         <div class="cotiz-summary-card">
-          <div class="cotiz-summary-icon" style="background: rgba(59, 130, 246, 0.15); color: var(--ax-accent);">💰</div>
+          <div class="cotiz-summary-icon" style="background: rgba(114, 147, 192, 0.15); color: var(--ax-accent);">💰</div>
           <div>
             <div class="cotiz-summary-lbl">Cartera Total Cotizada</div>
             <div class="cotiz-summary-val" style="color: var(--ax-accent);">$0</div>
@@ -5445,7 +5448,7 @@ function renderCotizacionesHeroCards(data) {
           </div>
         </div>
         <div class="cotiz-summary-card">
-          <div class="cotiz-summary-icon" style="background: rgba(16, 185, 129, 0.15); color: var(--ax-accent-emerald);">🏆</div>
+          <div class="cotiz-summary-icon" style="background: rgba(95, 169, 141, 0.15); color: var(--ax-accent-emerald);">🏆</div>
           <div>
             <div class="cotiz-summary-lbl">Negocios Ganados</div>
             <div class="cotiz-summary-val" style="color: var(--ax-accent-emerald);">$0</div>
@@ -5453,7 +5456,7 @@ function renderCotizacionesHeroCards(data) {
           </div>
         </div>
         <div class="cotiz-summary-card">
-          <div class="cotiz-summary-icon" style="background: rgba(245, 158, 11, 0.15); color: var(--ax-accent-gold);">⏳</div>
+          <div class="cotiz-summary-icon" style="background: rgba(194, 160, 107, 0.15); color: var(--ax-accent-gold);">⏳</div>
           <div>
             <div class="cotiz-summary-lbl">En Seguimiento Activo</div>
             <div class="cotiz-summary-val" style="color: var(--ax-accent-gold);">$0</div>
@@ -5549,7 +5552,7 @@ function renderCotizacionesHeroCards(data) {
   if (summaryStrip) {
     summaryStrip.innerHTML = `
       <div class="cotiz-summary-card">
-        <div class="cotiz-summary-icon" style="background: rgba(59, 130, 246, 0.15); color: var(--ax-accent);">💰</div>
+        <div class="cotiz-summary-icon" style="background: rgba(114, 147, 192, 0.15); color: var(--ax-accent);">💰</div>
         <div>
           <div class="cotiz-summary-lbl">Cartera Total Cotizada</div>
           <div class="cotiz-summary-val" style="color: var(--ax-accent);">${formatCLP(grandTotalMonto)}</div>
@@ -5558,7 +5561,7 @@ function renderCotizacionesHeroCards(data) {
       </div>
 
       <div class="cotiz-summary-card">
-        <div class="cotiz-summary-icon" style="background: rgba(16, 185, 129, 0.15); color: var(--ax-accent-emerald);">🏆</div>
+        <div class="cotiz-summary-icon" style="background: rgba(95, 169, 141, 0.15); color: var(--ax-accent-emerald);">🏆</div>
         <div>
           <div class="cotiz-summary-lbl">Negocios Ganados</div>
           <div class="cotiz-summary-val" style="color: var(--ax-accent-emerald);">${formatCLP(grandAceptadasMonto)}</div>
@@ -5567,7 +5570,7 @@ function renderCotizacionesHeroCards(data) {
       </div>
 
       <div class="cotiz-summary-card">
-        <div class="cotiz-summary-icon" style="background: rgba(251, 191, 36, 0.15); color: var(--ax-accent-gold);">⏳</div>
+        <div class="cotiz-summary-icon" style="background: rgba(194, 160, 107, 0.15); color: var(--ax-accent-gold);">⏳</div>
         <div>
           <div class="cotiz-summary-lbl">En Seguimiento Activo</div>
           <div class="cotiz-summary-val" style="color: var(--ax-accent-gold);">${formatCLP(grandEnviadasMonto)}</div>
@@ -5576,7 +5579,7 @@ function renderCotizacionesHeroCards(data) {
       </div>
 
       <div class="cotiz-summary-card">
-        <div class="cotiz-summary-icon" style="background: rgba(168, 85, 247, 0.15); color: var(--ax-accent-purple);">📈</div>
+        <div class="cotiz-summary-icon" style="background: rgba(155, 147, 196, 0.15); color: var(--ax-accent-purple);">📈</div>
         <div>
           <div class="cotiz-summary-lbl">Tasa Global de Conversión</div>
           <div class="cotiz-summary-val" style="color: var(--ax-accent-purple);">${grandWinRate}%</div>
@@ -5627,7 +5630,7 @@ function renderCotizacionesHeroCards(data) {
             <span class="cotiz-tipo-badge-icon">${icon}</span>
             <span>${item.tipo}</span>
           </span>
-          <span class="cotiz-win-badge" style="background: ${isHighWin ? 'rgba(16, 185, 129, 0.2)' : 'rgba(59, 130, 246, 0.2)'}; color: ${isHighWin ? 'var(--ax-accent-emerald)' : 'var(--ax-accent)'}; border: 1px solid ${isHighWin ? 'rgba(16, 185, 129, 0.4)' : 'rgba(59, 130, 246, 0.4)'};">
+          <span class="cotiz-win-badge" style="background: ${isHighWin ? 'rgba(95, 169, 141, 0.2)' : 'rgba(114, 147, 192, 0.2)'}; color: ${isHighWin ? 'var(--ax-accent-emerald)' : 'var(--ax-accent)'}; border: 1px solid ${isHighWin ? 'rgba(95, 169, 141, 0.4)' : 'rgba(114, 147, 192, 0.4)'};">
             ${winRate}% Aprobación
           </span>
         </div>
@@ -5674,7 +5677,7 @@ function renderCotizacionesHeroCards(data) {
             <strong style="color:${isHighWin ? 'var(--ax-accent-emerald)' : 'var(--ax-accent)'}; font-size:0.875rem;">${winRate}%</strong>
           </div>
           <div class="cotiz-progress-bar-wrap">
-            <div class="cotiz-progress-bar-fill" style="width: ${Math.min(100, Math.max(0, Number(winRate)))}%; background: ${isHighWin ? 'linear-gradient(90deg, #10b981, #34d399)' : 'linear-gradient(90deg, #3b82f6, #60a5fa)'}; box-shadow: 0 0 10px ${isHighWin ? 'rgba(16, 185, 129, 0.4)' : 'rgba(59, 130, 246, 0.4)'};"></div>
+            <div class="cotiz-progress-bar-fill" style="width: ${Math.min(100, Math.max(0, Number(winRate)))}%; background: ${isHighWin ? 'linear-gradient(90deg, #10b981, #34d399)' : 'linear-gradient(90deg, #3b82f6, #60a5fa)'}; box-shadow: 0 0 10px ${isHighWin ? 'rgba(95, 169, 141, 0.4)' : 'rgba(114, 147, 192, 0.4)'};"></div>
           </div>
         </div>
       </div>
@@ -5725,22 +5728,22 @@ function renderCotizacionesCharts(data) {
           {
             label: 'Aceptadas ($)',
             data: aceptadasByMonth,
-            backgroundColor: 'rgba(16, 185, 129, 0.85)',
-            borderColor: '#10b981',
+            backgroundColor: 'rgba(95, 169, 141, 0.85)',
+            borderColor: '#5FA98D',
             borderRadius: 6
           },
           {
             label: 'Enviadas / Proceso ($)',
             data: enviadasByMonth,
-            backgroundColor: 'rgba(251, 191, 36, 0.85)',
-            borderColor: '#fbbf24',
+            backgroundColor: 'rgba(194, 160, 107, 0.85)',
+            borderColor: '#C2A06B',
             borderRadius: 6
           },
           {
             label: 'Perdidas ($)',
             data: perdidasByMonth,
-            backgroundColor: 'rgba(239, 68, 68, 0.85)',
-            borderColor: '#ef4444',
+            backgroundColor: 'rgba(197, 124, 137, 0.85)',
+            borderColor: '#C57C89',
             borderRadius: 6
           }
         ]
@@ -5864,8 +5867,8 @@ function renderCotizacionesCharts(data) {
         datasets: [{
           label: 'Total Cotizado ($)',
           data: totals,
-          backgroundColor: 'rgba(59, 130, 246, 0.85)',
-          borderColor: '#3b82f6',
+          backgroundColor: 'rgba(114, 147, 192, 0.85)',
+          borderColor: '#7293C0',
           borderRadius: 6
         }]
       },
@@ -5942,7 +5945,7 @@ function renderCotizacionesTopProducts(data) {
   container.innerHTML = top10.map((p, idx) => {
     const pct = Math.min(100, Math.max(5, (p.total / maxTotal) * 100));
     let rankBadge = `<span class="badge badge-blue">#${idx + 1}</span>`;
-    if (idx === 0) rankBadge = `<span class="badge badge-amber" style="background: rgba(245, 158, 11, 0.2); color: var(--ax-accent-gold);">🥇 1°</span>`;
+    if (idx === 0) rankBadge = `<span class="badge badge-amber" style="background: rgba(194, 160, 107, 0.2); color: var(--ax-accent-gold);">🥇 1°</span>`;
     if (idx === 1) rankBadge = `<span class="badge" style="background: rgba(203, 213, 225, 0.2); color: var(--ax-text-secondary);">🥈 2°</span>`;
     if (idx === 2) rankBadge = `<span class="badge" style="background: rgba(217, 119, 6, 0.2); color: var(--ax-accent-gold);">🥉 3°</span>`;
 
@@ -6040,7 +6043,7 @@ function renderCotizacionesTable(data) {
         <td style="text-align:center; font-size:0.875rem; color:var(--ax-text-secondary);">${escapeHtml(r.fecha || '—')}</td>
         <td style="text-align:left;"><strong style="color:var(--ax-text-primary); font-size:0.875rem;">${escapeHtml(r.cliente)}</strong></td>
         <td style="text-align:left; font-size:0.8125rem; color:var(--ax-text-secondary);">${escapeHtml(r.rut || '—')}</td>
-        <td style="text-align:left;"><span class="sku-badge-pill" style="background:rgba(59,130,246,0.18); color:var(--ax-accent); border-color:rgba(59,130,246,0.35); font-weight:700; font-size:0.8125rem;">${escapeHtml(r.sku)}</span></td>
+        <td style="text-align:left;"><span class="sku-badge-pill" style="background:rgba(114, 147, 192,0.18); color:var(--ax-accent); border-color:rgba(114, 147, 192,0.35); font-weight:700; font-size:0.8125rem;">${escapeHtml(r.sku)}</span></td>
         <td style="text-align:left; max-width:280px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(r.producto)}"><span style="font-size:0.875rem; font-weight:500;">${escapeHtml(r.producto)}</span></td>
         <td style="text-align:center; font-weight:800; font-size:0.875rem;" class="num-cell">${Math.round(r.cantidad).toLocaleString('es-CL')}</td>
         <td style="text-align:right; font-weight:900; color:var(--ax-accent); font-size:1rem;" class="num-cell">${formatCLP(r.total)}</td>
@@ -6637,7 +6640,7 @@ function recalcCotizTotals() {
     if (margEl) {
       margEl.textContent = lineMargen.toFixed(1) + '%';
       margEl.style.color = lineMargen >= 30 ? 'var(--ax-accent-emerald)' : (lineMargen >= 15 ? 'var(--ax-accent-gold)' : 'var(--ax-accent-rose)');
-      margEl.style.background = lineMargen >= 30 ? 'rgba(16, 185, 129, 0.2)' : (lineMargen >= 15 ? 'rgba(245, 158, 11, 0.2)' : 'rgba(244, 63, 94, 0.2)');
+      margEl.style.background = lineMargen >= 30 ? 'rgba(95, 169, 141, 0.2)' : (lineMargen >= 15 ? 'rgba(194, 160, 107, 0.2)' : 'rgba(197, 124, 137, 0.2)');
     }
   });
 
@@ -7559,7 +7562,7 @@ function selectFtProductSku(sku) {
   if (!container) return;
 
   if (!prod) {
-    container.innerHTML = '<div style="text-align: center; color: var(--ax-accent-rose); padding: 3rem; background: rgba(239, 68, 68, 0.05); border: 1px dashed #ef4444; border-radius: 12px;">⚠️ No se encontraron datos técnicos para el SKU seleccionado.</div>';
+    container.innerHTML = '<div style="text-align: center; color: var(--ax-accent-rose); padding: 3rem; background: rgba(197, 124, 137, 0.05); border: 1px dashed #ef4444; border-radius: 12px;">⚠️ No se encontraron datos técnicos para el SKU seleccionado.</div>';
     return;
   }
 
@@ -7582,7 +7585,7 @@ function selectFtProductSku(sku) {
         <td style="text-align: right;">
           <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
             <div style="width: 60px; height: 6px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden;">
-              <div style="width: ${pctNum}%; height: 100%; background: linear-gradient(90deg, #38bdf8, #8b5cf6);"></div>
+              <div style="width: ${pctNum}%; height: 100%; background: linear-gradient(90deg, #74A6B8, #9B93C4);"></div>
             </div>
             <span class="ft-tag ft-tag-purple" style="font-size: 0.75rem;">${b.participacion}</span>
           </div>
@@ -7648,7 +7651,7 @@ function selectFtProductSku(sku) {
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
         <span style="font-weight: 700; color: var(--ax-text-primary);">ESQUEMA TÉCNICO CAD 3D</span>
       </div>
-      <div style="background: linear-gradient(135deg, var(--surf-3), var(--surf-3)); border: 1px dashed rgba(56, 189, 248, 0.4); border-radius: 12px; padding: 2.5rem 1.5rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center;">
+      <div style="background: linear-gradient(135deg, var(--surf-3), var(--surf-3)); border: 1px dashed rgba(116, 166, 184, 0.4); border-radius: 12px; padding: 2.5rem 1.5rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center;">
         <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
         <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.875rem; color: var(--ax-accent-sky); font-weight: 700; letter-spacing: 1px;">DIAGRAMA TÉCNICO CAD #${escapeHtml(prod.sku)}</div>
         <div style="font-size: 0.8125rem; color: var(--ax-text-tertiary);">Glomax SA Industrial Engineering Standard</div>
@@ -7658,16 +7661,16 @@ function selectFtProductSku(sku) {
 
   const html = `
     <!-- MEMBRETE OFICIAL DE LICITACIONES Y CERTIFICACIÓN -->
-    <div class="ft-header-card" style="background: linear-gradient(135deg, var(--surf-3), var(--surf-3)); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 16px; padding: 1.75rem; box-shadow: 0 12px 36px rgba(0,0,0,0.5);">
+    <div class="ft-header-card" style="background: linear-gradient(135deg, var(--surf-3), var(--surf-3)); border: 1px solid rgba(116, 166, 184, 0.4); border-radius: 16px; padding: 1.75rem; box-shadow: 0 12px 36px rgba(0,0,0,0.5);">
       
       <!-- FRANJA SUPREMA DE CERTIFICACIÓN Y MEMBRETE -->
       <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 1rem; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
         <div style="display: flex; align-items: center; gap: 12px;">
-          <div style="background: linear-gradient(135deg, #3b82f6, #2563eb); width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(59,130,246,0.4);">
+          <div style="background: linear-gradient(135deg, #3b82f6, #2563eb); width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(114, 147, 192,0.4);">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
           </div>
           <div>
-            <div style="font-family: 'Space Grotesk', sans-serif; font-weight: 800; font-size: 1rem; color: var(--ax-text-primary); letter-spacing: 0.5px;">GLOMAX S.A. · CHILE</div>
+            <div style="font-family: 'Inter Tight', 'Inter', sans-serif; font-weight: 800; font-size: 1rem; color: var(--ax-text-primary); letter-spacing: 0.5px;">GLOMAX S.A. · CHILE</div>
             <div style="font-size: 0.75rem; color: var(--ax-accent-sky); font-weight: 600;">DEPARTAMENTO DE INGENIERÍA & CONTROL DE CALIDAD</div>
           </div>
         </div>
@@ -7687,12 +7690,12 @@ function selectFtProductSku(sku) {
       <div class="ft-title-bar" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1.5rem; flex-wrap: wrap;">
         <div style="flex: 1; min-width: 280px;">
           <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 8px;">
-            <span class="ft-sku-badge" style="background: rgba(56, 189, 248, 0.2); color: var(--ax-accent-sky); border: 1px solid rgba(56, 189, 248, 0.4); padding: 4px 10px; border-radius: 6px; font-weight: 800; font-family: 'JetBrains Mono', monospace;">SKU: ${escapeHtml(prod.sku)}</span>
+            <span class="ft-sku-badge" style="background: rgba(116, 166, 184, 0.2); color: var(--ax-accent-sky); border: 1px solid rgba(116, 166, 184, 0.4); padding: 4px 10px; border-radius: 6px; font-weight: 800; font-family: 'JetBrains Mono', monospace;">SKU: ${escapeHtml(prod.sku)}</span>
             ${isCustomized ? '<span class="ft-tag ft-tag-gold">✏️ Spec Editada / Personalizada</span>' : '<span class="ft-tag ft-tag-blue">🛡️ Especificación Oficial Glomax</span>'}
             <span class="ft-tag ft-tag-purple">📂 ${prod.categoria || 'Sin Categoría'}</span>
             <span class="ft-tag ft-tag-green">🏷️ ${prod.marca || 'Glomax Standard'}</span>
           </div>
-          <h1 style="font-family: 'Space Grotesk', sans-serif; font-size: 1.5rem; font-weight: 800; color: var(--ax-text-primary); margin: 6px 0 8px 0; line-height: 1.3;">${escapeHtml(prod.descripcion)}</h1>
+          <h1 style="font-family: 'Inter Tight', 'Inter', sans-serif; font-size: 1.5rem; font-weight: 800; color: var(--ax-text-primary); margin: 6px 0 8px 0; line-height: 1.3;">${escapeHtml(prod.descripcion)}</h1>
           <div style="font-size: 0.8125rem; color: var(--ax-text-secondary); display: flex; gap: 12px; flex-wrap: wrap;">
             <span>Familia: <strong style="color: var(--ax-text-primary);">${prod.familia || 'General'}</strong></span>
             <span>|</span>
@@ -7716,17 +7719,17 @@ function selectFtProductSku(sku) {
 
       <!-- MÉTRICAS COMERCIALES & LOGÍSTICAS DE CABECERA -->
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-top: 1.25rem;">
-        <div style="background: var(--surf-2); padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(56, 189, 248, 0.25);">
+        <div style="background: var(--surf-2); padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(116, 166, 184, 0.25);">
           <div style="font-size: 0.75rem; color: var(--ax-text-tertiary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Precio Lista Prom.</div>
           <div style="font-size: 1.25rem; font-weight: 800; color: var(--ax-accent-sky); font-family: 'JetBrains Mono', monospace;">${formatCLP(prod.precioPromedio)}</div>
         </div>
 
-        <div style="background: var(--surf-2); padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(168, 85, 247, 0.25);">
+        <div style="background: var(--surf-2); padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(155, 147, 196, 0.25);">
           <div style="font-size: 0.75rem; color: var(--ax-text-tertiary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Costo Neto Unitario</div>
           <div style="font-size: 1.25rem; font-weight: 800; color: var(--ax-accent-purple); font-family: 'JetBrains Mono', monospace;">${formatCLP(prod.costoUnitario)}</div>
         </div>
 
-        <div style="background: var(--surf-2); padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.25);">
+        <div style="background: var(--surf-2); padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(95, 169, 141, 0.25);">
           <div style="font-size: 0.75rem; color: var(--ax-text-tertiary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Margen Prom. (%)</div>
           <div style="font-size: 1.25rem; font-weight: 800; color: ${prod.margenPct >= 30 ? 'var(--ax-accent-emerald)' : 'var(--ax-accent-gold)'}; font-family: 'JetBrains Mono', monospace;">${prod.margenPct.toFixed(1)}%</div>
         </div>
@@ -7758,7 +7761,7 @@ function selectFtProductSku(sku) {
               <tr><th style="padding: 8px 0; color: var(--ax-text-tertiary);">Peso Bruto Empacado:</th><td style="color: var(--ax-text-primary); font-weight: 600;">${escapeHtml(spec.pesoBruto)}</td></tr>
               <tr><th style="padding: 8px 0; color: var(--ax-text-tertiary);">Volumen Unitario (m³):</th><td style="color: var(--ax-accent-sky); font-weight: 700;">${escapeHtml(spec.volumen)}</td></tr>
               <tr><th style="padding: 8px 0; color: var(--ax-text-tertiary);">Capacidad Cajas x Pallet:</th><td style="color: var(--ax-text-primary); font-weight: 600;">${escapeHtml(spec.cajasPallet)}</td></tr>
-              <tr><th style="padding: 8px 0; color: var(--ax-text-tertiary);">Código Arancelario (HS):</th><td><code style="background: rgba(56,189,248,0.15); color: var(--ax-accent-sky); padding: 2px 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace;">${escapeHtml(spec.hsCode)}</code></td></tr>
+              <tr><th style="padding: 8px 0; color: var(--ax-text-tertiary);">Código Arancelario (HS):</th><td><code style="background: rgba(116, 166, 184,0.15); color: var(--ax-accent-sky); padding: 2px 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace;">${escapeHtml(spec.hsCode)}</code></td></tr>
               <tr><th style="padding: 8px 0; color: var(--ax-text-tertiary);">País de Origen / Fabricación:</th><td style="color: var(--ax-text-primary); font-weight: 600;">${escapeHtml(spec.origen)}</td></tr>
             </tbody>
           </table>
@@ -7813,7 +7816,7 @@ function selectFtProductSku(sku) {
         ${camposCustomHtml}
 
         <!-- IV. TIMBRE DE LICITACIÓN & APROBACIÓN DE CALIDAD -->
-        <div class="ft-card" style="background: var(--surf-3); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 12px; padding: 1.25rem;">
+        <div class="ft-card" style="background: var(--surf-3); border: 1px solid rgba(116, 166, 184, 0.4); border-radius: 12px; padding: 1.25rem;">
           <div class="ft-card-header" style="display: flex; align-items: center; gap: 8px; color: var(--ax-accent-sky); font-weight: 700; margin-bottom: 8px;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
             <span>IV. ENSAYOS, SEGURIDAD & TIMBRE DE APORBACIÓN LICITACIONES</span>
@@ -8501,7 +8504,7 @@ function updateImportPhotoPreview(url) {
 
   const cleanUrl = (url || '').trim();
   if (cleanUrl) {
-    container.innerHTML = `<img src="${cleanUrl}" style="max-height: 140px; max-width: 100%; border-radius: 8px; border: 1px solid rgba(56, 189, 248, 0.4); box-shadow: 0 4px 12px rgba(0,0,0,0.4);" onerror="this.parentElement.innerHTML='<span style=\'color:var(--ax-accent-rose); font-size:0.8125rem;\'>⚠️ Foto no accesible en esa URL</span>';" />`;
+    container.innerHTML = `<img src="${cleanUrl}" style="max-height: 140px; max-width: 100%; border-radius: 8px; border: 1px solid rgba(116, 166, 184, 0.4); box-shadow: 0 4px 12px rgba(0,0,0,0.4);" onerror="this.parentElement.innerHTML='<span style=\'color:var(--ax-accent-rose); font-size:0.8125rem;\'>⚠️ Foto no accesible en esa URL</span>';" />`;
   } else {
     container.innerHTML = '';
   }
@@ -8890,13 +8893,13 @@ function setSyncStatus(status, customText) {
   el.className = 'sync-status-pill';
   if (status === 'ok') {
     el.classList.add('synced');
-    el.innerHTML = '<span class="dot" style="background:#10b981;box-shadow:0 0 10px rgba(16,185,129,0.6);"></span> <span>Sincronizado</span>';
+    el.innerHTML = '<span class="dot" style="background:#10b981;box-shadow:0 0 10px rgba(95, 169, 141,0.6);"></span> <span>Sincronizado</span>';
   } else if (status === 'loading') {
     el.classList.add('syncing');
-    el.innerHTML = '<span class="dot" style="background:#f59e0b;box-shadow:0 0 10px rgba(245,158,11,0.6);"></span> <span>Sincronizando...</span>';
+    el.innerHTML = '<span class="dot" style="background:#f59e0b;box-shadow:0 0 10px rgba(194, 160, 107,0.6);"></span> <span>Sincronizando...</span>';
   } else if (status === 'error') {
     el.classList.add('error');
-    el.innerHTML = '<span class="dot" style="background:#ef4444;box-shadow:0 0 10px rgba(239,68,68,0.6);"></span> <span>Desconectado</span>';
+    el.innerHTML = '<span class="dot" style="background:#ef4444;box-shadow:0 0 10px rgba(197, 124, 137,0.6);"></span> <span>Desconectado</span>';
   }
 }
 
