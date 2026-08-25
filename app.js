@@ -10569,6 +10569,27 @@ const MP_MOTIVOS_DESCARTE = {
   'CANCELADA':    { texto: 'Cancelada por el organismo', tipo: 'externo' }
 };
 
+/* Las cuatro etiquetas que se muestran bajo el embudo. No son pasos del
+   embudo: tres de ellas son motivos para no haber ofertado y la cuarta es el
+   desenlace de las que si se ofertaron, asi que van en un bloque aparte y su
+   porcentaje se mide contra las detectadas, no contra "el paso anterior".
+
+   El monto de cada una dice lo que corresponde a su naturaleza y lo declara en
+   su nota: en las tres primeras casi nunca hubo oferta (5, 0 y 0 de 1.497, 459
+   y 959), asi que la unica cifra que existe es el valor publicado del llamado;
+   en PERDIDA hubo oferta en 2.304 de 2.371 y lo que se perdio de verdad es lo
+   que se oferto, no el presupuesto del organismo. */
+const MP_ETIQUETAS_EMBUDO = [
+  { clave: 'NO CUMPLE',   etiqueta: 'No cumple las bases', tono: 'neutro',
+    monto: 'neto', nota: 'valor publicado del llamado' },
+  { clave: 'SIN STOCK',   etiqueta: 'Sin stock',           tono: 'aviso',
+    monto: 'neto', nota: 'valor publicado del llamado' },
+  { clave: 'NO VENDEMOS', etiqueta: 'No vendemos',         tono: 'neutro',
+    monto: 'neto', nota: 'valor publicado del llamado' },
+  { clave: 'PERDIDA',     etiqueta: 'Perdidas',            tono: 'malo',
+    monto: 'netoOfertado', nota: 'ofertado y perdido' }
+];
+
 /* -------------------------------------------------------------------------
    Lectura de celdas
    ------------------------------------------------------------------------- */
@@ -10971,8 +10992,16 @@ function mpResumen(datos) {
     perdidas: 0, netoPerdido: 0,
     enJuego: 0, netoEnJuego: 0,
     sinResolver: 0, netoSinResolver: 0,
-    descartadas: 0, netoDescartado: 0
+    descartadas: 0, netoDescartado: 0,
+    porEtiqueta: {}
   };
+
+  /* Las cuatro etiquetas del desglose. Son excluyentes entre si (la columna K
+     guarda una sola) y suman 5.286 de las 17.464, asi que no se pisan ni
+     pretenden cubrirlo todo. */
+  MP_ETIQUETAS_EMBUDO.forEach(e => {
+    r.porEtiqueta[e.clave] = { n: 0, neto: 0, netoOfertado: 0, ofertaron: 0 };
+  });
 
   datos.forEach(d => {
     r.netoTotal += d.neto;
@@ -11004,6 +11033,14 @@ function mpResumen(datos) {
     }
     if (!d.oferto && MP_MOTIVOS_DESCARTE[d.etiqueta]) {
       r.descartadas++; r.netoDescartado += d.neto;
+    }
+
+    const et = r.porEtiqueta[d.etiqueta];
+    if (et) {
+      et.n++;
+      et.neto += d.neto;
+      et.netoOfertado += d.netoOfertado;
+      if (d.oferto) et.ofertaron++;
     }
   });
 
@@ -11068,6 +11105,30 @@ function mpRenderKpis(res, datos) {
   /* El embudo: detectadas -> ofertadas -> adjudicadas, a escala. */
   const embudo = document.getElementById('mpEmbudo');
   if (embudo) {
+    const base = res.total || 1;
+
+    /* Una barra con n a la derecha, monto abajo y una nota que dice de donde
+       sale ese monto. Se usa igual para los pasos del embudo y para el
+       desglose por etiqueta; solo cambia el texto del costado. */
+    const barra = (p) => {
+      /* Un cero se dibuja vacio. Con el minimo de 2% una categoria sin ningun
+         registro mostraba una barrita igual que una con cuatro, y a simple
+         vista parecian lo mismo. */
+      const ancho = p.n > 0 ? Math.max(2, (p.n / base) * 100) : 0;
+      return '<div class="mp-embudo__paso ' + p.clase + '">' +
+        '<div class="mp-embudo__cabecera">' +
+          '<span class="mp-embudo__etiqueta">' + escapeHtml(p.etiqueta) + '</span>' +
+          '<span class="mp-embudo__n">' + formatNum(p.n) + '</span>' +
+        '</div>' +
+        '<div class="mp-embudo__barra"><span style="width:' + ancho.toFixed(2) + '%"></span></div>' +
+        '<div class="mp-embudo__pie">' +
+          '<span class="mp-embudo__monto">' + formatCLP(p.monto) + '</span>' +
+          (p.costado ? '<span class="mp-embudo__conv">' + p.costado + '</span>' : '') +
+        '</div>' +
+        '<div class="mp-embudo__nota">' + escapeHtml(p.nota) + '</div>' +
+      '</div>';
+    };
+
     const pasos = [
       { etiqueta: 'Detectadas', n: res.total, monto: res.netoTotal, clase: 'is-detectadas',
         nota: 'valor publicado del llamado' },
@@ -11078,24 +11139,33 @@ function mpRenderKpis(res, datos) {
           ? 'seguimiento en Ganada · ' + formatNum(res.ganadasSinMonto) + ' sin monto anotado'
           : 'seguimiento en Ganada' }
     ];
-    const base = res.total || 1;
-    embudo.innerHTML = pasos.map((p, i) => {
-      const ancho = Math.max(2, (p.n / base) * 100);
+
+    const htmlEmbudo = pasos.map((p, i) => {
       const previo = i > 0 ? pasos[i - 1].n : 0;
-      const conversion = i > 0 && previo > 0 ? mpPct((p.n / previo) * 100) + ' del paso anterior' : '';
-      return '<div class="mp-embudo__paso ' + p.clase + '">' +
-        '<div class="mp-embudo__cabecera">' +
-          '<span class="mp-embudo__etiqueta">' + p.etiqueta + '</span>' +
-          '<span class="mp-embudo__n">' + formatNum(p.n) + '</span>' +
-        '</div>' +
-        '<div class="mp-embudo__barra"><span style="width:' + ancho.toFixed(2) + '%"></span></div>' +
-        '<div class="mp-embudo__pie">' +
-          '<span class="mp-embudo__monto">' + formatCLP(p.monto) + '</span>' +
-          (conversion ? '<span class="mp-embudo__conv">' + conversion + '</span>' : '') +
-        '</div>' +
-        '<div class="mp-embudo__nota">' + p.nota + '</div>' +
-      '</div>';
+      p.costado = (i > 0 && previo > 0) ? mpPct((p.n / previo) * 100) + ' del paso anterior' : '';
+      return barra(p);
     }).join('');
+
+    /* El desglose por etiqueta. Se mide contra las detectadas y no contra el
+       paso de arriba: no son eslabones de la misma cadena, sino cuatro cajones
+       donde cae lo que no llego a adjudicarse. */
+    const htmlEtiquetas = MP_ETIQUETAS_EMBUDO.map(cfg => {
+      const e = res.porEtiqueta[cfg.clave] || { n: 0, neto: 0, netoOfertado: 0 };
+      return barra({
+        etiqueta: cfg.etiqueta,
+        n: e.n,
+        monto: e[cfg.monto],
+        clase: 'is-etq-' + cfg.tono,
+        nota: cfg.nota,
+        costado: e.n > 0 ? mpPct((e.n / base) * 100) + ' de las detectadas' : ''
+      });
+    }).join('');
+
+    embudo.innerHTML = htmlEmbudo +
+      '<div class="mp-embudo__corte">' +
+        '<span class="mp-embudo__corte-txt">Por etiqueta</span>' +
+      '</div>' +
+      htmlEtiquetas;
   }
 
   /* Aviso de ofertas sin desenlace. No es decoracion: son ofertas presentadas

@@ -10401,6 +10401,36 @@ button, input, select, textarea, optgroup {
 .is-ofertadas  .mp-embudo__barra > span { background: var(--ax-accent-gold); }
 .is-ganadas    .mp-embudo__barra > span { background: var(--ax-accent-emerald); }
 
+/* El desglose por etiqueta usa el mismo vocabulario de color que las pastillas
+   del modulo: rojo lo que se perdio compitiendo, ambar lo que se dejo pasar
+   por causa propia y gris lo que fue una decision de catalogo. */
+.is-etq-malo   .mp-embudo__barra > span { background: var(--ax-accent-rose); }
+.is-etq-aviso  .mp-embudo__barra > span { background: var(--ax-accent-gold); }
+.is-etq-neutro .mp-embudo__barra > span { background: var(--ax-text-tertiary); }
+
+/* Separador entre el embudo y el desglose: sin el, las siete barras se leen
+   como siete pasos encadenados y las cuatro de abajo no lo son. */
+.mp-embudo__corte {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin: 0.35rem 0 0.1rem;
+}
+.mp-embudo__corte::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--ax-border-subtle);
+}
+.mp-embudo__corte-txt {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ax-text-tertiary);
+  white-space: nowrap;
+}
+
 .mp-embudo__pie {
   display: flex;
   align-items: baseline;
