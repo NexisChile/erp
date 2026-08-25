@@ -10156,3 +10156,33 @@ button, input, select, textarea, optgroup {
   outline: 2px solid var(--ax-accent-sky);
   outline-offset: 2px;
 }
+
+/* Estado vacio de la tabla de precios. Con dos o tres frases hace falta que
+   respiren: apiladas en una linea se leen como un error del sistema. */
+.precios-vacio {
+  display: block;
+  padding: 2.25rem 1.5rem;
+  text-align: center;
+  color: var(--ax-text-tertiary);
+}
+.precios-vacio strong {
+  display: block;
+  margin-bottom: 0.6rem;
+  color: var(--ax-text-primary);
+  font-size: 1rem;
+  font-weight: 600;
+}
+.precios-vacio span {
+  display: block;
+  max-width: 46rem;
+  margin: 0 auto 0.4rem;
+  line-height: 1.6;
+}
+.precios-vacio code {
+  padding: 0.05rem 0.3rem;
+  border-radius: 4px;
+  background: var(--surf-3);
+  color: var(--ax-text-secondary);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.85em;
+}

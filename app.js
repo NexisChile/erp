@@ -9741,10 +9741,17 @@ function renderPreciosView() {
   const todas = preciosRows.map(l => l);
   /* Se filtra ANTES de agrupar: si no, el "mas barato" de cada producto podria
      salir de un canal que no estas mirando y la fila resumen diria algo que no
-     corresponde a la tienda elegida. */
+     corresponde a la tienda elegida.
+
+     El filtro es estricto: si no hay lecturas de esa tienda, la tabla queda
+     vacia. Antes se mostraban todas para no dejarla en blanco, y era peor
+     remedio que enfermedad: comparar el precio de Meli contra paginas que no
+     son de Meli parece un resultado y no lo es. */
   const enCanal = todas.filter(preciosLecturaEsDelCanal);
-  const usadas = (preciosSoloCanal && enCanal.length) ? enCanal : todas;
-  const filtroActivo = preciosSoloCanal && enCanal.length > 0;
+  const usadas = preciosSoloCanal ? enCanal : todas;
+  const filtroActivo = preciosSoloCanal;
+  const fallidosUsados = preciosSoloCanal
+    ? preciosFallidos.filter(preciosLecturaEsDelCanal) : preciosFallidos;
 
   const items = usadas.map(l => {
     const mio = mios.get(l.codigo);
@@ -9780,7 +9787,11 @@ function renderPreciosView() {
   const caros = comparables.filter(g => g.dif > 0.5);
   const baratos = comparables.filter(g => g.dif < -0.5);
 
-  if (!items.length && !preciosFallidos.length) {
+  /* Sin ninguna lectura en la pestana es un problema de puesta en marcha. Que
+     no haya de ESTA tienda es otra cosa -la hoja funciona, falta cargar- y se
+     resuelve mas abajo, dentro de la tabla, para no esconder los KPI ni el
+     desplegable con el que se cambia de tienda. */
+  if (!preciosRows.length && !preciosFallidos.length) {
     preciosMostrarAviso(
       '<h3>Todavía no hay lecturas</h3>' +
       '<p>La pestaña existe pero está vacía. Llena <code>PreciosMapa</code> con al menos ' +
@@ -9828,17 +9839,9 @@ function renderPreciosView() {
 
   const avisos = [];
   const titulos = [];
-  if (filtroActivo) {
+  if (filtroActivo && todas.length) {
     avisos.push(enCanal.length + ' de ' + todas.length + ' lecturas son de ' + etiqueta);
     titulos.push('Solo se comparan las páginas publicadas en ' + etiqueta + '.');
-  } else if (preciosSoloCanal && todas.length) {
-    /* Se pidio filtrar pero no hay nada de ese canal. Vaciar la tabla seria
-       tecnicamente correcto y practicamente inutil: se muestran todas y se
-       avisa, que es lo que deja actuar. */
-    avisos.push('ninguna lectura es de ' + etiqueta + ', se muestran todas');
-    titulos.push('No hay competidores publicando en ' + etiqueta + '. Para una ' +
-      'comparación directa, carga en PreciosMapa la URL del competidor dentro de ' +
-      etiqueta + ' y marca la columna CANAL.');
   } else if (!preciosSoloCanal && enCanal.length < todas.length && todas.length) {
     /* Filtro apagado a proposito, pero hay que decirlo igual: comparar el
        precio de una tienda contra paginas de otra es exactamente el error que
@@ -9872,7 +9875,7 @@ function renderPreciosView() {
   if (preciosTab === 'fallo') {
     /* Los fallos van sin agrupar: aqui interesa cada URL que no se pudo leer,
        no un resumen por producto. */
-    visibles = preciosFallidos.map(f => ({
+    visibles = fallidosUsados.map(f => ({
       codigo: f.codigo,
       descripcion: (mios.get(f.codigo) || {}).descripcion || '',
       competidor: f.competidor,
@@ -9906,8 +9909,19 @@ function renderPreciosView() {
     (b.dif === null ? -Infinity : b.dif) - (a.dif === null ? -Infinity : a.dif));
 
   if (!visibles.length) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color: var(--ax-text-tertiary); padding: 2rem;">' +
-      'Ningún producto en esta vista.</td></tr>';
+    /* Vacio por filtrar y vacio por no tener datos son cosas distintas, y la
+       diferencia es lo unico que dice que hacer a continuacion. */
+    const sinLecturasDelCanal = filtroActivo && !enCanal.length && todas.length;
+    tbody.innerHTML = '<tr><td colspan="8" class="precios-vacio">' +
+      (sinLecturasDelCanal
+        ? '<strong>Ninguna lectura es de ' + escapeHtml(etiqueta) + '</strong>' +
+          '<span>Hay ' + todas.length + (todas.length === 1 ? ' lectura' : ' lecturas') +
+          ' de otras tiendas. Para comparar en ' + escapeHtml(etiqueta) + ', carga en ' +
+          '<code>PreciosMapa</code> la URL del competidor dentro de ' + escapeHtml(etiqueta) +
+          ' y escribe <code>' + escapeHtml(etiqueta) + '</code> en la columna CANAL.</span>' +
+          '<span>O desmarca <em>Solo esa tienda</em> para ver todas.</span>'
+        : 'Ningún producto en esta vista.') +
+      '</td></tr>';
     return;
   }
 
