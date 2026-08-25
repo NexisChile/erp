@@ -209,7 +209,10 @@ html, body {
 
   min-height: 100vh;
 
-  overflow-x: hidden;
+  /* `clip` y no `hidden`: hidden convierte html/body en contenedor de scroll,
+     y eso anula el position:sticky de la barra lateral (se iba de pantalla al
+     bajar). clip recorta igual pero no crea scrollport. */
+  overflow-x: clip;
 
 }
 
@@ -9134,4 +9137,265 @@ body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; 
   -webkit-background-clip: text !important;
   background-clip: text !important;
   -webkit-text-fill-color: transparent !important;
+}
+
+/* ============================================================================
+   6. REFINAMIENTO VISUAL
+   ----------------------------------------------------------------------------
+   Inventario medido en la vista de tablero antes de esta capa: 52 brillos
+   sobre las tarjetas, 38 capas de parallax, 37 sombras de color, 4 orbes de
+   fondo y la mitad del texto en peso 700-800. Todo pedia atencion a la vez,
+   y cuando todo destaca no destaca nada. Aqui se resta, no se anade.
+   ========================================================================== */
+
+/* --- 6.1 Brillo sobre las tarjetas ----------------------------------------
+   Un radial blanco en `mix-blend-mode: overlay` que seguia al cursor. Es el
+   efecto que mas abarataba el conjunto: 52 superficies con acabado satinado.
+   La profundidad la da la elevacion, no el reflejo. */
+.card-glare { display: none !important; }
+
+/* --- 6.2 Orbes de fondo ---------------------------------------------------
+   Manchas de 500px al 35% de opacidad detras del contenido. Tenian de fondo
+   pero competian con las cifras. Se dejan como insinuacion. */
+.parallax-orb-1,
+.parallax-orb-2,
+.parallax-orb-3,
+.parallax-orb-4,
+[class*="parallax-orb"] {
+  opacity: 0.28 !important;
+  filter: blur(90px) !important;
+}
+[data-ax-theme="light"] [class*="parallax-orb"] { opacity: 0.14 !important; }
+
+/* --- 6.3 Halos de color ---------------------------------------------------
+   37 elementos proyectaban sombras tenidas (azul, verde, ambar). Una sombra
+   describe distancia a la superficie, no categoria: el color ya lo aporta el
+   badge. Se unifican en la escala de elevacion neutra. */
+.hero-kpi-card,
+.proj-card,
+.mini-kpi-card,
+.kpi-card,
+.chart-card,
+.table-card,
+.ax-card,
+.cotiz-summary-card,
+.cotiz-tipo-card,
+.bi-compras-advisor-card,
+.ft-header-card,
+.mix-card,
+.target-card {
+  box-shadow: var(--el-2) !important;
+}
+.hero-kpi-card:hover,
+.proj-card:hover,
+.mini-kpi-card:hover,
+.kpi-card:hover,
+.chart-card:hover,
+.ax-card:hover {
+  box-shadow: var(--el-3) !important;
+  border-color: var(--ax-card-hover-border) !important;
+}
+
+/* --- 6.4 Movimiento -------------------------------------------------------
+   El giro 3D al pasar el cursor desplazaba el texto y obligaba a reenfocar.
+   Se sustituye por un ascenso corto: comunica lo mismo sin deformar nada. */
+[data-tilt] { transform: none !important; }
+.hero-kpi-card,
+.proj-card,
+.mini-kpi-card,
+.chart-card,
+.ax-card {
+  transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1),
+              box-shadow 0.18s ease,
+              border-color 0.18s ease !important;
+}
+.hero-kpi-card:hover,
+.proj-card:hover,
+.mini-kpi-card:hover { transform: translateY(-2px) !important; }
+
+/* Las capas de parallax movian el texto respecto a su tarjeta. */
+[data-parallax-layer] { transform: none !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+/* --- 6.5 Pesos tipograficos ----------------------------------------------
+   Habia cinco pesos conviviendo (400/500/600/700/800) y la mitad del texto
+   iba en negrita. Se reduce a tres funciones: cuerpo, enfasis y cifra. El
+   contraste lo marca el tamano y el color, no el grosor. */
+.today-value,
+.proj-value,
+.mini-kpi-value,
+.kpi-card__value,
+.cotiz-tipo-monto,
+.cotiz-summary-val {
+  font-weight: 600 !important;
+  letter-spacing: -0.02em !important;
+  font-variant-numeric: tabular-nums !important;
+}
+.dashboard-section-title,
+.chart-card-title,
+.ax-header__title { font-weight: 600 !important; }
+
+.today-label,
+.proj-label,
+.mini-kpi-label,
+.kpi-card__label { font-weight: 500 !important; }
+
+.today-sub, .proj-sub, .mini-kpi-sub,
+.section-subtitle, .chart-subtitle { font-weight: 400 !important; }
+
+/* --- 6.6 Bordes -----------------------------------------------------------
+   Un borde visible en cada tarjeta encajona el contenido. Se afinan a linea
+   de pelo: separan sin dibujar una reja. */
+.hero-kpi-card,
+.proj-card,
+.mini-kpi-card,
+.chart-card,
+.table-card,
+.ax-card,
+.filters-bar {
+  border: 1px solid var(--ax-border-subtle) !important;
+}
+
+/* --- 6.7 Distintivos ------------------------------------------------------
+   Fondo tenido + borde + mayuscula + negrita eran cuatro senales para decir
+   lo mismo. Se queda el fondo y la mayuscula; se van el borde y el peso 800. */
+.today-badge,
+.proj-badge,
+.ax-nav__badge,
+.ft-tag,
+.cotiz-win-badge {
+  border: none !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.06em !important;
+}
+
+/* --- 6.8 Barra lateral ----------------------------------------------------
+   El elemento activo se marcaba con fondo, borde y resplandor a la vez. Un
+   filete a la izquierda basta para decir "estas aqui". */
+.ax-nav__item {
+  border-radius: var(--ax-radius-sm) !important;
+  border: none !important;
+  box-shadow: none !important;
+  position: relative !important;
+  transition: background-color 0.15s ease, color 0.15s ease !important;
+}
+.ax-nav__item::before {
+  content: '' !important;
+  position: absolute !important;
+  left: 0 !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  width: 3px !important;
+  height: 0 !important;
+  border-radius: 0 3px 3px 0 !important;
+  background: var(--ax-accent) !important;
+  transition: height 0.18s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+}
+.ax-nav__item.active::before { height: 60% !important; }
+.ax-nav__item:hover { background: var(--ax-surface-hover) !important; }
+.ax-nav__item.active {
+  background: color-mix(in srgb, var(--ax-accent) 12%, transparent) !important;
+  color: var(--ax-text-primary) !important;
+}
+
+/* --- 6.9 Ajustes de especificidad -----------------------------------------
+   Estas reglas perdian frente a selectores mas especificos definidos antes
+   (`.ax-nav__item.active` vence a `.ax-nav__item`) o frente al <style> en
+   linea del HTML, que se carga despues de esta hoja. Se igualan aqui. */
+.ax-nav__item.active,
+.ax-nav__item.active:hover {
+  box-shadow: none !important;
+  border: none !important;
+}
+
+.compare-growth-tag,
+.hero-compare-badge .compare-growth-tag,
+.center-metric-val,
+.chart-main-title,
+.period-pill,
+.period-pill.active,
+.center-metric-lbl,
+.btn-primary,
+.btn-primary span,
+.banner-parallax h4 {
+  font-weight: 600 !important;
+}
+
+/* El indicador de variacion tambien llevaba borde y halo propios. */
+.hero-compare-badge.trend-positive,
+.hero-compare-badge.trend-negative,
+.hero-compare-badge {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* La tarjeta del asesor de compras conservaba un halo azul de 24px. */
+.bi-compras-advisor-card,
+.input-with-icon input#comprasBudgetInput,
+.advisor-preset-btn {
+  box-shadow: none !important;
+}
+.bi-compras-advisor-card { border: 1px solid var(--ax-border-subtle) !important; }
+
+/* Las pildoras de periodo del grafico: estado activo por relleno, no por peso. */
+.period-pill {
+  border: none !important;
+  border-radius: var(--ax-radius-sm) !important;
+  transition: background-color 0.15s ease, color 0.15s ease !important;
+}
+.period-pill.active {
+  background: color-mix(in srgb, var(--ax-accent) 14%, transparent) !important;
+  color: var(--ax-accent) !important;
+}
+
+/* --- 6.10 Ultimos resplandores y pesos ------------------------------------
+   Quedaban ocho iconos de KPI con un halo de color de 16px, varios puntos
+   luminosos y unos pocos textos en peso 800. Los indicadores "en vivo" si
+   conservan un brillo, pero reducido: informan de un estado, no compiten. */
+.kpi-icon-badge,
+.kpi-icon-badge.theme-blue,
+.kpi-icon-badge.theme-green,
+.kpi-icon-badge.theme-purple,
+.kpi-icon-badge.theme-amber,
+.user-avatar,
+.banner-parallax,
+.latency-badge,
+.period-pill.active,
+.btn-primary,
+.btn-primary:hover {
+  box-shadow: none !important;
+}
+.btn-primary:hover { filter: brightness(1.06) !important; }
+
+/* Los puntos de estado: brillo justo para leerse como "activo". */
+.pulse-dot,
+.sync-status-pill .dot,
+.section-badge-dot {
+  box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 18%, transparent) !important;
+}
+
+/* Pesos que ganaban por especificidad desde reglas anteriores. */
+.hero-compare-badge.trend-positive .compare-growth-tag,
+.hero-compare-badge.trend-negative .compare-growth-tag,
+.ax-sidebar__wordmark,
+.ax-sidebar__tagline,
+.ax-sidebar__section,
+.ax-sidebar__footer-badge span,
+.ax-kbd,
+.user-avatar,
+.user-email,
+.user-channel-tag {
+  font-weight: 600 !important;
+}
+
+/* Los rotulos de seccion de la barra lateral eran mayuscula + peso 800 a
+   0,625rem: mucho enfasis para un separador. Bastan color y espaciado. */
+.ax-sidebar__section {
+  font-size: var(--fs-2xs) !important;
+  letter-spacing: 0.1em !important;
+  color: var(--ax-text-tertiary) !important;
+  margin: var(--sp-5) 0 var(--sp-2) 0 !important;
 }
