@@ -1200,17 +1200,76 @@ function toggleCotizMobileFilters() {
   }
 }
 
+// El tema vive en <html data-ax-theme>, que es lo que leen las 108 reglas de
+// la hoja de estilos. Antes esto escribia body.dataset.theme (= data-theme en
+// <body>): un atributo que ningun selector consultaba, asi que el boton solo
+// cambiaba el icono y el modo claro no llegaba a aplicarse nunca.
+const THEME_ATTR = 'data-ax-theme';
+
+function getTheme() {
+  return document.documentElement.getAttribute(THEME_ATTR) || 'dark';
+}
+
+function applyTheme(theme) {
+  const t = theme === 'light' ? 'light' : 'dark';
+  document.documentElement.setAttribute(THEME_ATTR, t);
+  syncThemeIcon();
+  return t;
+}
+
 function syncThemeIcon() {
   const icon = document.getElementById('themeToggleIcon');
-  if (icon) icon.textContent = (document.body.dataset.theme || 'dark') === 'dark' ? '🌙' : '☀️';
+  if (icon) icon.textContent = getTheme() === 'dark' ? '🌙' : '☀️';
+  const btn = document.getElementById('themeToggleBtn');
+  if (btn) {
+    const claro = getTheme() === 'light';
+    btn.setAttribute('aria-pressed', String(claro));
+    btn.title = claro ? 'Cambiar a tema oscuro' : 'Cambiar a tema claro';
+  }
+}
+
+// Cada configuracion de grafico fija sus colores en duro (ticks #94a3b8,
+// rejilla blanca translucida). Sobre fondo claro la rejilla desaparece, asi
+// que hay que reescribirlos en las instancias vivas: Chart.js resuelve el
+// color al dibujar y no reacciona por si solo a un cambio de tema.
+function themeChartColors() {
+  const cs = getComputedStyle(document.documentElement);
+  const claro = getTheme() === 'light';
+  const lee = (v, alt) => (cs.getPropertyValue(v) || '').trim() || alt;
+  return {
+    tick:    lee('--ax-text-tertiary', claro ? '#64748B' : '#94a3b8'),
+    leyenda: lee('--ax-text-secondary', claro ? '#475569' : '#cbd5e1'),
+    rejilla: claro ? 'rgba(15, 23, 42, 0.10)' : 'rgba(255, 255, 255, 0.06)'
+  };
+}
+
+function refreshChartsTheme() {
+  if (typeof Chart === 'undefined' || typeof Chart.getChart !== 'function') return;
+  const c = themeChartColors();
+  Chart.defaults.color = c.tick;
+  Chart.defaults.borderColor = c.rejilla;
+  document.querySelectorAll('canvas').forEach(canvas => {
+    const ch = Chart.getChart(canvas);
+    if (!ch || !ch.options) return;
+    const escalas = ch.options.scales || {};
+    Object.keys(escalas).forEach(k => {
+      const eje = escalas[k];
+      if (!eje) return;
+      if (eje.ticks) eje.ticks.color = c.tick;
+      if (eje.grid && eje.grid.color) eje.grid.color = c.rejilla;
+    });
+    const leyenda = ch.options.plugins && ch.options.plugins.legend;
+    if (leyenda && leyenda.labels) leyenda.labels.color = c.leyenda;
+    try { ch.update('none'); } catch (e) { /* grafico a medio construir */ }
+  });
 }
 
 function toggleTheme() {
-  const currentTheme = document.body.dataset.theme || 'dark';
-  const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-  document.body.dataset.theme = newTheme;
-  localStorage.setItem('glomax_theme', newTheme);
-  syncThemeIcon();
+  const nuevo = applyTheme(getTheme() === 'dark' ? 'light' : 'dark');
+  try { localStorage.setItem('glomax_theme', nuevo); } catch (e) { /* modo privado */ }
+  // Chart.js pinta ejes y leyendas con el color resuelto en el momento de
+  // dibujar, asi que no se reajustan solos al cambiar de tema.
+  if (typeof refreshChartsTheme === 'function') refreshChartsTheme();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -1221,10 +1280,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  const savedTheme = localStorage.getItem('glomax_theme');
-  if (savedTheme) {
-    document.body.dataset.theme = savedTheme;
-  }
+  // El tema ya se aplico en el <head> para evitar el parpadeo; aqui solo se
+  // sincroniza el icono, que necesita que el boton exista en el DOM.
   syncThemeIcon();
 
   // Inicializar vinculación universal de botones
@@ -4004,6 +4061,10 @@ function renderCharts() {
       }
     });
   }
+
+  // Los graficos se acaban de crear con los colores del tema por defecto;
+  // si el usuario tiene el modo claro activo hay que reajustarlos.
+  refreshChartsTheme();
 }
 
 // ---------- Tabla + paginación ----------
@@ -7587,7 +7648,7 @@ function selectFtProductSku(sku) {
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
         <span style="font-weight: 700; color: var(--ax-text-primary);">ESQUEMA TÉCNICO CAD 3D</span>
       </div>
-      <div style="background: linear-gradient(135deg, rgba(6, 10, 19, 0.95), rgba(15, 23, 42, 0.9)); border: 1px dashed rgba(56, 189, 248, 0.4); border-radius: 12px; padding: 2.5rem 1.5rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center;">
+      <div style="background: linear-gradient(135deg, var(--surf-3), var(--surf-3)); border: 1px dashed rgba(56, 189, 248, 0.4); border-radius: 12px; padding: 2.5rem 1.5rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center;">
         <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
         <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.875rem; color: var(--ax-accent-sky); font-weight: 700; letter-spacing: 1px;">DIAGRAMA TÉCNICO CAD #${escapeHtml(prod.sku)}</div>
         <div style="font-size: 0.8125rem; color: var(--ax-text-tertiary);">Glomax SA Industrial Engineering Standard</div>
@@ -7597,7 +7658,7 @@ function selectFtProductSku(sku) {
 
   const html = `
     <!-- MEMBRETE OFICIAL DE LICITACIONES Y CERTIFICACIÓN -->
-    <div class="ft-header-card" style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.95)); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 16px; padding: 1.75rem; box-shadow: 0 12px 36px rgba(0,0,0,0.5);">
+    <div class="ft-header-card" style="background: linear-gradient(135deg, var(--surf-3), var(--surf-3)); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 16px; padding: 1.75rem; box-shadow: 0 12px 36px rgba(0,0,0,0.5);">
       
       <!-- FRANJA SUPREMA DE CERTIFICACIÓN Y MEMBRETE -->
       <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 1rem; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
