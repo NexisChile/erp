@@ -1182,34 +1182,61 @@ function switchView(viewName) {
   });
 }
 
-function toggleMobileSidebar() {
+/* El menu movil se abre con la clase 'mobile-open', que es la que escuchan las
+   reglas de style.css. Antes aqui se ponia 'open': el fondo oscuro aparecia,
+   pero la barra se quedaba fuera de pantalla en translateX(-100%), asi que
+   tocar la hamburguesa solo servia para apagar el tablero. */
+function abrirMenuMovil(abrir) {
   const sidebar = document.querySelector('.ax-sidebar');
   const overlay = document.getElementById('sidebarBackdrop');
-  if (sidebar) sidebar.classList.toggle('open');
-  if (overlay) overlay.classList.toggle('active');
+  const boton = document.getElementById('mobileMenuBtn');
+  if (sidebar) sidebar.classList.toggle('mobile-open', abrir);
+  if (overlay) overlay.classList.toggle('active', abrir);
+  if (boton) boton.setAttribute('aria-expanded', abrir ? 'true' : 'false');
+  /* Sin esto el dedo arrastra el tablero por detras del velo y al cerrar el
+     menu la vista quedo en otro punto del que estaba. */
+  document.body.classList.toggle('menu-movil-abierto', abrir);
+}
+
+function toggleMobileSidebar() {
+  const sidebar = document.querySelector('.ax-sidebar');
+  abrirMenuMovil(!(sidebar && sidebar.classList.contains('mobile-open')));
 }
 
 function closeMobileSidebar() {
-  const sidebar = document.querySelector('.ax-sidebar');
-  const overlay = document.getElementById('sidebarBackdrop');
-  if (sidebar) sidebar.classList.remove('open');
-  if (overlay) overlay.classList.remove('active');
+  abrirMenuMovil(false);
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeMobileSidebar();
+});
+
+/* Despliega los filtros en telefono. La clase 'open' es la que lee style.css;
+   'active' se mantiene por si algo mas la consulta, y el boton se marca para
+   que se note si estan plegados o desplegados. */
+function plegarFiltros(idBarra, idBoton) {
+  const bar = document.getElementById(idBarra);
+  if (!bar) return;
+  const abierto = !bar.classList.contains('open');
+  bar.classList.toggle('open', abierto);
+  bar.classList.toggle('active', abierto);
+  const btn = document.getElementById(idBoton);
+  if (btn) {
+    btn.classList.toggle('active', abierto);
+    btn.setAttribute('aria-expanded', abierto ? 'true' : 'false');
+  }
 }
 
 function toggleMobileFilters() {
-  const bar = document.getElementById('filtersBar');
-  if (bar) {
-    bar.classList.toggle('open');
-    bar.classList.toggle('active');
-  }
+  plegarFiltros('filtersBar', 'toggleMobileFiltersBtn');
 }
 
 function toggleCotizMobileFilters() {
-  const bar = document.getElementById('cotizFiltersBar');
-  if (bar) {
-    bar.classList.toggle('open');
-    bar.classList.toggle('active');
-  }
+  plegarFiltros('cotizFiltersBar', 'toggleCotizFiltersBtn');
+}
+
+function toggleMpMobileFilters() {
+  plegarFiltros('mpFiltersBar', 'toggleMpFiltersBtn');
 }
 
 // El tema vive en <html data-ax-theme>, que es lo que leen las 108 reglas de

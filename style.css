@@ -3172,9 +3172,8 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
 @media (max-width: 768px) {
 
-  .ax-sidebar { position: fixed; transform: translateX(-100%); }
-
-  .ax-sidebar.open { transform: translateX(0); }
+  /* La barra lateral movil se define completa mas abajo, en el bloque de
+     max-width 1024px, con la clase .mobile-open. */
 
   .hero-cards-grid { grid-template-columns: 1fr; }
 
@@ -10746,3 +10745,175 @@ button, input, select, textarea, optgroup {
 
 /* El boton de limpiar se alinea con los selects, no con sus etiquetas. */
 .filter-group--accion { display: flex; flex-direction: column; justify-content: flex-end; }
+
+/* ==========================================================================
+   VERSIÓN MÓVIL Y CONTENCIÓN DE DESBORDES LATERALES
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Desbordes laterales (cualquier ancho)
+   Un elemento de grilla trae `min-width: auto`, o sea que se niega a encogerse
+   por debajo de su contenido: empuja la pista en vez de recortarse. Con una
+   tabla de `min-width: 680px` dentro, o con un lienzo de Chart.js que conserva
+   el ancho con el que se dibujó, la tarjeta arrastra la vista entera de lado y
+   el encabezado se sale de cuadro al desplazarse. Medido: la tarjeta de Mix
+   Sugerido en 1179px dentro de una pista de 1124, y una de gráfico en 1501px
+   dentro de 944.
+   -------------------------------------------------------------------------- */
+
+.charts-grid > *,
+.bi-grid > *,
+.hero-cards-grid > *,
+.mini-kpis-grid > *,
+.bi-advisor-grid > *,
+.cotiz-tipo-cards-grid > *,
+.mp-fila-doble > *,
+.mp-kpis > * { min-width: 0 !important; }
+
+/* Un lienzo sin gráfico dibujado todavía mide 300px por defecto del HTML, y
+   uno ya dibujado no se encoge solo al girar el aparato. */
+.view canvas { max-width: 100% !important; }
+
+/* La barra de filtros es una grilla, pero el campo de búsqueda todavía arrastra
+   un `flex: 2; min-width: 240px` en el atributo style de cuando era flex. En una
+   grilla el `flex` no hace nada y el `min-width` sí: el campo se niega a caber
+   en su pista de 171px y desborda la fila. Medido en Cotizaciones a 1440px:
+   25px de más. El `minmax(150px, 1fr)` de la grilla ya garantiza un mínimo. */
+.filter-controls > .filter-group { min-width: 0 !important; }
+
+/* El boton «Filtros» solo tiene sentido donde los filtros se pliegan, o sea en
+   telefono. En escritorio estaba a la vista en el Tablero y en Cotizaciones sin
+   hacer nada: alli los filtros ya estan desplegados y la clase que alterna no
+   cambia nada por encima de 900px. */
+.mobile-filter-toggle-btn { display: none !important; }
+#mpFiltersBar .filters-bar__header { display: none !important; }
+
+/* --------------------------------------------------------------------------
+   2. Teléfono
+   El header estaba fijado en `height: 64px` con `overflow: hidden` y
+   `flex-wrap: wrap`: a 375px el bloque derecho no cabía junto al título,
+   saltaba a una segunda fila que empezaba en y=54 y el overflow la recortaba.
+   Medido: el clúster derecho terminaba en x=421 sobre un ancho de 375, así que
+   el tema, la búsqueda, el refresco y el botón de salir quedaban invisibles y
+   sin forma de tocarlos. Aquí se degradan los controles para que quepan en una
+   sola fila, con el mismo criterio de los cortes de 1560, 1360 y 1180px.
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 900px) {
+
+  .ax-header {
+    padding: 0 var(--sp-3) !important;
+    gap: var(--sp-2) !important;
+    flex-wrap: nowrap !important;
+  }
+
+  /* Informativos, no accionables: lo primero que se sacrifica. La búsqueda del
+     header solo lleva el foco a un campo que ya está en la propia vista. */
+  .ax-header__right .sync-status-pill,
+  .ax-header__right .ax-search-pill { display: none !important; }
+
+  .ax-header__right {
+    gap: var(--sp-1) !important;
+    min-width: 0 !important;
+  }
+
+  /* La credencial completa mide 232px de los 327 disponibles. En móvil queda
+     la inicial y la puerta de salida, que es lo único que se toca. */
+  .user-profile-badge {
+    gap: 0.35rem !important;
+    padding: 3px 4px !important;
+    margin-left: 0.15rem !important;
+    box-shadow: none !important;
+  }
+
+  .user-profile-badge .user-info,
+  .user-profile-badge .btn-logout span { display: none !important; }
+
+  .user-profile-badge .btn-logout {
+    padding: 6px !important;
+    min-width: 32px !important;
+    justify-content: center !important;
+  }
+
+  .ax-header__title { font-size: var(--fs-md) !important; }
+
+  /* 44px es el objetivo táctil mínimo; la hamburguesa venía en 38. */
+  .ax-mobile-toggle {
+    width: 44px !important;
+    height: 44px !important;
+    margin-right: 0 !important;
+  }
+
+  /* Mientras el menú tapa la pantalla, el dedo no debe arrastrar el tablero de
+     atrás: al cerrar, la vista volvía en otro punto del que estaba. */
+  body.menu-movil-abierto { overflow: hidden !important; }
+
+  /* Encabezados de sección: título y botonera pasan a filas separadas en vez
+     de pelear por el mismo renglón. */
+  .dashboard-section-header { align-items: flex-start !important; }
+
+  /* Las tablas llevan `min-width: 680px`. Donde cuelgan de un `.table-container`
+     eso está bien, porque el contenedor se desplaza solo; pero en Mix Sugerido y
+     en Productos cuelgan de un div sin clase y no había nada que las contuviera. */
+  .table-container,
+  .ax-table-wrap,
+  .view div:has(> table) {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  /* Los filtros en una columna: a 375px un `flex` de cuatro selects deja cada
+     uno en 70px, donde no se lee ni la etiqueta. */
+  .filter-controls {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .filter-group,
+  .filter-group--accion { width: 100% !important; min-width: 0 !important; }
+
+  .view select.filter-select,
+  .view input.filter-input { max-width: 100% !important; min-width: 0 !important; }
+
+  /* Cuatro botones en una fila que no envolvía: pedían 458px sobre 318, y el
+     que abre una cotización nueva quedaba fuera del borde derecho. */
+  .filter-actions-group {
+    flex-wrap: wrap !important;
+    justify-content: flex-start !important;
+  }
+
+  /* La regla de 768px dejaba `.filter-controls { display: none }` y los volvía a
+     mostrar con `.show-mobile`, una clase que no pone nadie: ni el CSS, ni el JS,
+     ni el HTML. Resultado: en teléfono los filtros no aparecían en ningún módulo,
+     y en Mercado Público la barra quedaba como una caja vacía de 38px porque ahí
+     ni siquiera hay un botón «Filtros» que los despliegue.
+
+     Donde hay botón se conserva el plegado -en el Tablero son ocho controles que
+     empujarían los KPI fuera de la pantalla-; donde no lo hay, se muestran, que
+     es la unica forma de poder tocarlos. */
+  .mobile-filter-toggle-btn { display: inline-flex !important; }
+
+  #mpFiltersBar .filters-bar__header {
+    display: flex !important;
+    margin: 0 !important;
+  }
+
+  .filters-bar:has(.mobile-filter-toggle-btn) .filter-controls {
+    display: none !important;
+  }
+
+  .filters-bar:has(.mobile-filter-toggle-btn).open .filter-controls,
+  .filters-bar:not(:has(.mobile-filter-toggle-btn)) .filter-controls {
+    display: flex !important;
+  }
+
+}
+
+/* La barra lateral ocupa 300px de 375: el resto de la pantalla es velo. Por
+   debajo de 400px se toma casi todo el ancho para que el nombre de los módulos
+   no se corte. */
+@media (max-width: 400px) {
+  .ax-sidebar { width: 88vw !important; }
+}

@@ -34,7 +34,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <!-- Stylesheets & Libraries -->
-  <link rel="stylesheet" href="style.css?v=20260825_ICON_V50" />
+  <link rel="stylesheet" href="style.css?v=20260825_MOVIL_V51" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -1946,6 +1946,16 @@
 
           <!-- FILTROS -->
           <div class="ax-card filters-bar" id="mpFiltersBar" style="margin-bottom: 1.25rem;">
+            <!-- Los nueve filtros ocupan 697px apilados, o sea toda la primera
+                 pantalla de un telefono. Este boton los pliega, igual que en el
+                 Tablero y en Cotizaciones; en escritorio no se ve. -->
+            <div class="filters-bar__header">
+              <button type="button" class="btn-secondary btn-sm mobile-filter-toggle-btn" id="toggleMpFiltersBtn"
+                onclick="toggleMpMobileFilters()" aria-expanded="false" aria-controls="mpFiltersBar">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
+                <span>Filtros &#9662;</span>
+              </button>
+            </div>
             <div class="filter-controls">
               <div class="filter-group">
                 <label for="mpFoco">Vista</label>
@@ -2946,7 +2956,7 @@
   </div>
 
   <!-- Scripts -->
-  <script src="config.js?v=20260825_ICON_V50"></script>
-  <script src="app.js?v=20260825_ICON_V50"></script>
+  <script src="config.js?v=20260825_MOVIL_V51"></script>
+  <script src="app.js?v=20260825_MOVIL_V51"></script>
 </body>
 </html>
