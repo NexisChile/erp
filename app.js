@@ -1278,7 +1278,10 @@ function themeChartColors() {
   return {
     tick:    lee('--ax-text-tertiary', claro ? '#8B95B9' : '#94a3b8'),
     leyenda: lee('--ax-text-secondary', claro ? '#475569' : '#cbd5e1'),
-    rejilla: claro ? 'rgba(15, 23, 42, 0.10)' : 'rgba(255, 255, 255, 0.06)'
+    rejilla: claro ? 'rgba(15, 23, 42, 0.10)' : 'rgba(255, 255, 255, 0.06)',
+    /* El fondo de la tarjeta, para lo que tiene que recortarse contra ella:
+       el aro de un punto al pasar el raton, por ejemplo. */
+    fondoTarjeta: lee('--surf-2', claro ? '#FFFFFF' : '#0F1530')
   };
 }
 
@@ -11721,16 +11724,47 @@ function mpRenderCharts(datos) {
          sin radio no dibuja ni linea ni marca -la tarjeta se ve vacia aunque el
          dato este ahi-. El corte en 14 deja ver los puntos de un ano completo. */
       const conPunto = claves.length <= 14;
-      const linea = (etiqueta, campo, color) => ({
+
+      /* El area sombreada va SOLO bajo Ofertadas. Con las tres rellenas -que fue
+         lo primero que probe- los tres degradados se superponen y el cruce da
+         un pardo del que ya no se distingue ninguna linea: la verde,
+         justamente la que importa, se perdia contra el fondo. Ofertadas es
+         ademas la que envuelve a las otras dos, asi que sombrear su area dice
+         algo -este es el volumen en el que se juega- en vez de decorar.
+
+         El degradado se arma sobre el alto real del area de dibujo, que no
+         existe cuando se declara la configuracion: por eso va como funcion, que
+         Chart.js vuelve a llamar en cada repintado, incluido el cambio de
+         tamano, donde un degradado fijo quedaria estirado o cortado. */
+      const relleno = (color) => (ctx) => {
+        const area = ctx.chart.chartArea;
+        if (!area) return mpRgba(color, 0);   // primer cuadro, todavia sin medidas
+        const g = ctx.chart.ctx.createLinearGradient(0, area.top, 0, area.bottom);
+        g.addColorStop(0, mpRgba(color, 0.30));
+        g.addColorStop(0.7, mpRgba(color, 0.05));
+        g.addColorStop(1, mpRgba(color, 0));
+        return g;
+      };
+
+      const linea = (etiqueta, campo, color, conArea) => ({
         label: etiqueta,
         data: serie(campo),
         borderColor: color,
-        backgroundColor: color,
+        /* Sin area, el color solido igual hace falta: es el que pinta el
+           cuadrito de la leyenda. */
+        backgroundColor: conArea ? relleno(color) : color,
         borderWidth: 2,
         tension: 0.35,
         pointRadius: conPunto ? 3 : 0,
-        pointHoverRadius: 5,
-        fill: false
+        pointHoverRadius: 6,
+        pointBackgroundColor: color,
+        pointBorderWidth: 0,
+        /* El aro del punto al pasar por encima usa el fondo de la tarjeta: sin
+           el, el punto crecido se confunde con la linea de la que sale. Va como
+           funcion para que siga al tema sin rehacer el grafico. */
+        pointHoverBorderWidth: 2,
+        pointHoverBorderColor: () => mpFondoTarjeta(),
+        fill: conArea ? 'origin' : false
       });
 
       if (mpChartCurva) mpChartCurva.destroy();
@@ -11738,15 +11772,25 @@ function mpRenderCharts(datos) {
         type: 'line',
         data: {
           labels: etiquetas,
+          /* El orden del arreglo hace dos cosas a la vez: Chart.js dibuja de
+             arriba a abajo -asi que Ofertadas, con su area, queda detras de las
+             otras dos- y la leyenda sigue esa misma secuencia, que es la del
+             embudo: se oferta, se gana o se pierde. Usar la propiedad `order`
+             para el fondo lo rompia, porque la leyenda tambien se ordena por
+             ella y quedaba al reves. */
           datasets: [
-            linea('Ofertadas', 'ofe', '#FFC46B'),
-            linea('Adjudicadas', 'gan', '#3DDC97'),
-            linea('Perdidas', 'per', '#FF6B8A')
+            linea('Ofertadas', 'ofe', '#FFC46B', true),
+            linea('Adjudicadas', 'gan', '#3DDC97', false),
+            linea('Perdidas', 'per', '#FF6B8A', false)
           ]
         },
         options: {
           responsive: true, maintainAspectRatio: false,
           interaction: { mode: 'index', intersect: false },
+          /* Las lineas se levantan desde el cero al entrar. Dura poco a
+             proposito: el grafico se repinta con cada filtro y una animacion
+             larga convierte en espera lo que deberia ser una respuesta. */
+          animation: mpAnimacionCurva(),
           plugins: {
             legend: { position: 'top', labels: { color: col.leyenda, boxWidth: 12, font: { size: 11 } } },
             tooltip: {
@@ -11800,6 +11844,56 @@ function mpRenderCharts(datos) {
       }
     }
   }
+}
+
+/* Un color de la paleta con la transparencia que se le pida. Los tonos del
+   modulo estan escritos en hexadecimal, y un degradado de lienzo necesita
+   canales sueltos. */
+function mpRgba(hex, alfa) {
+  const h = String(hex).replace('#', '');
+  const n = parseInt(h.length === 3
+    ? h[0] + h[0] + h[1] + h[1] + h[2] + h[2]
+    : h, 16);
+  return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + alfa + ')';
+}
+
+/* El fondo de la tarjeta, resuelto en el momento de dibujar y no al construir
+   el grafico.
+
+   Importa porque cambiar de tema no rehace los graficos: refreshChartsTheme
+   repasa ticks, rejilla y leyenda, pero no toca las opciones propias de cada
+   serie. Un color copiado al construir se queda con el tema que hubiera
+   entonces, y el aro del punto salia azul marino sobre una tarjeta blanca.
+
+   Se guarda en cache porque Chart.js resuelve las opciones de punto para los
+   132 puntos en cada cuadro, y getComputedStyle sobre el elemento raiz no es
+   gratis. La clave es el tema, asi que al cambiarlo se recalcula solo. */
+let mpFondoCache = { tema: null, color: '#0F1530' };
+function mpFondoTarjeta() {
+  const tema = document.documentElement.getAttribute('data-ax-theme') || 'auto';
+  if (mpFondoCache.tema !== tema) {
+    const c = (typeof themeChartColors === 'function') ? themeChartColors() : null;
+    mpFondoCache = { tema: tema, color: (c && c.fondoTarjeta) || '#0F1530' };
+  }
+  return mpFondoCache.color;
+}
+
+/* Las lineas se levantan desde el cero. Se anima solo la coordenada vertical:
+   animar tambien la horizontal las hace entrar barriendo de izquierda a
+   derecha, que en un eje de tiempo se lee como si los meses fueran llegando.
+
+   Quien pidio menos movimiento en su sistema no recibe ninguno. El tablero ya
+   respeta ese ajuste en el fondo con paralaje y no tiene sentido que un
+   grafico lo ignore. */
+function mpAnimacionCurva() {
+  const quieto = window.matchMedia &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (quieto) return false;
+  return {
+    duration: 650,
+    easing: 'easeOutQuart',
+    y: { from: (ctx) => (ctx.chart.scales.y ? ctx.chart.scales.y.getPixelForValue(0) : undefined) }
+  };
 }
 
 /* Porcentaje con coma decimal. En una tarjeta donde los montos ya usan el punto
