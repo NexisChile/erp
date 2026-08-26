@@ -10093,8 +10093,10 @@ button, input, select, textarea, optgroup {
   padding-top: 0.45rem;
   padding-bottom: 0.45rem;
 }
-/* La linea vertical marca de un vistazo donde empieza y termina el grupo. */
-.precios-detalle > td:first-child {
+/* La linea vertical marca de un vistazo donde empieza y termina el grupo. Va en
+   la celda del codigo y no en la primera, que ahora es la de la foto: alli
+   quedaria pegada al borde de la tarjeta y sin nada que enmarcar. */
+.precios-detalle > td:nth-child(2) {
   border-left: 2px solid var(--ax-accent-sky);
 }
 .precios-detalle .precios-pill {
@@ -10916,4 +10918,83 @@ button, input, select, textarea, optgroup {
    no se corte. */
 @media (max-width: 400px) {
   .ax-sidebar { width: 88vw !important; }
+}
+
+/* ==========================================================================
+   PRECIOS DE COMPETENCIA · MINIATURA DEL PRODUCTO
+   La foto de cada SKU sale de la columna IMAGE de PreciosMapa. Va primera,
+   antes del codigo, porque en una tabla de comparacion se busca el producto por
+   como se ve antes que por su codigo.
+   ========================================================================== */
+
+/* Ancho al 1%: en una tabla eso significa "lo minimo que quepa", asi la columna
+   no le roba sitio a la descripcion, que es la que lo necesita. */
+.precios-table th.precios-th-foto,
+.precios-table td.precios-td-foto {
+  width: 1% !important;
+  padding-right: var(--sp-2) !important;
+  white-space: nowrap !important;
+}
+
+.precios-foto {
+  display: block !important;
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  flex: 0 0 auto !important;
+  /* Fondo claro fijo, no el de la tarjeta: la fotografia de catalogo viene
+     recortada sobre blanco, y sobre el azul oscuro del tablero cada miniatura
+     se veria como un recuadro blanco flotando. Asi todas comparten un mismo
+     soporte y la fila se lee pareja en tema claro y en oscuro. */
+  background: #FFFFFF !important;
+  /* El borde no puede salir de --ax-border-subtle: en tema claro esa variable
+     vale #EDF0F6 y la caja es blanca sobre una fila blanca, o sea que el chip
+     desaparecia. Se deriva del color de texto terciario, que si cambia de tono
+     con el tema. Medido contra el fondo de la fila: 1.93:1 en claro y 2.21:1 en
+     oscuro. No llega al 3:1 que pide la WCAG para elementos no textuales, y es
+     a proposito: es el marco de una miniatura, no un control, y subirlo hasta
+     ahi pinta una caja gris pesada en cada una de las filas de una tabla que se
+     lee de un vistazo. Lo que hay que distinguir -si hay foto o no- se ve por
+     la foto misma, y el producto lo nombra el codigo de al lado. */
+  border: 1px solid color-mix(in srgb, var(--ax-text-tertiary) 45%, transparent) !important;
+}
+
+.precios-foto img {
+  width: 100% !important;
+  height: 100% !important;
+  /* contain y no cover: recortar un andador para llenar el cuadrado deja fuera
+     justo lo que distingue un modelo de otro. */
+  object-fit: contain !important;
+  display: block !important;
+  padding: 2px !important;
+}
+
+/* Sin foto se dibuja el mismo cuadro vacio en vez de nada: una columna que a
+   ratos existe descuadra la fila y cuesta mas leerla que la estetica que gana. */
+.precios-foto--vacia {
+  /* Tampoco --surf-3: en tema claro las tres superficies son blanco puro. */
+  background: color-mix(in srgb, var(--ax-text-tertiary) 14%, transparent) !important;
+  border-style: dashed !important;
+}
+
+/* La fila desplegada no repite la foto, pero conserva el hueco. */
+.precios-detalle > td.precios-td-foto { padding: 0 !important; }
+
+@media (max-width: 900px) {
+  .precios-foto { width: 32px !important; height: 32px !important; border-radius: 6px !important; }
+}
+
+/* Texto solo para lectores de pantalla: el encabezado de la columna no se
+   dibuja -robaria ancho- pero la tabla tiene que poder nombrarla. */
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
 }

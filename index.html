@@ -34,7 +34,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <!-- Stylesheets & Libraries -->
-  <link rel="stylesheet" href="style.css?v=20260825_MOVIL_V51" />
+  <link rel="stylesheet" href="style.css?v=20260825_FOTOS_V52" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -1905,6 +1905,9 @@
                 <table class="data-table precios-table">
                   <thead>
                     <tr>
+                      <!-- Sin texto: el encabezado de una columna de fotos solo
+                           robaria ancho a la descripcion, que si lo necesita. -->
+                      <th class="precios-th-foto"><span class="sr-only">Foto</span></th>
                       <th>Código</th>
                       <th>Descripción</th>
                       <th>Competidor</th>
@@ -1916,7 +1919,7 @@
                     </tr>
                   </thead>
                   <tbody id="preciosTableBody">
-                    <tr><td colspan="8" style="text-align:center; color: var(--ax-text-tertiary); padding: 2rem;">Cargando precios&hellip;</td></tr>
+                    <tr><td colspan="9" style="text-align:center; color: var(--ax-text-tertiary); padding: 2rem;">Cargando precios&hellip;</td></tr>
                   </tbody>
                 </table>
               </div>
@@ -2956,7 +2959,7 @@
   </div>
 
   <!-- Scripts -->
-  <script src="config.js?v=20260825_MOVIL_V51"></script>
-  <script src="app.js?v=20260825_MOVIL_V51"></script>
+  <script src="config.js?v=20260825_FOTOS_V52"></script>
+  <script src="app.js?v=20260825_FOTOS_V52"></script>
 </body>
 </html>

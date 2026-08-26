@@ -9308,6 +9308,7 @@ if (document.readyState === 'loading') {
 let preciosRows = [];          // ultima lectura por producto y competidor
 let preciosFallidos = [];      // filas que el scraper no pudo leer
 let preciosMisPrecios = new Map(); // codigo -> { DRCARE: n, MELI: n, ... }
+let preciosImagenes = new Map();   // codigo -> URL de la foto en PreciosMapa
 let preciosCanalPorUrl = new Map(); // url -> canal marcado a mano en PreciosMapa
 let preciosCanalSinReconocer = [];  // textos de la columna CANAL que no se entienden
 let preciosCanal = 'DRCARE';        // tienda elegida: filtra competidores y tu precio
@@ -9532,6 +9533,96 @@ function preciosPropiosDesdeMapa(filas) {
   return mapa;
 }
 
+/* Nombres aceptados para la columna de la foto. Se miran TODOS en cada fila y
+   gana el primero que traiga una direccion utilizable, en vez de elegir una
+   columna al leer el encabezado. La diferencia importa: en la hoja de Glomax la
+   columna IMAGE existe pero llega siempre vacia -lleva imagenes, que no son un
+   valor de celda y no viajan por GViz-, asi que quedarse con ella por ser la
+   primera que existe dejaria fuera la IMAGE_URL de al lado, que si trae texto. */
+const PRECIOS_COL_IMAGEN = ['IMAGE_URL', 'IMAGEN_URL', 'FOTO_URL', 'IMAGE', 'IMAGEN', 'FOTO'];
+
+/**
+ * Deja la celda de la foto en algo que un <img> pueda cargar, o cadena vacia.
+ *
+ * En la hoja esa celda puede venir de tres formas y solo una sirve tal cual:
+ * una URL escrita como texto. Las otras dos se traducen aqui.
+ */
+function preciosUrlImagen(v) {
+  let s = String(v === undefined || v === null ? '' : v).trim();
+  if (!s) return '';
+
+  /* Si la celda trae la formula como texto -pasa cuando se pega la columna como
+     valores- se saca la URL de dentro en vez de descartarla. */
+  const formula = s.match(/^=\s*IMAGE\s*\(\s*["']([^"']+)["']/i);
+  if (formula) s = formula[1].trim();
+
+  if (!/^https?:\/\//i.test(s)) return '';
+
+  /* Un enlace de Drive de los de "compartir" abre una pagina, no un archivo:
+     puesto en un <img> no muestra nada. La miniatura del mismo id si carga, y
+     ademas llega ya reducida, que es justo lo que hace falta en 44 pixeles. */
+  const drive = s.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:export=\w+&)?id=)([\w-]{20,})/);
+  if (drive) return 'https://drive.google.com/thumbnail?id=' + drive[1] + '&sz=w200';
+
+  return s;
+}
+
+/**
+ * Lee de PreciosMapa la foto de cada codigo.
+ *
+ * Un mismo codigo aparece en varias filas -una por competidor- y la foto suele
+ * estar solo en la primera: gana el primer valor utilizable que aparezca, no la
+ * ultima fila, para no perderla por una fila de mas abajo que la trae vacia.
+ */
+function preciosImagenesDesdeMapa(filas) {
+  const mapa = new Map();
+  if (!Array.isArray(filas) || !filas.length) return mapa;
+
+  const columnas = PRECIOS_COL_IMAGEN.filter(n =>
+    Object.prototype.hasOwnProperty.call(filas[0], n));
+  if (!columnas.length) return mapa;
+
+  filas.forEach(f => {
+    const codigo = String(f['CODIGO'] || '').trim();
+    if (!codigo || mapa.has(codigo)) return;
+    for (let i = 0; i < columnas.length; i++) {
+      const url = preciosUrlImagen(f[columnas[i]]);
+      if (url) { mapa.set(codigo, url); return; }
+    }
+  });
+  return mapa;
+}
+
+/**
+ * La celda de la miniatura.
+ *
+ * El hueco se dibuja siempre, con foto o sin ella: una columna que a ratos
+ * existe y a ratos no descuadra la fila entera y cuesta mas leerla que la
+ * estetica que se gana.
+ */
+function preciosMiniatura(codigo) {
+  const url = preciosImagenes.get(codigo);
+  if (!url) {
+    return '<span class="precios-foto precios-foto--vacia" aria-hidden="true"></span>';
+  }
+  return '<span class="precios-foto">' +
+    /* loading=lazy porque la tabla puede traer cientos de filas y solo se ven
+       diez: sin esto el navegador pide todas las fotos de golpe al abrir. */
+    '<img src="' + escapeHtml(url) + '" alt="" loading="lazy" decoding="async" ' +
+    'onerror="preciosFotoRota(this)" />' +
+    '</span>';
+}
+
+/* Una URL que ya no responde tiene que dejar el mismo hueco que un producto sin
+   foto, no el icono roto del navegador. */
+function preciosFotoRota(img) {
+  const caja = img.parentNode;
+  if (!caja) return;
+  img.remove();
+  caja.className = 'precios-foto precios-foto--vacia';
+  caja.setAttribute('aria-hidden', 'true');
+}
+
 /** Precio propio de un codigo en la tienda elegida, o 0 si no hay. */
 function preciosPropioDe(codigo) {
   const porCanal = preciosMisPrecios.get(codigo);
@@ -9675,11 +9766,16 @@ async function loadPrecios(forzar) {
     const gidMapa = (typeof SPREADSHEET_PRECIOSMAPA_GID !== 'undefined'
       && SPREADSHEET_PRECIOSMAPA_GID) || PRECIOS_HOJA_MAPA;
     try {
-      preciosMisPrecios = preciosPropiosDesdeMapa(
-        await fetchGVizViaJSONP(spId, gidMapa, 20000) || []);
+      /* Una sola lectura para las dos cosas: los precios por tienda y la foto
+         de cada codigo salen de la misma pestana y pedirla dos veces seria
+         esperar el doble por nada. */
+      const filasMapa = await fetchGVizViaJSONP(spId, gidMapa, 20000) || [];
+      preciosMisPrecios = preciosPropiosDesdeMapa(filasMapa);
+      preciosImagenes = preciosImagenesDesdeMapa(filasMapa);
     } catch (e) {
       console.warn('[Precios] No se pudo leer ' + gidMapa + ', se usa el PREUNI:', e);
       preciosMisPrecios = new Map();
+      preciosImagenes = new Map();
     }
 
     renderPreciosView();
@@ -9970,7 +10066,7 @@ function renderPreciosView() {
     /* Vacio por filtrar y vacio por no tener datos son cosas distintas, y la
        diferencia es lo unico que dice que hacer a continuacion. */
     const sinLecturasDelCanal = !enCanal.length && todas.length;
-    tbody.innerHTML = '<tr><td colspan="8" class="precios-vacio">' +
+    tbody.innerHTML = '<tr><td colspan="9" class="precios-vacio">' +
       (sinLecturasDelCanal
         ? '<strong>Ninguna lectura es de ' + escapeHtml(etiqueta) + '</strong>' +
           '<span>Hay ' + todas.length + (todas.length === 1 ? ' lectura' : ' lecturas') +
@@ -10006,6 +10102,7 @@ function renderPreciosView() {
       : '';
 
     const filaResumen = '<tr class="precios-fila' + (abierto ? ' is-abierta' : '') + '">' +
+      '<td class="precios-td-foto">' + preciosMiniatura(g.codigo) + '</td>' +
       '<td class="mono"><span class="precios-codigo">' + control +
         escapeHtml(g.codigo) + '</span></td>' +
       '<td>' + escapeHtml(g.descripcion || '—') + aviso + '</td>' +
@@ -10032,6 +10129,9 @@ function renderPreciosView() {
       const esMejor = g.mejor && l === g.mejor;
       return '<tr class="precios-detalle" data-precio-detalle="' +
           escapeHtml(g.codigo) + '"' + (abierto ? '' : ' hidden') + '>' +
+        /* La foto es del producto, no del competidor: repetirla en cada linea
+           desplegada solo llenaria la columna de copias de la de arriba. */
+        '<td class="precios-td-foto"></td>' +
         '<td></td>' +
         '<td class="precios-detalle__hueco"></td>' +
         '<td>' + preciosEnlace(l.competidor, l.url, l.canal) +
