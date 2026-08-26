@@ -10998,3 +10998,22 @@ button, input, select, textarea, optgroup {
   white-space: nowrap !important;
   border: 0 !important;
 }
+
+/* La curva mes a mes de Mercado Publico ocupa el ancho completo: con hasta 44
+   meses en el eje, media tarjeta deja las etiquetas una encima de otra. */
+.charts-grid--full { grid-template-columns: 1fr !important; }
+
+/* .chart-container declara 280px de alto, pero tambien `flex: 1`, y en un
+   contenedor flex vertical el flex-basis de 0 gana sobre la altura: la caja
+   termina midiendo lo que le deje la fila. A las tarjetas de media fila las
+   estira su companera -por eso Evolucion mide 300px y Tipo 155-, pero esta va
+   sola en su fila y se encogia hasta los 150px por defecto del lienzo, que para
+   una linea de 44 meses es una franja aplastada. */
+.charts-grid--full .chart-container {
+  height: 320px !important;
+  flex: 0 0 320px !important;
+}
+
+@media (max-width: 900px) {
+  .charts-grid--full .chart-container { height: 240px !important; flex: 0 0 240px !important; }
+}

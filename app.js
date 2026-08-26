@@ -10680,6 +10680,7 @@ let mpChartEvolucion = null;
 let mpChartSeguimiento = null;
 let mpChartMotivos = null;
 let mpChartTipo = null;
+let mpChartCurva = null;
 
 /* Etiquetas que significan "la vimos y decidimos no ofertar". Se separan de
    las demas porque su suma es plata que se dejo pasar a proposito, y el motivo
@@ -11658,6 +11659,146 @@ function mpRenderCharts(datos) {
         scales: ejes(false)
       }
     });
+  }
+
+  /* --- 5. Curva mes a mes -------------------------------------------------
+     Ofertadas, adjudicadas y perdidas sobre una linea de tiempo continua.
+
+     El eje va por ano-mes y no por mes del ano: juntar agosto de 2023 con
+     agosto de 2026 en un mismo punto no es una curva, es un promedio disfrazado
+     de tendencia. Y los meses sin ningun registro se rellenan con cero en vez
+     de saltarse: si se omiten, un hueco de cinco meses se dibuja del mismo
+     ancho que el paso de un mes y la pendiente miente.
+
+     Los meses salen de `datos`, que es lo que dejaron los filtros, asi que el
+     eje se recorta solo al elegir un ano, una tienda o un responsable. */
+  const ctxCurva = document.getElementById('chartMpCurva');
+  if (ctxCurva) {
+    const MESES_C = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
+                     'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+    const mapa = new Map();
+    datos.forEach(d => {
+      if (!d.anio || !d.mes) return;              // sin cierre no hay lugar en el tiempo
+      const gano = d.resultado === 'ganada';
+      const perdio = d.resultado === 'perdida';
+      /* Solo entran las filas que aportan a alguna de las tres lineas. Asi el
+         eje empieza y termina donde hubo actividad: si se contaran tambien las
+         detectadas, el ultimo punto seria septiembre de 2026 -licitaciones que
+         todavia no cierran- y las tres lineas caerian a cero de golpe. Eso se
+         lee como un derrumbe cuando en realidad es un mes que aun no ocurre. */
+      if (!d.oferto && !gano && !perdio) return;
+      const clave = d.anio * 12 + (d.mes - 1);    // un entero por mes, comparable y ordenable
+      if (!mapa.has(clave)) mapa.set(clave, { ofe: 0, gan: 0, per: 0 });
+      const m = mapa.get(clave);
+      if (d.oferto) m.ofe++;
+      if (gano) m.gan++;
+      else if (perdio) m.per++;
+    });
+
+    const resumen = document.getElementById('mpCurvaResumen');
+    if (!mapa.size) {
+      if (mpChartCurva) { mpChartCurva.destroy(); mpChartCurva = null; }
+      if (resumen) resumen.textContent = 'Sin meses que mostrar';
+    } else {
+      const desde = Math.min.apply(null, Array.from(mapa.keys()));
+      const hasta = Math.max.apply(null, Array.from(mapa.keys()));
+      const claves = [];
+      for (let k = desde; k <= hasta; k++) claves.push(k);
+
+      /* Con un solo ano en pantalla sobra repetirlo en cada etiqueta. */
+      const unSoloAnio = Math.floor(desde / 12) === Math.floor(hasta / 12);
+      const etiquetas = claves.map(k => {
+        const nombre = MESES_C[k % 12];
+        return unSoloAnio ? nombre : nombre + ' ' + String(Math.floor(k / 12)).slice(2);
+      });
+
+      const serie = (campo) => claves.map(k => (mapa.get(k) || {})[campo] || 0);
+
+      /* Con pocos meses el punto se dibuja; con muchos, no. Los 132 circulos de
+         una serie de 44 meses tapan las lineas que hay que leer, pero al reves
+         es peor: filtrando por "Abiertas" queda un solo mes, y un punto suelto
+         sin radio no dibuja ni linea ni marca -la tarjeta se ve vacia aunque el
+         dato este ahi-. El corte en 14 deja ver los puntos de un ano completo. */
+      const conPunto = claves.length <= 14;
+      const linea = (etiqueta, campo, color) => ({
+        label: etiqueta,
+        data: serie(campo),
+        borderColor: color,
+        backgroundColor: color,
+        borderWidth: 2,
+        tension: 0.35,
+        pointRadius: conPunto ? 3 : 0,
+        pointHoverRadius: 5,
+        fill: false
+      });
+
+      if (mpChartCurva) mpChartCurva.destroy();
+      mpChartCurva = new Chart(ctxCurva.getContext('2d'), {
+        type: 'line',
+        data: {
+          labels: etiquetas,
+          datasets: [
+            linea('Ofertadas', 'ofe', '#FFC46B'),
+            linea('Adjudicadas', 'gan', '#3DDC97'),
+            linea('Perdidas', 'per', '#FF6B8A')
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { position: 'top', labels: { color: col.leyenda, boxWidth: 12, font: { size: 11 } } },
+            tooltip: {
+              callbacks: {
+                afterBody: (items) => {
+                  const m = mapa.get(claves[items[0].dataIndex]);
+                  if (!m || !m.ofe) return '';
+                  const sinCerrar = m.ofe - m.gan - m.per;
+                  /* Puede salir negativo: hay filas marcadas Ganada o Perdida
+                     sin monto ofertado anotado, y "ofertadas" se cuenta por ese
+                     monto. Son 2 meses de 38, y se dice en vez de esconderlo. */
+                  if (sinCerrar >= 0) {
+                    return ['Tasa: ' + mpPct((m.gan / m.ofe) * 100),
+                            'Sin desenlace: ' + formatNum(sinCerrar)];
+                  }
+                  const n = -sinCerrar;
+                  return ['Tasa: ' + mpPct((m.gan / m.ofe) * 100),
+                          formatNum(n) + (n === 1 ? ' resuelta' : ' resueltas') +
+                          ' sin monto ofertado anotado'];
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              ticks: {
+                color: col.tick, font: { size: 11 },
+                /* Sin limite, 44 etiquetas se giran y se pisan. */
+                maxTicksLimit: 14, maxRotation: 0, autoSkip: true
+              },
+              grid: { display: false }
+            },
+            y: {
+              beginAtZero: true,
+              ticks: { color: col.tick, font: { size: 11 }, callback: (v) => formatNum(v) },
+              grid: { color: col.rejilla }
+            }
+          }
+        }
+      });
+
+      if (resumen) {
+        const tot = claves.reduce((a, k) => {
+          const m = mapa.get(k);
+          if (m) { a.ofe += m.ofe; a.gan += m.gan; a.per += m.per; }
+          return a;
+        }, { ofe: 0, gan: 0, per: 0 });
+        resumen.textContent = claves.length +
+          (claves.length === 1 ? ' mes · ' : ' meses · ') +
+          (tot.ofe ? mpPct((tot.gan / tot.ofe) * 100) + ' de adjudicación' : 'sin ofertas');
+      }
+    }
   }
 }
 
