@@ -1060,12 +1060,66 @@ if (document.readyState === 'loading') {
 // MÓDULO DE NAVEGACIÓN Y CONTROL DE VISTAS (switchView & UI Drawer Helpers)
 // ==========================================================================
 
+/* Cuanto vale lo ya descargado antes de volver a pedirlo, por modulo. Estos
+   tres leen de pestanas distintas a la de ventas, no pasan por applyFilters y
+   por lo tanto el auto-refresco de dos minutos no los tocaba. MercadoPublico va
+   mas espaciado porque su pestana pesa varios megas y cambia despacio. */
+const MODULO_TTL_MS = {
+  precios:        5 * 60 * 1000,
+  cotizaciones:   5 * 60 * 1000,
+  mercadopublico: 10 * 60 * 1000
+};
+
+/** Si lo traido en `marca` ya esta viejo para ese modulo. Sin marca, si. */
+function moduloVencido(marca, nombre) {
+  if (!marca) return true;
+  const t = (marca instanceof Date) ? marca.getTime() : Number(marca);
+  if (!(t > 0)) return true;
+  return (Date.now() - t) > (MODULO_TTL_MS[nombre] || 5 * 60 * 1000);
+}
+
 let _glomaxRenderRevision = 1;
 const _viewLastRenderedRevision = {};
 
 function invalidateViewCache() {
   _glomaxRenderRevision++;
   if (typeof invalidateShapeCurveCache === 'function') invalidateShapeCurveCache();
+}
+
+/* Que se repinta en cada vista que vive de los datos de ventas.
+   Estaba escrito dos veces: una en switchView y otra, incompleta, dentro de
+   renderAll. Las dos listas se separaron y de ahi salio que al llegar datos
+   nuevos se repintaran el tablero y la tabla -que suelen estar ocultos- y no
+   la vista que el usuario tenia delante. Ahora la lista es una sola.
+
+   Precios, MercadoPublico y Cotizaciones no estan aqui a proposito: leen de
+   otras pestanas, no dependen de estos filtros y se refrescan por su cuenta. */
+const VISTAS_RENDER = {
+  tablero:      ['renderKPIs', 'renderCharts', 'renderTodayCard', 'renderTicker'],
+  tabla:        ['renderTable'],
+  compras:      ['renderComprasView', 'renderComprasBIAdvisor'],
+  productos:    ['renderProductosView'],
+  bistudio:     ['renderExecutiveInsights', 'renderPareto8020', 'renderRFMGrid',
+                 'updateWhatIfSimulation', 'renderMonthlyTargetProgress'],
+  mixsugerido:  ['renderMixSugeridoModule'],
+  fichatecnica: ['renderFichaTecnicaView']
+};
+
+/** Pinta una vista y la marca como al dia. false si esa vista no se pinta asi. */
+function renderVista(nombre) {
+  const fns = VISTAS_RENDER[nombre];
+  if (!fns) return false;
+  fns.forEach(function (n) {
+    if (typeof window[n] === 'function') window[n]();
+  });
+  _viewLastRenderedRevision[nombre] = _glomaxRenderRevision;
+  return true;
+}
+
+/** Nombre de la vista visible ('tablero', 'precios', ...). '' si no hay. */
+function vistaActiva() {
+  const el = document.querySelector('.view.active');
+  return el ? el.id.replace(/^view-/, '') : '';
 }
 
 function switchView(viewName) {
@@ -1101,48 +1155,13 @@ function switchView(viewName) {
     const isCached = _viewLastRenderedRevision[viewName] === _glomaxRenderRevision;
     
     try {
-      if (viewName === 'tablero') {
+      if (VISTAS_RENDER[viewName]) {
         if (!isCached) {
-          if (typeof renderKPIs === 'function') renderKPIs();
-          if (typeof renderCharts === 'function') renderCharts();
-          if (typeof renderTodayCard === 'function') renderTodayCard();
-          if (typeof renderTicker === 'function') renderTicker();
-          _viewLastRenderedRevision['tablero'] = _glomaxRenderRevision;
-        } else {
-          // Si ya estaba en caché, asegurar ajuste dimensional rápido sin recalcular
-          if (chartSalesInst && typeof chartSalesInst.resize === 'function') chartSalesInst.resize();
-        }
-      } else if (viewName === 'tabla') {
-        if (!isCached) {
-          if (typeof renderTable === 'function') renderTable();
-          _viewLastRenderedRevision['tabla'] = _glomaxRenderRevision;
-        }
-      } else if (viewName === 'compras') {
-        if (!isCached) {
-          if (typeof renderComprasView === 'function') renderComprasView();
-          // El asesor no se pintaba al entrar a la vista: su tabla quedaba vacia
-          // hasta que el usuario tocaba el presupuesto o la estrategia.
-          if (typeof renderComprasBIAdvisor === 'function') renderComprasBIAdvisor();
-          _viewLastRenderedRevision['compras'] = _glomaxRenderRevision;
-        }
-      } else if (viewName === 'productos') {
-        if (!isCached) {
-          if (typeof renderProductosView === 'function') renderProductosView();
-          _viewLastRenderedRevision['productos'] = _glomaxRenderRevision;
-        }
-      } else if (viewName === 'bistudio') {
-        if (!isCached) {
-          if (typeof renderExecutiveInsights === 'function') renderExecutiveInsights();
-          if (typeof renderPareto8020 === 'function') renderPareto8020();
-          if (typeof renderRFMGrid === 'function') renderRFMGrid();
-          if (typeof updateWhatIfSimulation === 'function') updateWhatIfSimulation();
-          if (typeof renderMonthlyTargetProgress === 'function') renderMonthlyTargetProgress();
-          _viewLastRenderedRevision['bistudio'] = _glomaxRenderRevision;
-        }
-      } else if (viewName === 'mixsugerido') {
-        if (!isCached) {
-          if (typeof renderMixSugeridoModule === 'function') renderMixSugeridoModule();
-          _viewLastRenderedRevision['mixsugerido'] = _glomaxRenderRevision;
+          renderVista(viewName);
+        } else if (viewName === 'tablero' && chartSalesInst &&
+                   typeof chartSalesInst.resize === 'function') {
+          // Ya estaba pintada: solo ajustar dimensiones, sin recalcular.
+          chartSalesInst.resize();
         }
       } else if (viewName === 'precios') {
         /* Esta vista no depende de los filtros globales sino de una pestana
@@ -1152,18 +1171,18 @@ function switchView(viewName) {
         if (typeof loadPrecios === 'function') loadPrecios();
       } else if (viewName === 'mercadopublico') {
         /* Como precios: los datos viven en otra pestana y no dependen de los
-           filtros globales, asi que no se cachea por revision. loadMercadoPublico
-           corta solo si ya hay una descarga en curso o si ya tiene las filas. */
+           filtros globales. loadMercadoPublico decide solo si lo que tiene en
+           memoria sigue sirviendo o ya esta viejo. */
         if (typeof setupMercadoPublicoListeners === 'function') setupMercadoPublicoListeners();
         if (typeof loadMercadoPublico === 'function') loadMercadoPublico();
-      } else if (viewName === 'fichatecnica') {
-        if (!isCached) {
-          if (typeof renderFichaTecnicaView === 'function') renderFichaTecnicaView();
-          _viewLastRenderedRevision['fichatecnica'] = _glomaxRenderRevision;
-        }
       } else if (viewName === 'cotizaciones') {
         if (typeof refreshCotizacionesLive === 'function') {
-          if (!cotizacionesRows || cotizacionesRows.length === 0) {
+          /* Antes se volvia a pedir solo si no habia ninguna fila en memoria,
+             que es como decir "una vez por carga de pagina": entrar y salir de
+             la vista no traia nada nuevo y hacia falta F5. Ahora tambien cuenta
+             cuanto hace que se trajo. */
+          if (!cotizacionesRows || !cotizacionesRows.length ||
+              moduloVencido(cotizacionesUltimaCarga, 'cotizaciones')) {
             refreshCotizacionesLive();
           } else if (!isCached) {
             if (typeof applyCotizacionesFilters === 'function') applyCotizacionesFilters();
@@ -3026,11 +3045,17 @@ if (clearBtn) clearBtn.addEventListener('click', clearAllFilters);
 // ---------- Render orquestador ----------
 function renderAll() {
   renderActiveFilterChips();
-  renderTicker();
-  renderTodayCard();
-  renderKPIs();
-  renderCharts();
-  renderTable();
+  renderVista('tablero');
+  renderVista('tabla');
+
+  /* Y la vista que el usuario tiene delante, si no es una de esas dos.
+     Aqui estaba el fallo: renderAll pintaba el tablero y la tabla y nada mas,
+     asi que estando en Compras, Productos, BI Studio, Mix Sugerido o Ficha
+     Tecnica llegaban datos nuevos cada dos minutos y la pantalla no se movia.
+     Se veian al cambiar de vista y volver -la revision si se invalidaba-, y de
+     ahi la sensacion de que habia que recargar la pagina. */
+  const activa = vistaActiva();
+  if (activa !== 'tablero' && activa !== 'tabla') renderVista(activa);
 }
 
 // ---------- Ticker ----------
@@ -4358,7 +4383,43 @@ if (refreshBtnEl) refreshBtnEl.addEventListener('click', () => loadData(true));
 function startAutoRefresh() {
   if (refreshTimer) clearInterval(refreshTimer);
   const interval = (typeof REFRESH_INTERVAL_MS !== 'undefined' && REFRESH_INTERVAL_MS) ? REFRESH_INTERVAL_MS : 30000;
-  refreshTimer = setInterval(() => loadData(false), interval);
+  refreshTimer = setInterval(() => {
+    loadData(false);
+    refrescarModuloActivo();
+  }, interval);
+}
+
+/**
+ * Refresca el modulo que se esta mirando, si lee de otra pestana y ya vencio.
+ *
+ * loadData solo trae la pestana de ventas. Precios, MercadoPublico y
+ * Cotizaciones quedaban fuera del ciclo: se cargaban al entrar a la vista y ahi
+ * se quedaban congelados mientras la vista siguiera abierta. Cada uno tiene su
+ * propio plazo en MODULO_TTL_MS, asi que llamarlos en cada vuelta de dos
+ * minutos no significa descargar cada dos minutos: la mayoria de las veces no
+ * hacen nada.
+ */
+function refrescarModuloActivo() {
+  const vista = vistaActiva();
+
+  if (vista === 'mercadopublico') {
+    if (typeof loadMercadoPublico === 'function' && !mpCargando &&
+        moduloVencido(mpUltimaCarga, 'mercadopublico')) {
+      loadMercadoPublico(true);
+    }
+  } else if (vista === 'cotizaciones') {
+    /* En silencio: el aviso emergente tiene sentido cuando el usuario aprieta
+       sincronizar, no cada vez que el reloj hace su trabajo. */
+    if (typeof refreshCotizacionesLive === 'function' && !isCotizSyncing &&
+        moduloVencido(cotizacionesUltimaCarga, 'cotizaciones')) {
+      refreshCotizacionesLive(true);
+    }
+  } else if (vista === 'precios') {
+    if (typeof loadPrecios === 'function' && !preciosCargando &&
+        moduloVencido(preciosUltimaCarga, 'precios')) {
+      loadPrecios(true);
+    }
+  }
 }
 
 
@@ -4999,6 +5060,7 @@ function renderComprasBIAdvisor() {
 // ==========================================================================
 
 let cotizacionesRows = [];
+let cotizacionesUltimaCarga = null;   // cuando se trajo, para saber si ya vencio
 let filteredCotizacionesRows = [];
 let isCotizSyncing = false;
 let cotizCurrentPage = 1;
@@ -5265,6 +5327,7 @@ async function refreshCotizacionesLive(silent = false) {
     const loaded = await fetchCotizacionesData();
     if (loaded && loaded.length > 0) {
       cotizacionesRows = loaded;
+      cotizacionesUltimaCarga = new Date();
       populateCotizFilterOptions();
       applyCotizacionesFilters();
       if (!silent && typeof showToast === 'function') {
@@ -9323,6 +9386,7 @@ let preciosVisibles = [];
 let preciosFallidosVisibles = [];
 let preciosTab = 'todos';
 let preciosCargando = false;
+let preciosUltimaCarga = null;        // cuando se trajo, para saber si ya vencio
 /* Codigos desplegados. Vive fuera del render porque la tabla se vuelve a pintar
    entera al filtrar o cambiar de pestana, y perder lo que estabas mirando cada
    vez que escribes una letra en el buscador seria insufrible. */
@@ -9781,6 +9845,7 @@ async function loadPrecios(forzar) {
       preciosImagenes = new Map();
     }
 
+    preciosUltimaCarga = new Date();
     renderPreciosView();
   } catch (e) {
     console.error('[Precios] No se pudo leer la pestana:', e);
@@ -10976,13 +11041,21 @@ async function fetchMercadoPublicoData() {
    peor que esperar la descarga. */
 async function loadMercadoPublico(forzar) {
   if (mpCargando) return;
-  if (mpRows.length && !forzar) {
+
+  /* Este guardia miraba solo si habia filas en memoria, o sea "ya se cargo
+     alguna vez en esta pagina". Con el tablero abierto toda la tarde eso son
+     los datos de la manana, y la unica forma de ver algo nuevo era F5. Ahora
+     tambien cuenta cuanto hace que se trajeron. */
+  if (mpRows.length && !forzar && !moduloVencido(mpUltimaCarga, 'mercadopublico')) {
     renderMercadoPublicoView();
     return;
   }
 
   mpCargando = true;
-  mpEstadoCarga('Descargando oportunidades desde Google Sheets&hellip;');
+  /* El aviso de "descargando" borra la tabla. Vale la pena la primera vez, que
+     no hay nada que mirar; en un refresco de fondo seria hacer parpadear en
+     blanco algo que el usuario esta leyendo. */
+  if (!mpRows.length) mpEstadoCarga('Descargando oportunidades desde Google Sheets&hellip;');
 
   try {
     const filas = await fetchMercadoPublicoData();
