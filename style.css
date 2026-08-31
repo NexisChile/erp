@@ -11017,3 +11017,169 @@ button, input, select, textarea, optgroup {
 @media (max-width: 900px) {
   .charts-grid--full .chart-container { height: 240px !important; flex: 0 0 240px !important; }
 }
+
+/* ==========================================================================
+   PROSPECCION CANAL MAYORISTA
+   Lo unico que no puede ir en estilos en linea: media queries, :hover y los
+   pseudo-elementos de la barra apilada. El resto del modulo sigue la misma
+   convencion en linea que las demas vistas.
+   ========================================================================== */
+
+/* Las dos rejillas de graficos se parten en una sola columna antes de que la
+   proporcion 5fr/7fr obligue a hacer scroll horizontal. */
+@media (max-width: 1080px) {
+  .prosp-grid-2 { grid-template-columns: 1fr !important; }
+}
+
+/* --- Cinta geografica -------------------------------------------------- */
+.prosp-cinta__fila {
+  display: grid;
+  grid-template-columns: 92px 1fr 62px;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 6px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.prosp-cinta__fila:hover { background: rgba(255, 196, 107, 0.09); }
+
+.prosp-cinta__fila.is-activa {
+  background: rgba(255, 196, 107, 0.16);
+  box-shadow: inset 2px 0 0 var(--ax-accent-gold);
+}
+
+.prosp-cinta__nombre {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--ax-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.prosp-cinta__fila.is-activa .prosp-cinta__nombre { color: var(--ax-accent-gold); }
+
+/* Dos barras superpuestas: la del anio pasado atras y tenue, la de este anio
+   delante. Se lee de un vistazo si la region crecio o se encogio sin tener que
+   comparar dos numeros. */
+.prosp-cinta__pista {
+  position: relative;
+  height: 18px;
+  border-radius: 5px;
+  background: rgba(148, 163, 184, 0.10);
+  overflow: hidden;
+}
+
+.prosp-cinta__prev,
+.prosp-cinta__act {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  border-radius: 5px;
+}
+
+.prosp-cinta__prev { background: rgba(148, 163, 184, 0.34); }
+
+.prosp-cinta__act { height: 10px; top: 4px; }
+
+.prosp-cinta__delta {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* --- Chips de segmento -------------------------------------------------- */
+.prosp-segmentos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.prosp-seg {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 118px;
+  padding: 7px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: var(--surf-3);
+  cursor: pointer;
+  transition: transform 0.12s ease, border-color 0.15s ease;
+  text-align: left;
+  font: inherit;
+}
+
+.prosp-seg:hover { transform: translateY(-1px); }
+
+.prosp-seg.is-activo { border-width: 2px; padding: 6px 11px; }
+
+.prosp-seg__top {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.prosp-seg__n { font-size: 1.05rem; font-weight: 900; line-height: 1; }
+
+.prosp-seg__et {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--ax-text-secondary);
+}
+
+.prosp-seg__plata {
+  font-size: 0.7rem;
+  color: var(--ax-text-tertiary);
+  font-weight: 600;
+}
+
+/* La barrita bajo cada chip es la proporcion de cartera, no de clientes: diez
+   clientes dormidos chicos y uno grande no pesan lo mismo en la decision. */
+.prosp-seg__barra {
+  height: 3px;
+  border-radius: 2px;
+  margin-top: 3px;
+}
+
+/* --- Barra inline en las celdas de variacion ---------------------------- */
+.prosp-var {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.prosp-var__pista {
+  position: relative;
+  width: 46px;
+  height: 14px;
+  flex: 0 0 46px;
+}
+
+/* El cero va al centro para que lo que cae salga a la izquierda y lo que crece
+   a la derecha, sin tener que leer el signo. */
+.prosp-var__cero {
+  position: absolute;
+  left: 50%;
+  top: 1px;
+  bottom: 1px;
+  width: 1px;
+  background: rgba(148, 163, 184, 0.35);
+}
+
+.prosp-var__barra {
+  position: absolute;
+  top: 3px;
+  height: 8px;
+  border-radius: 2px;
+}
+
+@media (max-width: 640px) {
+  .prosp-cinta__fila { grid-template-columns: 78px 1fr 54px; gap: 7px; }
+  .prosp-var__pista { display: none; }
+}

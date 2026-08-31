@@ -12531,6 +12531,13 @@ function prospCalcular() {
         ytd: 0, ytdPrev: 0, anioPrevFull: 0, mtd: 0, mtdPrev: 0, mesPrevFull: 0,
         cerradoAct: 0, cerradoPrev: 0, restoPrev: 0,
         utilidadYtd: 0, ytdImputado: 0,
+        /* Series para los graficos: doce meses de cada anio, y el detalle dia
+           a dia del mes de referencia por anio, que es lo que dibuja la curva
+           intramensual. Se llenan en la misma pasada que los agregados para no
+           recorrer 88.000 filas una segunda vez. */
+        mesAct: new Array(12).fill(0),
+        mesPrev: new Array(12).fill(0),
+        diaMes: new Map(),
         mesesPrev: new Set(),
         clientesAct: new Set(), clientesPrev: new Set(),
         skus: new Map(), comunas: new Map(), clientes: []
@@ -12571,19 +12578,30 @@ function prospCalcular() {
       if (enYtd) { R.ytdImputado += neto; netoImputadoYtd += neto; }
     }
 
+    const mNum = parseInt(f.slice(5, 7), 10);
+    const yNum = parseInt(y, 10);
+
     if (enYtd)     { R.ytd += neto; R.utilidadYtd += util; }
     if (enYtdPrev) { R.ytdPrev += neto; }
-    if (y === String(anioPrev)) {
+    if (yNum === anioPrev) {
       R.anioPrevFull += neto;
       R.mesesPrev.add(ym);
-      const mNum = parseInt(f.slice(5, 7), 10);
       if (mNum < mes) R.cerradoPrev += neto;
       if (mNum > mes) R.restoPrev += neto;
+      if (mNum >= 1 && mNum <= 12) R.mesPrev[mNum - 1] += neto;
     }
-    if (y === String(anio)) {
-      const mNum = parseInt(f.slice(5, 7), 10);
+    if (yNum === anio) {
       if (mNum < mes) R.cerradoAct += neto;
+      if (mNum >= 1 && mNum <= 12) R.mesAct[mNum - 1] += neto;
     }
+    /* Solo el mes de referencia y solo desde tres anios atras: es el unico
+       tramo que la curva intramensual necesita. */
+    if (mNum === mes && yNum >= anio - 3 && yNum <= anio) {
+      if (!R.diaMes.has(yNum)) R.diaMes.set(yNum, new Array(32).fill(0));
+      const dNum = parseInt(f.slice(8, 10), 10);
+      if (dNum >= 1 && dNum <= 31) R.diaMes.get(yNum)[dNum] += neto;
+    }
+
     if (enMtd)     R.mtd += neto;
     if (enMesPrev) {
       R.mesPrevFull += neto;
@@ -12755,6 +12773,36 @@ function prospCalcular() {
     R.deltaAnio   = R.anioPrevFull > 0 ? ((R.proyAnio / R.anioPrevFull) - 1) * 100 : null;
     R.deltaClientes = R.clientesAct.size - R.clientesPrev.size;
 
+    /* Serie de doce meses para el grafico: los meses cerrados son la venta
+       real, el mes en curso es su proyeccion y los que faltan son el mismo mes
+       del anio pasado corregido por el factor. Es exactamente la misma
+       aritmetica que produce proyAnio, dibujada mes a mes: si el grafico y el
+       KPI no cuadraran seria porque uno de los dos miente. */
+    R.mesProy = R.mesAct.slice();
+    R.mesEsProyectado = new Array(12).fill(false);
+    for (let m = 0; m < 12; m++) {
+      if (m + 1 < mes) continue;
+      /* El mes en curso solo cuenta como proyectado mientras no este cerrado.
+         El dia 31 de agosto, agosto ya es un hecho y pintarlo como estimacion
+         seria sembrar una duda que no existe. */
+      if (m + 1 === mes && mesCerrado) continue;
+      R.mesEsProyectado[m] = true;
+      R.mesProy[m] = (m + 1 === mes) ? R.proyMes : R.mesPrev[m] * factor;
+    }
+
+    /* Acumulado dia a dia del mes de referencia, por anio. El grafico compara
+       como va este anio contra los anteriores a la misma altura del mes. */
+    R.curva = [];
+    for (let a = anio - 3; a <= anio; a++) {
+      const dias = R.diaMes.get(a);
+      if (!dias) continue;
+      const acum = new Array(32).fill(0);
+      let t = 0;
+      for (let d = 1; d <= 31; d++) { t += dias[d]; acum[d] = t; }
+      if (t <= 0) continue;
+      R.curva.push({ anio: a, acum, total: t, esActual: a === anio });
+    }
+
     const nMeses = R.mesesPrev.size;
     R.confianza = (nMeses >= 10 && R.anioPrevFull > 0) ? 'Alta'
                 : (nMeses >= 5) ? 'Media' : 'Baja';
@@ -12766,17 +12814,40 @@ function prospCalcular() {
 
   /* --- Totales del canal -------------------------------------------------- */
   const T = {
+    clave: 'ALL', nombre: 'todo el canal',
     ytd: 0, ytdPrev: 0, anioPrevFull: 0, mtd: 0, mesPrevFull: 0, ytdImputado: 0,
     proyMes: 0, proyMesMin: 0, proyMesMax: 0, proyAnio: 0,
+    mesAct: new Array(12).fill(0), mesPrev: new Array(12).fill(0), mesProy: new Array(12).fill(0),
+    mesEsProyectado: new Array(12).fill(false),
     clientesAct: new Set(), clientesPrev: new Set()
   };
+  const curvaTotal = new Map();
   listaRegiones.forEach(R => {
     T.ytd += R.ytd; T.ytdPrev += R.ytdPrev; T.anioPrevFull += R.anioPrevFull;
     T.mtd += R.mtd; T.mesPrevFull += R.mesPrevFull; T.ytdImputado += R.ytdImputado;
     T.proyMes += R.proyMes; T.proyAnio += R.proyAnio;
     T.proyMesMin += R.proyMesMin; T.proyMesMax += R.proyMesMax;
+    for (let m = 0; m < 12; m++) {
+      T.mesAct[m] += R.mesAct[m];
+      T.mesPrev[m] += R.mesPrev[m];
+      T.mesProy[m] += R.mesProy[m];
+      if (R.mesEsProyectado[m]) T.mesEsProyectado[m] = true;
+    }
+    R.diaMes.forEach((dias, a) => {
+      if (!curvaTotal.has(a)) curvaTotal.set(a, new Array(32).fill(0));
+      const acc = curvaTotal.get(a);
+      for (let d = 1; d <= 31; d++) acc[d] += dias[d];
+    });
     R.clientesAct.forEach(c => T.clientesAct.add(c));
     R.clientesPrev.forEach(c => T.clientesPrev.add(c));
+  });
+  T.curva = [];
+  Array.from(curvaTotal.keys()).sort((a, b) => a - b).forEach(a => {
+    const dias = curvaTotal.get(a);
+    const acum = new Array(32).fill(0);
+    let t = 0;
+    for (let d = 1; d <= 31; d++) { t += dias[d]; acum[d] = t; }
+    if (t > 0) T.curva.push({ anio: a, acum, total: t, esActual: a === anio });
   });
   T.deltaYtd  = T.ytdPrev > 0 ? ((T.ytd / T.ytdPrev) - 1) * 100 : null;
   T.deltaMes  = T.mesPrevFull > 0 ? ((T.proyMes / T.mesPrevFull) - 1) * 100 : null;
@@ -12948,6 +13019,29 @@ function prospPct(v, invertir) {
   return '<span style="color: ' + color + '; font-weight: 800;">' + signo + v.toFixed(1) + '%</span>';
 }
 
+/**
+ * Variacion con una barra divergente al lado. Doce columnas de porcentajes se
+ * leen una por una; con la barra el patron de la tabla entera se ve de golpe.
+ * La escala se satura a +/-100% a proposito: un +1200% de una region de tres
+ * clientes aplastaria contra cero a todas las demas, y ese caso ya se cuenta
+ * en el numero.
+ */
+function prospPctBarra(v) {
+  const texto = prospPct(v);
+  if (v === null || v === undefined || !isFinite(v)) {
+    return '<span class="prosp-var">' + texto + '</span>';
+  }
+  const tope = Math.min(100, Math.abs(v));
+  const ancho = (tope / 100) * 50;   // 50% de la pista = media anchura
+  const color = prospColorVar(v);
+  const lado = v >= 0
+    ? 'left:50%; width:' + ancho.toFixed(1) + '%;'
+    : 'right:50%; width:' + ancho.toFixed(1) + '%;';
+  return '<span class="prosp-var">' + texto +
+    '<span class="prosp-var__pista"><span class="prosp-var__cero"></span>' +
+    '<span class="prosp-var__barra" style="' + lado + 'background:' + color + ';"></span></span></span>';
+}
+
 function prospPlata(v) {
   return typeof formatCLP === 'function' ? formatCLP(v) : '$' + Math.round(prospNum(v)).toLocaleString('es-CL');
 }
@@ -13004,7 +13098,12 @@ function renderProspeccionView() {
 
   prospPintarEncabezado(M);
   prospPintarKpis(M);
+  prospPintarCinta(M);
+  prospPintarEvolucion(M);
+  prospPintarCurva(M);
+  prospPintarRadar(M);
   prospPintarRegiones(M);
+  prospPintarSegmentos(M);
   prospPintarRuta(M);
   prospPintarCartera(M);
   prospPintarMetodologia(M);
@@ -13142,13 +13241,13 @@ function prospPintarRegiones(M) {
         (R.deltaClientes > 0 ? '+' : '') + R.deltaClientes + '</td>' +
       '<td style="text-align:right;font-weight:800;color:var(--ax-accent-sky);">' + prospPlata(R.ytd) + '</td>' +
       '<td style="text-align:right;">' + prospPlata(R.ytdPrev) + '</td>' +
-      '<td style="text-align:right;">' + prospPct(R.deltaYtd) + '</td>' +
+      '<td style="text-align:right;">' + prospPctBarra(R.deltaYtd) + '</td>' +
       '<td style="text-align:right;">' + prospPlata(R.mtd) + '</td>' +
       '<td style="text-align:right;font-weight:700;color:var(--ax-accent-gold);">' + prospPlata(R.proyMes) + '</td>' +
       '<td style="text-align:right;">' + prospPct(R.deltaMes) + '</td>' +
       '<td style="text-align:right;font-weight:800;color:var(--ax-accent-purple);">' + prospPlata(R.proyAnio) + '</td>' +
       '<td style="text-align:right;">' + prospPlata(R.anioPrevFull) + '</td>' +
-      '<td style="text-align:right;">' + prospPct(R.deltaAnio) + '</td>' +
+      '<td style="text-align:right;">' + prospPctBarra(R.deltaAnio) + '</td>' +
       '<td style="text-align:center;"><span style="font-size:0.72rem;font-weight:800;color:' + (conf[R.confianza] || '#94A3B8') + ';">' +
         R.confianza + '</span></td>' +
       '</tr>';
@@ -13403,6 +13502,471 @@ function prospPintarMetodologia(M) {
 }
 
 /* -------------------------------------------------------------------------
+   Bloques visuales
+   -------------------------------------------------------------------------
+   Cuatro piezas que responden de un vistazo lo que las tablas responden
+   leyendo: donde crece y donde cae (cinta), como viene el ano y a cuanto
+   cierra (evolucion), por que la proyeccion del mes dice lo que dice (curva)
+   y donde esta la plata que se esta yendo (radar).
+
+   Los tres graficos se destruyen y se rehacen en cada pintada. Reutilizar la
+   instancia y solo cambiar los datos seria mas rapido, pero aqui cambian
+   tambien el tipo de escala y la cantidad de series al elegir region, y una
+   instancia reciclada arrastra ejes de la configuracion anterior.
+   ------------------------------------------------------------------------- */
+
+let prospChartEvol = null;
+let prospChartCurva = null;
+let prospChartCartera = null;
+
+/**
+ * Trama diagonal para las barras proyectadas. Un color distinto no basta:
+ * al lado de once barras solidas la duodecima parece una barra mas, y la
+ * diferencia entre "esto se facturo" y "esto es una estimacion" es justo la
+ * que no se puede perder. Las rayas se leen como provisional a primera vista.
+ */
+function prospTramaProyeccion(ctx2d, color) {
+  const lienzo = document.createElement('canvas');
+  lienzo.width = 8;
+  lienzo.height = 8;
+  const p = lienzo.getContext('2d');
+  if (!p) return color;
+  p.fillStyle = 'rgba(255, 196, 107, 0.20)';
+  p.fillRect(0, 0, 8, 8);
+  p.strokeStyle = color;
+  p.lineWidth = 2.2;
+  /* Dos trazos desplazados para que la diagonal siga siendo continua al
+     repetirse el mosaico. */
+  p.beginPath();
+  p.moveTo(-2, 10); p.lineTo(10, -2);
+  p.moveTo(2, 14); p.lineTo(14, 2);
+  p.stroke();
+  return ctx2d.createPattern(lienzo, 'repeat') || color;
+}
+
+/** Color divergente segun la variacion: rojo cae, gris plano, verde crece. */
+function prospColorVar(pct) {
+  if (pct === null || pct === undefined || !isFinite(pct)) return '#5A6488';
+  if (pct >= 25) return '#3DDC97';
+  if (pct >= 5)  return '#7FD8A8';
+  if (pct > -5)  return '#8B95B9';
+  if (pct > -25) return '#FFAE7B';
+  return '#F87171';
+}
+
+/* --- 1. Cinta geografica ------------------------------------------------- */
+
+function prospPintarCinta(M) {
+  const cont = document.getElementById('prospCinta');
+  if (!cont) return;
+
+  /* Orden geografico, no por tamano: la gracia de esta pieza es que se lee
+     como el mapa del pais. La RM sale la primera en plata pero va en su
+     lugar entre Valparaiso y O'Higgins.
+
+     "Sin region asignada" se saca de la secuencia y se pinta aparte, despues
+     del rotulo SUR: no es un lugar, y colgarlo debajo de Magallanes sugiere
+     que queda en el extremo austral del pais. */
+  const todas = M.regiones.slice().sort((a, b) => a.orden - b.orden || a.nombre.localeCompare(b.nombre));
+  const lista = todas.filter(R => !R.sinDato);
+  const sueltas = todas.filter(R => R.sinDato);
+  if (!todas.length) { cont.innerHTML = ''; return; }
+
+  let tope = 0;
+  todas.forEach(R => { tope = Math.max(tope, R.ytd, R.ytdPrev); });
+  if (tope <= 0) tope = 1;
+
+  const pintar = (R) => {
+    const activa = R.clave === prospRegionSel;
+    const anchoAct = Math.max(R.ytd > 0 ? 1.5 : 0, (R.ytd / tope) * 100);
+    const anchoPrev = Math.max(R.ytdPrev > 0 ? 1.5 : 0, (R.ytdPrev / tope) * 100);
+    const color = prospColorVar(R.deltaYtd);
+    const texto = R.deltaYtd === null ? 's/d'
+      : (R.deltaYtd > 0 ? '+' : '') + R.deltaYtd.toFixed(0) + '%';
+
+    return '<div class="prosp-cinta__fila' + (activa ? ' is-activa' : '') +
+      '" data-region="' + escapeHtml(R.clave) + '" role="button" tabindex="0" ' +
+      'title="' + escapeHtml(R.nombre + ': ' + prospPlata(R.ytd) + ' este anio contra ' +
+        prospPlata(R.ytdPrev) + ' el pasado. ' + R.clientesAct.size + ' clientes activos.') + '">' +
+      '<span class="prosp-cinta__nombre">' + escapeHtml(R.nombre) + '</span>' +
+      '<span class="prosp-cinta__pista">' +
+        '<span class="prosp-cinta__prev" style="width:' + anchoPrev.toFixed(2) + '%"></span>' +
+        '<span class="prosp-cinta__act" style="width:' + anchoAct.toFixed(2) + '%; background:' + color + ';"></span>' +
+      '</span>' +
+      '<span class="prosp-cinta__delta" style="color:' + color + '">' + texto + '</span>' +
+      '</div>';
+  };
+
+  cont.innerHTML =
+    '<div style="display:flex;justify-content:space-between;font-size:0.68rem;font-weight:800;' +
+    'color:var(--ax-text-tertiary);letter-spacing:0.6px;margin-bottom:6px;padding:0 6px;">' +
+    '<span>NORTE</span><span>' + escapeHtml(M.anio + ' vs ' + M.anioPrev) + '</span></div>' +
+    lista.map(pintar).join('') +
+    '<div style="font-size:0.68rem;font-weight:800;color:var(--ax-text-tertiary);' +
+    'letter-spacing:0.6px;margin-top:6px;padding:0 6px;">SUR</div>' +
+    (sueltas.length
+      ? '<div style="margin-top:10px;padding-top:9px;border-top:1px dashed rgba(148,163,184,0.28);">' +
+        sueltas.map(pintar).join('') +
+        '<p style="font-size:0.68rem;color:var(--ax-text-tertiary);margin:4px 6px 0 6px;">' +
+        'Sin direcci&oacute;n en la planilla: no entra en ninguna ruta.</p></div>'
+      : '');
+
+  const activar = (el) => {
+    const clave = el.dataset.region;
+    prospRegionSel = (prospRegionSel === clave) ? 'ALL' : clave;
+    renderProspeccionView();
+  };
+  cont.querySelectorAll('.prosp-cinta__fila').forEach(el => {
+    el.addEventListener('click', () => activar(el));
+    el.addEventListener('keydown', ev => {
+      if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); activar(el); }
+    });
+  });
+}
+
+/* --- 2. Evolucion mes a mes ---------------------------------------------- */
+
+function prospPintarEvolucion(M) {
+  const lienzo = document.getElementById('prospChartEvolucion');
+  if (!lienzo || typeof Chart === 'undefined') return;
+
+  const D = prospRegionActual(M) || M.totales;
+  const titulo = document.getElementById('prospEvolTitulo');
+  if (titulo) {
+    titulo.textContent = 'Mes a mes: ' + M.anio + ' contra ' + M.anioPrev +
+      (D.clave === 'ALL' ? '' : ' · ' + D.nombre);
+  }
+
+  const col = (typeof themeChartColors === 'function') ? themeChartColors()
+    : { tick: '#94a3b8', leyenda: '#cbd5e1', rejilla: 'rgba(255,255,255,0.06)' };
+  const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+  /* Dos series apiladas. En el mes en curso la parte solida es lo ya
+     facturado y la rayada SOLO el incremento que falta hasta el cierre
+     estimado: al apilarse suman la proyeccion. Poner el total proyectado en
+     la serie rayada duplicaria el mes en curso, que quedaria como la barra
+     mas alta del ano por un error de dibujo. En los meses futuros no hay
+     nada facturado, asi que la solida va vacia. */
+  const real = D.mesAct.map((v, m) => (D.mesEsProyectado[m] && m + 1 !== M.mes) ? null : v);
+  const proy = D.mesProy.map((v, m) => {
+    if (!D.mesEsProyectado[m]) return null;
+    return (m + 1 === M.mes) ? Math.max(0, v - D.mesAct[m]) : v;
+  });
+
+  if (prospChartEvol) { try { prospChartEvol.destroy(); } catch (e) {} prospChartEvol = null; }
+
+  const ctx2d = lienzo.getContext('2d');
+  const trama = prospTramaProyeccion(ctx2d, 'rgba(255, 196, 107, 0.85)');
+
+  prospChartEvol = new Chart(ctx2d, {
+    data: {
+      labels: MESES,
+      datasets: [
+        { type: 'bar', label: 'Facturado ' + M.anio, data: real,
+          backgroundColor: 'rgba(77, 159, 236, 0.85)', borderRadius: 4, order: 2 },
+        { type: 'bar', label: 'Proyectado', data: proy,
+          backgroundColor: trama,
+          borderColor: 'rgba(255, 196, 107, 0.95)', borderWidth: 1.5, borderRadius: 4,
+          order: 3 },
+        { type: 'line', label: M.anioPrev, data: D.mesPrev,
+          borderColor: '#8B95B9', borderWidth: 2, pointRadius: 2.5, pointBackgroundColor: '#8B95B9',
+          tension: 0.25, fill: false, order: 1 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { position: 'top', labels: { color: col.leyenda, boxWidth: 12, font: { size: 11 } } },
+        tooltip: {
+          callbacks: {
+            label: (it) => it.parsed.y === null ? null : it.dataset.label + ': ' + formatCLP(it.parsed.y),
+            afterBody: (items) => {
+              const m = items[0].dataIndex;
+              const act = D.mesEsProyectado[m] ? D.mesProy[m] : D.mesAct[m];
+              const prev = D.mesPrev[m];
+              if (!(prev > 0)) return '';
+              const v = ((act / prev) - 1) * 100;
+              return (v >= 0 ? '+' : '') + v.toFixed(1) + '% contra ' + M.anioPrev;
+            }
+          }
+        }
+      },
+      scales: {
+        x: { stacked: true, ticks: { color: col.tick, font: { size: 11 } }, grid: { display: false } },
+        y: {
+          stacked: true, beginAtZero: true,
+          ticks: { color: col.tick, font: { size: 11 }, callback: (v) => mpCorto(v) },
+          grid: { color: col.rejilla }
+        }
+      }
+    }
+  });
+}
+
+/* --- 3. Curva intramensual ----------------------------------------------- */
+
+function prospPintarCurva(M) {
+  const lienzo = document.getElementById('prospChartCurva');
+  if (!lienzo || typeof Chart === 'undefined') return;
+
+  const D = prospRegionActual(M) || M.totales;
+  const titulo = document.getElementById('prospCurvaTitulo');
+  if (titulo) titulo.textContent = 'Cómo se llena ' + M.mesNombre;
+  const nota = document.getElementById('prospCurvaNota');
+  if (nota) {
+    nota.textContent = M.mesCerrado
+      ? 'El mes ya está completo. Se muestra cómo se acumuló frente a años anteriores.'
+      : 'Acumulado día a día. La línea punteada es lo que falta para el cierre proyectado.';
+  }
+
+  const col = (typeof themeChartColors === 'function') ? themeChartColors()
+    : { tick: '#94a3b8', leyenda: '#cbd5e1', rejilla: 'rgba(255,255,255,0.06)' };
+
+  const etiquetas = [];
+  for (let d = 1; d <= M.diasMes; d++) etiquetas.push(String(d));
+
+  const tonosPrevios = ['#5A6488', '#7C86AA', '#A78BFA'];
+  const series = [];
+  let i = 0;
+  (D.curva || []).filter(c => !c.esActual).forEach(c => {
+    series.push({
+      label: String(c.anio),
+      data: etiquetas.map((_, k) => c.acum[k + 1]),
+      borderColor: tonosPrevios[i % tonosPrevios.length],
+      borderWidth: 1.6, pointRadius: 0, tension: 0.2, fill: false
+    });
+    i++;
+  });
+
+  const actual = (D.curva || []).find(c => c.esActual);
+  if (actual) {
+    /* Se corta en el dia de referencia: mas alla no hay dato, y prolongar la
+       linea solida hasta fin de mes daria a entender que ya se factura. */
+    series.push({
+      label: String(M.anio),
+      data: etiquetas.map((_, k) => (k + 1) <= M.dia ? actual.acum[k + 1] : null),
+      borderColor: '#4D9FEC', borderWidth: 3, pointRadius: 0, tension: 0.2, fill: false
+    });
+
+    if (!M.mesCerrado) {
+      /* Tramo punteado desde donde va hasta el cierre proyectado. Arranca en el
+         mismo punto que la linea solida para que no aparezca un salto. */
+      const puente = etiquetas.map((_, k) => {
+        const d = k + 1;
+        if (d < M.dia) return null;
+        if (d === M.dia) return actual.acum[d];
+        if (d === M.diasMes) return D.proyMes;
+        const t = (d - M.dia) / Math.max(1, M.diasMes - M.dia);
+        return actual.acum[M.dia] + (D.proyMes - actual.acum[M.dia]) * t;
+      });
+      series.push({
+        label: 'Proyección', data: puente,
+        borderColor: '#FFC46B', borderWidth: 2.2, borderDash: [5, 4],
+        pointRadius: 0, tension: 0, fill: false
+      });
+    }
+  }
+
+  if (prospChartCurva) { try { prospChartCurva.destroy(); } catch (e) {} prospChartCurva = null; }
+
+  if (!series.length) {
+    lienzo.getContext('2d').clearRect(0, 0, lienzo.width, lienzo.height);
+    return;
+  }
+
+  prospChartCurva = new Chart(lienzo.getContext('2d'), {
+    type: 'line',
+    data: { labels: etiquetas, datasets: series },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { position: 'top', labels: { color: col.leyenda, boxWidth: 12, font: { size: 11 } } },
+        tooltip: {
+          callbacks: {
+            title: (items) => 'Día ' + items[0].label + ' de ' + M.mesNombre,
+            label: (it) => it.parsed.y === null ? null : it.dataset.label + ': ' + formatCLP(it.parsed.y)
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: col.tick, font: { size: 10 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 11 },
+          grid: { display: false }
+        },
+        y: {
+          beginAtZero: true,
+          ticks: { color: col.tick, font: { size: 11 }, callback: (v) => mpCorto(v) },
+          grid: { color: col.rejilla }
+        }
+      }
+    }
+  });
+}
+
+/* --- 4. Radar de cartera -------------------------------------------------- */
+
+function prospPintarRadar(M) {
+  const lienzo = document.getElementById('prospChartCartera');
+  if (!lienzo || typeof Chart === 'undefined') return;
+
+  const R = prospRegionActual(M);
+  const base = R ? R.clientes : M.clientes;
+  const nota = document.getElementById('prospRadarNota');
+
+  /* Un punto por cliente, agrupado en una serie por segmento para que la
+     leyenda sirva de filtro visual. El eje Y es logaritmico porque la cartera
+     va de cincuenta mil a quince millones: en escala lineal el 90% de los
+     clientes queda aplastado contra el cero. */
+  const porSeg = new Map();
+  base.forEach(C => {
+    if (C.tamano <= 0) return;
+    if (!porSeg.has(C.segmento)) porSeg.set(C.segmento, []);
+    porSeg.get(C.segmento).push({
+      x: Math.min(C.diasSin === null ? 720 : C.diasSin, 720),
+      y: Math.max(1000, C.tamano),
+      r: 4 + (C.score / 100) * 9,
+      cli: C
+    });
+  });
+
+  const series = Object.keys(PROSP_SEGMENTOS)
+    .filter(k => porSeg.has(k))
+    .map(k => ({
+      label: PROSP_SEGMENTOS[k].etiqueta + ' (' + porSeg.get(k).length + ')',
+      data: porSeg.get(k),
+      backgroundColor: PROSP_SEGMENTOS[k].color + '99',
+      borderColor: PROSP_SEGMENTOS[k].color,
+      borderWidth: 1
+    }));
+
+  if (nota) {
+    /* Se dice cuantos quedan fuera y por que. Sin esa frase el grafico marca
+       199 clientes, el chip de al lado marca 290, y parece que uno de los dos
+       esta mal contando. */
+    const dibujados = base.filter(C => C.tamano > 0).length;
+    const fuera = base.length - dibujados;
+    nota.textContent = dibujados + ' clientes' + (R ? ' de ' + R.nombre : ' del canal') +
+      '. Mientras más a la derecha, más tiempo sin comprar; mientras más arriba, más vale la cuenta. ' +
+      'Clic para buscarlo abajo.' +
+      (fuera > 0 ? ' Quedan fuera ' + fuera + ' sin compras en ' + M.anioPrev + ' ni en los últimos 12 meses.' : '');
+  }
+
+  if (prospChartCartera) { try { prospChartCartera.destroy(); } catch (e) {} prospChartCartera = null; }
+  if (!series.length) {
+    lienzo.getContext('2d').clearRect(0, 0, lienzo.width, lienzo.height);
+    return;
+  }
+
+  const col = (typeof themeChartColors === 'function') ? themeChartColors()
+    : { tick: '#94a3b8', leyenda: '#cbd5e1', rejilla: 'rgba(255,255,255,0.06)' };
+
+  prospChartCartera = new Chart(lienzo.getContext('2d'), {
+    type: 'bubble',
+    data: { datasets: series },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top', labels: { color: col.leyenda, boxWidth: 10, font: { size: 10 }, padding: 8 } },
+        tooltip: {
+          callbacks: {
+            label: (it) => {
+              const C = it.raw.cli;
+              return [
+                C.nombre,
+                C.comuna + ' · prioridad ' + C.score,
+                'Cartera: ' + formatCLP(C.tamano),
+                (C.diasSin === null ? 'sin compras' : C.diasSin + ' días sin comprar')
+              ];
+            }
+          }
+        }
+      },
+      onClick: (ev, elementos) => {
+        if (!elementos || !elementos.length) return;
+        const punto = series[elementos[0].datasetIndex].data[elementos[0].index];
+        if (!punto || !punto.cli) return;
+        prospBusqueda = punto.cli.nombre;
+        const caja = document.getElementById('prospBuscar');
+        if (caja) caja.value = punto.cli.nombre;
+        prospPintarCartera(M);
+        const tabla = document.getElementById('prospCarteraBody');
+        if (tabla) tabla.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      },
+      scales: {
+        x: {
+          title: { display: true, text: 'Días sin comprar', color: col.tick, font: { size: 10 } },
+          beginAtZero: true, max: 760,
+          ticks: { color: col.tick, font: { size: 10 }, stepSize: 120 },
+          grid: { color: col.rejilla }
+        },
+        y: {
+          type: 'logarithmic',
+          title: { display: true, text: 'Cartera del cliente', color: col.tick, font: { size: 10 } },
+          ticks: { color: col.tick, font: { size: 10 }, callback: (v) => mpCorto(v) },
+          grid: { color: col.rejilla }
+        }
+      }
+    }
+  });
+}
+
+/* --- 5. Segmentos como barra clicable ------------------------------------ */
+
+function prospPintarSegmentos(M) {
+  const cont = document.getElementById('prospSegmentos');
+  if (!cont) return;
+
+  const R = prospRegionActual(M);
+  const base = R ? R.clientes : M.clientes;
+
+  const cuenta = {};
+  let plataTotal = 0;
+  base.forEach(C => {
+    if (!cuenta[C.segmento]) cuenta[C.segmento] = { n: 0, plata: 0 };
+    cuenta[C.segmento].n++;
+    cuenta[C.segmento].plata += Math.max(0, C.tamano);
+    plataTotal += Math.max(0, C.tamano);
+  });
+
+  const chip = (clave, etiqueta, color, n, plata) => {
+    const activo = prospSegmentoSel === clave;
+    const prop = plataTotal > 0 ? (plata / plataTotal) * 100 : 0;
+    return '<button type="button" class="prosp-seg' + (activo ? ' is-activo' : '') +
+      '" data-seg="' + escapeHtml(clave) + '" style="border-color:' + color + (activo ? '' : '44') + ';' +
+      (activo ? 'background:' + color + '1F;' : '') + '" ' +
+      'title="' + escapeHtml((PROSP_SEGMENTOS[clave] ? PROSP_SEGMENTOS[clave].ayuda : 'Toda la cartera') +
+        '. ' + prospPlata(plata) + ' en cartera.') + '">' +
+      '<span class="prosp-seg__top">' +
+        '<span class="prosp-seg__n" style="color:' + color + '">' + n + '</span>' +
+        '<span class="prosp-seg__et">' + escapeHtml(etiqueta) + '</span>' +
+      '</span>' +
+      '<span class="prosp-seg__plata">' + prospPlata(plata) + '</span>' +
+      '<span class="prosp-seg__barra" style="background:' + color + '; width:' +
+        Math.max(3, prop).toFixed(1) + '%"></span>' +
+      '</button>';
+  };
+
+  const chips = [chip('ALL', 'Todos', 'var(--ax-accent)', base.length, plataTotal)];
+  Object.keys(PROSP_SEGMENTOS).forEach(k => {
+    const c = cuenta[k];
+    if (!c || !c.n) return;
+    chips.push(chip(k, PROSP_SEGMENTOS[k].etiqueta, PROSP_SEGMENTOS[k].color, c.n, c.plata));
+  });
+
+  cont.innerHTML = '<div class="prosp-segmentos">' + chips.join('') + '</div>';
+
+  cont.querySelectorAll('.prosp-seg').forEach(b => {
+    b.addEventListener('click', () => {
+      const s = b.dataset.seg;
+      prospSegmentoSel = (prospSegmentoSel === s) ? 'ALL' : s;
+      renderProspeccionView();
+    });
+  });
+}
+
+/* -------------------------------------------------------------------------
    Exportacion
    ------------------------------------------------------------------------- */
 
@@ -13544,10 +14108,9 @@ function setupProspeccionListeners() {
     renderProspeccionView();
   });
 
-  enlazar('prospSegmentoFiltro', 'change', e => {
-    prospSegmentoSel = e.target.value || 'ALL';
-    renderProspeccionView();
-  });
+  /* El filtro de segmento ya no es un <select>: son los chips de
+     #prospSegmentos, que se enlazan en prospPintarSegmentos porque se
+     regeneran en cada pintada. */
 
   const numerico = (id, min, max, asignar) => {
     enlazar(id, 'change', e => {

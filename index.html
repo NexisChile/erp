@@ -34,7 +34,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <!-- Stylesheets & Libraries -->
-  <link rel="stylesheet" href="style.css?v=20260831_PROSPECCION_V56" />
+  <link rel="stylesheet" href="style.css?v=20260831_PROSPECCION_V57" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -2256,6 +2256,58 @@
 
           <div id="prospAviso" style="display: none; margin-top: 1rem;"></div>
 
+          <!-- MAPA DE REGIONES + EVOLUCIÓN ANUAL -->
+          <div style="display: grid; grid-template-columns: minmax(300px, 5fr) minmax(340px, 7fr); gap: 1.5rem; margin-top: 1.5rem; align-items: stretch;" class="prosp-grid-2">
+            <div class="ax-card bi-compras-advisor-card">
+              <div class="advisor-results-header">
+                <div>
+                  <h3 class="results-title">Chile de norte a sur</h3>
+                  <p style="font-size: 0.8125rem; color: var(--ax-text-tertiary); margin: 4px 0 0 0;">Barra llena: venta de este a&ntilde;o. Barra tenue detr&aacute;s: mismo periodo del a&ntilde;o pasado. Clic para elegir la regi&oacute;n</p>
+                </div>
+              </div>
+              <div id="prospCinta" style="margin-top: 1.1rem;"></div>
+            </div>
+
+            <div class="ax-card bi-compras-advisor-card">
+              <div class="advisor-results-header">
+                <div>
+                  <h3 class="results-title" id="prospEvolTitulo">Mes a mes contra el a&ntilde;o anterior</h3>
+                  <p style="font-size: 0.8125rem; color: var(--ax-text-tertiary); margin: 4px 0 0 0;">Las barras rayadas son proyecci&oacute;n, no venta registrada</p>
+                </div>
+              </div>
+              <div style="position: relative; height: 300px; margin-top: 1rem;">
+                <canvas id="prospChartEvolucion"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- CURVA DEL MES + RADAR DE CARTERA -->
+          <div style="display: grid; grid-template-columns: minmax(300px, 5fr) minmax(340px, 7fr); gap: 1.5rem; margin-top: 1.5rem;" class="prosp-grid-2">
+            <div class="ax-card bi-compras-advisor-card">
+              <div class="advisor-results-header">
+                <div>
+                  <h3 class="results-title" id="prospCurvaTitulo">C&oacute;mo se llena el mes</h3>
+                  <p style="font-size: 0.8125rem; color: var(--ax-text-tertiary); margin: 4px 0 0 0;" id="prospCurvaNota">Acumulado d&iacute;a a d&iacute;a, este a&ntilde;o contra los anteriores</p>
+                </div>
+              </div>
+              <div style="position: relative; height: 280px; margin-top: 1rem;">
+                <canvas id="prospChartCurva"></canvas>
+              </div>
+            </div>
+
+            <div class="ax-card bi-compras-advisor-card">
+              <div class="advisor-results-header">
+                <div>
+                  <h3 class="results-title">Radar de cartera</h3>
+                  <p style="font-size: 0.8125rem; color: var(--ax-text-tertiary); margin: 4px 0 0 0;" id="prospRadarNota">Cada burbuja es un cliente. Arriba a la derecha est&aacute; la plata que se est&aacute; yendo. Clic para buscarlo</p>
+                </div>
+              </div>
+              <div style="position: relative; height: 280px; margin-top: 1rem;">
+                <canvas id="prospChartCartera"></canvas>
+              </div>
+            </div>
+          </div>
+
           <!-- TABLA POR REGIÓN -->
           <div class="ax-card bi-compras-advisor-card" style="margin-top: 1.5rem;">
             <div class="advisor-results-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
@@ -2308,16 +2360,14 @@
                 <label style="font-size: 0.75rem; font-weight: 700; color: var(--ax-text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Visitas/día
                   <input type="number" id="prospVisitasDia" class="filter-input" min="1" max="12" value="4" style="width: 64px; height: 34px; margin-left: 6px; font-weight: 700;" />
                 </label>
-                <select id="prospSegmentoFiltro" class="filter-select" style="height: 34px; font-size: 0.8125rem; font-weight: 700;">
-                  <option value="ALL">Todos los segmentos</option>
-                  <option value="FUGA">Solo en fuga</option>
-                  <option value="DORMIDO">Solo dormidos</option>
-                  <option value="RIESGO">Solo en riesgo</option>
-                  <option value="CAIDA">Solo en caída</option>
-                  <option value="CRECE">Solo en crecimiento</option>
-                </select>
               </div>
             </div>
+
+            <!-- SEGMENTOS COMO BARRA CLICABLE.
+                 Sustituye al <select> que habia aqui: ademas de filtrar, muestra
+                 cuantos clientes y cuanta plata hay en cada estado, que es el
+                 dato que decide que tipo de ruta conviene hacer. -->
+            <div id="prospSegmentos" style="margin-top: 1rem;"></div>
 
             <div id="prospRutaCuerpo" style="margin-top: 1.25rem;">
               <p style="text-align: center; color: var(--ax-text-tertiary); padding: 2rem;">Elige una región en el selector de arriba o en la tabla para ver la ruta propuesta.</p>
@@ -3165,7 +3215,7 @@
   </div>
 
   <!-- Scripts -->
-  <script src="config.js?v=20260831_PROSPECCION_V56"></script>
-  <script src="app.js?v=20260831_PROSPECCION_V56"></script>
+  <script src="config.js?v=20260831_PROSPECCION_V57"></script>
+  <script src="app.js?v=20260831_PROSPECCION_V57"></script>
 </body>
 </html>
