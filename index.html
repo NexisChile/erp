@@ -34,7 +34,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <!-- Stylesheets & Libraries -->
-  <link rel="stylesheet" href="style.css?v=20260826_REFRESCO_V55" />
+  <link rel="stylesheet" href="style.css?v=20260831_PROSPECCION_V56" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -411,6 +411,12 @@
           <svg class="ax-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M5 21V10l7-6 7 6v11"/><path d="M9 21v-6h6v6"/></svg>
           <span class="ax-nav__label">Mercado Público</span>
           <span class="ax-nav__badge ax-nav__badge--prod" style="background: rgba(167, 139, 250, 0.2); color: var(--ax-accent-purple); border: 1px solid rgba(167, 139, 250, 0.4);">Licit</span>
+        </button>
+
+        <button class="ax-nav__item" data-view="prospeccion">
+          <svg class="ax-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <span class="ax-nav__label">Prospecci&oacute;n Mayorista</span>
+          <span class="ax-nav__badge ax-nav__badge--hot" style="background: rgba(255, 196, 107, 0.2); color: var(--ax-accent-gold); border: 1px solid rgba(255, 196, 107, 0.4);">Ruta</span>
         </button>
 
         <p class="ax-sidebar__section">Seguridad & Sesión</p>
@@ -2178,6 +2184,189 @@
           </div>
         </div>
 
+        <!-- VISTA PROSPECCIÓN MAYORISTA -->
+        <div class="view" id="view-prospeccion">
+          <div class="dashboard-section-header" style="margin-top: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <div class="section-title-wrap">
+                <span class="section-badge-dot" style="background: #FFC46B; box-shadow: 0 0 12px rgba(255, 196, 107, 0.6);"></span>
+                <h2 class="dashboard-section-title">Prospección Canal Mayorista</h2>
+              </div>
+              <span class="section-subtitle" id="prospSubtitulo">Clientes por región, crecimiento interanual, proyecciones y ruta de visitas sugerida</span>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+              <div style="display: flex; align-items: center; gap: 0.6rem; background: var(--surf-3); padding: 6px 14px; border-radius: 12px; border: 1px solid rgba(255, 196, 107, 0.35);">
+                <label for="prospRegionSelect" style="font-size: 0.8125rem; font-weight: 700; color: var(--ax-text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Región:</label>
+                <select id="prospRegionSelect" class="filter-select" style="min-width: 210px; height: 38px; font-weight: 700; color: var(--ax-accent-gold); background: var(--surf-2); border: 1px solid rgba(255, 196, 107, 0.4); border-radius: 8px;">
+                  <option value="ALL">Todas las regiones</option>
+                </select>
+              </div>
+              <button type="button" class="btn-secondary btn-sm" id="prospExportar" title="Descarga el panel de regiones, la cartera y la ruta en un Excel de tres hojas">Exportar Excel</button>
+            </div>
+          </div>
+
+          <!-- KPIs DEL CANAL.
+               hero-cards-grid es de tres columnas fijas y aqui las tarjetas son
+               cuatro, asi que la ultima quedaba sola en una segunda fila con
+               medio ancho vacio. El auto-fit local pone las cuatro en linea
+               cuando hay espacio y las va plegando solo; no se toca la clase
+               compartida para no mover las otras vistas. El !important es
+               necesario: la hoja de estilos fija las tres columnas con esa
+               misma marca y sin ella la declaracion de aqui no gana. El
+               auto-fit se pliega solo a 2 y a 1 columna al angostarse, asi que
+               tampoco hace falta lo que anulan los media queries. -->
+          <div class="hero-cards-grid" style="margin-top: 1.25rem; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)) !important;">
+            <div class="ax-card hero-kpi-card" style="border-color: rgba(77, 159, 236, 0.3);">
+              <div class="today-header">
+                <span class="today-badge badge-purple">AÑO EN CURSO</span>
+                <span class="today-label" id="prospKpiYtdLabel">Venta mayorista acumulada</span>
+              </div>
+              <div class="today-value" id="prospKpiYtd" style="color: var(--ax-accent);">$0</div>
+              <div class="today-sub" id="prospKpiYtdSub">Comparado con el mismo periodo del año anterior</div>
+            </div>
+
+            <div class="ax-card hero-kpi-card" style="border-color: rgba(61, 220, 151, 0.3);">
+              <div class="today-header">
+                <span class="today-badge" style="background: rgba(61, 220, 151, 0.2); color: var(--ax-accent-emerald); border: 1px solid rgba(61, 220, 151, 0.4);">CARTERA</span>
+                <span class="today-label">Clientes mayoristas activos</span>
+              </div>
+              <div class="today-value" id="prospKpiClientes" style="color: var(--ax-accent-emerald);">0</div>
+              <div class="today-sub" id="prospKpiClientesSub">Con al menos una compra en el año</div>
+            </div>
+
+            <div class="ax-card hero-kpi-card" style="border-color: rgba(255, 196, 107, 0.3);">
+              <div class="today-header">
+                <span class="today-badge badge-gold">PROYECCIÓN</span>
+                <span class="today-label" id="prospKpiMesLabel">Cierre del mes en curso</span>
+              </div>
+              <div class="today-value" id="prospKpiMes" style="color: var(--ax-accent-gold);">$0</div>
+              <div class="today-sub" id="prospKpiMesSub">Estimado con la curva histórica del mes</div>
+            </div>
+
+            <div class="ax-card hero-kpi-card" style="border-color: rgba(167, 139, 250, 0.3);">
+              <div class="today-header">
+                <span class="today-badge badge-gold" style="background: rgba(167, 139, 250, 0.2); color: var(--ax-accent-purple); border: 1px solid rgba(167, 139, 250, 0.4);">PROYECCIÓN</span>
+                <span class="today-label" id="prospKpiAnioLabel">Cierre del año</span>
+              </div>
+              <div class="today-value" id="prospKpiAnio" style="color: var(--ax-accent-purple);">$0</div>
+              <div class="today-sub" id="prospKpiAnioSub">Estimado sobre el año anterior completo</div>
+            </div>
+          </div>
+
+          <div id="prospAviso" style="display: none; margin-top: 1rem;"></div>
+
+          <!-- TABLA POR REGIÓN -->
+          <div class="ax-card bi-compras-advisor-card" style="margin-top: 1.5rem;">
+            <div class="advisor-results-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+              <div>
+                <h3 class="results-title">Clientes y venta por región</h3>
+                <p style="font-size: 0.8125rem; color: var(--ax-text-tertiary); margin: 4px 0 0 0;" id="prospRegionesNota">Haz clic en una región para armar su ruta de visitas</p>
+              </div>
+              <span class="tag-pill" id="prospRegionesResumen" style="font-size: 0.75rem;">0 regiones</span>
+            </div>
+
+            <div style="overflow-x: auto; margin-top: 1.25rem;">
+              <table class="advisor-table" id="prospRegionesTabla">
+                <thead>
+                  <tr>
+                    <th style="text-align: left;">Región</th>
+                    <th style="text-align: right;" title="Clientes con al menos una compra en el año en curso">Clientes</th>
+                    <th style="text-align: right;" title="Variación de la cantidad de clientes activos frente al mismo periodo del año anterior">&Delta; Clientes</th>
+                    <th style="text-align: right;" id="prospThYtd">Venta año</th>
+                    <th style="text-align: right;" id="prospThYtdPrev">Mismo periodo año ant.</th>
+                    <th style="text-align: right;">&Delta;% acumulado</th>
+                    <th style="text-align: right;">Mes en curso</th>
+                    <th style="text-align: right;">Proy. mes</th>
+                    <th style="text-align: right;">&Delta;% mes</th>
+                    <th style="text-align: right;">Proy. cierre año</th>
+                    <th style="text-align: right;" id="prospThAnioPrev">Año anterior completo</th>
+                    <th style="text-align: right;">&Delta;% cierre</th>
+                    <th style="text-align: center;" title="Cuánta historia respalda la proyección de esta región">Confianza</th>
+                  </tr>
+                </thead>
+                <tbody id="prospRegionesBody">
+                  <tr><td colspan="13" style="text-align: center; color: var(--ax-text-tertiary); padding: 2rem;">Calculando prospección del canal mayorista&hellip;</td></tr>
+                </tbody>
+                <tfoot id="prospRegionesFoot"></tfoot>
+              </table>
+            </div>
+          </div>
+
+          <!-- RUTA DE VISITAS -->
+          <div class="ax-card bi-compras-advisor-card" style="margin-top: 1.5rem;">
+            <div class="advisor-results-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+              <div>
+                <h3 class="results-title">Ruta de visitas sugerida</h3>
+                <p style="font-size: 0.8125rem; color: var(--ax-text-tertiary); margin: 4px 0 0 0;" id="prospRutaNota">Selecciona una región para planificar la ruta</p>
+              </div>
+
+              <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                <label style="font-size: 0.75rem; font-weight: 700; color: var(--ax-text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Días
+                  <input type="number" id="prospDias" class="filter-input" min="1" max="10" value="3" style="width: 64px; height: 34px; margin-left: 6px; font-weight: 700;" />
+                </label>
+                <label style="font-size: 0.75rem; font-weight: 700; color: var(--ax-text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Visitas/día
+                  <input type="number" id="prospVisitasDia" class="filter-input" min="1" max="12" value="4" style="width: 64px; height: 34px; margin-left: 6px; font-weight: 700;" />
+                </label>
+                <select id="prospSegmentoFiltro" class="filter-select" style="height: 34px; font-size: 0.8125rem; font-weight: 700;">
+                  <option value="ALL">Todos los segmentos</option>
+                  <option value="FUGA">Solo en fuga</option>
+                  <option value="DORMIDO">Solo dormidos</option>
+                  <option value="RIESGO">Solo en riesgo</option>
+                  <option value="CAIDA">Solo en caída</option>
+                  <option value="CRECE">Solo en crecimiento</option>
+                </select>
+              </div>
+            </div>
+
+            <div id="prospRutaCuerpo" style="margin-top: 1.25rem;">
+              <p style="text-align: center; color: var(--ax-text-tertiary); padding: 2rem;">Elige una región en el selector de arriba o en la tabla para ver la ruta propuesta.</p>
+            </div>
+          </div>
+
+          <!-- CARTERA DE LA REGIÓN -->
+          <div class="ax-card bi-compras-advisor-card" style="margin-top: 1.5rem;">
+            <div class="advisor-results-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+              <div>
+                <h3 class="results-title">Cartera mayorista</h3>
+                <p style="font-size: 0.8125rem; color: var(--ax-text-tertiary); margin: 4px 0 0 0;" id="prospCarteraNota">Todos los clientes del canal, ordenados por prioridad de contacto</p>
+              </div>
+              <div class="input-with-icon" style="max-width: 240px;">
+                <input type="search" id="prospBuscar" class="filter-input" placeholder="Buscar cliente, RUT o comuna&hellip;" style="height: 38px; font-size: 0.8125rem;" />
+              </div>
+            </div>
+
+            <div style="overflow-x: auto; margin-top: 1.25rem; max-height: 620px; overflow-y: auto;">
+              <table class="advisor-table">
+                <thead>
+                  <tr>
+                    <th style="text-align: center; width: 60px;">Prio.</th>
+                    <th style="text-align: left;">Cliente</th>
+                    <th style="text-align: left;">Comuna</th>
+                    <th style="text-align: left;">Región</th>
+                    <th style="text-align: center;">Segmento</th>
+                    <th style="text-align: right;">Última compra</th>
+                    <th style="text-align: right;" id="prospThCliYtd">Venta año</th>
+                    <th style="text-align: right;">Año ant. (mismo periodo)</th>
+                    <th style="text-align: right;">&Delta;%</th>
+                    <th style="text-align: right;">Margen</th>
+                    <th style="text-align: left;">Productos a proponer</th>
+                  </tr>
+                </thead>
+                <tbody id="prospCarteraBody">
+                  <tr><td colspan="11" style="text-align: center; color: var(--ax-text-tertiary); padding: 2rem;">Calculando cartera&hellip;</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- METODOLOGÍA -->
+          <details class="ax-card" style="margin-top: 1.5rem; padding: 1rem 1.25rem;">
+            <summary style="cursor: pointer; font-weight: 800; color: var(--ax-text-secondary); font-size: 0.875rem;">Cómo se calcula todo esto</summary>
+            <div id="prospMetodologia" style="font-size: 0.8125rem; color: var(--ax-text-tertiary); line-height: 1.7; margin-top: 0.85rem;"></div>
+          </details>
+        </div>
+
         <!-- VISTA FICHA TÉCNICA -->
         <div class="view" id="view-fichatecnica">
           <div class="dashboard-section-header" style="margin-top: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
@@ -2976,7 +3165,7 @@
   </div>
 
   <!-- Scripts -->
-  <script src="config.js?v=20260826_REFRESCO_V55"></script>
-  <script src="app.js?v=20260826_REFRESCO_V55"></script>
+  <script src="config.js?v=20260831_PROSPECCION_V56"></script>
+  <script src="app.js?v=20260831_PROSPECCION_V56"></script>
 </body>
 </html>

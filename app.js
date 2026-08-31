@@ -1102,7 +1102,11 @@ const VISTAS_RENDER = {
   bistudio:     ['renderExecutiveInsights', 'renderPareto8020', 'renderRFMGrid',
                  'updateWhatIfSimulation', 'renderMonthlyTargetProgress'],
   mixsugerido:  ['renderMixSugeridoModule'],
-  fichatecnica: ['renderFichaTecnicaView']
+  fichatecnica: ['renderFichaTecnicaView'],
+  /* setupProspeccionListeners va aqui y no en switchView porque la vista tambien
+     se repinta desde renderAll en cada refresco automatico; el guardia
+     _prospBound de cada control hace que llamarlo de nuevo no cueste nada. */
+  prospeccion:  ['renderProspeccionView', 'setupProspeccionListeners']
 };
 
 /** Pinta una vista y la marca como al dia. false si esa vista no se pinta asi. */
@@ -12246,4 +12250,1329 @@ function setupMercadoPublicoListeners() {
   });
 
   mpSincronizarExportar();
+}
+
+/* =========================================================================
+   MODULO PROSPECCION CANAL MAYORISTA
+   -------------------------------------------------------------------------
+   Responde cuatro preguntas sobre el canal MAYORISTAS, siempre sobre `rows`
+   completo y NO sobre `filtered`: la comparativa interanual necesita los dos
+   anios enteros, y el filtro global de anio del tablero se llevaria por
+   delante justamente el termino de comparacion.
+
+     1. Cuantos clientes y cuanta venta hay en cada region.
+     2. Como va eso contra el mismo periodo del anio anterior.
+     3. En cuanto cierra el mes en curso y el anio.
+     4. A quien visitar, en que orden y con que productos llegar.
+
+   El punto 4 es un modelo heuristico determinista que corre en el navegador:
+   puntua cada cliente por potencial, caida, recencia, brecha de mix y margen,
+   y arma la ruta agrupando por comuna. No hay IA generativa detras ni se
+   manda un solo dato a ningun servidor; el detalle esta en prospMetodologia().
+   ========================================================================= */
+
+/* Estado del modulo. Vive fuera del render para que sobreviva a un refresco
+   automatico: si el usuario tenia elegida la Quinta y llega data nueva, la
+   vista se repinta sola sin devolverlo a "todas las regiones". */
+let prospRegionSel   = 'ALL';
+let prospSegmentoSel = 'ALL';
+let prospBusqueda    = '';
+let prospDiasRuta    = 3;
+let prospVisitasDia  = 4;
+let prospModelo      = null;
+let prospModeloRev   = -1;
+
+/* La planilla escribe el canal en plural, pero los datos de respaldo y algunas
+   cargas antiguas lo traen en singular. Se aceptan los dos en vez de corregir
+   la hoja. */
+const PROSP_CANAL_RE = /^MAYORISTAS?$/;
+
+/* Los nombres de region vienen truncados a 40 caracteres desde el ERP
+   ("Duodecima Region (de Magallanes y de la"), con y sin tildes, y con la
+   numeracion romana escrita en palabras. Por eso el match no es por igualdad
+   sino por una subcadena que sobreviva al truncado. El orden importa: se
+   evalua de arriba hacia abajo y gana el primero. */
+const PROSP_REGIONES = [
+  { clave: 'XV',   nombre: 'Arica y Parinacota',   orden: 1,  pistas: ['arica', 'parinacota'] },
+  { clave: 'I',    nombre: 'Tarapaca',             orden: 2,  pistas: ['tarapac'] },
+  { clave: 'II',   nombre: 'Antofagasta',          orden: 3,  pistas: ['antofagasta'] },
+  { clave: 'III',  nombre: 'Atacama',              orden: 4,  pistas: ['atacama'] },
+  { clave: 'IV',   nombre: 'Coquimbo',             orden: 5,  pistas: ['coquimbo'] },
+  { clave: 'V',    nombre: 'Valparaiso',           orden: 6,  pistas: ['valpara'] },
+  { clave: 'RM',   nombre: 'Metropolitana',        orden: 7,  pistas: ['metropolitana'] },
+  { clave: 'VI',   nombre: "O'Higgins",            orden: 8,  pistas: ['higgins', 'libertador'] },
+  { clave: 'VII',  nombre: 'Maule',                orden: 9,  pistas: ['maule'] },
+  { clave: 'XVI',  nombre: 'Nuble',                orden: 10, pistas: ['nuble', 'uble'] },
+  { clave: 'VIII', nombre: 'Biobio',               orden: 11, pistas: ['bio-bio', 'biobio', 'bio'] },
+  { clave: 'IX',   nombre: 'La Araucania',         orden: 12, pistas: ['araucan'] },
+  { clave: 'XIV',  nombre: 'Los Rios',             orden: 13, pistas: ['los rios', 'de los rios'] },
+  { clave: 'X',    nombre: 'Los Lagos',            orden: 14, pistas: ['los lagos'] },
+  { clave: 'XI',   nombre: 'Aysen',                orden: 15, pistas: ['aisen', 'aysen'] },
+  { clave: 'XII',  nombre: 'Magallanes',           orden: 16, pistas: ['magallanes', 'antartica'] }
+];
+
+const PROSP_SEGMENTOS = {
+  FUGA:    { etiqueta: 'En fuga',        color: '#F87171', peso: 1, ayuda: 'Compraba el anio pasado y este anio no ha comprado nada' },
+  DORMIDO: { etiqueta: 'Dormido',        color: '#FB923C', peso: 2, ayuda: 'Mas de 180 dias sin comprar' },
+  RIESGO:  { etiqueta: 'En riesgo',      color: '#FFC46B', peso: 3, ayuda: 'Entre 90 y 180 dias sin comprar' },
+  CAIDA:   { etiqueta: 'En caida',       color: '#FDE68A', peso: 4, ayuda: 'Compra, pero al menos 20% menos que el anio pasado' },
+  NUEVO:   { etiqueta: 'Nuevo',          color: '#2DD4CE', peso: 5, ayuda: 'Su primera compra fue este anio' },
+  CRECE:   { etiqueta: 'En crecimiento', color: '#3DDC97', peso: 6, ayuda: 'Crece mas de 10% contra el anio pasado' },
+  ESTABLE: { etiqueta: 'Estable',        color: '#94A3B8', peso: 7, ayuda: 'Se mantiene dentro de +/-10% del anio pasado' }
+};
+
+const PROSP_MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+                     'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+
+/* -------------------------------------------------------------------------
+   Utilidades
+   ------------------------------------------------------------------------- */
+
+function prospSinTildes(v) {
+  return String(v === null || v === undefined ? '' : v)
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+}
+
+function prospNum(v) {
+  const n = Number(v);
+  return isFinite(n) ? n : 0;
+}
+
+function prospFecha(iso) {
+  /* Mediodia y no medianoche: con medianoche una resta entre fechas cruzando
+     el cambio de hora chileno devuelve 23 o 25 horas y los "dias sin comprar"
+     bailan en uno. */
+  const d = new Date(String(iso) + 'T12:00:00');
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function prospDias(desde, hasta) {
+  if (!desde || !hasta) return null;
+  return Math.round((hasta - desde) / 86400000);
+}
+
+function prospTitulo(v) {
+  return String(v || '').toLowerCase().replace(/(^|[\s\-\/])([a-záéíóúñü])/g,
+    (m, sep, c) => sep + c.toUpperCase()).trim();
+}
+
+/**
+ * Region canonica de una fila. Devuelve siempre un objeto para que quien llama
+ * no tenga que preguntar por null.
+ */
+function prospRegionDe(raw) {
+  const bruto = String(raw || '').trim();
+
+  /* normalizeDataRows rellena las filas sin region con el literal
+     'Region Metropolitana' (sin parentesis), mientras que la planilla siempre
+     escribe 'Region Metropolitana (de Santiago)'. Distinguirlos evita que
+     ~880 lineas sin direccion se cuenten como venta de la RM e inflen la
+     region mas grande justo en el modulo que decide donde viajar.
+     Si algun dia la planilla escribiera el nombre corto, estas filas volverian
+     a caer en la RM, que es exactamente lo que pasa hoy: el peor caso es el
+     comportamiento actual. */
+  const limpio = prospSinTildes(bruto);
+  if (!bruto || limpio === 'region metropolitana') {
+    return { clave: 'SR', nombre: 'Sin region asignada', orden: 99, sinDato: true };
+  }
+
+  for (let i = 0; i < PROSP_REGIONES.length; i++) {
+    const r = PROSP_REGIONES[i];
+    for (let j = 0; j < r.pistas.length; j++) {
+      if (limpio.indexOf(r.pistas[j]) !== -1) return r;
+    }
+  }
+  return { clave: 'OTRA:' + bruto, nombre: bruto, orden: 98 };
+}
+
+/**
+ * Clave estable de cliente. Se prefiere el RUT porque el mismo comprador
+ * aparece escrito de varias formas ("R & E GROUP SPA" / "R&E GROUP S.P.A.")
+ * y contarlo dos veces rompe tanto el conteo de clientes como la ruta.
+ */
+function prospClaveCliente(r) {
+  const rut = String(r['RUT'] || '').replace(/[^0-9kK]/g, '').toUpperCase();
+  if (rut.length >= 7) return 'R' + rut;
+  return 'N' + String(r['CLIENTE'] || '').trim().toUpperCase();
+}
+
+/* -------------------------------------------------------------------------
+   Calculo del modelo
+   ------------------------------------------------------------------------- */
+
+/**
+ * Construye todo el modelo del canal a partir de `rows`. Es la unica funcion
+ * que recorre las 186.000 filas, y el resultado queda cacheado contra la
+ * revision de render: entrar y salir de la vista no vuelve a calcular nada,
+ * pero una carga de datos nueva si invalida el cache.
+ */
+function prospCalcular() {
+  const todas = Array.isArray(rows) ? rows : [];
+  const mayoristas = todas.filter(r => PROSP_CANAL_RE.test(String(r['CANAL FINAL'] || '').trim().toUpperCase()));
+
+  if (!mayoristas.length) return null;
+
+  /* Fecha de referencia: el ultimo dia CON venta que no sea futuro, igual
+     criterio que renderSummaryCards. No es necesariamente hoy, y esa
+     diferencia se avisa en pantalla porque cambia como leer el mes en curso. */
+  const ahora = new Date();
+  const topeHoy = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 23, 59, 59).getTime();
+  let maxPasado = 0;
+  let maxCualquiera = 0;
+  for (let i = 0; i < mayoristas.length; i++) {
+    const d = prospFecha(mayoristas[i]['FECHA']);
+    if (!d) continue;
+    const t = d.getTime();
+    if (t > maxCualquiera) maxCualquiera = t;
+    if (t <= topeHoy && t > maxPasado) maxPasado = t;
+  }
+  const refDate = new Date(maxPasado || maxCualquiera || ahora.getTime());
+
+  const anio     = refDate.getFullYear();
+  const anioPrev = anio - 1;
+  const mes      = refDate.getMonth() + 1;          // 1..12
+  const dia      = refDate.getDate();
+  const mm       = String(mes).padStart(2, '0');
+  const refISO   = anio + '-' + mm + '-' + String(dia).padStart(2, '0');
+  const corteISO = anioPrev + refISO.slice(4);      // mismo dia y mes, anio anterior
+  const diasMes  = new Date(anio, mes, 0).getDate();
+  const inicio12m = new Date(refDate.getTime() - 365 * 86400000);
+
+  /* --- Curva intramensual -------------------------------------------------
+     Que fraccion del mes se lleva facturada al dia D. Se arma juntando el
+     mismo mes calendario de los tres anios anteriores, porque un mes de
+     venta mayorista no se reparte parejo entre los 30 dias y prorratear por
+     dias transcurridos subestima sistematicamente el cierre. */
+  const acumDia = new Array(32).fill(0);
+  let totalCurva = 0;
+  /* Ademas del promedio agrupado se guarda cada anio por separado, porque la
+     dispersion entre anios es el margen de error de la proyeccion y esconderla
+     detras de un numero unico da una falsa precision. */
+  const porAnioCurva = new Map();
+  mayoristas.forEach(r => {
+    const f = String(r['FECHA'] || '');
+    if (f.slice(5, 7) !== mm) return;
+    const y = parseInt(f.slice(0, 4), 10);
+    if (!(y >= anio - 3 && y <= anioPrev)) return;
+    const d = parseInt(f.slice(8, 10), 10);
+    if (!(d >= 1 && d <= 31)) return;
+    const n = prospNum(r['NETO']);
+    acumDia[d] += n;
+    totalCurva += n;
+    if (!porAnioCurva.has(y)) porAnioCurva.set(y, { acum: 0, total: 0 });
+    const A = porAnioCurva.get(y);
+    A.total += n;
+    if (d <= dia) A.acum += n;
+  });
+  let cuotaCurva = 0;
+  if (totalCurva > 0) {
+    let acum = 0;
+    for (let d = 1; d <= dia && d <= 31; d++) acum += acumDia[d];
+    cuotaCurva = acum / totalCurva;
+  }
+  /* Por debajo de 0,10 la division amplifica el ruido hasta lo absurdo (un
+     10% de mes proyectaria x10). Ahi se cae al prorrateo por dias, que sera
+     conservador pero no delirante. */
+  const usaCurva = cuotaCurva >= 0.10;
+  const cuota = usaCurva ? cuotaCurva : (dia / diasMes);
+  const mesCerrado = dia >= diasMes;
+
+  const cuotasAnio = [];
+  porAnioCurva.forEach(A => { if (A.total > 0) cuotasAnio.push(A.acum / A.total); });
+  cuotasAnio.sort((a, b) => a - b);
+  /* La banda se arma con el anio mas adelantado y el mas atrasado a esta misma
+     altura del mes: dividir por la cuota mas chica da el techo y viceversa. */
+  const cuotaMin = cuotasAnio.length ? cuotasAnio[0] : cuota;
+  const cuotaMax = cuotasAnio.length ? cuotasAnio[cuotasAnio.length - 1] : cuota;
+  const hayBanda = usaCurva && !mesCerrado && cuotasAnio.length >= 2 && cuotaMin >= 0.10;
+
+  /* --- Domicilio comercial de cada cliente --------------------------------
+     Desde julio de 2026 el ERP dejo de escribir la columna Region en una parte
+     grande de las lineas mayoristas. Sin corregirlo, un cuarto de la venta del
+     anio cae en un limbo y las regiones aparecen desplomandose contra 2025
+     cuando en realidad solo se perdio el dato de direccion.
+
+     Un cliente no se muda: se toma la region (y la comuna) desde la que mas ha
+     facturado historicamente EN LAS LINEAS QUE SI TRAEN EL DATO, y con eso se
+     completan las que no lo traen. Cada linea completada asi queda marcada y
+     se informa en pantalla: es una imputacion, no un dato de la planilla. */
+  const domicilios = new Map();
+  mayoristas.forEach(r => {
+    const reg = prospRegionDe(r['REGION']);
+    if (reg.clave === 'SR') return;
+    const clave = prospClaveCliente(r);
+    if (!domicilios.has(clave)) domicilios.set(clave, { regiones: new Map(), comunas: new Map() });
+    const D = domicilios.get(clave);
+    const peso = Math.abs(prospNum(r['NETO'])) + 1;   // +1 para que una linea en 0 igual cuente
+    D.regiones.set(reg.clave, (D.regiones.get(reg.clave) || 0) + peso);
+    const cm = prospTitulo(r['COMUNA']) || 'Sin comuna';
+    D.comunas.set(cm, (D.comunas.get(cm) || 0) + peso);
+  });
+  const domicilioDe = new Map();
+  domicilios.forEach((D, clave) => {
+    domicilioDe.set(clave, {
+      region: prospMayor_(D.regiones),
+      comuna: prospMayor_(D.comunas) || 'Sin comuna'
+    });
+  });
+  const catalogoRegion = {};
+  PROSP_REGIONES.forEach(x => { catalogoRegion[x.clave] = x; });
+
+  /* --- Agregacion por region y por cliente ------------------------------- */
+  const regiones = new Map();
+  const clientes = new Map();
+  let filasImputadas = 0;
+  let netoImputadoYtd = 0;
+
+  function region_(clave, nombre, orden, sinDato) {
+    if (!regiones.has(clave)) {
+      regiones.set(clave, {
+        clave, nombre, orden, sinDato: !!sinDato,
+        ytd: 0, ytdPrev: 0, anioPrevFull: 0, mtd: 0, mtdPrev: 0, mesPrevFull: 0,
+        cerradoAct: 0, cerradoPrev: 0, restoPrev: 0,
+        utilidadYtd: 0, ytdImputado: 0,
+        mesesPrev: new Set(),
+        clientesAct: new Set(), clientesPrev: new Set(),
+        skus: new Map(), comunas: new Map(), clientes: []
+      });
+    }
+    return regiones.get(clave);
+  }
+
+  mayoristas.forEach(r => {
+    const f = String(r['FECHA'] || '');
+    if (f.length < 10) return;
+
+    const clave = prospClaveCliente(r);
+    let reg = prospRegionDe(r['REGION']);
+    let imputada = false;
+    if (reg.clave === 'SR') {
+      const dom = domicilioDe.get(clave);
+      if (dom && dom.region && catalogoRegion[dom.region]) {
+        reg = catalogoRegion[dom.region];
+        imputada = true;
+      }
+    }
+    const R = region_(reg.clave, reg.nombre, reg.orden, reg.sinDato);
+
+    const neto = prospNum(r['NETO']);
+    const util = prospNum(r['($) UTILIDAD']);
+    const cant = prospNum(r['CANTFACTURADA']);
+    const y    = f.slice(0, 4);
+    const ym   = f.slice(0, 7);
+
+    const enYtd     = (y === String(anio)) && f <= refISO;
+    const enYtdPrev = (y === String(anioPrev)) && f <= corteISO;
+    const enMtd     = ym === (anio + '-' + mm);
+    const enMesPrev = ym === (anioPrev + '-' + mm);
+
+    if (imputada) {
+      filasImputadas++;
+      if (enYtd) { R.ytdImputado += neto; netoImputadoYtd += neto; }
+    }
+
+    if (enYtd)     { R.ytd += neto; R.utilidadYtd += util; }
+    if (enYtdPrev) { R.ytdPrev += neto; }
+    if (y === String(anioPrev)) {
+      R.anioPrevFull += neto;
+      R.mesesPrev.add(ym);
+      const mNum = parseInt(f.slice(5, 7), 10);
+      if (mNum < mes) R.cerradoPrev += neto;
+      if (mNum > mes) R.restoPrev += neto;
+    }
+    if (y === String(anio)) {
+      const mNum = parseInt(f.slice(5, 7), 10);
+      if (mNum < mes) R.cerradoAct += neto;
+    }
+    if (enMtd)     R.mtd += neto;
+    if (enMesPrev) {
+      R.mesPrevFull += neto;
+      if (f <= corteISO) R.mtdPrev += neto;
+    }
+
+    /* --- cliente --- */
+    if (!clientes.has(clave)) {
+      clientes.set(clave, {
+        clave,
+        nombre: String(r['CLIENTE'] || '').trim() || 'Cliente sin nombre',
+        rut: String(r['RUT'] || '').trim(),
+        vendedor: String(r['CODVENDENDOR'] || '').trim(),
+        ytd: 0, ytdPrev: 0, anioPrevFull: 0, neto12m: 0, utilidad12m: 0, netoTotal: 0,
+        primera: null, ultima: null,
+        meses12m: new Set(),
+        skus: new Map()
+      });
+    }
+    const C = clientes.get(clave);
+    const fd = prospFecha(f);
+
+    C.netoTotal += neto;
+    if (enYtd)     C.ytd += neto;
+    if (enYtdPrev) C.ytdPrev += neto;
+    if (y === String(anioPrev)) C.anioPrevFull += neto;
+    if (fd) {
+      if (!C.primera || fd < C.primera) C.primera = fd;
+      if (fd <= refDate && (!C.ultima || fd > C.ultima)) C.ultima = fd;
+      if (fd >= inicio12m && fd <= refDate) {
+        C.neto12m += neto;
+        C.utilidad12m += util;
+        C.meses12m.add(ym);
+      }
+    }
+    const sku = String(r['CODIGO'] || '').trim().toUpperCase();
+    if (sku && fd) {
+      if (!C.skus.has(sku)) {
+        C.skus.set(sku, { sku, desc: String(r['DESCRIPCION'] || sku).trim(),
+                          familia: String(r['FAMILIA'] || '').trim(),
+                          neto: 0, cant: 0, ultima: null, compras: [] });
+      }
+      const S = C.skus.get(sku);
+      S.neto += neto;
+      S.cant += cant;
+      if (!S.ultima || fd > S.ultima) S.ultima = fd;
+      S.compras.push(fd.getTime());
+    }
+
+    if (enYtd) R.clientesAct.add(clave);
+    if (enYtdPrev) R.clientesPrev.add(clave);
+
+    /* Catalogo vivo de la region: solo los ultimos 24 meses, para no
+       recomendar un producto que se dejo de vender hace tres anios. */
+    if (sku && fd && fd >= new Date(refDate.getTime() - 730 * 86400000)) {
+      if (!R.skus.has(sku)) {
+        R.skus.set(sku, { sku, desc: String(r['DESCRIPCION'] || sku).trim(),
+                          familia: String(r['FAMILIA'] || '').trim(),
+                          neto: 0, cant: 0, clientes: new Set() });
+      }
+      const RS = R.skus.get(sku);
+      RS.neto += neto;
+      RS.cant += cant;
+      RS.clientes.add(clave);
+    }
+  });
+
+  /* --- Cierre de cada cliente ------------------------------------------- */
+  const listaClientes = [];
+  clientes.forEach(C => {
+    /* La region del cliente sale del mismo domicilio con el que se completaron
+       sus lineas sin direccion, asi que su ficha y sus ventas caen siempre en
+       la misma region. Sin historial de direccion queda en "Sin region". */
+    const dom = domicilioDe.get(C.clave);
+    C.region = (dom && dom.region) || 'SR';
+    C.comuna = (dom && dom.comuna) || 'Sin comuna';
+    C.sinDireccion = !dom;
+    C.diasSin = C.ultima ? prospDias(C.ultima, refDate) : null;
+    C.margen = C.neto12m > 0 ? (C.utilidad12m / C.neto12m) * 100 : 0;
+    C.delta = C.ytdPrev > 0 ? ((C.ytd / C.ytdPrev) - 1) * 100 : null;
+    C.segmento = prospSegmentar_(C, anio);
+    listaClientes.push(C);
+  });
+
+  /* Top de cada region por penetracion: cuantos de sus clientes compran cada
+     producto. Es la base de la recomendacion cruzada. */
+  regiones.forEach(R => {
+    const universo = new Set();
+    listaClientes.forEach(C => { if (C.region === R.clave) universo.add(C.clave); });
+    R.universo = universo.size;
+    R.top = Array.from(R.skus.values()).map(s => ({
+      sku: s.sku, desc: s.desc, familia: s.familia,
+      penetracion: universo.size ? s.clientes.size / universo.size : 0,
+      ticket: s.clientes.size ? s.neto / s.clientes.size : 0,
+      neto: s.neto
+    })).sort((a, b) => (b.penetracion * b.ticket) - (a.penetracion * a.ticket)).slice(0, 20);
+    R.clientes = listaClientes.filter(C => C.region === R.clave);
+  });
+
+  /* --- Puntaje de prioridad ---------------------------------------------
+     Se normaliza contra el canal entero y no contra cada region: asi un 78 de
+     la Novena y un 78 de la RM significan lo mismo y las regiones se pueden
+     comparar entre si en la tabla de arriba. */
+  /* El tamano del cliente se mide por el maximo entre lo que compro en los
+     ultimos 12 meses y lo que compro el anio pasado completo. Usar solo los
+     12 meses dejaria en cero justamente al cliente grande que dejo de comprar
+     hace trece meses, que es el que mas urge visitar. */
+  listaClientes.forEach(C => { C.tamano = Math.max(0, C.neto12m, C.anioPrevFull); });
+
+  /* Percentil y no escala logaritmica. Con log1p un cliente de 105 mil al anio
+     sacaba 0,65 de potencial contra el 1,00 de uno de 13 millones -- 500 veces
+     mas chico y casi el mismo puntaje -- y terminaba colado en la ruta por
+     encima de cuentas grandes. El percentil reparte el 0..1 entre los clientes
+     que realmente hay, que es la comparacion que importa. */
+  const ordenTamano = listaClientes.map(C => C.tamano).sort((a, b) => a - b);
+  const posicionTamano = new Map();
+  ordenTamano.forEach((v, i) => { if (!posicionTamano.has(v)) posicionTamano.set(v, i); });
+  const denomTamano = Math.max(1, ordenTamano.length - 1);
+
+  listaClientes.forEach(C => {
+    const R = regiones.get(C.region);
+    const potencial = (posicionTamano.get(C.tamano) || 0) / denomTamano;
+    const caida = C.ytdPrev > 0 ? Math.min(1, Math.max(0, 1 - (C.ytd / C.ytdPrev))) : 0;
+    const recencia = C.diasSin === null ? 1 : Math.min(1, Math.max(0, C.diasSin / 240));
+    let brecha = 0;
+    if (R && R.top && R.top.length) {
+      const faltan = R.top.slice(0, 15).filter(t => !C.skus.has(t.sku)).length;
+      brecha = faltan / Math.min(15, R.top.length);
+    }
+    const margen = Math.min(1, Math.max(0, C.margen / 40));
+
+    C.factores = { potencial, caida, recencia, brecha, margen };
+    C.score = Math.round(100 * (
+      0.30 * potencial +
+      0.25 * caida +
+      0.25 * recencia +
+      0.12 * brecha +
+      0.08 * margen
+    ));
+    C.recomendaciones = prospRecomendar_(C, R, refDate);
+  });
+
+  listaClientes.sort((a, b) => b.score - a.score || b.neto12m - a.neto12m);
+
+  /* --- Proyecciones por region ------------------------------------------- */
+  const listaRegiones = [];
+  regiones.forEach(R => {
+    R.clientes.sort((a, b) => b.score - a.score || b.neto12m - a.neto12m);
+
+    R.proyMes = mesCerrado ? R.mtd : (cuota > 0 ? R.mtd / cuota : R.mtd);
+    R.proyMesMin = hayBanda ? R.mtd / cuotaMax : R.proyMes;
+    R.proyMesMax = hayBanda ? R.mtd / cuotaMin : R.proyMes;
+
+    /* Factor de crecimiento sobre meses YA CERRADOS. Usar el acumulado
+       incluyendo el mes en curso mezclaria un mes incompleto con doce
+       completos y arrastraria la proyeccion hacia abajo todos los meses. */
+    let factor = 1;
+    if (R.cerradoPrev > 0) factor = R.cerradoAct / R.cerradoPrev;
+    else if (R.ytdPrev > 0) factor = R.ytd / R.ytdPrev;
+    /* Acotado: una region con tres clientes puede marcar x8 en enero y eso no
+       es una tendencia, es un pedido grande. */
+    factor = Math.min(2.5, Math.max(0.4, factor));
+    R.factor = factor;
+
+    R.proyAnio = R.ytd + Math.max(0, R.proyMes - R.mtd) + (R.restoPrev * factor);
+
+    R.deltaYtd    = R.ytdPrev > 0 ? ((R.ytd / R.ytdPrev) - 1) * 100 : null;
+    R.deltaMes    = R.mesPrevFull > 0 ? ((R.proyMes / R.mesPrevFull) - 1) * 100 : null;
+    R.deltaAnio   = R.anioPrevFull > 0 ? ((R.proyAnio / R.anioPrevFull) - 1) * 100 : null;
+    R.deltaClientes = R.clientesAct.size - R.clientesPrev.size;
+
+    const nMeses = R.mesesPrev.size;
+    R.confianza = (nMeses >= 10 && R.anioPrevFull > 0) ? 'Alta'
+                : (nMeses >= 5) ? 'Media' : 'Baja';
+
+    listaRegiones.push(R);
+  });
+
+  listaRegiones.sort((a, b) => b.ytd - a.ytd);
+
+  /* --- Totales del canal -------------------------------------------------- */
+  const T = {
+    ytd: 0, ytdPrev: 0, anioPrevFull: 0, mtd: 0, mesPrevFull: 0, ytdImputado: 0,
+    proyMes: 0, proyMesMin: 0, proyMesMax: 0, proyAnio: 0,
+    clientesAct: new Set(), clientesPrev: new Set()
+  };
+  listaRegiones.forEach(R => {
+    T.ytd += R.ytd; T.ytdPrev += R.ytdPrev; T.anioPrevFull += R.anioPrevFull;
+    T.mtd += R.mtd; T.mesPrevFull += R.mesPrevFull; T.ytdImputado += R.ytdImputado;
+    T.proyMes += R.proyMes; T.proyAnio += R.proyAnio;
+    T.proyMesMin += R.proyMesMin; T.proyMesMax += R.proyMesMax;
+    R.clientesAct.forEach(c => T.clientesAct.add(c));
+    R.clientesPrev.forEach(c => T.clientesPrev.add(c));
+  });
+  T.deltaYtd  = T.ytdPrev > 0 ? ((T.ytd / T.ytdPrev) - 1) * 100 : null;
+  T.deltaMes  = T.mesPrevFull > 0 ? ((T.proyMes / T.mesPrevFull) - 1) * 100 : null;
+  T.deltaAnio = T.anioPrevFull > 0 ? ((T.proyAnio / T.anioPrevFull) - 1) * 100 : null;
+
+  return {
+    refDate, refISO, anio, anioPrev, mes, dia, diasMes, mm,
+    mesNombre: PROSP_MESES[mes - 1],
+    cuota, usaCurva, mesCerrado, cuotaMin, cuotaMax, hayBanda, aniosCurva: cuotasAnio.length,
+    filas: mayoristas.length,
+    filasImputadas, netoImputadoYtd,
+    regiones: listaRegiones,
+    clientes: listaClientes,
+    totales: T,
+    desfaseDias: prospDias(refDate, new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 12))
+  };
+}
+
+/** Clave con mayor valor acumulado de un Map. */
+function prospMayor_(mapa) {
+  let mejor = null;
+  let max = -Infinity;
+  mapa.forEach((v, k) => { if (v > max) { max = v; mejor = k; } });
+  return mejor;
+}
+
+function prospSegmentar_(C, anio) {
+  const d = C.diasSin;
+  if (C.ytdPrev > 0 && C.ytd <= 0) return 'FUGA';
+  if (d !== null && d >= 180) return 'DORMIDO';
+  if (d !== null && d >= 90) return 'RIESGO';
+  if (C.ytdPrev > 0 && C.ytd < C.ytdPrev * 0.8) return 'CAIDA';
+  if (C.primera && C.primera.getFullYear() >= anio) return 'NUEVO';
+  if (C.ytdPrev > 0 && C.ytd > C.ytdPrev * 1.1) return 'CRECE';
+  if (C.ytdPrev <= 0 && C.ytd > 0) return 'CRECE';
+  return 'ESTABLE';
+}
+
+/**
+ * Con que productos llegar. Dos fuentes distintas y explicitas:
+ *
+ *   reposicion  el cliente ya compra ese SKU con cierta cadencia y se le paso
+ *               el ciclo. Es la venta mas facil que existe.
+ *   cruzado     lo compran sus pares de la misma region y el no. Se ordena por
+ *               penetracion x ticket, o sea por plata esperada y no por
+ *               popularidad a secas.
+ */
+function prospRecomendar_(C, R, refDate) {
+  const recs = [];
+
+  C.skus.forEach(S => {
+    if (S.compras.length < 2) return;
+    const ord = S.compras.slice().sort((a, b) => a - b);
+    const huecos = [];
+    for (let i = 1; i < ord.length; i++) huecos.push((ord[i] - ord[i - 1]) / 86400000);
+    const distintos = huecos.filter(h => h > 0).sort((a, b) => a - b);
+    if (!distintos.length) return;
+    const mediana = distintos[Math.floor(distintos.length / 2)];
+    if (!(mediana > 0)) return;
+    const sin = prospDias(S.ultima, refDate);
+    if (sin === null || sin <= mediana * 1.3) return;
+    recs.push({
+      sku: S.sku, desc: S.desc, tipo: 'reposicion',
+      /* x1.6 porque un SKU que el cliente ya usa convierte bastante mejor que
+         uno que nunca ha probado; sin el sesgo la lista se llena de cruzados
+         caros y desaparece lo obvio. */
+      valor: (S.neto / S.compras.length) * 1.6,
+      nota: 'repone cada ~' + Math.round(mediana) + 'd, lleva ' + sin + 'd'
+    });
+  });
+
+  if (R && R.top) {
+    /* Las familias que el cliente ya trabaja. Sin esto, tres clientes dormidos
+       de la misma region reciben exactamente la misma lista de cuatro SKUs
+       (los mas penetrados) y la sugerencia deja de significar nada: lo que se
+       propone tiene que depender de lo que ese cliente vende. */
+    const familias = new Set();
+    C.skus.forEach(S => { if (S.familia) familias.add(S.familia); });
+
+    R.top.forEach(t => {
+      if (C.skus.has(t.sku)) return;
+      if (t.penetracion <= 0 || t.ticket <= 0) return;
+      const encaja = t.familia && familias.has(t.familia);
+      recs.push({
+        sku: t.sku, desc: t.desc, tipo: 'cruzado',
+        valor: t.penetracion * t.ticket * (encaja ? 1.5 : 1),
+        nota: Math.round(t.penetracion * 100) + '% de la region lo compra' +
+              (encaja ? ', y el ya vende ' + t.familia : '')
+      });
+    });
+  }
+
+  recs.sort((a, b) => b.valor - a.valor);
+  return recs.slice(0, 4);
+}
+
+/**
+ * Arma la ruta dentro de UNA region. El agrupamiento es por comuna y no por
+ * distancia real: la planilla no trae coordenadas y no se van a inventar.
+ * Mantener juntas las visitas de una misma comuna es la mejor reduccion de
+ * traslado que se puede sacar del dato disponible.
+ */
+function prospArmarRuta(R, dias, visitasDia, segmento) {
+  if (!R) return [];
+
+  let cand = R.clientes.slice();
+  if (segmento && segmento !== 'ALL') cand = cand.filter(c => c.segmento === segmento);
+  cand.sort((a, b) => b.score - a.score || b.neto12m - a.neto12m);
+
+  const cupo = Math.max(1, dias * visitasDia);
+  const sel = cand.slice(0, cupo);
+  if (!sel.length) return [];
+
+  const porComuna = new Map();
+  sel.forEach(c => {
+    if (!porComuna.has(c.comuna)) porComuna.set(c.comuna, []);
+    porComuna.get(c.comuna).push(c);
+  });
+
+  const comunas = Array.from(porComuna.entries()).map(([nombre, lista]) => {
+    lista.sort((a, b) => b.score - a.score);
+    return { nombre, lista, peso: lista.reduce((a, c) => a + c.score, 0) };
+  }).sort((a, b) => b.peso - a.peso);
+
+  const jornadas = [];
+  let actual = { dia: 1, comunas: [], visitas: [] };
+
+  comunas.forEach(cm => {
+    let i = 0;
+    while (i < cm.lista.length) {
+      if (actual.visitas.length >= visitasDia) {
+        jornadas.push(actual);
+        actual = { dia: jornadas.length + 1, comunas: [], visitas: [] };
+      }
+      const espacio = visitasDia - actual.visitas.length;
+      const quedan = cm.lista.length - i;
+      /* Si la comuna no cabe en el hueco que queda pero si cabria entera en un
+         dia completo, se abre dia nuevo antes que partirla en dos viajes. */
+      if (actual.visitas.length > 0 && quedan > espacio && quedan <= visitasDia) {
+        jornadas.push(actual);
+        actual = { dia: jornadas.length + 1, comunas: [], visitas: [] };
+        continue;
+      }
+      const trozo = cm.lista.slice(i, i + espacio);
+      trozo.forEach(v => {
+        actual.visitas.push(v);
+        if (actual.comunas.indexOf(cm.nombre) === -1) actual.comunas.push(cm.nombre);
+      });
+      i += trozo.length;
+    }
+  });
+
+  if (actual.visitas.length) jornadas.push(actual);
+  return jornadas.slice(0, dias);
+}
+
+/* -------------------------------------------------------------------------
+   Render
+   ------------------------------------------------------------------------- */
+
+function prospPct(v, invertir) {
+  if (v === null || v === undefined || !isFinite(v)) {
+    return '<span style="color: var(--ax-text-tertiary);">s/d</span>';
+  }
+  const bueno = invertir ? v <= 0 : v >= 0;
+  const color = Math.abs(v) < 0.05 ? 'var(--ax-text-secondary)'
+              : (bueno ? 'var(--ax-accent-emerald)' : '#F87171');
+  const signo = v > 0 ? '+' : '';
+  return '<span style="color: ' + color + '; font-weight: 800;">' + signo + v.toFixed(1) + '%</span>';
+}
+
+function prospPlata(v) {
+  return typeof formatCLP === 'function' ? formatCLP(v) : '$' + Math.round(prospNum(v)).toLocaleString('es-CL');
+}
+
+function prospFechaCorta(d) {
+  if (!d) return 'nunca';
+  return String(d.getDate()).padStart(2, '0') + '/' +
+         String(d.getMonth() + 1).padStart(2, '0') + '/' + d.getFullYear();
+}
+
+function prospBadgeSegmento(clave) {
+  const s = PROSP_SEGMENTOS[clave] || PROSP_SEGMENTOS.ESTABLE;
+  return '<span title="' + escapeHtml(s.ayuda) + '" style="padding: 3px 9px; border-radius: 12px; font-size: 0.72rem; ' +
+         'font-weight: 800; white-space: nowrap; color: ' + s.color + '; background: ' + s.color + '22; ' +
+         'border: 1px solid ' + s.color + '55;">' + escapeHtml(s.etiqueta) + '</span>';
+}
+
+function prospRecosHtml(recs) {
+  if (!recs || !recs.length) {
+    return '<span style="color: var(--ax-text-tertiary); font-size: 0.75rem;">sin sugerencia</span>';
+  }
+  return recs.map(r => {
+    const esRepo = r.tipo === 'reposicion';
+    const col = esRepo ? 'var(--ax-accent-emerald)' : 'var(--ax-accent)';
+    return '<span class="tag-pill" title="' + escapeHtml(r.desc + ' — ' + r.nota) + '" ' +
+           'style="font-size: 0.7rem; margin: 1px 3px 1px 0; color: ' + col + '; border-color: ' + col + '55;">' +
+           (esRepo ? '&#8635; ' : '&#43; ') + escapeHtml(r.sku) + '</span>';
+  }).join('');
+}
+
+/** Modelo cacheado contra la revision de render. */
+function prospModeloVigente() {
+  const rev = (typeof _glomaxRenderRevision !== 'undefined') ? _glomaxRenderRevision : 0;
+  if (prospModelo && prospModeloRev === rev) return prospModelo;
+  prospModelo = prospCalcular();
+  prospModeloRev = rev;
+  return prospModelo;
+}
+
+function renderProspeccionView() {
+  const M = prospModeloVigente();
+
+  const cuerpoReg = document.getElementById('prospRegionesBody');
+  const cuerpoCart = document.getElementById('prospCarteraBody');
+
+  if (!M) {
+    const msg = (rows && rows.length)
+      ? 'No hay ventas con canal MAYORISTAS en los datos cargados.'
+      : 'Esperando la carga de datos&hellip;';
+    if (cuerpoReg) cuerpoReg.innerHTML = '<tr><td colspan="13" style="text-align:center;color:var(--ax-text-tertiary);padding:2rem;">' + msg + '</td></tr>';
+    if (cuerpoCart) cuerpoCart.innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--ax-text-tertiary);padding:2rem;">' + msg + '</td></tr>';
+    return;
+  }
+
+  prospPintarEncabezado(M);
+  prospPintarKpis(M);
+  prospPintarRegiones(M);
+  prospPintarRuta(M);
+  prospPintarCartera(M);
+  prospPintarMetodologia(M);
+}
+
+function prospPintarEncabezado(M) {
+  const sel = document.getElementById('prospRegionSelect');
+  if (sel) {
+    const deseada = prospRegionSel;
+    const opciones = ['<option value="ALL">Todas las regiones</option>'].concat(
+      M.regiones.slice().sort((a, b) => a.orden - b.orden || a.nombre.localeCompare(b.nombre))
+        .map(R => '<option value="' + escapeHtml(R.clave) + '">' + escapeHtml(R.nombre) +
+                  ' (' + R.clientesAct.size + ')</option>')
+    ).join('');
+    if (sel.innerHTML !== opciones) sel.innerHTML = opciones;
+    /* Si la region elegida desaparecio de los datos nuevos se vuelve a ALL en
+       vez de dejar el selector apuntando a nada. */
+    if (deseada !== 'ALL' && !M.regiones.some(R => R.clave === deseada)) prospRegionSel = 'ALL';
+    sel.value = prospRegionSel;
+  }
+
+  const sub = document.getElementById('prospSubtitulo');
+  if (sub) {
+    sub.textContent = formatNum(M.filas) + ' lineas de venta mayorista · ' +
+      M.clientes.length + ' clientes historicos · datos hasta el ' + prospFechaCorta(M.refDate);
+  }
+
+  const aviso = document.getElementById('prospAviso');
+  if (aviso) {
+    const alertas = [];
+    if (M.desfaseDias !== null && M.desfaseDias > 2) {
+      alertas.push('La ultima venta mayorista cargada es del ' + prospFechaCorta(M.refDate) +
+        ', hace ' + M.desfaseDias + ' dias. Todo lo de abajo se calcula contra esa fecha, no contra hoy.');
+    }
+    if (!M.usaCurva) {
+      alertas.push('Hay poca historia del mes de ' + M.mesNombre + ' para reconstruir la curva intramensual: ' +
+        'la proyeccion del mes se hace prorrateando por dias transcurridos, que tiende a quedarse corta.');
+    }
+    if (M.filasImputadas > 0) {
+      alertas.push('La planilla trae ' + formatNum(M.filasImputadas) + ' lineas mayoristas sin la columna Region (' +
+        prospPlata(M.netoImputadoYtd) + ' de ' + M.anio + ', un ' +
+        (M.totales.ytd > 0 ? (100 * M.netoImputadoYtd / M.totales.ytd).toFixed(0) : '0') +
+        '% del anio). Se asignaron a la region desde la que ese mismo cliente factura habitualmente. ' +
+        'Vale la pena arreglarlo en el origen: mientras tanto, esas ventas se estan repartiendo por historial y no por dato.');
+    }
+    const sinReg = M.regiones.find(R => R.clave === 'SR');
+    if (sinReg && sinReg.ytd > 0) {
+      alertas.push(formatNum(sinReg.clientesAct.size) + ' clientes (' + prospPlata(sinReg.ytd) +
+        ' este anio) nunca han traido region en ninguna de sus lineas, asi que no hay historial del que deducirla ' +
+        'y no se pueden rutear. Aparecen agrupados como "Sin region asignada".');
+    }
+    if (alertas.length) {
+      aviso.style.display = '';
+      aviso.innerHTML = alertas.map(a =>
+        '<div class="ax-card" style="padding: 0.7rem 1rem; margin-bottom: 0.5rem; border-color: rgba(255,196,107,0.4); ' +
+        'font-size: 0.8125rem; color: var(--ax-text-secondary);"><strong style="color: var(--ax-accent-gold);">Aviso:</strong> ' +
+        escapeHtml(a) + '</div>').join('');
+    } else {
+      aviso.style.display = 'none';
+      aviso.innerHTML = '';
+    }
+  }
+}
+
+/** Region seleccionada, o null si es "todas". */
+function prospRegionActual(M) {
+  if (prospRegionSel === 'ALL') return null;
+  return M.regiones.find(R => R.clave === prospRegionSel) || null;
+}
+
+function prospPintarKpis(M) {
+  const R = prospRegionActual(M);
+  const D = R || M.totales;
+  const nClientes = R ? R.clientesAct.size : M.totales.clientesAct.size;
+  const nPrev = R ? R.clientesPrev.size : M.totales.clientesPrev.size;
+  const ambito = R ? R.nombre : 'todo el canal';
+
+  const set = (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = html; };
+
+  set('prospKpiYtdLabel', 'Venta mayorista ' + M.anio + ' &middot; ' + escapeHtml(ambito));
+  set('prospKpiYtd', prospPlata(D.ytd));
+  set('prospKpiYtdSub', 'vs ' + prospPlata(D.ytdPrev) + ' al ' + M.dia + ' de ' + M.mesNombre +
+      ' de ' + M.anioPrev + ' &nbsp;' + prospPct(D.deltaYtd));
+
+  set('prospKpiClientes', formatNum(nClientes));
+  const dc = nClientes - nPrev;
+  set('prospKpiClientesSub', 'Compraron en ' + M.anio + '. Mismo periodo ' + M.anioPrev + ': ' + formatNum(nPrev) +
+      ' &nbsp;<span style="font-weight:800;color:' + (dc >= 0 ? 'var(--ax-accent-emerald)' : '#F87171') + '">' +
+      (dc > 0 ? '+' : '') + dc + '</span>');
+
+  set('prospKpiMesLabel', 'Cierre proyectado de ' + M.mesNombre);
+  set('prospKpiMes', prospPlata(D.proyMes !== undefined ? D.proyMes : M.totales.proyMes));
+  const mesPrev = R ? R.mesPrevFull : M.totales.mesPrevFull;
+  /* La banda entre el anio mas adelantado y el mas atrasado dice mas que el
+     punto medio solo: en agosto la venta se concentra en los ultimos dias y
+     que el mes vaya al 52% o al 77% a esta altura cambia el cierre en decenas
+     de millones. Dar un unico numero sugeriria una precision que no existe. */
+  const banda = M.hayBanda
+    ? ' <span style="color: var(--ax-text-tertiary);">(rango ' + prospPlata(D.proyMesMin) +
+      ' a ' + prospPlata(D.proyMesMax) + ')</span>'
+    : '';
+  set('prospKpiMesSub', 'Lleva ' + prospPlata(D.mtd) + ' al dia ' + M.dia + '. ' + M.mesNombre + ' ' + M.anioPrev +
+      ': ' + prospPlata(mesPrev) + ' &nbsp;' + prospPct(D.deltaMes) + banda);
+
+  set('prospKpiAnioLabel', 'Cierre proyectado ' + M.anio);
+  set('prospKpiAnio', prospPlata(D.proyAnio !== undefined ? D.proyAnio : M.totales.proyAnio));
+  set('prospKpiAnioSub', M.anioPrev + ' completo: ' + prospPlata(D.anioPrevFull) + ' &nbsp;' + prospPct(D.deltaAnio));
+}
+
+function prospPintarRegiones(M) {
+  const tbody = document.getElementById('prospRegionesBody');
+  const tfoot = document.getElementById('prospRegionesFoot');
+  if (!tbody) return;
+
+  const thYtd = document.getElementById('prospThYtd');
+  if (thYtd) thYtd.textContent = 'Venta ' + M.anio + ' (al ' + M.dia + '/' + M.mm + ')';
+  const thPrev = document.getElementById('prospThYtdPrev');
+  if (thPrev) thPrev.textContent = M.anioPrev + ' mismo periodo';
+  const thAnioPrev = document.getElementById('prospThAnioPrev');
+  if (thAnioPrev) thAnioPrev.textContent = M.anioPrev + ' completo';
+
+  const resumen = document.getElementById('prospRegionesResumen');
+  if (resumen) resumen.textContent = M.regiones.length + ' regiones con venta';
+
+  const conf = { Alta: 'var(--ax-accent-emerald)', Media: 'var(--ax-accent-gold)', Baja: '#F87171' };
+
+  tbody.innerHTML = M.regiones.map(R => {
+    const activa = R.clave === prospRegionSel;
+    return '<tr class="js-prosp-region" data-region="' + escapeHtml(R.clave) + '" style="cursor: pointer;' +
+      (activa ? ' background: rgba(255,196,107,0.10);' : '') + '" title="Clic para planificar la ruta de esta region">' +
+      '<td style="text-align:left;font-weight:800;color:' + (activa ? 'var(--ax-accent-gold)' : 'var(--ax-text-primary)') + ';">' +
+        escapeHtml(R.nombre) + (R.sinDato ? ' <span style="font-weight:600;color:var(--ax-text-tertiary);font-size:0.72rem;">(sin direccion)</span>' : '') + '</td>' +
+      '<td style="text-align:right;font-weight:700;">' + formatNum(R.clientesAct.size) + '</td>' +
+      '<td style="text-align:right;font-weight:800;color:' + (R.deltaClientes >= 0 ? 'var(--ax-accent-emerald)' : '#F87171') + ';">' +
+        (R.deltaClientes > 0 ? '+' : '') + R.deltaClientes + '</td>' +
+      '<td style="text-align:right;font-weight:800;color:var(--ax-accent-sky);">' + prospPlata(R.ytd) + '</td>' +
+      '<td style="text-align:right;">' + prospPlata(R.ytdPrev) + '</td>' +
+      '<td style="text-align:right;">' + prospPct(R.deltaYtd) + '</td>' +
+      '<td style="text-align:right;">' + prospPlata(R.mtd) + '</td>' +
+      '<td style="text-align:right;font-weight:700;color:var(--ax-accent-gold);">' + prospPlata(R.proyMes) + '</td>' +
+      '<td style="text-align:right;">' + prospPct(R.deltaMes) + '</td>' +
+      '<td style="text-align:right;font-weight:800;color:var(--ax-accent-purple);">' + prospPlata(R.proyAnio) + '</td>' +
+      '<td style="text-align:right;">' + prospPlata(R.anioPrevFull) + '</td>' +
+      '<td style="text-align:right;">' + prospPct(R.deltaAnio) + '</td>' +
+      '<td style="text-align:center;"><span style="font-size:0.72rem;font-weight:800;color:' + (conf[R.confianza] || '#94A3B8') + ';">' +
+        R.confianza + '</span></td>' +
+      '</tr>';
+  }).join('') || '<tr><td colspan="13" style="text-align:center;color:var(--ax-text-tertiary);padding:2rem;">Sin regiones con venta mayorista.</td></tr>';
+
+  if (tfoot) {
+    const T = M.totales;
+    tfoot.innerHTML = '<tr style="border-top: 2px solid var(--ax-border); font-weight: 800;">' +
+      '<td style="text-align:left;">TOTAL CANAL</td>' +
+      '<td style="text-align:right;">' + formatNum(T.clientesAct.size) + '</td>' +
+      '<td style="text-align:right;">' + ((T.clientesAct.size - T.clientesPrev.size) > 0 ? '+' : '') +
+        (T.clientesAct.size - T.clientesPrev.size) + '</td>' +
+      '<td style="text-align:right;color:var(--ax-accent-sky);">' + prospPlata(T.ytd) + '</td>' +
+      '<td style="text-align:right;">' + prospPlata(T.ytdPrev) + '</td>' +
+      '<td style="text-align:right;">' + prospPct(T.deltaYtd) + '</td>' +
+      '<td style="text-align:right;">' + prospPlata(T.mtd) + '</td>' +
+      '<td style="text-align:right;color:var(--ax-accent-gold);">' + prospPlata(T.proyMes) + '</td>' +
+      '<td style="text-align:right;">' + prospPct(T.deltaMes) + '</td>' +
+      '<td style="text-align:right;color:var(--ax-accent-purple);">' + prospPlata(T.proyAnio) + '</td>' +
+      '<td style="text-align:right;">' + prospPlata(T.anioPrevFull) + '</td>' +
+      '<td style="text-align:right;">' + prospPct(T.deltaAnio) + '</td>' +
+      '<td></td></tr>';
+  }
+
+  tbody.querySelectorAll('.js-prosp-region').forEach(tr => {
+    tr.addEventListener('click', () => {
+      const clave = tr.dataset.region;
+      prospRegionSel = (prospRegionSel === clave) ? 'ALL' : clave;
+      renderProspeccionView();
+    });
+  });
+}
+
+function prospPintarRuta(M) {
+  const cont = document.getElementById('prospRutaCuerpo');
+  const nota = document.getElementById('prospRutaNota');
+  if (!cont) return;
+
+  let R = prospRegionActual(M);
+  let sugerida = false;
+  if (!R) {
+    /* Sin region elegida se propone la de mayor prioridad acumulada en vez de
+       dejar el panel vacio, pero se dice que es una propuesta. La ruta nunca
+       mezcla regiones: esa es la restriccion dura del modulo. */
+    R = M.regiones.filter(x => !x.sinDato && x.clientes.length)
+      .map(x => ({ R: x, peso: x.clientes.slice(0, 10).reduce((a, c) => a + c.score, 0) }))
+      .sort((a, b) => b.peso - a.peso).map(x => x.R)[0] || null;
+    sugerida = true;
+  }
+
+  if (!R) {
+    cont.innerHTML = '<p style="text-align:center;color:var(--ax-text-tertiary);padding:2rem;">No hay clientes ruteables.</p>';
+    if (nota) nota.textContent = 'Sin datos de region suficientes para armar una ruta.';
+    return;
+  }
+
+  const jornadas = prospArmarRuta(R, prospDiasRuta, prospVisitasDia, prospSegmentoSel);
+
+  if (nota) {
+    nota.innerHTML = (sugerida ? 'Region propuesta por prioridad: ' : 'Region seleccionada: ') +
+      '<strong style="color: var(--ax-accent-gold);">' + escapeHtml(R.nombre) + '</strong>. ' +
+      'La ruta no sale nunca de esta region; las visitas se agrupan por comuna.' +
+      (sugerida ? ' Elige otra en el selector para cambiarla.' : '');
+  }
+
+  if (!jornadas.length) {
+    cont.innerHTML = '<p style="text-align:center;color:var(--ax-text-tertiary);padding:2rem;">' +
+      'Ningun cliente de ' + escapeHtml(R.nombre) + ' cumple el filtro de segmento elegido.</p>';
+    return;
+  }
+
+  cont.innerHTML = jornadas.map(J => {
+    const netoDia = J.visitas.reduce((a, c) => a + c.neto12m, 0);
+    const filas = J.visitas.map((C, i) => {
+      const mapa = 'https://www.google.com/maps/search/?api=1&query=' +
+        encodeURIComponent(C.nombre + ', ' + C.comuna + ', Chile');
+      return '<tr>' +
+        '<td style="text-align:center;font-weight:800;color:var(--ax-text-tertiary);">' + (i + 1) + '</td>' +
+        '<td style="text-align:left;">' +
+          '<div style="font-weight:800;color:var(--ax-text-primary);">' + escapeHtml(C.nombre) + '</div>' +
+          '<div style="font-size:0.72rem;color:var(--ax-text-tertiary);">' + escapeHtml(C.comuna) +
+          (C.rut ? ' &middot; ' + escapeHtml(C.rut) : '') + '</div></td>' +
+        '<td style="text-align:center;">' + prospBadgeSegmento(C.segmento) + '</td>' +
+        '<td style="text-align:right;font-size:0.78rem;">' + prospFechaCorta(C.ultima) +
+          '<div style="font-size:0.7rem;color:var(--ax-text-tertiary);">' +
+          (C.diasSin === null ? '' : 'hace ' + C.diasSin + ' d&iacute;as') + '</div></td>' +
+        '<td style="text-align:right;font-weight:700;">' + prospPlata(C.neto12m) +
+          '<div style="font-size:0.7rem;color:var(--ax-text-tertiary);">ult. 12 meses</div></td>' +
+        '<td style="text-align:right;">' + prospPct(C.delta) + '</td>' +
+        '<td style="text-align:left;max-width:280px;">' + prospRecosHtml(C.recomendaciones) + '</td>' +
+        '<td style="text-align:center;"><a href="' + mapa + '" target="_blank" rel="noopener noreferrer" ' +
+          'class="tag-pill" style="font-size:0.7rem;text-decoration:none;" title="Abrir en Google Maps">Mapa</a></td>' +
+        '</tr>';
+    }).join('');
+
+    return '<div class="ax-card" style="padding: 1rem 1.1rem; margin-bottom: 1rem; border-color: rgba(255,196,107,0.28);">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.6rem;">' +
+        '<div><span style="font-weight:900;font-size:0.95rem;color:var(--ax-accent-gold);">D&iacute;a ' + J.dia + '</span>' +
+        '<span style="margin-left:10px;font-size:0.8125rem;color:var(--ax-text-secondary);">' +
+        J.comunas.map(c => escapeHtml(c)).join(' &rarr; ') + '</span></div>' +
+        '<span class="tag-pill" style="font-size:0.72rem;">' + J.visitas.length + ' visitas &middot; ' +
+        prospPlata(netoDia) + ' en cartera</span>' +
+      '</div>' +
+      '<div style="overflow-x:auto;"><table class="advisor-table"><thead><tr>' +
+        '<th style="text-align:center;width:44px;">#</th>' +
+        '<th style="text-align:left;">Cliente</th>' +
+        '<th style="text-align:center;">Segmento</th>' +
+        '<th style="text-align:right;">&Uacute;ltima compra</th>' +
+        '<th style="text-align:right;">Cartera 12m</th>' +
+        '<th style="text-align:right;">&Delta;% a&ntilde;o</th>' +
+        '<th style="text-align:left;">Productos a proponer</th>' +
+        '<th style="text-align:center;">Ir</th>' +
+      '</tr></thead><tbody>' + filas + '</tbody></table></div></div>';
+  }).join('') +
+  '<p style="font-size:0.75rem;color:var(--ax-text-tertiary);margin-top:0.25rem;">' +
+  '&#8635; producto que el cliente ya compra y se le paso el ciclo de reposicion &nbsp;&middot;&nbsp; ' +
+  '&#43; producto que compran sus pares de la region y el todavia no.</p>';
+}
+
+function prospPintarCartera(M) {
+  const tbody = document.getElementById('prospCarteraBody');
+  if (!tbody) return;
+
+  const R = prospRegionActual(M);
+  const thYtd = document.getElementById('prospThCliYtd');
+  if (thYtd) thYtd.textContent = 'Venta ' + M.anio;
+
+  let lista = R ? R.clientes.slice() : M.clientes.slice();
+  if (prospSegmentoSel !== 'ALL') lista = lista.filter(c => c.segmento === prospSegmentoSel);
+  if (prospBusqueda) {
+    const q = prospSinTildes(prospBusqueda);
+    lista = lista.filter(c => prospSinTildes(c.nombre).indexOf(q) !== -1 ||
+                              prospSinTildes(c.rut).indexOf(q) !== -1 ||
+                              prospSinTildes(c.comuna).indexOf(q) !== -1);
+  }
+
+  const nota = document.getElementById('prospCarteraNota');
+  if (nota) {
+    nota.textContent = lista.length + ' clientes' + (R ? ' en ' + R.nombre : ' en todo el canal') +
+      ', ordenados por prioridad de contacto' + (lista.length > 150 ? ' (se muestran los 150 primeros)' : '');
+  }
+
+  const nombreReg = {};
+  M.regiones.forEach(x => { nombreReg[x.clave] = x.nombre; });
+
+  const vista = lista.slice(0, 150);
+  tbody.innerHTML = vista.map((C, i) => {
+    const colScore = C.score >= 70 ? '#F87171' : C.score >= 50 ? 'var(--ax-accent-gold)' : 'var(--ax-text-secondary)';
+    return '<tr>' +
+      '<td style="text-align:center;"><span style="font-weight:900;color:' + colScore + ';" ' +
+        'title="Puntaje 0-100: potencial 30%, caida 25%, dias sin comprar 25%, brecha de mix 12%, margen 8%">' +
+        C.score + '</span></td>' +
+      '<td style="text-align:left;max-width:250px;"><div style="font-weight:700;color:var(--ax-text-primary);' +
+        'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="' + escapeHtml(C.nombre) + '">' +
+        escapeHtml(C.nombre) + '</div>' + (C.rut ? '<div style="font-size:0.7rem;color:var(--ax-text-tertiary);">' +
+        escapeHtml(C.rut) + '</div>' : '') + '</td>' +
+      '<td style="text-align:left;font-size:0.8rem;">' + escapeHtml(C.comuna) + '</td>' +
+      '<td style="text-align:left;font-size:0.8rem;color:var(--ax-text-secondary);">' +
+        escapeHtml(nombreReg[C.region] || C.region) + '</td>' +
+      '<td style="text-align:center;">' + prospBadgeSegmento(C.segmento) + '</td>' +
+      '<td style="text-align:right;font-size:0.78rem;">' + prospFechaCorta(C.ultima) +
+        (C.diasSin === null ? '' : '<div style="font-size:0.7rem;color:var(--ax-text-tertiary);">' +
+        C.diasSin + ' d&iacute;as</div>') + '</td>' +
+      '<td style="text-align:right;font-weight:800;color:var(--ax-accent-sky);">' + prospPlata(C.ytd) + '</td>' +
+      '<td style="text-align:right;">' + prospPlata(C.ytdPrev) + '</td>' +
+      '<td style="text-align:right;">' + prospPct(C.delta) + '</td>' +
+      '<td style="text-align:right;font-weight:700;color:' + (C.margen >= 25 ? 'var(--ax-accent-emerald)' : 'var(--ax-accent-gold)') + ';">' +
+        C.margen.toFixed(1) + '%</td>' +
+      '<td style="text-align:left;max-width:300px;">' + prospRecosHtml(C.recomendaciones) + '</td>' +
+      '</tr>';
+  }).join('') || prospCarteraVaciaHtml(M, R);
+}
+
+/**
+ * Mensaje de lista vacia que nombra los filtros que la dejaron vacia. Buscar
+ * "valparaiso" con la region Metropolitana puesta devuelve cero, y sin decir
+ * cual de los dos filtros mando parece que el buscador esta roto.
+ */
+function prospCarteraVaciaHtml(M, R) {
+  const activos = [];
+  if (R) activos.push('la region <strong>' + escapeHtml(R.nombre) + '</strong>');
+  if (prospSegmentoSel !== 'ALL') {
+    activos.push('el segmento <strong>' +
+      escapeHtml((PROSP_SEGMENTOS[prospSegmentoSel] || {}).etiqueta || prospSegmentoSel) + '</strong>');
+  }
+  if (prospBusqueda) activos.push('la b&uacute;squeda <strong>"' + escapeHtml(prospBusqueda) + '"</strong>');
+
+  const detalle = activos.length
+    ? 'Ning&uacute;n cliente cumple a la vez ' + activos.join(' y ') + '.'
+    : 'No hay clientes mayoristas que mostrar.';
+
+  return '<tr><td colspan="11" style="text-align:center;color:var(--ax-text-tertiary);padding:2rem;">' +
+    detalle + (activos.length > 1 ? '<br><span style="font-size:0.78rem;">Quita uno de los filtros para ampliar la lista.</span>' : '') +
+    '</td></tr>';
+}
+
+function prospPintarMetodologia(M) {
+  const el = document.getElementById('prospMetodologia');
+  if (!el) return;
+  const pct = (M.cuota * 100).toFixed(1);
+  el.innerHTML =
+    '<p style="margin:0 0 0.6rem 0;"><strong>Universo.</strong> Solo las lineas cuyo <em>Canal Final</em> es MAYORISTAS, ' +
+    'sobre la planilla completa y sin los filtros globales del tablero: la comparativa interanual necesita los dos anios enteros. ' +
+    'Los clientes se agrupan por RUT cuando existe, no por nombre, porque el mismo comprador viene escrito de varias formas.</p>' +
+
+    '<p style="margin:0 0 0.6rem 0;"><strong>Region de cada venta.</strong> Se toma la columna Region de la planilla. ' +
+    'Cuando esa columna viene vacia se completa con la region desde la que ese mismo cliente factura habitualmente, ' +
+    'calculada sobre sus propias lineas que si traen el dato. Hoy eso afecta a <strong>' + formatNum(M.filasImputadas) +
+    '</strong> lineas (' + prospPlata(M.netoImputadoYtd) + ' de ' + M.anio + '). Sin ese arreglo, las regiones ' +
+    'apareceran cayendo contra el anio pasado cuando lo unico que se perdio fue el dato de direccion. ' +
+    'Es una imputacion, no un dato: lo correcto es corregirlo en el origen.</p>' +
+
+    '<p style="margin:0 0 0.6rem 0;"><strong>Fecha de referencia.</strong> ' + prospFechaCorta(M.refDate) +
+    ', el ultimo dia con venta mayorista cargada. Todo lo "acumulado" llega hasta ahi, y el mismo periodo del anio anterior ' +
+    'se corta en el mismo dia y mes.</p>' +
+
+    '<p style="margin:0 0 0.6rem 0;"><strong>Proyeccion del mes.</strong> ' +
+    (M.mesCerrado
+      ? 'El mes ya esta completo, asi que la proyeccion es la venta real.'
+      : (M.usaCurva
+          ? 'Se reconstruye la curva del mes de ' + M.mesNombre + ' juntando ese mismo mes de los tres anios anteriores. ' +
+            'Historicamente al dia ' + M.dia + ' ya se lleva facturado el <strong>' + pct + '%</strong> del mes, ' +
+            'asi que el cierre estimado es lo facturado dividido por esa fraccion. Prorratear por dias transcurridos ' +
+            'ignoraria que la venta mayorista se concentra hacia fin de mes.' +
+            (M.hayBanda
+              ? ' Entre esos ' + M.aniosCurva + ' anios la cifra no fue la misma: a esta altura del mes iban desde ' +
+                (M.cuotaMin * 100).toFixed(0) + '% hasta ' + (M.cuotaMax * 100).toFixed(0) +
+                '%. Ese es el rango que aparece bajo la proyeccion, y es el margen de error honesto del numero.'
+              : '')
+          : 'No hay suficiente historia de ' + M.mesNombre + ' para reconstruir la curva, asi que se prorratea por dias ' +
+            'transcurridos (' + M.dia + ' de ' + M.diasMes + '). Ese metodo tiende a quedarse corto.')) + '</p>' +
+
+    '<p style="margin:0 0 0.6rem 0;"><strong>Proyeccion del anio.</strong> Lo facturado hasta hoy, mas lo que falta del mes en curso, ' +
+    'mas los meses que quedan valorizados con lo que vendieron esos mismos meses el anio pasado corregidos por un factor de ' +
+    'crecimiento. El factor se calcula solo con <em>meses ya cerrados</em> para no mezclar un mes a medias con doce completos, ' +
+    'y se acota entre 0,4x y 2,5x: en una region de tres clientes un pedido grande no es una tendencia.</p>' +
+
+    '<p style="margin:0 0 0.6rem 0;"><strong>Prioridad de contacto (0-100).</strong> Suma ponderada de cinco factores: ' +
+    'potencial 30% (venta de los ultimos 12 meses en escala logaritmica), caida 25% (cuanto perdio contra el mismo periodo del anio pasado), ' +
+    'recencia 25% (dias sin comprar, saturando a 240), brecha de mix 12% (cuantos de los 15 productos mas penetrados de su region no compra) ' +
+    'y margen 8%. Es una formula fija y auditable, no un modelo entrenado: mismos datos, mismo resultado.</p>' +
+
+    '<p style="margin:0 0 0.6rem 0;"><strong>Productos a proponer.</strong> Dos listas distintas. <em>Reposicion</em>: SKUs que el cliente ' +
+    'ya compra con cadencia y cuyo ciclo mediano se paso en mas de un 30%. <em>Cruzado</em>: SKUs que compran sus pares de la misma region ' +
+    'y el no, ordenados por penetracion x ticket medio, o sea por plata esperada y no por popularidad.</p>' +
+
+    '<p style="margin:0;"><strong>Ruta.</strong> Siempre dentro de una sola region. Se toman los mejor puntuados hasta llenar ' +
+    'dias x visitas, se agrupan por comuna y se ordenan las comunas por prioridad acumulada; una comuna no se parte entre dos dias ' +
+    'si cabe entera en uno. <strong>No se calculan distancias reales</strong>: la planilla no trae coordenadas y no se van a inventar. ' +
+    'Agrupar por comuna es la mejor reduccion de traslado que permite el dato disponible; el enlace "Mapa" abre cada cliente en ' +
+    'Google Maps para el trayecto fino.</p>';
+}
+
+/* -------------------------------------------------------------------------
+   Exportacion
+   ------------------------------------------------------------------------- */
+
+function exportarProspeccionExcel() {
+  const M = prospModeloVigente();
+  if (!M) {
+    if (typeof showToast === 'function') showToast('No hay datos mayoristas que exportar', 'warn');
+    return;
+  }
+  if (typeof xlsxCrearLibro !== 'function') {
+    if (typeof showToast === 'function') showToast('El generador de Excel no esta disponible', 'error');
+    return;
+  }
+
+  const nombreReg = {};
+  M.regiones.forEach(x => { nombreReg[x.clave] = x.nombre; });
+
+  const hojaRegiones = {
+    nombre: 'Regiones',
+    columnas: [
+      { titulo: 'REGIÓN', ancho: 24, tipo: 'texto' },
+      { titulo: 'CLIENTES ' + M.anio, ancho: 14, tipo: 'numero' },
+      { titulo: 'CLIENTES ' + M.anioPrev, ancho: 14, tipo: 'numero' },
+      { titulo: 'VENTA ' + M.anio + ' (AL ' + M.dia + '/' + M.mm + ')', ancho: 20, tipo: 'clp' },
+      { titulo: M.anioPrev + ' MISMO PERIODO', ancho: 20, tipo: 'clp' },
+      { titulo: '% VAR ACUMULADO', ancho: 16, tipo: 'pct' },
+      { titulo: 'MES EN CURSO', ancho: 16, tipo: 'clp' },
+      { titulo: 'PROY. MES', ancho: 16, tipo: 'clp' },
+      { titulo: '% VAR MES', ancho: 12, tipo: 'pct' },
+      { titulo: 'PROY. CIERRE ' + M.anio, ancho: 18, tipo: 'clp' },
+      { titulo: M.anioPrev + ' COMPLETO', ancho: 18, tipo: 'clp' },
+      { titulo: '% VAR CIERRE', ancho: 13, tipo: 'pct' },
+      { titulo: 'CONFIANZA', ancho: 11, tipo: 'texto' }
+    ],
+    filas: M.regiones.map(R => [
+      R.nombre, R.clientesAct.size, R.clientesPrev.size, R.ytd, R.ytdPrev,
+      R.deltaYtd === null ? '' : R.deltaYtd / 100,
+      R.mtd, R.proyMes, R.deltaMes === null ? '' : R.deltaMes / 100,
+      R.proyAnio, R.anioPrevFull, R.deltaAnio === null ? '' : R.deltaAnio / 100,
+      R.confianza
+    ])
+  };
+
+  const hojaCartera = {
+    nombre: 'Cartera',
+    columnas: [
+      { titulo: 'PRIORIDAD', ancho: 10, tipo: 'numero' },
+      { titulo: 'CLIENTE', ancho: 40, tipo: 'texto' },
+      { titulo: 'RUT', ancho: 14, tipo: 'texto' },
+      { titulo: 'COMUNA', ancho: 20, tipo: 'texto' },
+      { titulo: 'REGIÓN', ancho: 22, tipo: 'texto' },
+      { titulo: 'SEGMENTO', ancho: 16, tipo: 'texto' },
+      { titulo: 'ÚLTIMA COMPRA', ancho: 15, tipo: 'fecha' },
+      { titulo: 'DÍAS SIN COMPRAR', ancho: 16, tipo: 'numero' },
+      { titulo: 'VENTA ' + M.anio, ancho: 16, tipo: 'clp' },
+      { titulo: M.anioPrev + ' MISMO PERIODO', ancho: 20, tipo: 'clp' },
+      { titulo: '% VAR', ancho: 10, tipo: 'pct' },
+      { titulo: 'CARTERA 12M', ancho: 16, tipo: 'clp' },
+      { titulo: 'MARGEN 12M', ancho: 12, tipo: 'pct' },
+      { titulo: 'PRODUCTOS A PROPONER', ancho: 46, tipo: 'texto' }
+    ],
+    filas: M.clientes.map(C => [
+      C.score, C.nombre, C.rut, C.comuna, nombreReg[C.region] || C.region,
+      (PROSP_SEGMENTOS[C.segmento] || {}).etiqueta || C.segmento,
+      C.ultima, C.diasSin === null ? '' : C.diasSin,
+      C.ytd, C.ytdPrev, C.delta === null ? '' : C.delta / 100,
+      C.neto12m, C.margen / 100,
+      C.recomendaciones.map(r => r.sku + ' (' + (r.tipo === 'reposicion' ? 'repone' : 'cruzado') + ')').join(' | ')
+    ])
+  };
+
+  const hojas = [hojaRegiones, hojaCartera];
+
+  const R = prospRegionActual(M) ||
+    M.regiones.filter(x => !x.sinDato && x.clientes.length)
+      .map(x => ({ R: x, peso: x.clientes.slice(0, 10).reduce((a, c) => a + c.score, 0) }))
+      .sort((a, b) => b.peso - a.peso).map(x => x.R)[0];
+
+  if (R) {
+    const jornadas = prospArmarRuta(R, prospDiasRuta, prospVisitasDia, prospSegmentoSel);
+    const filas = [];
+    jornadas.forEach(J => {
+      J.visitas.forEach((C, i) => {
+        filas.push([
+          J.dia, i + 1, C.comuna, C.nombre, C.rut,
+          (PROSP_SEGMENTOS[C.segmento] || {}).etiqueta || C.segmento,
+          C.score, C.ultima, C.diasSin === null ? '' : C.diasSin, C.neto12m,
+          C.delta === null ? '' : C.delta / 100,
+          C.recomendaciones.map(r => r.sku + ' - ' + r.desc + ' (' + r.nota + ')').join(' | ')
+        ]);
+      });
+    });
+    hojas.push({
+      nombre: 'Ruta ' + R.nombre,
+      columnas: [
+        { titulo: 'DÍA', ancho: 6, tipo: 'numero' },
+        { titulo: 'ORDEN', ancho: 7, tipo: 'numero' },
+        { titulo: 'COMUNA', ancho: 20, tipo: 'texto' },
+        { titulo: 'CLIENTE', ancho: 40, tipo: 'texto' },
+        { titulo: 'RUT', ancho: 14, tipo: 'texto' },
+        { titulo: 'SEGMENTO', ancho: 16, tipo: 'texto' },
+        { titulo: 'PRIORIDAD', ancho: 10, tipo: 'numero' },
+        { titulo: 'ÚLTIMA COMPRA', ancho: 15, tipo: 'fecha' },
+        { titulo: 'DÍAS SIN COMPRAR', ancho: 16, tipo: 'numero' },
+        { titulo: 'CARTERA 12M', ancho: 16, tipo: 'clp' },
+        { titulo: '% VAR AÑO', ancho: 11, tipo: 'pct' },
+        { titulo: 'PRODUCTOS A PROPONER', ancho: 70, tipo: 'texto' }
+      ],
+      filas
+    });
+  }
+
+  try {
+    const blob = xlsxCrearLibro(hojas);
+    xlsxDescargar(blob, 'Glomax_Prospeccion_Mayorista_' + M.refISO + '.xlsx');
+    if (typeof showToast === 'function') {
+      showToast('Prospección exportada (' + hojas.length + ' hojas)', 'success');
+    }
+  } catch (err) {
+    console.error('[Prospeccion] Error al exportar:', err);
+    if (typeof showToast === 'function') showToast('No se pudo generar el Excel', 'error');
+  }
+}
+
+/* -------------------------------------------------------------------------
+   Listeners
+   ------------------------------------------------------------------------- */
+
+function setupProspeccionListeners() {
+  const enlazar = (id, evento, fn) => {
+    const el = document.getElementById(id);
+    if (!el || el._prospBound) return;
+    el._prospBound = true;
+    el.addEventListener(evento, fn);
+  };
+
+  enlazar('prospRegionSelect', 'change', e => {
+    prospRegionSel = e.target.value || 'ALL';
+    renderProspeccionView();
+  });
+
+  enlazar('prospSegmentoFiltro', 'change', e => {
+    prospSegmentoSel = e.target.value || 'ALL';
+    renderProspeccionView();
+  });
+
+  const numerico = (id, min, max, asignar) => {
+    enlazar(id, 'change', e => {
+      const v = Math.min(max, Math.max(min, parseInt(e.target.value, 10) || min));
+      e.target.value = v;
+      asignar(v);
+      renderProspeccionView();
+    });
+  };
+  numerico('prospDias', 1, 10, v => { prospDiasRuta = v; });
+  numerico('prospVisitasDia', 1, 12, v => { prospVisitasDia = v; });
+
+  const caja = document.getElementById('prospBuscar');
+  if (caja && !caja._prospBound) {
+    caja._prospBound = true;
+    let t = null;
+    caja.addEventListener('input', () => {
+      clearTimeout(t);
+      t = setTimeout(() => {
+        prospBusqueda = (caja.value || '').trim();
+        const M = prospModeloVigente();
+        if (M) prospPintarCartera(M);
+      }, 220);
+    });
+  }
+
+  enlazar('prospExportar', 'click', exportarProspeccionExcel);
 }
