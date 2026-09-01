@@ -56,6 +56,39 @@
   --ax-shadow-glass: 0 16px 40px rgba(0, 0, 0, 0.45);
   --ax-shadow-card: 0 6px 24px rgba(0, 0, 0, 0.28);
   --ax-shadow-glow: 0 0 28px rgba(77, 159, 236, 0.25);
+
+  /* --- Paleta semantica de Prospeccion --------------------------------
+     Estos tonos se eligieron contra el lienzo oscuro y se estaban usando
+     tal cual en el tema claro, donde el amarillo caia a 1.12:1 sobre
+     blanco: invisible. Ahora cada tono tiene su version por tema y el JS
+     los lee desde aqui en vez de llevarlos escritos a mano.
+     Medidos sobre #FFFFFF y sobre el lienzo: todos >= 4.5:1. */
+  --prosp-fuga:      #F87171;
+  --prosp-dormido:   #FB923C;
+  --prosp-riesgo:    #FFC46B;
+  --prosp-caida:     #FDE68A;
+  --prosp-nuevo:     #2DD4CE;
+  --prosp-crece:     #3DDC97;
+  --prosp-estable:   #94A3B8;
+  --prosp-var-alza:  #3DDC97;
+  --prosp-var-sube:  #7FD8A8;
+  --prosp-var-plano: #8B95B9;
+  --prosp-var-baja:  #FFAE7B;
+  --prosp-var-cae:   #F87171;
+  /* El gris de "sin dato" marcaba 2.52:1 sobre la tarjeta oscura; se aclara. */
+  --prosp-var-sd:    #9AA3C0;
+
+  /* La pastilla de segmento pinta texto y fondo con el mismo tono. El relleno
+     acerca el fondo al color del texto y se come el contraste, asi que el alfa
+     va por tema: medido, "En fuga" sobre su propio tinte pasaba de 4.5:1.
+     Son sufijos hexadecimales de alfa, no colores. */
+  --prosp-tinte: 14;
+  --prosp-borde: 55;
+
+  /* Azul de las pastillas de producto sugerido. --ax-accent puro marcaba
+     4.44:1 sobre el relleno de la pastilla: se aclara lo justo para pasar
+     4.5:1 sin cambiar el tono. */
+  --prosp-cruce: #63ABF0;
 }
 
 [data-ax-theme="light"], .is-pdf-export {
@@ -67,6 +100,27 @@
   --ax-card-bg: #FFFFFF;
   --ax-card-border: #E2E8F0;
   --ax-card-hover-border: #1E62B4;
+
+  /* Version clara de la paleta de Prospeccion (ver el bloque oscuro). */
+  --prosp-fuga:      #C81E1E;
+  --prosp-dormido:   #B45309;
+  --prosp-riesgo:    #A16207;
+  --prosp-caida:     #7D6608;
+  --prosp-nuevo:     #0F766E;
+  --prosp-crece:     #15803D;
+  --prosp-estable:   #5B6B85;
+  --prosp-var-alza:  #15803D;
+  --prosp-var-sube:  #2E7D5B;
+  --prosp-var-plano: #616E96;
+  --prosp-var-baja:  #C2410C;
+  --prosp-var-cae:   #C81E1E;
+  --prosp-var-sd:    #5B6B85;
+  /* En claro el tinte tiene que ser mas leve todavia: el texto ya es oscuro
+     y el fondo teniido lo empuja hacia el mismo lado de la escala. */
+  --prosp-tinte: 0A;
+  --prosp-borde: 40;
+  /* En claro el acento ya cumple; se deja igual. */
+  --prosp-cruce: #1E62B4;
 }
 
 [data-ax-theme="light"] .table-card,

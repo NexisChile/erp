@@ -1335,6 +1335,15 @@ function toggleTheme() {
   // Chart.js pinta ejes y leyendas con el color resuelto en el momento de
   // dibujar, asi que no se reajustan solos al cambiar de tema.
   if (typeof refreshChartsTheme === 'function') refreshChartsTheme();
+
+  // Prospeccion escribe sus tonos dentro del HTML que genera, asi que
+  // refrescar los graficos no alcanza: si la vista esta abierta hay que
+  // rehacerla para que tome la paleta del tema nuevo.
+  const vistaProsp = document.getElementById('view-prospeccion');
+  if (vistaProsp && vistaProsp.classList.contains('active') &&
+      typeof renderProspeccionView === 'function') {
+    renderProspeccionView();
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -12311,15 +12320,84 @@ const PROSP_REGIONES = [
   { clave: 'XII',  nombre: 'Magallanes',           orden: 16, pistas: ['magallanes', 'antartica'] }
 ];
 
+/* Los tonos ya no van escritos aqui. Se eligieron mirando el lienzo oscuro y
+   se estaban reutilizando tal cual en el tema claro, donde el amarillo de "En
+   caida" quedaba en 1.12:1 sobre blanco: presente en la pantalla e ilegible.
+   Ahora cada segmento declara que variable CSS le toca y el tono concreto lo
+   resuelve prospPaleta() segun el tema activo. */
 const PROSP_SEGMENTOS = {
-  FUGA:    { etiqueta: 'En fuga',        color: '#F87171', peso: 1, ayuda: 'Compraba el anio pasado y este anio no ha comprado nada' },
-  DORMIDO: { etiqueta: 'Dormido',        color: '#FB923C', peso: 2, ayuda: 'Mas de 180 dias sin comprar' },
-  RIESGO:  { etiqueta: 'En riesgo',      color: '#FFC46B', peso: 3, ayuda: 'Entre 90 y 180 dias sin comprar' },
-  CAIDA:   { etiqueta: 'En caida',       color: '#FDE68A', peso: 4, ayuda: 'Compra, pero al menos 20% menos que el anio pasado' },
-  NUEVO:   { etiqueta: 'Nuevo',          color: '#2DD4CE', peso: 5, ayuda: 'Su primera compra fue este anio' },
-  CRECE:   { etiqueta: 'En crecimiento', color: '#3DDC97', peso: 6, ayuda: 'Crece mas de 10% contra el anio pasado' },
-  ESTABLE: { etiqueta: 'Estable',        color: '#94A3B8', peso: 7, ayuda: 'Se mantiene dentro de +/-10% del anio pasado' }
+  FUGA:    { etiqueta: 'En fuga',        tono: '--prosp-fuga',    peso: 1, ayuda: 'Compraba el anio pasado y este anio no ha comprado nada' },
+  DORMIDO: { etiqueta: 'Dormido',        tono: '--prosp-dormido', peso: 2, ayuda: 'Mas de 180 dias sin comprar' },
+  RIESGO:  { etiqueta: 'En riesgo',      tono: '--prosp-riesgo',  peso: 3, ayuda: 'Entre 90 y 180 dias sin comprar' },
+  CAIDA:   { etiqueta: 'En caida',       tono: '--prosp-caida',   peso: 4, ayuda: 'Compra, pero al menos 20% menos que el anio pasado' },
+  NUEVO:   { etiqueta: 'Nuevo',          tono: '--prosp-nuevo',   peso: 5, ayuda: 'Su primera compra fue este anio' },
+  CRECE:   { etiqueta: 'En crecimiento', tono: '--prosp-crece',   peso: 6, ayuda: 'Crece mas de 10% contra el anio pasado' },
+  ESTABLE: { etiqueta: 'Estable',        tono: '--prosp-estable', peso: 7, ayuda: 'Se mantiene dentro de +/-10% del anio pasado' }
 };
+
+/* Respaldos por si la hoja de estilos no esta cargada todavia o el modulo se
+   evalua fuera del navegador (la bateria de pruebas lo hace). Son los valores
+   del tema oscuro, que es el de arranque. */
+const PROSP_TONOS_RESPALDO = {
+  '--prosp-fuga':      '#F87171',
+  '--prosp-dormido':   '#FB923C',
+  '--prosp-riesgo':    '#FFC46B',
+  '--prosp-caida':     '#FDE68A',
+  '--prosp-nuevo':     '#2DD4CE',
+  '--prosp-crece':     '#3DDC97',
+  '--prosp-estable':   '#94A3B8',
+  '--prosp-var-alza':  '#3DDC97',
+  '--prosp-var-sube':  '#7FD8A8',
+  '--prosp-var-plano': '#8B95B9',
+  '--prosp-var-baja':  '#FFAE7B',
+  '--prosp-var-cae':   '#F87171',
+  '--prosp-var-sd':    '#9AA3C0',
+  '--prosp-tinte':     '14',
+  '--prosp-borde':     '55',
+  '--prosp-cruce':     '#63ABF0'
+};
+
+let prospPaletaCache = null;
+let prospPaletaTema  = null;
+
+/* Resuelve la paleta contra el tema activo. Se cachea porque la tabla de
+   cartera pide un color por fila y resolver la variable en cada una obligaria
+   al navegador a recalcular estilos cientos de veces por repintado. */
+function prospPaleta() {
+  const tema = (typeof document !== 'undefined' && document.documentElement
+    ? document.documentElement.getAttribute('data-ax-theme') : null) || 'dark';
+  if (prospPaletaCache && prospPaletaTema === tema) return prospPaletaCache;
+
+  let hoja = null;
+  try { hoja = getComputedStyle(document.documentElement); } catch (e) { hoja = null; }
+
+  const paleta = {};
+  Object.keys(PROSP_TONOS_RESPALDO).forEach(nombre => {
+    let valor = '';
+    if (hoja) {
+      try { valor = (hoja.getPropertyValue(nombre) || '').trim(); } catch (e) { valor = ''; }
+    }
+    paleta[nombre] = valor || PROSP_TONOS_RESPALDO[nombre];
+  });
+
+  prospPaletaTema  = tema;
+  prospPaletaCache = paleta;
+  return paleta;
+}
+
+function prospTono(nombre) {
+  return prospPaleta()[nombre] || PROSP_TONOS_RESPALDO[nombre] || 'currentColor';
+}
+
+/* Un getter para que las decenas de llamadas a `.color` que ya existen sigan
+   funcionando y ademas devuelvan el tono correcto despues de cambiar de tema. */
+Object.keys(PROSP_SEGMENTOS).forEach(clave => {
+  const seg = PROSP_SEGMENTOS[clave];
+  Object.defineProperty(seg, 'color', {
+    get: function () { return prospTono(seg.tono); },
+    enumerable: true
+  });
+});
 
 const PROSP_MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
                      'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -13014,7 +13092,7 @@ function prospPct(v, invertir) {
   }
   const bueno = invertir ? v <= 0 : v >= 0;
   const color = Math.abs(v) < 0.05 ? 'var(--ax-text-secondary)'
-              : (bueno ? 'var(--ax-accent-emerald)' : '#F87171');
+              : (bueno ? 'var(--ax-accent-emerald)' : prospTono('--prosp-var-cae'));
   const signo = v > 0 ? '+' : '';
   return '<span style="color: ' + color + '; font-weight: 800;">' + signo + v.toFixed(1) + '%</span>';
 }
@@ -13055,8 +13133,10 @@ function prospFechaCorta(d) {
 function prospBadgeSegmento(clave) {
   const s = PROSP_SEGMENTOS[clave] || PROSP_SEGMENTOS.ESTABLE;
   return '<span title="' + escapeHtml(s.ayuda) + '" style="padding: 3px 9px; border-radius: 12px; font-size: 0.72rem; ' +
-         'font-weight: 800; white-space: nowrap; color: ' + s.color + '; background: ' + s.color + '22; ' +
-         'border: 1px solid ' + s.color + '55;">' + escapeHtml(s.etiqueta) + '</span>';
+         'font-weight: 800; white-space: nowrap; color: ' + s.color +
+         '; background: ' + s.color + prospTono('--prosp-tinte') + '; ' +
+         'border: 1px solid ' + s.color + prospTono('--prosp-borde') + ';">' +
+         escapeHtml(s.etiqueta) + '</span>';
 }
 
 function prospRecosHtml(recs) {
@@ -13065,7 +13145,9 @@ function prospRecosHtml(recs) {
   }
   return recs.map(r => {
     const esRepo = r.tipo === 'reposicion';
-    const col = esRepo ? 'var(--ax-accent-emerald)' : 'var(--ax-accent)';
+    /* El acento a secas se quedaba en 4.44:1 sobre el relleno de la
+       pastilla; --prosp-cruce es el mismo azul apenas mas claro. */
+    const col = esRepo ? 'var(--ax-accent-emerald)' : 'var(--prosp-cruce)';
     return '<span class="tag-pill" title="' + escapeHtml(r.desc + ' — ' + r.nota) + '" ' +
            'style="font-size: 0.7rem; margin: 1px 3px 1px 0; color: ' + col + '; border-color: ' + col + '55;">' +
            (esRepo ? '&#8635; ' : '&#43; ') + escapeHtml(r.sku) + '</span>';
@@ -13191,7 +13273,7 @@ function prospPintarKpis(M) {
   set('prospKpiClientes', formatNum(nClientes));
   const dc = nClientes - nPrev;
   set('prospKpiClientesSub', 'Compraron en ' + M.anio + '. Mismo periodo ' + M.anioPrev + ': ' + formatNum(nPrev) +
-      ' &nbsp;<span style="font-weight:800;color:' + (dc >= 0 ? 'var(--ax-accent-emerald)' : '#F87171') + '">' +
+      ' &nbsp;<span style="font-weight:800;color:' + (dc >= 0 ? 'var(--ax-accent-emerald)' : prospTono('--prosp-var-cae')) + '">' +
       (dc > 0 ? '+' : '') + dc + '</span>');
 
   set('prospKpiMesLabel', 'Cierre proyectado de ' + M.mesNombre);
@@ -13228,7 +13310,7 @@ function prospPintarRegiones(M) {
   const resumen = document.getElementById('prospRegionesResumen');
   if (resumen) resumen.textContent = M.regiones.length + ' regiones con venta';
 
-  const conf = { Alta: 'var(--ax-accent-emerald)', Media: 'var(--ax-accent-gold)', Baja: '#F87171' };
+  const conf = { Alta: 'var(--ax-accent-emerald)', Media: 'var(--ax-accent-gold)', Baja: prospTono('--prosp-var-cae') };
 
   tbody.innerHTML = M.regiones.map(R => {
     const activa = R.clave === prospRegionSel;
@@ -13237,7 +13319,7 @@ function prospPintarRegiones(M) {
       '<td style="text-align:left;font-weight:800;color:' + (activa ? 'var(--ax-accent-gold)' : 'var(--ax-text-primary)') + ';">' +
         escapeHtml(R.nombre) + (R.sinDato ? ' <span style="font-weight:600;color:var(--ax-text-tertiary);font-size:0.72rem;">(sin direccion)</span>' : '') + '</td>' +
       '<td style="text-align:right;font-weight:700;">' + formatNum(R.clientesAct.size) + '</td>' +
-      '<td style="text-align:right;font-weight:800;color:' + (R.deltaClientes >= 0 ? 'var(--ax-accent-emerald)' : '#F87171') + ';">' +
+      '<td style="text-align:right;font-weight:800;color:' + (R.deltaClientes >= 0 ? 'var(--ax-accent-emerald)' : prospTono('--prosp-var-cae')) + ';">' +
         (R.deltaClientes > 0 ? '+' : '') + R.deltaClientes + '</td>' +
       '<td style="text-align:right;font-weight:800;color:var(--ax-accent-sky);">' + prospPlata(R.ytd) + '</td>' +
       '<td style="text-align:right;">' + prospPlata(R.ytdPrev) + '</td>' +
@@ -13248,7 +13330,7 @@ function prospPintarRegiones(M) {
       '<td style="text-align:right;font-weight:800;color:var(--ax-accent-purple);">' + prospPlata(R.proyAnio) + '</td>' +
       '<td style="text-align:right;">' + prospPlata(R.anioPrevFull) + '</td>' +
       '<td style="text-align:right;">' + prospPctBarra(R.deltaAnio) + '</td>' +
-      '<td style="text-align:center;"><span style="font-size:0.72rem;font-weight:800;color:' + (conf[R.confianza] || '#94A3B8') + ';">' +
+      '<td style="text-align:center;"><span style="font-size:0.72rem;font-weight:800;color:' + (conf[R.confianza] || prospTono('--prosp-estable')) + ';">' +
         R.confianza + '</span></td>' +
       '</tr>';
   }).join('') || '<tr><td colspan="13" style="text-align:center;color:var(--ax-text-tertiary);padding:2rem;">Sin regiones con venta mayorista.</td></tr>';
@@ -13339,7 +13421,9 @@ function prospPintarRuta(M) {
         '<td style="text-align:right;">' + prospPct(C.delta) + '</td>' +
         '<td style="text-align:left;max-width:280px;">' + prospRecosHtml(C.recomendaciones) + '</td>' +
         '<td style="text-align:center;"><a href="' + mapa + '" target="_blank" rel="noopener noreferrer" ' +
-          'class="tag-pill" style="font-size:0.7rem;text-decoration:none;" title="Abrir en Google Maps">Mapa</a></td>' +
+          'class="tag-pill" style="font-size:0.7rem;text-decoration:none;display:inline-flex;' +
+           'align-items:center;justify-content:center;min-height:24px;padding:0 10px;" ' +
+           'title="Abrir en Google Maps">Mapa</a></td>' +
         '</tr>';
     }).join('');
 
@@ -13395,7 +13479,7 @@ function prospPintarCartera(M) {
 
   const vista = lista.slice(0, 150);
   tbody.innerHTML = vista.map((C, i) => {
-    const colScore = C.score >= 70 ? '#F87171' : C.score >= 50 ? 'var(--ax-accent-gold)' : 'var(--ax-text-secondary)';
+    const colScore = C.score >= 70 ? prospTono('--prosp-var-cae') : C.score >= 50 ? 'var(--ax-accent-gold)' : 'var(--ax-text-secondary)';
     return '<tr>' +
       '<td style="text-align:center;"><span style="font-weight:900;color:' + colScore + ';" ' +
         'title="Puntaje 0-100: potencial 30%, caida 25%, dias sin comprar 25%, brecha de mix 12%, margen 8%">' +
@@ -13546,12 +13630,12 @@ function prospTramaProyeccion(ctx2d, color) {
 
 /** Color divergente segun la variacion: rojo cae, gris plano, verde crece. */
 function prospColorVar(pct) {
-  if (pct === null || pct === undefined || !isFinite(pct)) return '#5A6488';
-  if (pct >= 25) return '#3DDC97';
-  if (pct >= 5)  return '#7FD8A8';
-  if (pct > -5)  return '#8B95B9';
-  if (pct > -25) return '#FFAE7B';
-  return '#F87171';
+  if (pct === null || pct === undefined || !isFinite(pct)) return prospTono('--prosp-var-sd');
+  if (pct >= 25) return prospTono('--prosp-var-alza');
+  if (pct >= 5)  return prospTono('--prosp-var-sube');
+  if (pct > -5)  return prospTono('--prosp-var-plano');
+  if (pct > -25) return prospTono('--prosp-var-baja');
+  return prospTono('--prosp-var-cae');
 }
 
 /* --- 1. Cinta geografica ------------------------------------------------- */
