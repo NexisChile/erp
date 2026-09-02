@@ -12356,37 +12356,38 @@ function setupMercadoPublicoListeners() {
 /* =========================================================================
    MODULO MERCADO PUBLICO - ORDENES DE COMPRA RECIBIDAS
    -------------------------------------------------------------------------
-   Las OC que los organismos le emiten a Glomax. A diferencia de las otras dos
-   vistas del modulo, esto NO sale de la planilla: la fuente es la API de
-   ChileCompra (api.mercadopublico.cl), y todavia no esta conectada.
+   Las OC que los organismos le emiten a Glomax. La fuente original es la API
+   de ChileCompra, pero el navegador NO la llama: lee la pestana
+   "OrdenesCompra" del mismo libro, que llena un disparador de Apps Script
+   (parte 3 de Code.gs).
 
-   Faltan dos cosas concretas, ninguna de las dos se resuelve escribiendo mas
-   codigo aqui:
+   Por que ese rodeo, medido contra la API real el 2026-09-02:
 
-     1. Un ticket de ChileCompra, que se pide en el portal de proveedores y se
-        pega en config.js -> MP_API_TICKET.
-     2. Un proxy, en config.js -> MP_API_PROXY. Hace falta porque
-        api.mercadopublico.cl no manda cabeceras CORS: el navegador bloquea la
-        respuesta aunque el servidor conteste bien. Sirve el mismo Apps Script
-        que ya usa el resto del panel, con un doGet que reenvie la llamada.
+     - api.mercadopublico.cl no manda cabeceras CORS. El navegador bloquea la
+       respuesta aunque el servidor conteste bien.
+     - El listado por dia devuelve solo Codigo, Nombre y CodigoEstado. El
+       organismo, el monto y las fechas exigen una segunda llamada por orden.
+     - El filtro por proveedor no funciona sin fecha: CodigoProveedor solo
+       devuelve Cantidad 0. Es un dia por llamada.
+     - La API rechaza llamadas simultaneas (codigo 10500), asi que hay que
+       serializarlas con una pausa.
 
-   Mientras eso no exista la vista se arma igual y dice que falta, en vez de
-   mostrar una tabla vacia sin explicar por que.
+   Cubrir 2025 y 2026 son ~610 listados y ~1.100 detalles. Con la pausa
+   obligatoria eso son mas de 25 minutos: no es algo que pueda pasar mientras
+   alguien mira una pantalla. Por eso corre en Apps Script por tandas y aqui
+   solo se lee el resultado, que baja en menos de un segundo.
 
-   El endpoint de la lista es:
-     <proxy>/servicios/v1/publico/ordenesdecompra.json?fecha=ddmmaaaa&ticket=T
-   y devuelve las OC de UN dia, en un objeto { Cantidad, Listado: [...] }. El
-   detalle de cada orden se pide aparte con ?codigo=<n>&ticket=T. El limite
-   publicado es de 500 solicitudes cada 5 minutos por ticket, asi que barrer un
-   mes son 30 llamadas y conviene guardarlas, no repetirlas en cada entrada a
-   la vista.
-
-   Los nombres de campo de normalizarOrdenesCompra estan tomados de la
-   documentacion publica y NO se han probado contra una respuesta real todavia:
-   por eso cada uno se lee con varias alternativas y cae a vacio en vez de
-   reventar. La primera vez que llegue una respuesta de verdad hay que revisar
-   este mapeo antes de confiar en los montos.
+   Las 17 columnas se leen por POSICION, igual que la pestana MercadoPublico:
+   sobreviven a que alguien renombre un titulo y se rompen ruidosamente si
+   alguien inserta una columna al medio.
    ========================================================================= */
+
+const MP_OC_COL = {
+  id: 0, nombre: 1, organismo: 2, unidad: 3, rutUnidad: 4, region: 5,
+  comuna: 6, tipo: 7, estado: 8, codEstado: 9, fechaEnvio: 10,
+  fechaAceptacion: 11, neto: 12, total: 13, lineas: 14, licitacion: 15,
+  actualizada: 16
+};
 
 let mpOcRows = [];
 let mpOcPagina = 1;
@@ -12394,22 +12395,29 @@ const MP_OC_TAM_PAGINA = 50;
 let mpOcCargando = false;
 let mpOcUltimaCarga = null;
 
-/* Estados que significan "el organismo todavia no la cierra". Se separan
-   porque son las unicas sobre las que se puede hacer algo hoy. */
-const MP_OC_PENDIENTES = ['Enviada a proveedor', 'Guardada', 'En proceso'];
+/* Estados en los que la orden todavia espera algo de nosotros. Se decide por
+   CodigoEstado y no por el texto, que la API escribe con tildes y mayusculas
+   cambiantes ("Recepcion Conforme" viene con la C alta).
 
-/** Que falta para poder llamar a la API. Lista vacia = se puede llamar. */
-function mpOcFaltaConfig() {
-  const falta = [];
-  const ticket = (typeof MP_API_TICKET !== 'undefined') ? String(MP_API_TICKET || '').trim() : '';
-  const proxy  = (typeof MP_API_PROXY  !== 'undefined') ? String(MP_API_PROXY  || '').trim() : '';
-  if (!ticket) falta.push('ticket');
-  if (!proxy)  falta.push('proxy');
-  return falta;
-}
+   Sobre 39 ordenes reales de 30 dias solo aparecieron tres codigos: 4
+   (Enviada a proveedor), 6 (Aceptada) y 12 (Recepcion Conforme). El 3 y el 5
+   estan aqui por la documentacion, no por haberlos visto. */
+const MP_OC_ESTADOS_PENDIENTES = [3, 4, 5];
+
+/* Los tres tipos que aparecen en las ordenes de Glomax. AG es Compra Agil, SE
+   es Seleccion/trato directo y CM es Convenio Marco. Se muestran expandidos
+   porque las siglas no se leen solas. */
+const MP_OC_TIPOS = {
+  AG: 'Compra Ágil',
+  SE: 'Trato directo',
+  CM: 'Convenio Marco',
+  LE: 'Licitación',
+  LP: 'Licitación',
+  LR: 'Licitación'
+};
 
 /* -------------------------------------------------------------------------
-   Lectura de la respuesta
+   Lectura de la pestana
    ------------------------------------------------------------------------- */
 
 function mpOcTexto(v) {
@@ -12417,79 +12425,183 @@ function mpOcTexto(v) {
   return String(v).trim();
 }
 
-/* La API devuelve los montos como numero JSON, pero algunas respuestas los
-   traen ya formateados ("$1.234.567"). Ahi el punto es separador de miles, no
-   decimal: Number() lee eso como NaN y el monto se perdia entero. Se delega en
-   parseChileanNumber, que es el lector que ya usa el resto del panel y sabe
-   distinguir el punto de miles de la coma decimal. */
 function mpOcNumero(v) {
   if (typeof v === 'number') return isFinite(v) ? v : 0;
   if (v === undefined || v === null || v === '') return 0;
+  /* parseChileanNumber es el lector que ya usa el resto del panel: entiende el
+     punto como separador de miles y la coma como decimal. Number() a secas lee
+     "1.234.567" como NaN y el monto se perdia entero. */
   if (typeof parseChileanNumber === 'function') return parseChileanNumber(v);
   const n = Number(String(v).replace(/[^0-9.-]/g, ''));
   return isFinite(n) ? n : 0;
 }
 
-/* Las fechas de la API vienen como "2026-08-14T10:32:00" o, en algunas
-   respuestas antiguas, como "14-08-2026". Se aceptan las dos. */
+/* GViz entrega las fechas como "Date(2026,7,14,10,32,0)" -mes en base 0- y el
+   CSV como texto ISO. Se aceptan las dos formas y cualquier basura devuelve
+   null en vez de una fecha inventada. */
 function mpOcFecha(v) {
+  if (v instanceof Date) return isNaN(v.getTime()) ? null : v;
   const t = mpOcTexto(v);
   if (!t) return null;
-  let m = t.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+
+  const g = t.match(/^Date\((\d+),(\d+),(\d+)(?:,(\d+),(\d+))?/);
+  if (g) {
+    return new Date(Number(g[1]), Number(g[2]), Number(g[3]),
+      Number(g[4] || 0), Number(g[5] || 0));
+  }
+  let m = t.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2}))?/);
+  if (m) {
+    return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]),
+      Number(m[4] || 0), Number(m[5] || 0));
+  }
   m = t.match(/^(\d{2})-(\d{2})-(\d{4})/);
   if (m) return new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
+
   const d = new Date(t);
   return isNaN(d.getTime()) ? null : d;
 }
 
-/**
- * Aplana una respuesta de ordenesdecompra.json a la forma que usa la vista.
- * Acepta tanto el objeto completo como el arreglo Listado suelto.
- */
-function normalizarOrdenesCompra(bruto) {
-  const lista = Array.isArray(bruto) ? bruto
-    : (bruto && Array.isArray(bruto.Listado) ? bruto.Listado : []);
+/** Filas crudas de la pestana -> la forma que usa la vista. */
+function normalizeOrdenesCompraRows(rawRows) {
+  const salida = [];
+  if (!rawRows || !rawRows.length) return salida;
 
-  return lista.map(function (o) {
-    const comprador = o.Comprador || o.comprador || {};
-    const neto = mpOcNumero(o.TotalNeto !== undefined ? o.TotalNeto : o.Total);
-    const fecha = mpOcFecha(o.FechaEnvio || o.Fechas && o.Fechas.FechaEnvio || o.FechaCreacion);
-    const estado = mpOcTexto(o.Estado || o.estado);
+  for (let i = 0; i < rawRows.length; i++) {
+    const raw = rawRows[i];
+    if (!raw) continue;
 
-    return {
-      codigo:    mpOcTexto(o.Codigo || o.codigo),
-      nombre:    mpOcTexto(o.Nombre || o.nombre),
-      organismo: mpOcTexto(comprador.NombreOrganismo || comprador.NombreUnidad || o.Organismo),
-      fecha:     fecha,
-      estado:    estado,
-      pendiente: MP_OC_PENDIENTES.indexOf(estado) !== -1,
-      neto:      neto,
-      lineas:    Array.isArray(o.Items && o.Items.Listado) ? o.Items.Listado.length
-               : mpOcNumero(o.Items && o.Items.Cantidad)
+    /* JSONP deja las celdas en _col_0.._col_16; el CSV entrega un arreglo. */
+    const celda = (n) => {
+      if (Array.isArray(raw)) return raw[n];
+      const v = raw['_col_' + n];
+      return v === undefined ? '' : v;
     };
-  }).filter(function (o) { return o.codigo; });
+
+    const id = mpOcTexto(celda(MP_OC_COL.id));
+    if (!id) continue;
+    /* El encabezado se cuela cuando la descarga viene por CSV sin cabecera
+       declarada; se reconoce porque la columna A dice literalmente "ID". */
+    if (id.toUpperCase() === 'ID' &&
+        mpOcTexto(celda(MP_OC_COL.nombre)).toUpperCase() === 'NOMBRE') continue;
+
+    const cod = Math.round(mpOcNumero(celda(MP_OC_COL.codEstado)));
+    const tipo = mpOcTexto(celda(MP_OC_COL.tipo));
+
+    salida.push({
+      id: id,
+      nombre: mpOcTexto(celda(MP_OC_COL.nombre)),
+      organismo: mpOcTexto(celda(MP_OC_COL.organismo)),
+      unidad: mpOcTexto(celda(MP_OC_COL.unidad)),
+      rutUnidad: mpOcTexto(celda(MP_OC_COL.rutUnidad)),
+      region: mpOcTexto(celda(MP_OC_COL.region)) || 'Sin región',
+      comuna: mpOcTexto(celda(MP_OC_COL.comuna)),
+      tipo: tipo,
+      tipoTexto: MP_OC_TIPOS[tipo.toUpperCase()] || (tipo || 'Sin tipo'),
+      estado: mpOcTexto(celda(MP_OC_COL.estado)) || 'Sin estado',
+      codEstado: cod,
+      pendiente: MP_OC_ESTADOS_PENDIENTES.indexOf(cod) !== -1,
+      fecha: mpOcFecha(celda(MP_OC_COL.fechaEnvio)),
+      fechaAceptacion: mpOcFecha(celda(MP_OC_COL.fechaAceptacion)),
+      neto: Math.round(mpOcNumero(celda(MP_OC_COL.neto))),
+      total: Math.round(mpOcNumero(celda(MP_OC_COL.total))),
+      lineas: Math.round(mpOcNumero(celda(MP_OC_COL.lineas))),
+      licitacion: mpOcTexto(celda(MP_OC_COL.licitacion))
+    });
+  }
+
+  return salida;
 }
 
 /* -------------------------------------------------------------------------
-   Carga
+   Descarga
    ------------------------------------------------------------------------- */
 
-/**
- * Trae las ordenes de compra de la API. Hoy no llama a nadie: sin ticket ni
- * proxy no hay a donde llamar, y disparar un fetch que el navegador va a
- * bloquear por CORS solo llena la consola de errores rojos que no ayudan.
- *
- * Cuando esten los dos datos en config.js, esta es la unica funcion que hay
- * que escribir: pedir un dia por llamada, juntar los Listado y devolver
- * normalizarOrdenesCompra() del conjunto.
- */
-async function fetchMpOrdenes() {
-  const falta = mpOcFaltaConfig();
-  if (falta.length) return null;
+/* Los ID de orden de compra de ChileCompra tienen una forma muy estrecha:
+   unidad de compra, correlativo y tipo+anio. "889473-1533-AG26".
 
-  console.warn('[MercadoPublico OC] Hay ticket y proxy configurados pero la ' +
-    'llamada a la API todavia no esta escrita. Ver fetchMpOrdenes().');
+   Este guardia no es paranoia. GViz, cuando le pides una pestana que no
+   existe, NO da error: devuelve la PRIMERA hoja del libro. Sin esta
+   comprobacion, mientras Apps Script no hubiera creado "OrdenesCompra", la
+   vista mostraba 636 filas del catalogo de productos como si fueran ordenes
+   de compra, con montos y todo. Comprobado el 2026-09-02.
+
+   Se exige que al menos 8 de cada 10 filas tengan un ID con esa forma: deja
+   pasar alguna fila rara de la hoja de verdad y ataja una hoja equivocada
+   entera. */
+const MP_OC_ID_RE = /^\d+-\d+-[A-Z]{2}\d{2}$/;
+
+function mpOcParecenOrdenes(filas) {
+  if (!filas || !filas.length) return false;
+  let buenas = 0;
+  filas.forEach(function (o) { if (MP_OC_ID_RE.test(o.id)) buenas++; });
+  return (buenas / filas.length) >= 0.8;
+}
+
+/** Normaliza y descarta el resultado si no son ordenes de compra. */
+function mpOcAceptar(filas, via) {
+  const datos = normalizeOrdenesCompraRows(filas);
+  if (!datos.length) return null;
+  if (!mpOcParecenOrdenes(datos)) {
+    console.warn('[MercadoPublico OC] ' + via + ' devolvio ' + datos.length +
+      ' filas que no son ordenes de compra (ejemplo de ID: "' + datos[0].id +
+      '"). Lo mas probable es que la pestana "OrdenesCompra" todavia no exista ' +
+      'y GViz haya entregado la primera hoja del libro. Se descarta.');
+    return null;
+  }
+  console.log('[MercadoPublico OC] ' + datos.length.toLocaleString('es-CL') +
+    ' ordenes por ' + via);
+  return datos;
+}
+
+async function fetchMpOrdenes() {
+  const spId = typeof SPREADSHEET_ID !== 'undefined' ? SPREADSHEET_ID
+    : '16bU5xUuPDvI6xIpuBabK9j_EiUFgcgMTq1T0S2LeVgQ';
+  /* Sin GID configurado se pide por nombre de pestana, que GViz tambien
+     acepta. Asi el modulo anda apenas Apps Script crea la hoja, sin tener que
+     ir a buscar el numero. */
+  const gid = (typeof SPREADSHEET_ORDENESCOMPRA_GID !== 'undefined'
+    && SPREADSHEET_ORDENESCOMPRA_GID) ? SPREADSHEET_ORDENESCOMPRA_GID : 'OrdenesCompra';
+  const esGitHub = window.location.hostname.includes('github') ||
+    window.location.protocol === 'file:';
+
+  console.log('[MercadoPublico OC] Conectando a la pestana (' + gid + ')...');
+
+  /* Son unas 1.100 filas de 17 columnas: cabe de sobra en los 8s que usan los
+     otros modulos chicos. */
+  try {
+    if (typeof fetchGVizViaJSONP === 'function') {
+      const filas = await fetchGVizViaJSONP(spId, gid, 12000);
+      const datos = mpOcAceptar(filas, 'JSONP');
+      if (datos) return datos;
+    }
+  } catch (err) {
+    console.warn('[MercadoPublico OC] JSONP fallo, se prueba el proxy:', err.message || err);
+  }
+
+  /* El proxy local pide GID numerico. Sin uno configurado no se puede armar la
+     URL, asi que esta rama se salta en vez de pedir una hoja equivocada. */
+  const gidNumerico = /^\d+$/.test(String(gid)) ? String(gid) : '';
+
+  if (!esGitHub && gidNumerico) {
+    const proxies = [
+      '/api/proxy?spreadsheet_id=' + spId + '&gid=' + gidNumerico,
+      '/api/csv?spreadsheet_id=' + spId + '&gid=' + gidNumerico
+    ];
+    for (const url of proxies) {
+      try {
+        const resp = await fetch(url, { signal: AbortSignal.timeout(20000) });
+        if (!resp.ok) continue;
+        const texto = await resp.text();
+        if (!texto || texto.trim().startsWith('<')) continue;
+        if (typeof parseCsvText !== 'function') continue;
+        const datos = mpOcAceptar(parseCsvText(texto), 'el proxy local');
+        if (datos) return datos;
+      } catch (err) {
+        console.warn('[MercadoPublico OC] Fallo ' + url + ':', err.message || err);
+      }
+    }
+  }
+
   return null;
 }
 
@@ -12502,9 +12614,10 @@ async function loadMpOrdenes(forzar) {
   }
 
   mpOcCargando = true;
+  if (!mpOcRows.length) mpOcEstadoCarga('Descargando órdenes de compra&hellip;');
   try {
     const filas = await fetchMpOrdenes();
-    if (filas) {
+    if (filas && filas.length) {
       mpOcRows = filas;
       mpOcUltimaCarga = new Date();
     }
@@ -12514,6 +12627,16 @@ async function loadMpOrdenes(forzar) {
     mpOcCargando = false;
     renderMpOrdenesView();
   }
+}
+
+function mpOcEstadoCarga(html) {
+  const cuerpo = document.getElementById('mpOcTableBody');
+  if (cuerpo) {
+    cuerpo.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:2.5rem; ' +
+      'color:var(--ax-text-tertiary);">' + html + '</td></tr>';
+  }
+  const sello = document.getElementById('mpOcUpdated');
+  if (sello) sello.textContent = 'Cargando…';
 }
 
 /* -------------------------------------------------------------------------
@@ -12540,34 +12663,28 @@ function mpOcRenderEstado() {
   if (!caja) return;
 
   if (mpOcRows.length) { caja.innerHTML = ''; return; }
-
-  const falta = mpOcFaltaConfig();
-  const pasos = [];
-  if (falta.indexOf('ticket') !== -1) {
-    pasos.push('<li><strong>El ticket de ChileCompra.</strong> Se pide en el portal de ' +
-      'proveedores con el RUT de Glomax y se pega en <code>config.js</code>, en ' +
-      '<code>MP_API_TICKET</code>.</li>');
-  }
-  if (falta.indexOf('proxy') !== -1) {
-    pasos.push('<li><strong>Un proxy.</strong> <code>api.mercadopublico.cl</code> no manda ' +
-      'cabeceras CORS, así que el navegador bloquea la respuesta aunque el servidor ' +
-      'conteste bien. Sirve el mismo Apps Script del panel con un <code>doGet</code> que ' +
-      'reenvíe la llamada; su URL va en <code>MP_API_PROXY</code>.</li>');
-  }
-  if (!pasos.length) {
-    pasos.push('<li>La configuración está completa, pero la llamada a la API todavía no ' +
-      'está escrita. Es la función <code>fetchMpOrdenes()</code> en <code>app.js</code>.</li>');
-  }
+  if (mpOcCargando) { caja.innerHTML = ''; return; }
 
   caja.innerHTML =
     '<div class="ax-card mp-vacio">' +
-      '<div class="mp-vacio__icono" aria-hidden="true">🔌</div>' +
-      '<h3 class="mp-vacio__titulo">Todavía no hay conexión con la API de Mercado Público</h3>' +
-      '<p class="mp-vacio__texto">Esta vista lee las órdenes de compra que los organismos ' +
-        'le emiten a Glomax desde <code>api.mercadopublico.cl</code>. Para encenderla falta:</p>' +
-      '<ol class="mp-vacio__pasos">' + pasos.join('') + '</ol>' +
-      '<p class="mp-vacio__pie">Los KPI, la tabla y el Excel de esta pantalla ya están ' +
-        'conectados: en cuanto la carga devuelva filas, se llenan solos.</p>' +
+      '<div class="mp-vacio__icono" aria-hidden="true">📥</div>' +
+      '<h3 class="mp-vacio__titulo">La pestaña <code>OrdenesCompra</code> todavía no tiene datos</h3>' +
+      '<p class="mp-vacio__texto">Esta vista lee las órdenes que los organismos le emiten a ' +
+        'Glomax. No se piden desde el navegador: <code>api.mercadopublico.cl</code> no manda ' +
+        'cabeceras CORS, el listado por día no trae ni el monto ni el organismo, y cubrir 2025 ' +
+        'y 2026 son más de 1.700 llamadas. Eso corre en Apps Script y deja el resultado en una ' +
+        'pestaña.</p>' +
+      '<ol class="mp-vacio__pasos">' +
+        '<li>En Apps Script, <strong>Configuración del proyecto &rarr; Propiedades del script</strong>: ' +
+          'agrega <code>MP_OC_TICKET</code> con el ticket de ChileCompra.</li>' +
+        '<li>Ejecuta <code>configurarOrdenesCompra()</code>. Resuelve el código de proveedor ' +
+          'desde el RUT y crea la pestaña.</li>' +
+        '<li>Ejecuta <code>instalarDisparadorOrdenes()</code>. Corre cada hora y va llenando ' +
+          'hacia atrás hasta enero de 2025.</li>' +
+      '</ol>' +
+      '<p class="mp-vacio__pie">Si ya hiciste los tres pasos, dale a <strong>Actualizar</strong>: ' +
+        'la primera vuelta del disparador puede tardar unos minutos en escribir las primeras ' +
+        'filas. <code>probarOrdenesCompra()</code> dice cómo va.</p>' +
     '</div>';
 }
 
@@ -12587,18 +12704,28 @@ function mpOcRenderKpis() {
     return;
   }
 
-  let neto = 0, pendientes = 0, netoPendiente = 0, ultima = null;
+  let neto = 0, pendientes = 0, netoPendiente = 0, ultima = null, primera = null;
+  const organismos = {};
   mpOcRows.forEach(function (o) {
     neto += o.neto;
     if (o.pendiente) { pendientes++; netoPendiente += o.neto; }
-    if (o.fecha && (!ultima || o.fecha > ultima)) ultima = o.fecha;
+    if (o.fecha) {
+      if (!ultima || o.fecha > ultima) ultima = o.fecha;
+      if (!primera || o.fecha < primera) primera = o.fecha;
+    }
+    if (o.organismo) organismos[o.organismo] = true;
   });
 
+  const nOrg = Object.keys(organismos).length;
   set('mpOcKpiTotal', formatNum(mpOcRows.length),
-    mpOcRows.length === 1 ? 'orden en el período cargado' : 'órdenes en el período cargado');
-  set('mpOcKpiMonto', formatCLP(neto), 'Suma del neto de todas las órdenes');
+    nOrg + (nOrg === 1 ? ' organismo comprador' : ' organismos compradores'));
+  set('mpOcKpiMonto', formatCLP(neto),
+    primera && ultima
+      ? 'Entre ' + mpOcFechaTexto(primera) + ' y ' + mpOcFechaTexto(ultima)
+      : 'Suma del neto de todas las órdenes');
   set('mpOcKpiPendientes', formatNum(pendientes),
-    pendientes ? formatCLP(netoPendiente) + ' esperando aceptación' : 'Ninguna esperando aceptación');
+    pendientes ? formatCLP(netoPendiente) + ' esperando aceptación'
+               : 'Ninguna esperando aceptación');
   set('mpOcKpiUltima', ultima ? mpOcFechaTexto(ultima) : '—',
     ultima ? 'Fecha de envío más reciente' : 'Sin fecha de envío anotada');
 }
@@ -12616,8 +12743,10 @@ function mpOcRenderTabla() {
   if (!cuerpo) return;
 
   if (!mpOcRows.length) {
-    cuerpo.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:2.5rem; ' +
-      'color:var(--ax-text-tertiary);">Sin órdenes cargadas.</td></tr>';
+    if (!mpOcCargando) {
+      cuerpo.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:2.5rem; ' +
+        'color:var(--ax-text-tertiary);">Sin órdenes cargadas.</td></tr>';
+    }
     if (info) info.textContent = 'Página 1 de 1';
     if (prev) prev.disabled = true;
     if (next) next.disabled = true;
@@ -12649,15 +12778,17 @@ function mpOcRenderTabla() {
 
   cuerpo.innerHTML = pagina.map(function (o) {
     const chip = o.pendiente
-      ? '<span class="mp-tag mp-tag--pendiente">' + escapeHtml(o.estado || 'Pendiente') + '</span>'
-      : '<span class="mp-tag">' + escapeHtml(o.estado || '—') + '</span>';
+      ? '<span class="mp-tag mp-tag--pendiente">' + escapeHtml(o.estado) + '</span>'
+      : '<span class="mp-tag">' + escapeHtml(o.estado) + '</span>';
 
     return '<tr>' +
-      '<td class="mp-td-id"><span title="' + escapeHtml(o.codigo) + '">' + escapeHtml(o.codigo) + '</span></td>' +
+      '<td class="mp-td-id"><span title="' + escapeHtml(o.id) + '">' + escapeHtml(o.id) + '</span></td>' +
       '<td class="mp-td-nombre">' +
         '<span class="mp-nombre" title="' + escapeHtml(o.nombre) + '">' + escapeHtml(o.nombre) + '</span>' +
-        '<span class="mp-organismo">' + escapeHtml(o.organismo) + '</span>' +
+        '<span class="mp-organismo">' + escapeHtml(o.organismo) +
+          (o.comuna ? ' · ' + escapeHtml(o.comuna) : '') + '</span>' +
       '</td>' +
+      '<td>' + escapeHtml(o.tipoTexto) + '</td>' +
       '<td class="mp-td-fecha">' + mpOcFechaTexto(o.fecha) + '</td>' +
       '<td>' + chip + '</td>' +
       '<td class="num">' + formatCLP(o.neto) + '</td>' +
@@ -12678,14 +12809,28 @@ function cambiarMpOcPagina(dir) {
    ------------------------------------------------------------------------- */
 
 const MP_OC_COLUMNAS_EXCEL = [
-  { titulo: 'N° OC',           ancho: 22, tipo: 'texto' },
-  { titulo: 'NOMBRE',          ancho: 46, tipo: 'texto' },
-  { titulo: 'ORGANISMO',       ancho: 40, tipo: 'texto' },
-  { titulo: 'FECHA DE ENVÍO',  ancho: 15, tipo: 'fecha' },
-  { titulo: 'ESTADO',          ancho: 20, tipo: 'texto' },
-  { titulo: 'MONTO NETO',      ancho: 15, tipo: 'clp' },
-  { titulo: 'LÍNEAS',          ancho: 9,  tipo: 'numero' }
+  { titulo: 'N° OC',            ancho: 22, tipo: 'texto' },
+  { titulo: 'NOMBRE',           ancho: 46, tipo: 'texto' },
+  { titulo: 'ORGANISMO',        ancho: 40, tipo: 'texto' },
+  { titulo: 'UNIDAD DE COMPRA', ancho: 34, tipo: 'texto' },
+  { titulo: 'RUT UNIDAD',       ancho: 14, tipo: 'texto' },
+  { titulo: 'REGIÓN',           ancho: 30, tipo: 'texto' },
+  { titulo: 'COMUNA',           ancho: 18, tipo: 'texto' },
+  { titulo: 'TIPO',             ancho: 15, tipo: 'texto' },
+  { titulo: 'ESTADO',           ancho: 20, tipo: 'texto' },
+  { titulo: 'FECHA DE ENVÍO',   ancho: 15, tipo: 'fecha' },
+  { titulo: 'FECHA ACEPTACIÓN', ancho: 15, tipo: 'fecha' },
+  { titulo: 'MONTO NETO',       ancho: 15, tipo: 'clp' },
+  { titulo: 'MONTO TOTAL',      ancho: 15, tipo: 'clp' },
+  { titulo: 'LÍNEAS',           ancho: 9,  tipo: 'numero' },
+  { titulo: 'ID LICITACIÓN',    ancho: 20, tipo: 'texto' }
 ];
+
+function mpOcFilaExcel(o) {
+  return [o.id, o.nombre, o.organismo, o.unidad, o.rutUnidad, o.region, o.comuna,
+    o.tipoTexto, o.estado, o.fecha, o.fechaAceptacion, o.neto || null,
+    o.total || null, o.lineas || null, o.licitacion];
+}
 
 function mpOcSincronizarExportar() {
   const btn = document.getElementById('mpOcExportar');
@@ -12707,20 +12852,35 @@ function exportarMpOrdenesExcel() {
     return;
   }
 
-  const filas = mpOcRows.map(function (o) {
-    return [o.codigo, o.nombre, o.organismo, o.fecha, o.estado, o.neto || null, o.lineas || null];
+  const ordenados = mpOcRows.slice().sort(function (a, b) {
+    const fa = a.fecha ? a.fecha.getTime() : 0;
+    const fb = b.fecha ? b.fecha.getTime() : 0;
+    return fb - fa;
   });
+
+  const hojas = [{
+    nombre: 'Ordenes de Compra',
+    columnas: MP_OC_COLUMNAS_EXCEL,
+    filas: ordenados.map(mpOcFilaExcel)
+  }];
+
+  /* Segunda hoja con lo que todavia espera respuesta nuestra. Es la lista
+     sobre la que se puede actuar hoy. */
+  const pendientes = ordenados.filter(function (o) { return o.pendiente; });
+  if (pendientes.length) {
+    hojas.push({
+      nombre: 'Pendientes',
+      columnas: MP_OC_COLUMNAS_EXCEL,
+      filas: pendientes.map(mpOcFilaExcel)
+    });
+  }
 
   const sello = new Date().toISOString().slice(0, 10);
   try {
-    const blob = xlsxCrearLibro([{
-      nombre: 'Ordenes de Compra',
-      columnas: MP_OC_COLUMNAS_EXCEL,
-      filas: filas
-    }]);
+    const blob = xlsxCrearLibro(hojas);
     xlsxDescargar(blob, 'Glomax_OrdenesCompra_' + sello + '.xlsx');
     if (typeof showToast === 'function') {
-      showToast(formatNum(filas.length) + ' órdenes exportadas', 'success');
+      showToast(formatNum(ordenados.length) + ' órdenes exportadas', 'success');
     }
   } catch (err) {
     console.error('[MercadoPublico OC] Error al exportar:', err);

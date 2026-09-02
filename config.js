@@ -39,22 +39,20 @@ const ENABLE_LOCAL_CACHE = true;          // Carga instantánea 0ms desde Indexe
 const ENABLE_OPTIMISTIC_UPDATES = true;   // Ediciones e inserciones instantáneas 0ms
 const SOUND_EFFECTS = true;               // Efectos sonoros sintetizados por Web Audio
 
-// ===== API de Mercado Publico (ChileCompra) =====
+// Pestana OrdenesCompra, que alimenta el submodulo de Ordenes de Compra
+// Recibidas de Mercado Publico.
 //
-// Alimenta el submodulo "Ordenes de Compra Recibidas". Mientras estos dos
-// campos esten vacios, la vista se arma igual y explica en pantalla que falta.
+// La llena un disparador de Apps Script (parte 3 de Code.gs) leyendo
+// api.mercadopublico.cl. El navegador NO llama a esa API: no manda cabeceras
+// CORS, su listado por dia no trae ni el monto ni el organismo, y cubrir 2025
+// y 2026 son mas de 1.700 llamadas encadenadas.
 //
-// MP_API_TICKET: se pide en el portal de proveedores de ChileCompra con el RUT
-// de Glomax. Es una cadena tipo "F8537A18-C4B8-...". Limite publicado: 500
-// solicitudes cada 5 minutos por ticket.
+// Igual que MercadoPublico, se puede dejar VACIO: sin GID la pestana se pide
+// por nombre, que GViz tambien acepta. Ponerle el numero solo ahorra una
+// resolucion de nombre y habilita el proxy local en desarrollo;
+// probarOrdenesCompra() lo imprime en el registro de Apps Script.
 //
-// MP_API_PROXY: la URL base por donde se reenvia la llamada.
-// api.mercadopublico.cl no manda cabeceras CORS, asi que el navegador bloquea
-// la respuesta aunque el servidor conteste bien. Sirve el mismo Apps Script
-// del panel con un doGet que reenvie la peticion.
-//
-// OJO: el ticket es una credencial. Puesto aqui viaja al repositorio y queda
-// publico en GitHub Pages. Lo correcto es dejar MP_API_TICKET vacio y que el
-// ticket viva en las Script Properties de Apps Script, detras del proxy.
-const MP_API_TICKET = "";
-const MP_API_PROXY  = "";
+// El ticket de ChileCompra NO va aqui: es una credencial y este archivo se
+// publica en GitHub Pages. Vive en las Propiedades del Script de Apps Script,
+// con el nombre MP_OC_TICKET.
+const SPREADSHEET_ORDENESCOMPRA_GID = "";
