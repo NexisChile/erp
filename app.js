@@ -3532,6 +3532,208 @@ function renderSummaryCards() {
     ? 'Ritmo actual ajustado por la estacionalidad de años anteriores'
     : 'Extrapolación anual completa AI Forecast';
   renderCompareBadge(elYearProjComp, totalAnioFullPrev, growthProjAnio, `Cierre Año ${prevYyyy}`);
+
+  /* Las dos tablas por canal cuelgan de aqui a proposito. No recalculan nada:
+     reciben las mismas baseRows, la misma fecha de referencia y las mismas
+     curvas de avance con las que se acaban de pintar las seis tarjetas de
+     arriba, de modo que su fila TOTAL no puede discrepar de ellas. */
+  renderCanalesFacturacion({
+    baseRows: baseRows,
+    refDate: refDate, refYyyy: refYyyy, prevYyyy: prevYyyy,
+    refMm: refMm, refDd: refDd,
+    refMonthISO: refMonthISO, refYearISO: refYearISO,
+    curvaMes: curvaMes, curvaAnio: curvaAnio,
+    progresoMes: progresoMes, progresoAnio: progresoAnio,
+    currentDay: currentDay, daysInMonth: daysInMonth,
+    diaDelAnio: currentDayOfYear, diasDelAnio: diasDelAnio(refYyyy),
+    hayAnioPrevio: hasPriorYearData
+  });
+}
+
+
+/* ---------- Facturación por canal: mes y año -------------------------------
+   Dos tablas que abren por canal el mismo total que muestran las tarjetas de
+   Proyección de Cierre, que es lo que hace falta para saber DE DÓNDE sale la
+   variación: un -26% del mes puede ser todo el rubro cayendo o un solo canal
+   arrastrando al resto, y en la tarjeta global las dos cosas se ven igual.
+
+   Una decisión que conviene dejar escrita: la proyección de cada canal usa la
+   curva de avance GLOBAL, no una curva propia. Con la curva global
+   proyectarCierre es lineal en el acumulado -0,5*(a/p) + 0,5*(a/f), con p y f
+   iguales para todos- y por eso la suma de los canales da exactamente la
+   proyección del total. Con una curva por canal cada uno tendría su propia
+   estacionalidad, más fina sobre el papel, pero la fila TOTAL dejaría de
+   cuadrar con la tarjeta de arriba, y además buildShapeCurve exige tres
+   periodos cerrados que varios canales no tienen. Medido sobre la planilla:
+   entre la suma de los seis canales y el total global hay 1 peso de
+   diferencia, y es el redondeo de proyectarCierre.
+   -------------------------------------------------------------------------- */
+
+const CANAL_MESES_CORTOS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun',
+                            'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+const CANAL_MESES_LARGOS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+                            'julio', 'agosto', 'septiembre', 'octubre', 'noviembre',
+                            'diciembre'];
+
+function canalVariacion(actual, base) {
+  /* Sin base del año anterior no hay porcentaje que calcular. Devolver 100%
+     -que es lo que hacen las tarjetas de arriba para no dejar el hueco- aquí
+     sería peor: en una tabla, al lado de porcentajes de verdad, un 100%
+     inventado se lee como un dato. */
+  if (!(base > 0)) return null;
+  return ((actual - base) / base) * 100;
+}
+
+function canalVariacionHtml(v) {
+  if (v === null) {
+    return '<span class="canal-tabla__sd" title="Sin facturación en el mismo ' +
+      'periodo del año anterior: no hay contra qué comparar">s/d</span>';
+  }
+  const clase = Math.abs(v) < 0.05 ? 'es-plano' : (v > 0 ? 'es-alza' : 'es-baja');
+  /* Un canal que arranca de casi cero marca +40.000%. El número es cierto pero
+     ocupa toda la columna y se lee peor que el múltiplo; el porcentaje exacto
+     queda en el title. */
+  /* Por encima del 100% el decimal es ruido -entre +105,7% y +106% no hay
+     ninguna decision distinta- y son doce caracteres de columna que aqui no
+     sobran. Por debajo si distingue: +2,4% y +2,9% no son lo mismo. */
+  const texto = v >= 1000
+    ? '&times;' + Math.round(1 + v / 100).toLocaleString('es-CL')
+    : (v > 0 ? '+' : '') + (Math.abs(v) >= 100 ? v.toFixed(0) : v.toFixed(1)) + '%';
+  return '<span class="canal-tabla__pct ' + clase + '" title="' +
+    (v > 0 ? '+' : '') + v.toFixed(2) + '%">' + texto + '</span>';
+}
+
+function canalFilaHtml(nombre, d, esTotal) {
+  return '<tr' + (esTotal ? ' class="canal-tabla__total"' : '') + '>' +
+    '<td class="canal-tabla__canal">' + escapeHtml(nombre) + '</td>' +
+    '<td>' + formatCLP(d.prev) + '</td>' +
+    '<td class="canal-tabla__act">' + formatCLP(d.act) + '</td>' +
+    '<td class="canal-tabla__var">' + canalVariacionHtml(canalVariacion(d.act, d.prev)) + '</td>' +
+    '<td>' + formatCLP(d.prevFull) + '</td>' +
+    '<td class="canal-tabla__act">' + formatCLP(d.proy) + '</td>' +
+    '<td class="canal-tabla__var">' + canalVariacionHtml(canalVariacion(d.proy, d.prevFull)) + '</td>' +
+    '</tr>';
+}
+
+function canalPintarTabla(pref, filas, total, cabeceras, subtitulo) {
+  const cuerpo = document.getElementById(pref + 'Body');
+  const pie = document.getElementById(pref + 'Foot');
+  if (!cuerpo || !pie) return;
+
+  Object.keys(cabeceras).forEach(function (sufijo) {
+    const th = document.getElementById(pref + sufijo);
+    if (th) th.textContent = cabeceras[sufijo];
+  });
+  const sub = document.getElementById(pref + 'Sub');
+  if (sub) sub.textContent = subtitulo;
+
+  cuerpo.innerHTML = filas.length
+    ? filas.map(function (f) { return canalFilaHtml(f.nombre, f, false); }).join('')
+    : '<tr><td colspan="7" class="canal-tabla__vacio">Sin facturación en el periodo.</td></tr>';
+  pie.innerHTML = filas.length ? canalFilaHtml('Total', total, true) : '';
+}
+
+function renderCanalesFacturacion(ctx) {
+  if (!document.getElementById('canalMesBody')) return;
+
+  const mesPrevISO = ctx.prevYyyy + '-' + ctx.refMm;
+  const corteMesPrev = mesPrevISO + '-' + ctx.refDd;
+  const corteAnioPrev = ctx.prevYyyy + '-' + ctx.refMm + '-' + ctx.refDd;
+
+  /* Los mismos seis recortes que usa renderSummaryCards, pero abiertos por
+     canal y en una sola pasada por las filas en vez de seis filter(). */
+  const acc = {};
+  ctx.baseRows.forEach(function (r) {
+    const f = r['FECHA'];
+    if (!f) return;
+    const d = String(f).slice(0, 10);
+    const neto = Number(r['NETO']) || 0;
+    const canal = r['CANAL FINAL'] || 'Sin canal';
+    let b = acc[canal];
+    if (!b) {
+      b = { mtd: 0, mtdPrev: 0, mesPrevFull: 0, ytd: 0, ytdPrev: 0, anioPrevFull: 0 };
+      acc[canal] = b;
+    }
+    if (d.indexOf(ctx.refMonthISO) === 0) b.mtd += neto;
+    if (d.indexOf(mesPrevISO) === 0) {
+      b.mesPrevFull += neto;
+      if (d <= corteMesPrev) b.mtdPrev += neto;
+    }
+    if (d.indexOf(ctx.refYearISO + '-') === 0) b.ytd += neto;
+    if (d.indexOf(ctx.prevYyyy + '-') === 0) {
+      b.anioPrevFull += neto;
+      if (d <= corteAnioPrev) b.ytdPrev += neto;
+    }
+  });
+
+  const mes = [], anio = [];
+  const totalMes = { prev: 0, act: 0, prevFull: 0, proy: 0 };
+  const totalAnio = { prev: 0, act: 0, prevFull: 0, proy: 0 };
+
+  Object.keys(acc).forEach(function (c) {
+    const b = acc[c];
+    const fm = {
+      nombre: c, prev: b.mtdPrev, act: b.mtd, prevFull: b.mesPrevFull,
+      proy: proyectarCierre(b.mtd, ctx.progresoMes, ctx.curvaMes)
+    };
+    const fa = {
+      nombre: c, prev: b.ytdPrev, act: b.ytd, prevFull: b.anioPrevFull,
+      proy: proyectarCierre(b.ytd, ctx.progresoAnio, ctx.curvaAnio)
+    };
+    /* Un canal sin nada este año ni el pasado no aporta una línea, solo ruido:
+       se cae de la tabla. */
+    if (fm.prev || fm.act || fm.prevFull || fm.proy) {
+      mes.push(fm);
+      totalMes.prev += fm.prev; totalMes.act += fm.act;
+      totalMes.prevFull += fm.prevFull; totalMes.proy += fm.proy;
+    }
+    if (fa.prev || fa.act || fa.prevFull || fa.proy) {
+      anio.push(fa);
+      totalAnio.prev += fa.prev; totalAnio.act += fa.act;
+      totalAnio.prevFull += fa.prevFull; totalAnio.proy += fa.proy;
+    }
+  });
+
+  /* De mayor a menor por lo facturado AHORA: la tabla se lee de arriba abajo
+     como el ranking del periodo en curso, no como una lista alfabética.
+     Cuando varios canales llevan cero en el periodo -pasa al filtrar por una
+     región chica a principios de mes- el desempate es lo que facturaron el
+     año pasado: el que más se está dejando de vender queda arriba. */
+  const orden = function (a, b) {
+    return (b.act - a.act) || (b.proy - a.proy) || (b.prevFull - a.prevFull);
+  };
+  mes.sort(orden);
+  anio.sort(orden);
+
+  const m = ctx.refDate.getMonth();
+  const mCorto = CANAL_MESES_CORTOS[m];
+  const mLargo = CANAL_MESES_LARGOS[m];
+  const dia = Number(ctx.refDd);
+  const corte = dia + ' de ' + mLargo + ' de ' + ctx.refYyyy;
+  const aviso = ctx.hayAnioPrevio ? '' :
+    ' No hay datos del año anterior cargados, así que no hay comparación posible.';
+
+  canalPintarTabla('canalMes', mes, totalMes, {
+    ThPrev: 'Al ' + dia + ' ' + mCorto + ' ' + ctx.prevYyyy,
+    ThAct: 'Al ' + dia + ' ' + mCorto + ' ' + ctx.refYyyy,
+    ThPrevFull: mCorto.charAt(0).toUpperCase() + mCorto.slice(1) + ' ' + ctx.prevYyyy + ' completo',
+    ThProy: 'Proy. ' + mCorto + ' ' + ctx.refYyyy
+  }, 'Corte al ' + corte + ': van ' + ctx.currentDay + ' de ' + ctx.daysInMonth +
+     ' días (' + ctx.progresoMes.toFixed(1).replace('.', ',') + '% del mes). ' +
+     (ctx.curvaMes
+       ? 'La proyección corrige el ritmo con la curva histórica del mes.'
+       : 'La proyección es una extrapolación lineal: falta historia para la curva.') + aviso);
+
+  canalPintarTabla('canalAnio', anio, totalAnio, {
+    ThPrev: 'Al ' + dia + ' ' + mCorto + ' ' + ctx.prevYyyy,
+    ThAct: 'Al ' + dia + ' ' + mCorto + ' ' + ctx.refYyyy,
+    ThPrevFull: ctx.prevYyyy + ' completo',
+    ThProy: 'Proy. ' + ctx.refYyyy
+  }, 'Corte al ' + corte + ': van ' + ctx.diaDelAnio + ' de ' + ctx.diasDelAnio +
+     ' días (' + ctx.progresoAnio.toFixed(1).replace('.', ',') + '% del año). ' +
+     (ctx.curvaAnio
+       ? 'La proyección corrige el ritmo con la estacionalidad de años anteriores.'
+       : 'La proyección es una extrapolación lineal: falta historia para la curva.') + aviso);
 }
 
 // ---------- KPIs ----------

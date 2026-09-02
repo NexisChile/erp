@@ -34,7 +34,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <!-- Stylesheets & Libraries -->
-  <link rel="stylesheet" href="style.css?v=20260902_INSIGHT_V64" />
+  <link rel="stylesheet" href="style.css?v=20260902_CANALES_V68" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -815,7 +815,79 @@
               </div>
             </div>
 
-            <!-- 2. VENTAS POR CANAL (DOUGHNUT + CENTER METRIC) -->
+            <!-- 2. FACTURACION POR CANAL: MES EN CURSO
+                 Abre por canal el mismo total que muestran las tarjetas de
+                 Proyeccion de Cierre. Los encabezados de las columnas y el
+                 subtitulo los escribe renderCanalesFacturacion() porque
+                 dependen de la fecha de corte, que sale de los datos. -->
+            <div class="ax-card chart-card gradient-border-card canal-tabla-card">
+              <div class="chart-card-header">
+                <div class="chart-title-group">
+                  <div class="chart-header-badge">&#128197;</div>
+                  <div>
+                    <h3 class="chart-main-title">Facturaci&oacute;n por Canal &middot; Mes</h3>
+                    <p class="chart-subtitle" id="canalMesSub">Calculando&hellip;</p>
+                  </div>
+                </div>
+              </div>
+              <div class="canal-tabla-wrap">
+                <table class="advisor-table canal-tabla" id="canalMesTabla">
+                  <thead>
+                    <tr class="canal-tabla__grupos">
+                      <th rowspan="2" class="canal-tabla__canal">Canal</th>
+                      <th colspan="3">Mes a la fecha</th>
+                      <th colspan="3">Cierre del mes</th>
+                    </tr>
+                    <tr>
+                      <th id="canalMesThPrev">&mdash;</th>
+                      <th id="canalMesThAct">&mdash;</th>
+                      <th class="canal-tabla__var">&Delta;%</th>
+                      <th id="canalMesThPrevFull">&mdash;</th>
+                      <th id="canalMesThProy">&mdash;</th>
+                      <th class="canal-tabla__var">&Delta;%</th>
+                    </tr>
+                  </thead>
+                  <tbody id="canalMesBody"></tbody>
+                  <tfoot id="canalMesFoot"></tfoot>
+                </table>
+              </div>
+            </div>
+
+            <!-- 3. FACTURACION POR CANAL: ANIO EN CURSO -->
+            <div class="ax-card chart-card gradient-border-card canal-tabla-card">
+              <div class="chart-card-header">
+                <div class="chart-title-group">
+                  <div class="chart-header-badge">&#128200;</div>
+                  <div>
+                    <h3 class="chart-main-title">Facturaci&oacute;n por Canal &middot; A&ntilde;o</h3>
+                    <p class="chart-subtitle" id="canalAnioSub">Calculando&hellip;</p>
+                  </div>
+                </div>
+              </div>
+              <div class="canal-tabla-wrap">
+                <table class="advisor-table canal-tabla" id="canalAnioTabla">
+                  <thead>
+                    <tr class="canal-tabla__grupos">
+                      <th rowspan="2" class="canal-tabla__canal">Canal</th>
+                      <th colspan="3">A&ntilde;o a la fecha</th>
+                      <th colspan="3">Cierre del a&ntilde;o</th>
+                    </tr>
+                    <tr>
+                      <th id="canalAnioThPrev">&mdash;</th>
+                      <th id="canalAnioThAct">&mdash;</th>
+                      <th class="canal-tabla__var">&Delta;%</th>
+                      <th id="canalAnioThPrevFull">&mdash;</th>
+                      <th id="canalAnioThProy">&mdash;</th>
+                      <th class="canal-tabla__var">&Delta;%</th>
+                    </tr>
+                  </thead>
+                  <tbody id="canalAnioBody"></tbody>
+                  <tfoot id="canalAnioFoot"></tfoot>
+                </table>
+              </div>
+            </div>
+
+            <!-- 4. VENTAS POR CANAL (DOUGHNUT + CENTER METRIC) -->
             <div class="ax-card chart-card gradient-border-card">
               <div class="chart-card-header">
                 <div class="chart-title-group">
@@ -836,7 +908,7 @@
               <div class="chart-legend-wrap" id="canalLegendWrap"></div>
             </div>
 
-            <!-- 3. TOP CATEGORÍAS DE PRODUCTOS -->
+            <!-- 5. TOP CATEGORÍAS DE PRODUCTOS -->
             <div class="ax-card chart-card gradient-border-card">
               <div class="chart-card-header">
                 <div class="chart-title-group">
@@ -852,7 +924,7 @@
               </div>
             </div>
 
-            <!-- 4. VENTAS POR TIENDA / SUCURSAL -->
+            <!-- 6. VENTAS POR TIENDA / SUCURSAL -->
             <div class="ax-card chart-card gradient-border-card">
               <div class="chart-card-header">
                 <div class="chart-title-group">
@@ -868,7 +940,7 @@
               </div>
             </div>
 
-            <!-- 5. TOP VENDEDORES -->
+            <!-- 7. TOP VENDEDORES -->
             <div class="ax-card chart-card gradient-border-card">
               <div class="chart-card-header">
                 <div class="chart-title-group">
@@ -3357,7 +3429,7 @@
   </div>
 
   <!-- Scripts -->
-  <script src="config.js?v=20260902_INSIGHT_V64"></script>
-  <script src="app.js?v=20260902_INSIGHT_V64"></script>
+  <script src="config.js?v=20260902_CANALES_V68"></script>
+  <script src="app.js?v=20260902_CANALES_V68"></script>
 </body>
 </html>

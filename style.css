@@ -11360,3 +11360,132 @@ button, input, select, textarea, optgroup {
   color: var(--ax-accent-gold);
   border-color: rgba(255, 196, 107, 0.4);
 }
+
+/* ----------------------------------------------------------------------------
+   FACTURACION POR CANAL (tablero)
+   Dos tarjetas de la charts-grid que llevan una tabla en vez de un lienzo, asi
+   que no usan .chart-container (que fija 280px de alto para Chart.js).
+
+   Siete columnas dentro de media rejilla es lo justo: con la tipografia de
+   .advisor-table -0,875rem y 1rem de relleno lateral- una fila con cuatro
+   importes de nueve cifras pedia unos 890px y hay ~780. De ahi que aqui se
+   baje a 0,8rem y 0,55rem de relleno, que deja la fila en ~690px. El wrap
+   conserva el scroll horizontal como red por si el idioma o el zoom estiran
+   algo.
+
+   Todo cuelga de .canal-tabla-card a proposito: index.html trae un <style> en
+   linea con .advisor-table td/th y, al ir despues de esta hoja, ganaba los
+   empates de especificidad. Con el ancestro estas reglas pesan mas y no
+   dependen del orden de carga.
+   -------------------------------------------------------------------------- */
+
+.canal-tabla-card .canal-tabla-wrap {
+  overflow-x: auto;
+  margin: 0 -0.35rem;
+  padding: 0 0.35rem;
+}
+
+.canal-tabla-card .canal-tabla {
+  /* Hay una regla global -.ax-table, .advisor-table, .data-table...- que clava
+     min-width: 680px !important en todas las tablas del proyecto. Sirve para
+     las de ancho completo; aqui, dentro de media rejilla, obligaba a la tabla
+     a desbordar 35px cuando su contenido pide 558. El width: 100% que ya trae
+     .advisor-table basta para llenar la tarjeta. */
+  min-width: 0 !important;
+  /* Sin esto las cifras bailan de fila en fila y la columna deja de leerse
+     como una columna. */
+  font-variant-numeric: tabular-nums;
+}
+
+/* .advisor-table clava sus th con position: sticky y top: 0. Aqui la cabecera
+   tiene DOS filas: pegadas las dos al mismo top se montarian una sobre otra.
+   Esta tabla no scrollea en vertical -son seis canales y el total-, asi que la
+   cabecera no necesita pegarse a nada. */
+.canal-tabla-card .canal-tabla th {
+  position: static !important;
+  text-transform: none !important;
+  font-size: 0.68rem !important;
+  font-weight: 700 !important;
+  line-height: 1.25 !important;
+  padding: 0.45rem 0.45rem !important;
+  text-align: right !important;
+  white-space: normal !important;
+  background: transparent !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+.canal-tabla-card .canal-tabla__grupos th {
+  text-align: center !important;
+  text-transform: uppercase !important;
+  font-size: 0.62rem !important;
+  letter-spacing: 0.06em !important;
+  color: var(--ax-text-tertiary) !important;
+  padding-bottom: 0.15rem !important;
+}
+
+/* La franja separa visualmente los dos bloques -lo que va del periodo y el
+   cierre- sin necesidad de una linea vertical que corte la tabla entera. */
+.canal-tabla-card .canal-tabla__grupos th[colspan] {
+  border-bottom: 2px solid var(--ax-card-border) !important;
+}
+
+.canal-tabla-card .canal-tabla td {
+  padding: 0.45rem 0.45rem !important;
+  font-size: 0.78rem !important;
+  text-align: right !important;
+  white-space: nowrap !important;
+}
+
+.canal-tabla-card .canal-tabla th.canal-tabla__canal,
+.canal-tabla-card .canal-tabla td.canal-tabla__canal {
+  text-align: left !important;
+  font-weight: 800 !important;
+  color: var(--ax-text-primary) !important;
+}
+
+.canal-tabla-card .canal-tabla__grupos th.canal-tabla__canal {
+  vertical-align: bottom !important;
+  border-bottom: 2px solid var(--ax-card-border) !important;
+}
+
+/* El importe del periodo en curso y el proyectado son las dos cifras que se
+   miran; las del año anterior son el contexto. */
+.canal-tabla-card .canal-tabla td.canal-tabla__act {
+  color: var(--ax-text-primary) !important;
+  font-weight: 700 !important;
+}
+
+.canal-tabla-card .canal-tabla__var { width: 1%; }
+
+.canal-tabla-card .canal-tabla__pct { font-weight: 800; }
+/* Los tonos vienen de la paleta semantica del bloque :root, que ya tiene
+   version clara y oscura medidas por contraste. Se reusan en vez de elegir un
+   verde y un rojo nuevos que habria que volver a medir. */
+.canal-tabla-card .canal-tabla__pct.es-alza  { color: var(--prosp-var-alza); }
+.canal-tabla-card .canal-tabla__pct.es-baja  { color: var(--prosp-var-cae); }
+.canal-tabla-card .canal-tabla__pct.es-plano { color: var(--ax-text-secondary); }
+.canal-tabla-card .canal-tabla__sd           { color: var(--prosp-var-sd); font-weight: 700; }
+
+.canal-tabla-card .canal-tabla__total td {
+  border-top: 2px solid var(--ax-card-border) !important;
+  border-bottom: none !important;
+  font-weight: 800 !important;
+  color: var(--ax-text-primary) !important;
+  padding-top: 0.6rem !important;
+}
+
+.canal-tabla-card .canal-tabla tfoot tr:hover td { background: transparent !important; }
+
+.canal-tabla-card .canal-tabla__vacio {
+  text-align: center !important;
+  color: var(--ax-text-tertiary) !important;
+  padding: 1.5rem 0 !important;
+}
+
+/* Con la rejilla en una sola columna sobra ancho: se recupera la tipografia
+   normal de la tabla. */
+@media (max-width: 900px) {
+  .canal-tabla-card .canal-tabla th { font-size: 0.72rem !important; }
+  .canal-tabla-card .canal-tabla td { font-size: 0.85rem !important; padding: 0.55rem 0.7rem !important; }
+}
