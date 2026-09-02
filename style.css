@@ -11226,3 +11226,137 @@ button, input, select, textarea, optgroup {
   .prosp-cinta__fila { grid-template-columns: 78px 1fr 54px; gap: 7px; }
   .prosp-var__pista { display: none; }
 }
+
+
+/* =========================================================================
+   SUBMENU DE MERCADO PUBLICO
+   -------------------------------------------------------------------------
+   Tres vistas colgando de un padre plegable. Los hijos reusan .ax-nav__item
+   entero para no reescribir hover, foco ni el estado activo; el modificador
+   solo corrige el tamano y agrega el riel vertical que los agrupa.
+   ========================================================================= */
+
+.ax-nav__children {
+  /* .ax-nav__item mide calc(100% - 1.2rem) con 0.6rem de margen lateral. Con
+     el padding-left original de 1.75rem los hijos se salian por la derecha. */
+  padding-left: 1rem !important;
+}
+
+.ax-nav__group--vistas .ax-nav__children {
+  position: relative;
+}
+
+.ax-nav__group--vistas .ax-nav__children::before {
+  content: "";
+  position: absolute;
+  left: 1.5rem;
+  top: 4px;
+  bottom: 4px;
+  width: 1px;
+  background: var(--ax-border-subtle, rgba(139, 149, 185, 0.22));
+}
+
+.ax-nav__item--sub {
+  font-size: 0.8125rem !important;
+  font-weight: 600 !important;
+  padding-top: 0.5rem !important;
+  padding-bottom: 0.5rem !important;
+}
+
+.ax-nav__item--sub .ax-nav__icon {
+  width: 15px;
+  height: 15px;
+}
+
+/* El padre no tiene data-view, asi que nunca recibe .active. Cuando alguna de
+   sus tres vistas esta abierta se marca con esto: mas suave que el activo real
+   para que no compitan dos elementos por parecer "donde estoy". */
+.ax-nav__item--parent.is-abierto {
+  color: var(--ax-text-primary) !important;
+}
+
+.ax-nav__caret {
+  flex: 0 0 auto;
+  margin-left: 0.35rem;
+  opacity: 0.55;
+}
+
+/* El ancla donde se monta la barra de filtros compartida. No pinta nada: solo
+   existe para que mpMontarFiltros() tenga a donde mover el nodo. Vacia no debe
+   ocupar espacio, o el Dashboard y la Busqueda arrastrarian un hueco. */
+.mp-ancla-filtros:empty { display: none; }
+
+/* =========================================================================
+   ESTADO VACIO DE ORDENES DE COMPRA
+   ========================================================================= */
+
+.mp-vacio {
+  padding: 2.25rem 2rem;
+  margin-bottom: 1.25rem;
+  text-align: left;
+  max-width: 780px;
+}
+
+.mp-vacio__icono {
+  font-size: 1.75rem;
+  line-height: 1;
+  margin-bottom: 0.85rem;
+}
+
+.mp-vacio__titulo {
+  margin: 0 0 0.6rem;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: var(--ax-text-primary);
+}
+
+.mp-vacio__texto,
+.mp-vacio__pie {
+  margin: 0 0 0.9rem;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--ax-text-secondary);
+}
+
+.mp-vacio__pie {
+  margin: 1rem 0 0;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--ax-border-subtle, rgba(139, 149, 185, 0.22));
+  color: var(--ax-text-tertiary);
+  font-size: 0.8125rem;
+}
+
+.mp-vacio__pasos {
+  margin: 0;
+  padding-left: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--ax-text-secondary);
+}
+
+.mp-vacio__pasos strong { color: var(--ax-text-primary); }
+
+/* Tinte propio y no var(--el-1): en esta hoja --el-1 es una SOMBRA
+   (`0 1px 2px rgba(...)`), no un color, asi que como `background` no es un
+   valor valido y la declaracion se descarta entera. El chip quedaba
+   transparente. Es el mismo despiste que arrastra .mp-tag. */
+.mp-vacio code {
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: rgba(124, 92, 220, 0.10);
+  border: 1px solid rgba(124, 92, 220, 0.26);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.8125em;
+  color: var(--ax-accent-purple);
+  white-space: nowrap;
+}
+
+/* Una OC enviada y no aceptada todavia se puede trabajar; una cerrada no. */
+.mp-tag--pendiente {
+  background: rgba(255, 196, 107, 0.16);
+  color: var(--ax-accent-gold);
+  border-color: rgba(255, 196, 107, 0.4);
+}

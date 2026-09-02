@@ -38,3 +38,23 @@ const REFRESH_INTERVAL_MS = 120000;       // Frecuencia de actualización (2 min
 const ENABLE_LOCAL_CACHE = true;          // Carga instantánea 0ms desde IndexedDB
 const ENABLE_OPTIMISTIC_UPDATES = true;   // Ediciones e inserciones instantáneas 0ms
 const SOUND_EFFECTS = true;               // Efectos sonoros sintetizados por Web Audio
+
+// ===== API de Mercado Publico (ChileCompra) =====
+//
+// Alimenta el submodulo "Ordenes de Compra Recibidas". Mientras estos dos
+// campos esten vacios, la vista se arma igual y explica en pantalla que falta.
+//
+// MP_API_TICKET: se pide en el portal de proveedores de ChileCompra con el RUT
+// de Glomax. Es una cadena tipo "F8537A18-C4B8-...". Limite publicado: 500
+// solicitudes cada 5 minutos por ticket.
+//
+// MP_API_PROXY: la URL base por donde se reenvia la llamada.
+// api.mercadopublico.cl no manda cabeceras CORS, asi que el navegador bloquea
+// la respuesta aunque el servidor conteste bien. Sirve el mismo Apps Script
+// del panel con un doGet que reenvie la peticion.
+//
+// OJO: el ticket es una credencial. Puesto aqui viaja al repositorio y queda
+// publico en GitHub Pages. Lo correcto es dejar MP_API_TICKET vacio y que el
+// ticket viva en las Script Properties de Apps Script, detras del proxy.
+const MP_API_TICKET = "";
+const MP_API_PROXY  = "";

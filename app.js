@@ -1067,7 +1067,8 @@ if (document.readyState === 'loading') {
 const MODULO_TTL_MS = {
   precios:        5 * 60 * 1000,
   cotizaciones:   5 * 60 * 1000,
-  mercadopublico: 10 * 60 * 1000
+  mercadopublico: 10 * 60 * 1000,
+  mpordenes:      10 * 60 * 1000
 };
 
 /** Si lo traido en `marca` ya esta viejo para ese modulo. Sin marca, si. */
@@ -1120,6 +1121,44 @@ function renderVista(nombre) {
   return true;
 }
 
+/* Las tres vistas del modulo de Mercado Publico. Se listan aparte porque el
+   submenu, el refresco automatico y el traslado de la barra de filtros tienen
+   que saber cuales son sin repetir la lista en cada sitio. */
+const MP_VISTAS = ['mercadopublico', 'mpoportunidades', 'mpordenes'];
+
+/* Donde se monta la barra de filtros en cada vista. Ordenes de Compra no
+   aparece: cuando llegue por API traera sus propios controles (rango de
+   fechas y estado), que no son estos nueve. */
+const MP_ANCLAS_FILTROS = {
+  mercadopublico:  'mpAnclaFiltrosDash',
+  mpoportunidades: 'mpAnclaFiltrosBusca'
+};
+
+/* La barra de filtros de Mercado Publico es UNA sola y se muda de vista.
+   Duplicarla en el HTML habria significado dos juegos de ids y dos estados que
+   se desincronizan; moverla conserva los valores elegidos, los listeners ya
+   enlazados y el estado plegado del movil, porque appendChild traslada el nodo
+   sin recrearlo. */
+function mpMontarFiltros(vista) {
+  const barra = document.getElementById('mpFiltersBar');
+  const ancla = document.getElementById(MP_ANCLAS_FILTROS[vista] || '');
+  if (!barra || !ancla || barra.parentElement === ancla) return;
+  ancla.appendChild(barra);
+}
+
+/** Abre el submenu de Mercado Publico y muda la barra si la vista es suya. */
+function mpSincronizarNav(vista) {
+  const dentro = MP_VISTAS.indexOf(vista) !== -1;
+  const padre = document.getElementById('mpNavToggle');
+  if (padre) padre.classList.toggle('is-abierto', dentro);
+  if (!dentro) return;
+
+  const grupo = document.getElementById('mpNavGroup');
+  if (grupo) grupo.classList.add('expanded');
+  if (padre) padre.setAttribute('aria-expanded', 'true');
+  mpMontarFiltros(vista);
+}
+
 /** Nombre de la vista visible ('tablero', 'precios', ...). '' si no hay. */
 function vistaActiva() {
   const el = document.querySelector('.view.active');
@@ -1145,6 +1184,12 @@ function switchView(viewName) {
   if (globalFiltersBar) {
     globalFiltersBar.style.display = (viewName === 'tablero' || viewName === 'tabla' || viewName === 'bistudio') ? '' : 'none';
   }
+
+  /* El submenu de Mercado Publico se abre solo al entrar a cualquiera de sus
+     tres vistas, y la barra de filtros compartida se muda a la que quedo
+     visible. Va en el tramo sincrono para que el traslado ocurra antes del
+     primer pintado y no se vea saltar la barra. */
+  mpSincronizarNav(viewName);
 
   // Cerrar navegación móvil inmediatamente
   closeMobileSidebar();
@@ -1173,12 +1218,21 @@ function switchView(viewName) {
            propio loadPrecios corta si ya hay una carga en curso. */
         if (typeof setupPreciosListeners === 'function') setupPreciosListeners();
         if (typeof loadPrecios === 'function') loadPrecios();
-      } else if (viewName === 'mercadopublico') {
+      } else if (viewName === 'mercadopublico' || viewName === 'mpoportunidades') {
         /* Como precios: los datos viven en otra pestana y no dependen de los
            filtros globales. loadMercadoPublico decide solo si lo que tiene en
-           memoria sigue sirviendo o ya esta viejo. */
+           memoria sigue sirviendo o ya esta viejo.
+
+           El Dashboard y la Busqueda entran por la misma puerta a proposito:
+           son dos recortes de un solo estado (mpRows -> mpFiltrado). El render
+           pinta los dos de una vez y los elementos del que esta oculto se
+           actualizan igual, que cuesta nada y evita tener que acordarse de
+           repintar al cambiar de submenu. */
         if (typeof setupMercadoPublicoListeners === 'function') setupMercadoPublicoListeners();
         if (typeof loadMercadoPublico === 'function') loadMercadoPublico();
+      } else if (viewName === 'mpordenes') {
+        if (typeof setupMpOrdenesListeners === 'function') setupMpOrdenesListeners();
+        if (typeof loadMpOrdenes === 'function') loadMpOrdenes();
       } else if (viewName === 'cotizaciones') {
         if (typeof refreshCotizacionesLive === 'function') {
           /* Antes se volvia a pedir solo si no habia ninguna fila en memoria,
@@ -2839,12 +2893,30 @@ function renderCanalSubmenu() {
   }
 }
 
+/* La clase que abre un submenu es .expanded EN EL GRUPO: la regla es
+   `.ax-nav__group.expanded .ax-nav__children { display: flex }`. Esto la ponia
+   en el boton y ademas marcaba el hijo con .open, que ninguna regla consulta,
+   asi que el submenu de Canal Final no se abria nunca. */
 const canalToggle = document.getElementById('canalToggle');
 if (canalToggle) {
   canalToggle.addEventListener('click', () => {
-    canalToggle.classList.toggle('expanded');
-    const sub = document.getElementById('canalSubmenu');
-    if (sub) sub.classList.toggle('open');
+    const grupo = document.getElementById('canalToggleGroup');
+    if (grupo) grupo.classList.toggle('expanded');
+  });
+}
+
+/* Mercado Publico: el padre pliega y despliega sus tres vistas. Si estaba
+   cerrado tambien lleva al Dashboard, porque el que hace un solo clic sobre el
+   nombre del modulo espera llegar a alguna parte, no solo ver una lista. */
+const mpNavToggle = document.getElementById('mpNavToggle');
+if (mpNavToggle) {
+  mpNavToggle.addEventListener('click', () => {
+    const grupo = document.getElementById('mpNavGroup');
+    if (!grupo) return;
+    const abrir = !grupo.classList.contains('expanded');
+    grupo.classList.toggle('expanded', abrir);
+    mpNavToggle.setAttribute('aria-expanded', abrir ? 'true' : 'false');
+    if (abrir && typeof switchView === 'function') switchView('mercadopublico');
   });
 }
 
@@ -4415,10 +4487,15 @@ function startAutoRefresh() {
 function refrescarModuloActivo() {
   const vista = vistaActiva();
 
-  if (vista === 'mercadopublico') {
+  if (vista === 'mercadopublico' || vista === 'mpoportunidades') {
     if (typeof loadMercadoPublico === 'function' && !mpCargando &&
         moduloVencido(mpUltimaCarga, 'mercadopublico')) {
       loadMercadoPublico(true);
+    }
+  } else if (vista === 'mpordenes') {
+    if (typeof loadMpOrdenes === 'function' && !mpOcCargando &&
+        moduloVencido(mpOcUltimaCarga, 'mpordenes')) {
+      loadMpOrdenes(true);
     }
   } else if (vista === 'cotizaciones') {
     /* En silencio: el aviso emergente tiene sentido cuando el usuario aprieta
@@ -11090,14 +11167,21 @@ async function loadMercadoPublico(forzar) {
   }
 }
 
+/* Los dos ids del sello de hora y los dos del boton de Excel, uno en la
+   cabecera del Dashboard y otro en la de Busqueda de Oportunidades. */
+const MP_SELLOS = ['mpUpdated', 'mpUpdatedBusca'];
+const MP_BOTONES_EXCEL = ['mpExportar', 'mpExportarBusca'];
+
 function mpEstadoCarga(html, esError) {
   const cuerpo = document.getElementById('mpTableBody');
   if (cuerpo) {
     cuerpo.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:2.5rem; color:' +
       (esError ? 'var(--ax-accent-rose)' : 'var(--ax-text-tertiary)') + ';">' + html + '</td></tr>';
   }
-  const sello = document.getElementById('mpUpdated');
-  if (sello && !esError) sello.textContent = 'Cargando…';
+  MP_SELLOS.forEach(function (id) {
+    const sello = document.getElementById(id);
+    if (sello && !esError) sello.textContent = 'Cargando…';
+  });
 }
 
 /* -------------------------------------------------------------------------
@@ -11286,12 +11370,15 @@ function renderMercadoPublicoView() {
   mpRenderTabla(datos);
   mpSincronizarExportar();
 
-  const sello = document.getElementById('mpUpdated');
-  if (sello) {
-    sello.textContent = mpUltimaCarga
-      ? 'Actualizado ' + mpUltimaCarga.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })
-      : '—';
-  }
+  /* Dos sellos, uno por vista: el Dashboard y la Busqueda tienen cada uno su
+     cabecera y comparten la misma carga. */
+  const texto = mpUltimaCarga
+    ? 'Actualizado ' + mpUltimaCarga.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })
+    : '—';
+  MP_SELLOS.forEach(function (id) {
+    const sello = document.getElementById(id);
+    if (sello) sello.textContent = texto;
+  });
 }
 
 function mpRenderKpis(res, datos) {
@@ -12154,13 +12241,16 @@ function mpFilaExcel(d, ahora) {
 }
 
 function mpSincronizarExportar() {
-  const btn = document.getElementById('mpExportar');
-  if (!btn) return;
   const n = mpFiltrado.length;
-  btn.disabled = !n;
-  btn.title = n
+  const titulo = n
     ? 'Exportar a Excel ' + formatNum(n) + (n === 1 ? ' oportunidad' : ' oportunidades') + ' del filtro actual'
     : 'No hay oportunidades que exportar';
+  MP_BOTONES_EXCEL.forEach(function (id) {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    btn.disabled = !n;
+    btn.title = titulo;
+  });
 }
 
 function exportarMercadoPublicoExcel() {
@@ -12235,7 +12325,9 @@ function setupMercadoPublicoListeners() {
   enlazar('btnMpPrevPage', 'click', () => cambiarMpPagina(-1));
   enlazar('btnMpNextPage', 'click', () => cambiarMpPagina(1));
   enlazar('mpExportar', 'click', exportarMercadoPublicoExcel);
+  enlazar('mpExportarBusca', 'click', exportarMercadoPublicoExcel);
   enlazar('mpReload', 'click', () => loadMercadoPublico(true));
+  enlazar('mpReloadBusca', 'click', () => loadMercadoPublico(true));
   enlazar('btnMpLimpiar', 'click', limpiarMpFiltros);
 
   document.querySelectorAll('#mpTablaCard th[data-mp-sort]').forEach(th => {
@@ -12259,6 +12351,401 @@ function setupMercadoPublicoListeners() {
   });
 
   mpSincronizarExportar();
+}
+
+/* =========================================================================
+   MODULO MERCADO PUBLICO - ORDENES DE COMPRA RECIBIDAS
+   -------------------------------------------------------------------------
+   Las OC que los organismos le emiten a Glomax. A diferencia de las otras dos
+   vistas del modulo, esto NO sale de la planilla: la fuente es la API de
+   ChileCompra (api.mercadopublico.cl), y todavia no esta conectada.
+
+   Faltan dos cosas concretas, ninguna de las dos se resuelve escribiendo mas
+   codigo aqui:
+
+     1. Un ticket de ChileCompra, que se pide en el portal de proveedores y se
+        pega en config.js -> MP_API_TICKET.
+     2. Un proxy, en config.js -> MP_API_PROXY. Hace falta porque
+        api.mercadopublico.cl no manda cabeceras CORS: el navegador bloquea la
+        respuesta aunque el servidor conteste bien. Sirve el mismo Apps Script
+        que ya usa el resto del panel, con un doGet que reenvie la llamada.
+
+   Mientras eso no exista la vista se arma igual y dice que falta, en vez de
+   mostrar una tabla vacia sin explicar por que.
+
+   El endpoint de la lista es:
+     <proxy>/servicios/v1/publico/ordenesdecompra.json?fecha=ddmmaaaa&ticket=T
+   y devuelve las OC de UN dia, en un objeto { Cantidad, Listado: [...] }. El
+   detalle de cada orden se pide aparte con ?codigo=<n>&ticket=T. El limite
+   publicado es de 500 solicitudes cada 5 minutos por ticket, asi que barrer un
+   mes son 30 llamadas y conviene guardarlas, no repetirlas en cada entrada a
+   la vista.
+
+   Los nombres de campo de normalizarOrdenesCompra estan tomados de la
+   documentacion publica y NO se han probado contra una respuesta real todavia:
+   por eso cada uno se lee con varias alternativas y cae a vacio en vez de
+   reventar. La primera vez que llegue una respuesta de verdad hay que revisar
+   este mapeo antes de confiar en los montos.
+   ========================================================================= */
+
+let mpOcRows = [];
+let mpOcPagina = 1;
+const MP_OC_TAM_PAGINA = 50;
+let mpOcCargando = false;
+let mpOcUltimaCarga = null;
+
+/* Estados que significan "el organismo todavia no la cierra". Se separan
+   porque son las unicas sobre las que se puede hacer algo hoy. */
+const MP_OC_PENDIENTES = ['Enviada a proveedor', 'Guardada', 'En proceso'];
+
+/** Que falta para poder llamar a la API. Lista vacia = se puede llamar. */
+function mpOcFaltaConfig() {
+  const falta = [];
+  const ticket = (typeof MP_API_TICKET !== 'undefined') ? String(MP_API_TICKET || '').trim() : '';
+  const proxy  = (typeof MP_API_PROXY  !== 'undefined') ? String(MP_API_PROXY  || '').trim() : '';
+  if (!ticket) falta.push('ticket');
+  if (!proxy)  falta.push('proxy');
+  return falta;
+}
+
+/* -------------------------------------------------------------------------
+   Lectura de la respuesta
+   ------------------------------------------------------------------------- */
+
+function mpOcTexto(v) {
+  if (v === undefined || v === null) return '';
+  return String(v).trim();
+}
+
+/* La API devuelve los montos como numero JSON, pero algunas respuestas los
+   traen ya formateados ("$1.234.567"). Ahi el punto es separador de miles, no
+   decimal: Number() lee eso como NaN y el monto se perdia entero. Se delega en
+   parseChileanNumber, que es el lector que ya usa el resto del panel y sabe
+   distinguir el punto de miles de la coma decimal. */
+function mpOcNumero(v) {
+  if (typeof v === 'number') return isFinite(v) ? v : 0;
+  if (v === undefined || v === null || v === '') return 0;
+  if (typeof parseChileanNumber === 'function') return parseChileanNumber(v);
+  const n = Number(String(v).replace(/[^0-9.-]/g, ''));
+  return isFinite(n) ? n : 0;
+}
+
+/* Las fechas de la API vienen como "2026-08-14T10:32:00" o, en algunas
+   respuestas antiguas, como "14-08-2026". Se aceptan las dos. */
+function mpOcFecha(v) {
+  const t = mpOcTexto(v);
+  if (!t) return null;
+  let m = t.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  m = t.match(/^(\d{2})-(\d{2})-(\d{4})/);
+  if (m) return new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
+  const d = new Date(t);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+/**
+ * Aplana una respuesta de ordenesdecompra.json a la forma que usa la vista.
+ * Acepta tanto el objeto completo como el arreglo Listado suelto.
+ */
+function normalizarOrdenesCompra(bruto) {
+  const lista = Array.isArray(bruto) ? bruto
+    : (bruto && Array.isArray(bruto.Listado) ? bruto.Listado : []);
+
+  return lista.map(function (o) {
+    const comprador = o.Comprador || o.comprador || {};
+    const neto = mpOcNumero(o.TotalNeto !== undefined ? o.TotalNeto : o.Total);
+    const fecha = mpOcFecha(o.FechaEnvio || o.Fechas && o.Fechas.FechaEnvio || o.FechaCreacion);
+    const estado = mpOcTexto(o.Estado || o.estado);
+
+    return {
+      codigo:    mpOcTexto(o.Codigo || o.codigo),
+      nombre:    mpOcTexto(o.Nombre || o.nombre),
+      organismo: mpOcTexto(comprador.NombreOrganismo || comprador.NombreUnidad || o.Organismo),
+      fecha:     fecha,
+      estado:    estado,
+      pendiente: MP_OC_PENDIENTES.indexOf(estado) !== -1,
+      neto:      neto,
+      lineas:    Array.isArray(o.Items && o.Items.Listado) ? o.Items.Listado.length
+               : mpOcNumero(o.Items && o.Items.Cantidad)
+    };
+  }).filter(function (o) { return o.codigo; });
+}
+
+/* -------------------------------------------------------------------------
+   Carga
+   ------------------------------------------------------------------------- */
+
+/**
+ * Trae las ordenes de compra de la API. Hoy no llama a nadie: sin ticket ni
+ * proxy no hay a donde llamar, y disparar un fetch que el navegador va a
+ * bloquear por CORS solo llena la consola de errores rojos que no ayudan.
+ *
+ * Cuando esten los dos datos en config.js, esta es la unica funcion que hay
+ * que escribir: pedir un dia por llamada, juntar los Listado y devolver
+ * normalizarOrdenesCompra() del conjunto.
+ */
+async function fetchMpOrdenes() {
+  const falta = mpOcFaltaConfig();
+  if (falta.length) return null;
+
+  console.warn('[MercadoPublico OC] Hay ticket y proxy configurados pero la ' +
+    'llamada a la API todavia no esta escrita. Ver fetchMpOrdenes().');
+  return null;
+}
+
+async function loadMpOrdenes(forzar) {
+  if (mpOcCargando) return;
+
+  if (mpOcRows.length && !forzar && !moduloVencido(mpOcUltimaCarga, 'mpordenes')) {
+    renderMpOrdenesView();
+    return;
+  }
+
+  mpOcCargando = true;
+  try {
+    const filas = await fetchMpOrdenes();
+    if (filas) {
+      mpOcRows = filas;
+      mpOcUltimaCarga = new Date();
+    }
+  } catch (err) {
+    console.error('[MercadoPublico OC] Error de carga:', err);
+  } finally {
+    mpOcCargando = false;
+    renderMpOrdenesView();
+  }
+}
+
+/* -------------------------------------------------------------------------
+   Render
+   ------------------------------------------------------------------------- */
+
+function renderMpOrdenesView() {
+  mpOcRenderEstado();
+  mpOcRenderKpis();
+  mpOcRenderTabla();
+  mpOcSincronizarExportar();
+
+  const sello = document.getElementById('mpOcUpdated');
+  if (sello) {
+    sello.textContent = mpOcUltimaCarga
+      ? 'Actualizado ' + mpOcUltimaCarga.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })
+      : '—';
+  }
+}
+
+/** El bloque que explica por que no hay datos. Vacio cuando si los hay. */
+function mpOcRenderEstado() {
+  const caja = document.getElementById('mpOcEstado');
+  if (!caja) return;
+
+  if (mpOcRows.length) { caja.innerHTML = ''; return; }
+
+  const falta = mpOcFaltaConfig();
+  const pasos = [];
+  if (falta.indexOf('ticket') !== -1) {
+    pasos.push('<li><strong>El ticket de ChileCompra.</strong> Se pide en el portal de ' +
+      'proveedores con el RUT de Glomax y se pega en <code>config.js</code>, en ' +
+      '<code>MP_API_TICKET</code>.</li>');
+  }
+  if (falta.indexOf('proxy') !== -1) {
+    pasos.push('<li><strong>Un proxy.</strong> <code>api.mercadopublico.cl</code> no manda ' +
+      'cabeceras CORS, así que el navegador bloquea la respuesta aunque el servidor ' +
+      'conteste bien. Sirve el mismo Apps Script del panel con un <code>doGet</code> que ' +
+      'reenvíe la llamada; su URL va en <code>MP_API_PROXY</code>.</li>');
+  }
+  if (!pasos.length) {
+    pasos.push('<li>La configuración está completa, pero la llamada a la API todavía no ' +
+      'está escrita. Es la función <code>fetchMpOrdenes()</code> en <code>app.js</code>.</li>');
+  }
+
+  caja.innerHTML =
+    '<div class="ax-card mp-vacio">' +
+      '<div class="mp-vacio__icono" aria-hidden="true">🔌</div>' +
+      '<h3 class="mp-vacio__titulo">Todavía no hay conexión con la API de Mercado Público</h3>' +
+      '<p class="mp-vacio__texto">Esta vista lee las órdenes de compra que los organismos ' +
+        'le emiten a Glomax desde <code>api.mercadopublico.cl</code>. Para encenderla falta:</p>' +
+      '<ol class="mp-vacio__pasos">' + pasos.join('') + '</ol>' +
+      '<p class="mp-vacio__pie">Los KPI, la tabla y el Excel de esta pantalla ya están ' +
+        'conectados: en cuanto la carga devuelva filas, se llenan solos.</p>' +
+    '</div>';
+}
+
+function mpOcRenderKpis() {
+  const set = function (id, valor, sub) {
+    const v = document.getElementById(id);
+    if (v) v.textContent = valor;
+    const t = document.getElementById(id + 'Sub');
+    if (t) t.textContent = sub;
+  };
+
+  if (!mpOcRows.length) {
+    set('mpOcKpiTotal', '0', 'Sin datos cargados');
+    set('mpOcKpiMonto', '$0', 'Sin datos cargados');
+    set('mpOcKpiPendientes', '0', 'Sin datos cargados');
+    set('mpOcKpiUltima', '—', 'Sin datos cargados');
+    return;
+  }
+
+  let neto = 0, pendientes = 0, netoPendiente = 0, ultima = null;
+  mpOcRows.forEach(function (o) {
+    neto += o.neto;
+    if (o.pendiente) { pendientes++; netoPendiente += o.neto; }
+    if (o.fecha && (!ultima || o.fecha > ultima)) ultima = o.fecha;
+  });
+
+  set('mpOcKpiTotal', formatNum(mpOcRows.length),
+    mpOcRows.length === 1 ? 'orden en el período cargado' : 'órdenes en el período cargado');
+  set('mpOcKpiMonto', formatCLP(neto), 'Suma del neto de todas las órdenes');
+  set('mpOcKpiPendientes', formatNum(pendientes),
+    pendientes ? formatCLP(netoPendiente) + ' esperando aceptación' : 'Ninguna esperando aceptación');
+  set('mpOcKpiUltima', ultima ? mpOcFechaTexto(ultima) : '—',
+    ultima ? 'Fecha de envío más reciente' : 'Sin fecha de envío anotada');
+}
+
+function mpOcFechaTexto(f) {
+  if (!f) return '—';
+  return f.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+function mpOcRenderTabla() {
+  const cuerpo = document.getElementById('mpOcTableBody');
+  const info = document.getElementById('mpOcPageInfo');
+  const prev = document.getElementById('btnMpOcPrevPage');
+  const next = document.getElementById('btnMpOcNextPage');
+  if (!cuerpo) return;
+
+  if (!mpOcRows.length) {
+    cuerpo.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:2.5rem; ' +
+      'color:var(--ax-text-tertiary);">Sin órdenes cargadas.</td></tr>';
+    if (info) info.textContent = 'Página 1 de 1';
+    if (prev) prev.disabled = true;
+    if (next) next.disabled = true;
+    return;
+  }
+
+  /* Mas reciente primero: una OC de hace tres meses ya no se acepta ni se
+     despacha, la de ayer si. */
+  const ordenados = mpOcRows.slice().sort(function (a, b) {
+    const fa = a.fecha ? a.fecha.getTime() : 0;
+    const fb = b.fecha ? b.fecha.getTime() : 0;
+    return fb - fa;
+  });
+
+  const paginas = Math.ceil(ordenados.length / MP_OC_TAM_PAGINA) || 1;
+  if (mpOcPagina < 1) mpOcPagina = 1;
+  if (mpOcPagina > paginas) mpOcPagina = paginas;
+
+  const desde = (mpOcPagina - 1) * MP_OC_TAM_PAGINA;
+  const pagina = ordenados.slice(desde, desde + MP_OC_TAM_PAGINA);
+
+  if (info) {
+    info.innerHTML = 'Página <strong>' + mpOcPagina + '</strong> de <strong>' + paginas + '</strong> ' +
+      '(<span style="color: var(--ax-accent); font-weight:700;">' + formatNum(ordenados.length) +
+      '</span> órdenes)';
+  }
+  if (prev) prev.disabled = mpOcPagina <= 1;
+  if (next) next.disabled = mpOcPagina >= paginas;
+
+  cuerpo.innerHTML = pagina.map(function (o) {
+    const chip = o.pendiente
+      ? '<span class="mp-tag mp-tag--pendiente">' + escapeHtml(o.estado || 'Pendiente') + '</span>'
+      : '<span class="mp-tag">' + escapeHtml(o.estado || '—') + '</span>';
+
+    return '<tr>' +
+      '<td class="mp-td-id"><span title="' + escapeHtml(o.codigo) + '">' + escapeHtml(o.codigo) + '</span></td>' +
+      '<td class="mp-td-nombre">' +
+        '<span class="mp-nombre" title="' + escapeHtml(o.nombre) + '">' + escapeHtml(o.nombre) + '</span>' +
+        '<span class="mp-organismo">' + escapeHtml(o.organismo) + '</span>' +
+      '</td>' +
+      '<td class="mp-td-fecha">' + mpOcFechaTexto(o.fecha) + '</td>' +
+      '<td>' + chip + '</td>' +
+      '<td class="num">' + formatCLP(o.neto) + '</td>' +
+      '<td class="num">' + (o.lineas || '<span class="mp-nulo">—</span>') + '</td>' +
+    '</tr>';
+  }).join('');
+}
+
+function cambiarMpOcPagina(dir) {
+  mpOcPagina += dir;
+  mpOcRenderTabla();
+  const tabla = document.getElementById('mpOcTablaCard');
+  if (tabla) tabla.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* -------------------------------------------------------------------------
+   Exportacion
+   ------------------------------------------------------------------------- */
+
+const MP_OC_COLUMNAS_EXCEL = [
+  { titulo: 'N° OC',           ancho: 22, tipo: 'texto' },
+  { titulo: 'NOMBRE',          ancho: 46, tipo: 'texto' },
+  { titulo: 'ORGANISMO',       ancho: 40, tipo: 'texto' },
+  { titulo: 'FECHA DE ENVÍO',  ancho: 15, tipo: 'fecha' },
+  { titulo: 'ESTADO',          ancho: 20, tipo: 'texto' },
+  { titulo: 'MONTO NETO',      ancho: 15, tipo: 'clp' },
+  { titulo: 'LÍNEAS',          ancho: 9,  tipo: 'numero' }
+];
+
+function mpOcSincronizarExportar() {
+  const btn = document.getElementById('mpOcExportar');
+  if (!btn) return;
+  const n = mpOcRows.length;
+  btn.disabled = !n;
+  btn.title = n
+    ? 'Exportar a Excel ' + formatNum(n) + (n === 1 ? ' orden' : ' órdenes')
+    : 'No hay órdenes que exportar';
+}
+
+function exportarMpOrdenesExcel() {
+  if (!mpOcRows.length) {
+    if (typeof showToast === 'function') showToast('No hay órdenes que exportar', 'warn');
+    return;
+  }
+  if (typeof xlsxCrearLibro !== 'function') {
+    if (typeof showToast === 'function') showToast('El generador de Excel no está disponible', 'error');
+    return;
+  }
+
+  const filas = mpOcRows.map(function (o) {
+    return [o.codigo, o.nombre, o.organismo, o.fecha, o.estado, o.neto || null, o.lineas || null];
+  });
+
+  const sello = new Date().toISOString().slice(0, 10);
+  try {
+    const blob = xlsxCrearLibro([{
+      nombre: 'Ordenes de Compra',
+      columnas: MP_OC_COLUMNAS_EXCEL,
+      filas: filas
+    }]);
+    xlsxDescargar(blob, 'Glomax_OrdenesCompra_' + sello + '.xlsx');
+    if (typeof showToast === 'function') {
+      showToast(formatNum(filas.length) + ' órdenes exportadas', 'success');
+    }
+  } catch (err) {
+    console.error('[MercadoPublico OC] Error al exportar:', err);
+    if (typeof showToast === 'function') showToast('No se pudo generar el Excel', 'error');
+  }
+}
+
+/* -------------------------------------------------------------------------
+   Listeners
+   ------------------------------------------------------------------------- */
+
+function setupMpOrdenesListeners() {
+  const enlazar = function (id, evento, fn) {
+    const el = document.getElementById(id);
+    if (!el || el._mpOcBound) return;
+    el._mpOcBound = true;
+    el.addEventListener(evento, fn);
+  };
+
+  enlazar('btnMpOcPrevPage', 'click', function () { cambiarMpOcPagina(-1); });
+  enlazar('btnMpOcNextPage', 'click', function () { cambiarMpOcPagina(1); });
+  enlazar('mpOcExportar', 'click', exportarMpOrdenesExcel);
+  enlazar('mpOcReload', 'click', function () { loadMpOrdenes(true); });
+
+  mpOcSincronizarExportar();
 }
 
 /* =========================================================================

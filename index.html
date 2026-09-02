@@ -34,7 +34,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <!-- Stylesheets & Libraries -->
-  <link rel="stylesheet" href="style.css?v=20260902_TILDES_V60" />
+  <link rel="stylesheet" href="style.css?v=20260902_MPTRES_V61" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -407,11 +407,33 @@
           <span class="ax-nav__badge ax-nav__badge--ficha">VS</span>
         </button>
 
-        <button class="ax-nav__item" data-view="mercadopublico">
-          <svg class="ax-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M5 21V10l7-6 7 6v11"/><path d="M9 21v-6h6v6"/></svg>
-          <span class="ax-nav__label">Mercado Público</span>
-          <span class="ax-nav__badge ax-nav__badge--prod" style="background: rgba(167, 139, 250, 0.2); color: var(--ax-accent-purple); border: 1px solid rgba(167, 139, 250, 0.4);">Licit</span>
-        </button>
+        <!-- Mercado Publico es el unico modulo con submenu: son tres vistas
+             distintas sobre la misma fuente (el tablero, el buscador y las
+             ordenes recibidas) y colgarlas del mismo padre evita tres entradas
+             sueltas en una barra que ya tiene once. -->
+        <div class="ax-nav__group ax-nav__group--vistas" id="mpNavGroup">
+          <button type="button" class="ax-nav__item ax-nav__item--parent" id="mpNavToggle"
+            aria-expanded="false" aria-controls="mpNavSubmenu">
+            <svg class="ax-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M5 21V10l7-6 7 6v11"/><path d="M9 21v-6h6v6"/></svg>
+            <span class="ax-nav__label">Mercado P&uacute;blico</span>
+            <span class="ax-nav__badge ax-nav__badge--prod" style="background: rgba(167, 139, 250, 0.2); color: var(--ax-accent-purple); border: 1px solid rgba(167, 139, 250, 0.4);">Licit</span>
+            <svg class="ax-nav__caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+          </button>
+          <div class="ax-nav__children" id="mpNavSubmenu">
+            <button class="ax-nav__item ax-nav__item--sub" data-view="mercadopublico">
+              <svg class="ax-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+              <span class="ax-nav__label">Dashboard</span>
+            </button>
+            <button class="ax-nav__item ax-nav__item--sub" data-view="mpoportunidades">
+              <svg class="ax-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <span class="ax-nav__label">B&uacute;squeda de Oportunidades</span>
+            </button>
+            <button class="ax-nav__item ax-nav__item--sub" data-view="mpordenes">
+              <svg class="ax-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+              <span class="ax-nav__label">&Oacute;rdenes de Compra Recibidas</span>
+            </button>
+          </div>
+        </div>
 
         <button class="ax-nav__item" data-view="prospeccion">
           <svg class="ax-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
@@ -1933,15 +1955,15 @@
           </div>
         </div>
 
-        <!-- VISTA MERCADO PÚBLICO -->
+        <!-- VISTA MERCADO PUBLICO 1/3: DASHBOARD -->
         <div class="view" id="view-mercadopublico">
           <div class="dashboard-section-header" style="margin-top: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
             <div>
               <div class="section-title-wrap">
                 <span class="section-badge-dot" style="background: #A78BFA; box-shadow: 0 0 12px rgba(167, 139, 250, 0.6);"></span>
-                <h2 class="dashboard-section-title">Mercado Público</h2>
+                <h2 class="dashboard-section-title">Mercado Público &middot; Dashboard</h2>
               </div>
-              <span class="section-subtitle">Oportunidades detectadas, lo que se ofertó y cómo terminó</span>
+              <span class="section-subtitle">C&oacute;mo va la participaci&oacute;n: de la oportunidad detectada a la orden adjudicada</span>
             </div>
             <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
               <span id="mpUpdated" class="precios-updated">&mdash;</span>
@@ -1953,61 +1975,65 @@
             </div>
           </div>
 
-          <!-- FILTROS -->
-          <div class="ax-card filters-bar" id="mpFiltersBar" style="margin-bottom: 1.25rem;">
-            <!-- Los nueve filtros ocupan 697px apilados, o sea toda la primera
-                 pantalla de un telefono. Este boton los pliega, igual que en el
-                 Tablero y en Cotizaciones; en escritorio no se ve. -->
-            <div class="filters-bar__header">
-              <button type="button" class="btn-secondary btn-sm mobile-filter-toggle-btn" id="toggleMpFiltersBtn"
-                onclick="toggleMpMobileFilters()" aria-expanded="false" aria-controls="mpFiltersBar">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
-                <span>Filtros &#9662;</span>
-              </button>
-            </div>
-            <div class="filter-controls">
-              <div class="filter-group">
-                <label for="mpFoco">Vista</label>
-                <select id="mpFoco" class="filter-select">
-                  <option value="">Todas</option>
-                  <option value="abiertas">Abiertas (cierran después de hoy)</option>
-                  <option value="ofertadas">Ofertadas</option>
-                  <option value="ganadas">Adjudicadas</option>
-                  <option value="perdidas">Perdidas</option>
-                  <option value="sinresolver">Ofertadas sin cerrar</option>
-                </select>
+          <!-- Aqui se monta la barra de filtros compartida cuando el submenu
+               activo es el Dashboard. Ver mpMontarFiltros() en app.js. -->
+          <div class="mp-ancla-filtros" id="mpAnclaFiltrosDash">
+            <!-- FILTROS -->
+            <div class="ax-card filters-bar" id="mpFiltersBar" style="margin-bottom: 1.25rem;">
+              <!-- Los nueve filtros ocupan 697px apilados, o sea toda la primera
+                   pantalla de un telefono. Este boton los pliega, igual que en el
+                   Tablero y en Cotizaciones; en escritorio no se ve. -->
+              <div class="filters-bar__header">
+                <button type="button" class="btn-secondary btn-sm mobile-filter-toggle-btn" id="toggleMpFiltersBtn"
+                  onclick="toggleMpMobileFilters()" aria-expanded="false" aria-controls="mpFiltersBar">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
+                  <span>Filtros &#9662;</span>
+                </button>
               </div>
-              <div class="filter-group">
-                <label for="fltMpAnio">Año</label>
-                <select id="fltMpAnio" class="filter-select"><option value="">Todos los años</option></select>
-              </div>
-              <div class="filter-group">
-                <label for="fltMpTienda">Tienda</label>
-                <select id="fltMpTienda" class="filter-select"><option value="">Todas las tiendas</option></select>
-              </div>
-              <div class="filter-group">
-                <label for="fltMpSeguimiento">Seguimiento</label>
-                <select id="fltMpSeguimiento" class="filter-select"><option value="">Todo seguimiento</option></select>
-              </div>
-              <div class="filter-group">
-                <label for="fltMpEtiqueta">Etiqueta</label>
-                <select id="fltMpEtiqueta" class="filter-select"><option value="">Todas las etiquetas</option></select>
-              </div>
-              <div class="filter-group">
-                <label for="fltMpAsignado">Asignado</label>
-                <select id="fltMpAsignado" class="filter-select"><option value="">Todos los responsables</option></select>
-              </div>
-              <div class="filter-group">
-                <label for="fltMpLinea">Línea de negocio</label>
-                <select id="fltMpLinea" class="filter-select"><option value="">Todas las líneas</option></select>
-              </div>
-              <div class="filter-group" style="flex: 2; min-width: 240px;">
-                <label for="mpSearchBox">Buscar</label>
-                <input type="text" id="mpSearchBox" class="filter-input" placeholder="ID, nombre, organismo, descripción&hellip;" />
-              </div>
-              <div class="filter-group filter-group--accion">
-                <label>&nbsp;</label>
-                <button type="button" class="btn-secondary btn-sm" id="btnMpLimpiar">Limpiar filtros</button>
+              <div class="filter-controls">
+                <div class="filter-group">
+                  <label for="mpFoco">Vista</label>
+                  <select id="mpFoco" class="filter-select">
+                    <option value="">Todas</option>
+                    <option value="abiertas">Abiertas (cierran después de hoy)</option>
+                    <option value="ofertadas">Ofertadas</option>
+                    <option value="ganadas">Adjudicadas</option>
+                    <option value="perdidas">Perdidas</option>
+                    <option value="sinresolver">Ofertadas sin cerrar</option>
+                  </select>
+                </div>
+                <div class="filter-group">
+                  <label for="fltMpAnio">Año</label>
+                  <select id="fltMpAnio" class="filter-select"><option value="">Todos los años</option></select>
+                </div>
+                <div class="filter-group">
+                  <label for="fltMpTienda">Tienda</label>
+                  <select id="fltMpTienda" class="filter-select"><option value="">Todas las tiendas</option></select>
+                </div>
+                <div class="filter-group">
+                  <label for="fltMpSeguimiento">Seguimiento</label>
+                  <select id="fltMpSeguimiento" class="filter-select"><option value="">Todo seguimiento</option></select>
+                </div>
+                <div class="filter-group">
+                  <label for="fltMpEtiqueta">Etiqueta</label>
+                  <select id="fltMpEtiqueta" class="filter-select"><option value="">Todas las etiquetas</option></select>
+                </div>
+                <div class="filter-group">
+                  <label for="fltMpAsignado">Asignado</label>
+                  <select id="fltMpAsignado" class="filter-select"><option value="">Todos los responsables</option></select>
+                </div>
+                <div class="filter-group">
+                  <label for="fltMpLinea">Línea de negocio</label>
+                  <select id="fltMpLinea" class="filter-select"><option value="">Todas las líneas</option></select>
+                </div>
+                <div class="filter-group" style="flex: 2; min-width: 240px;">
+                  <label for="mpSearchBox">Buscar</label>
+                  <input type="text" id="mpSearchBox" class="filter-input" placeholder="ID, nombre, organismo, descripción&hellip;" />
+                </div>
+                <div class="filter-group filter-group--accion">
+                  <label>&nbsp;</label>
+                  <button type="button" class="btn-secondary btn-sm" id="btnMpLimpiar">Limpiar filtros</button>
+                </div>
               </div>
             </div>
           </div>
@@ -2143,6 +2169,41 @@
               <div class="mp-organismos" id="mpTopOrganismos"></div>
             </div>
           </div>
+        </div>
+
+        <!-- VISTA MERCADO PUBLICO 2/3: BUSQUEDA DE OPORTUNIDADES -->
+        <div class="view" id="view-mpoportunidades">
+          <div class="dashboard-section-header" style="margin-top: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <div class="section-title-wrap">
+                <span class="section-badge-dot" style="background: #A78BFA; box-shadow: 0 0 12px rgba(167, 139, 250, 0.6);"></span>
+                <h2 class="dashboard-section-title">B&uacute;squeda de Oportunidades</h2>
+              </div>
+              <span class="section-subtitle">El registro completo de licitaciones y compras &aacute;giles, con filtros, orden y exportaci&oacute;n</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+              <span id="mpUpdatedBusca" class="precios-updated">&mdash;</span>
+              <button type="button" class="btn-secondary" id="mpExportarBusca" disabled
+                title="Exportar a Excel lo que est&aacute;s viendo">
+                <span aria-hidden="true">&#128202;</span> Excel
+              </button>
+              <button type="button" class="btn-secondary" id="mpReloadBusca">Actualizar</button>
+            </div>
+          </div>
+
+          <!-- La barra de filtros es UNA sola en todo el modulo y se muda de
+               vista al cambiar de submenu (mpMontarFiltros). Se hace asi y no
+               con dos barras porque los mismos nueve controles alimentan los
+               KPI y los graficos del Dashboard y la tabla de aqui: dos copias
+               serian dos estados que se desincronizan al primer descuido. -->
+          <div class="mp-ancla-filtros" id="mpAnclaFiltrosBusca"></div>
+
+          <div class="mp-aviso" id="mpBuscaAvisoApi">
+            <span class="mp-aviso__icono">&#128268;</span>
+            <div>La b&uacute;squeda en vivo contra <strong>api.mercadopublico.cl</strong> todav&iacute;a
+            no est&aacute; conectada. Lo que se lista aqu&iacute; son las oportunidades ya detectadas
+            en la pesta&ntilde;a <strong>MercadoPublico</strong> de la planilla.</div>
+          </div>
 
           <!-- TABLA -->
           <div class="ax-card chart-card" id="mpTablaCard">
@@ -2179,6 +2240,86 @@
               <div class="pagination-controls">
                 <button type="button" class="btn-secondary btn-sm" id="btnMpPrevPage">Anterior</button>
                 <button type="button" class="btn-secondary btn-sm" id="btnMpNextPage">Siguiente</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- VISTA MERCADO PUBLICO 3/3: ORDENES DE COMPRA RECIBIDAS -->
+        <div class="view" id="view-mpordenes">
+          <div class="dashboard-section-header" style="margin-top: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <div class="section-title-wrap">
+                <span class="section-badge-dot" style="background: #A78BFA; box-shadow: 0 0 12px rgba(167, 139, 250, 0.6);"></span>
+                <h2 class="dashboard-section-title">&Oacute;rdenes de Compra Recibidas</h2>
+              </div>
+              <span class="section-subtitle">Las OC que los organismos emitieron a Glomax, con su estado y su monto</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+              <span id="mpOcUpdated" class="precios-updated">&mdash;</span>
+              <button type="button" class="btn-secondary" id="mpOcExportar" disabled
+                title="Exportar a Excel las &oacute;rdenes cargadas">
+                <span aria-hidden="true">&#128202;</span> Excel
+              </button>
+              <button type="button" class="btn-secondary" id="mpOcReload">Actualizar</button>
+            </div>
+          </div>
+
+          <div class="mp-kpis">
+            <div class="ax-card mp-kpi">
+              <span class="mp-kpi__label">&Oacute;rdenes recibidas</span>
+              <span class="mp-kpi__value" id="mpOcKpiTotal">0</span>
+              <span class="mp-kpi__sub" id="mpOcKpiTotalSub">&mdash;</span>
+            </div>
+            <div class="ax-card mp-kpi mp-kpi--ok">
+              <span class="mp-kpi__label">Monto neto recibido</span>
+              <span class="mp-kpi__value" id="mpOcKpiMonto">$0</span>
+              <span class="mp-kpi__sub" id="mpOcKpiMontoSub">&mdash;</span>
+            </div>
+            <div class="ax-card mp-kpi mp-kpi--oferta">
+              <span class="mp-kpi__label">Pendientes de aceptaci&oacute;n</span>
+              <span class="mp-kpi__value" id="mpOcKpiPendientes">0</span>
+              <span class="mp-kpi__sub" id="mpOcKpiPendientesSub">&mdash;</span>
+            </div>
+            <div class="ax-card mp-kpi">
+              <span class="mp-kpi__label">&Uacute;ltima orden</span>
+              <span class="mp-kpi__value" id="mpOcKpiUltima">&mdash;</span>
+              <span class="mp-kpi__sub" id="mpOcKpiUltimaSub">&mdash;</span>
+            </div>
+          </div>
+
+          <div id="mpOcEstado"></div>
+
+          <div class="ax-card chart-card" id="mpOcTablaCard">
+            <div class="chart-card-header">
+              <div>
+                <span class="chart-tag">&Oacute;RDENES DE COMPRA</span>
+                <h3 class="chart-main-title">Listado de &oacute;rdenes recibidas</h3>
+              </div>
+            </div>
+            <div class="table-container">
+              <table class="data-table mp-table">
+                <thead>
+                  <tr>
+                    <th>N&deg; OC</th>
+                    <th>NOMBRE / ORGANISMO</th>
+                    <th>FECHA DE ENV&Iacute;O</th>
+                    <th>ESTADO</th>
+                    <th class="num">MONTO NETO</th>
+                    <th class="num">L&Iacute;NEAS</th>
+                  </tr>
+                </thead>
+                <tbody id="mpOcTableBody">
+                  <tr><td colspan="6" style="text-align:center; padding:2.5rem; color: var(--ax-text-tertiary);">Sin &oacute;rdenes cargadas.</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="pagination" style="margin-top: 1rem;">
+              <span id="mpOcPageInfo">P&aacute;gina 1 de 1</span>
+              <div class="pagination-controls">
+                <button type="button" class="btn-secondary btn-sm" id="btnMpOcPrevPage">Anterior</button>
+                <button type="button" class="btn-secondary btn-sm" id="btnMpOcNextPage">Siguiente</button>
               </div>
             </div>
           </div>
@@ -3215,7 +3356,7 @@
   </div>
 
   <!-- Scripts -->
-  <script src="config.js?v=20260902_TILDES_V60"></script>
-  <script src="app.js?v=20260902_TILDES_V60"></script>
+  <script src="config.js?v=20260902_MPTRES_V61"></script>
+  <script src="app.js?v=20260902_MPTRES_V61"></script>
 </body>
 </html>
