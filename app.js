@@ -12303,20 +12303,20 @@ const PROSP_CANAL_RE = /^MAYORISTAS?$/;
    evalua de arriba hacia abajo y gana el primero. */
 const PROSP_REGIONES = [
   { clave: 'XV',   nombre: 'Arica y Parinacota',   orden: 1,  pistas: ['arica', 'parinacota'] },
-  { clave: 'I',    nombre: 'Tarapaca',             orden: 2,  pistas: ['tarapac'] },
+  { clave: 'I',    nombre: 'Tarapacá',             orden: 2,  pistas: ['tarapac'] },
   { clave: 'II',   nombre: 'Antofagasta',          orden: 3,  pistas: ['antofagasta'] },
   { clave: 'III',  nombre: 'Atacama',              orden: 4,  pistas: ['atacama'] },
   { clave: 'IV',   nombre: 'Coquimbo',             orden: 5,  pistas: ['coquimbo'] },
-  { clave: 'V',    nombre: 'Valparaiso',           orden: 6,  pistas: ['valpara'] },
+  { clave: 'V',    nombre: 'Valparaíso',           orden: 6,  pistas: ['valpara'] },
   { clave: 'RM',   nombre: 'Metropolitana',        orden: 7,  pistas: ['metropolitana'] },
   { clave: 'VI',   nombre: "O'Higgins",            orden: 8,  pistas: ['higgins', 'libertador'] },
   { clave: 'VII',  nombre: 'Maule',                orden: 9,  pistas: ['maule'] },
-  { clave: 'XVI',  nombre: 'Nuble',                orden: 10, pistas: ['nuble', 'uble'] },
-  { clave: 'VIII', nombre: 'Biobio',               orden: 11, pistas: ['bio-bio', 'biobio', 'bio'] },
-  { clave: 'IX',   nombre: 'La Araucania',         orden: 12, pistas: ['araucan'] },
-  { clave: 'XIV',  nombre: 'Los Rios',             orden: 13, pistas: ['los rios', 'de los rios'] },
+  { clave: 'XVI',  nombre: 'Ñuble',                orden: 10, pistas: ['nuble', 'uble'] },
+  { clave: 'VIII', nombre: 'Biobío',               orden: 11, pistas: ['bio-bio', 'biobio', 'bio'] },
+  { clave: 'IX',   nombre: 'La Araucanía',         orden: 12, pistas: ['araucan'] },
+  { clave: 'XIV',  nombre: 'Los Ríos',             orden: 13, pistas: ['los rios', 'de los rios'] },
   { clave: 'X',    nombre: 'Los Lagos',            orden: 14, pistas: ['los lagos'] },
-  { clave: 'XI',   nombre: 'Aysen',                orden: 15, pistas: ['aisen', 'aysen'] },
+  { clave: 'XI',   nombre: 'Aysén',                orden: 15, pistas: ['aisen', 'aysen'] },
   { clave: 'XII',  nombre: 'Magallanes',           orden: 16, pistas: ['magallanes', 'antartica'] }
 ];
 
@@ -12451,7 +12451,7 @@ function prospRegionDe(raw) {
      comportamiento actual. */
   const limpio = prospSinTildes(bruto);
   if (!bruto || limpio === 'region metropolitana') {
-    return { clave: 'SR', nombre: 'Sin region asignada', orden: 99, sinDato: true };
+    return { clave: 'SR', nombre: 'Sin región asignada', orden: 99, sinDato: true };
   }
 
   for (let i = 0; i < PROSP_REGIONES.length; i++) {
@@ -13209,8 +13209,8 @@ function prospPintarEncabezado(M) {
 
   const sub = document.getElementById('prospSubtitulo');
   if (sub) {
-    sub.textContent = formatNum(M.filas) + ' lineas de venta mayorista · ' +
-      M.clientes.length + ' clientes historicos · datos hasta el ' + prospFechaCorta(M.refDate);
+    sub.textContent = formatNum(M.filas) + ' líneas de venta mayorista · ' +
+      M.clientes.length + ' clientes históricos · datos hasta el ' + prospFechaCorta(M.refDate);
   }
 
   const aviso = document.getElementById('prospAviso');
@@ -13222,20 +13222,20 @@ function prospPintarEncabezado(M) {
     }
     if (!M.usaCurva) {
       alertas.push('Hay poca historia del mes de ' + M.mesNombre + ' para reconstruir la curva intramensual: ' +
-        'la proyeccion del mes se hace prorrateando por dias transcurridos, que tiende a quedarse corta.');
+        'la proyección del mes se hace prorrateando por días transcurridos, que tiende a quedarse corta.');
     }
     if (M.filasImputadas > 0) {
-      alertas.push('La planilla trae ' + formatNum(M.filasImputadas) + ' lineas mayoristas sin la columna Region (' +
+      alertas.push('La planilla trae ' + formatNum(M.filasImputadas) + ' líneas mayoristas sin la columna Región (' +
         prospPlata(M.netoImputadoYtd) + ' de ' + M.anio + ', un ' +
         (M.totales.ytd > 0 ? (100 * M.netoImputadoYtd / M.totales.ytd).toFixed(0) : '0') +
-        '% del anio). Se asignaron a la region desde la que ese mismo cliente factura habitualmente. ' +
-        'Vale la pena arreglarlo en el origen: mientras tanto, esas ventas se estan repartiendo por historial y no por dato.');
+        '% del año). Se asignaron a la región desde la que ese mismo cliente factura habitualmente. ' +
+        'Vale la pena arreglarlo en el origen: mientras tanto, esas ventas se están repartiendo por historial y no por dato.');
     }
     const sinReg = M.regiones.find(R => R.clave === 'SR');
     if (sinReg && sinReg.ytd > 0) {
       alertas.push(formatNum(sinReg.clientesAct.size) + ' clientes (' + prospPlata(sinReg.ytd) +
-        ' este anio) nunca han traido region en ninguna de sus lineas, asi que no hay historial del que deducirla ' +
-        'y no se pueden rutear. Aparecen agrupados como "Sin region asignada".');
+        ' este año) nunca han traído región en ninguna de sus líneas, así que no hay historial del que deducirla ' +
+        'y no se pueden rutear. Aparecen agrupados como "Sin región asignada".');
     }
     if (alertas.length) {
       aviso.style.display = '';
@@ -13315,9 +13315,9 @@ function prospPintarRegiones(M) {
   tbody.innerHTML = M.regiones.map(R => {
     const activa = R.clave === prospRegionSel;
     return '<tr class="js-prosp-region" data-region="' + escapeHtml(R.clave) + '" style="cursor: pointer;' +
-      (activa ? ' background: rgba(255,196,107,0.10);' : '') + '" title="Clic para planificar la ruta de esta region">' +
+      (activa ? ' background: rgba(255,196,107,0.10);' : '') + '" title="Clic para planificar la ruta de esta región">' +
       '<td style="text-align:left;font-weight:800;color:' + (activa ? 'var(--ax-accent-gold)' : 'var(--ax-text-primary)') + ';">' +
-        escapeHtml(R.nombre) + (R.sinDato ? ' <span style="font-weight:600;color:var(--ax-text-tertiary);font-size:0.72rem;">(sin direccion)</span>' : '') + '</td>' +
+        escapeHtml(R.nombre) + (R.sinDato ? ' <span style="font-weight:600;color:var(--ax-text-tertiary);font-size:0.72rem;">(sin dirección)</span>' : '') + '</td>' +
       '<td style="text-align:right;font-weight:700;">' + formatNum(R.clientesAct.size) + '</td>' +
       '<td style="text-align:right;font-weight:800;color:' + (R.deltaClientes >= 0 ? 'var(--ax-accent-emerald)' : prospTono('--prosp-var-cae')) + ';">' +
         (R.deltaClientes > 0 ? '+' : '') + R.deltaClientes + '</td>' +
@@ -13389,15 +13389,15 @@ function prospPintarRuta(M) {
   const jornadas = prospArmarRuta(R, prospDiasRuta, prospVisitasDia, prospSegmentoSel);
 
   if (nota) {
-    nota.innerHTML = (sugerida ? 'Region propuesta por prioridad: ' : 'Region seleccionada: ') +
+    nota.innerHTML = (sugerida ? 'Región propuesta por prioridad: ' : 'Región seleccionada: ') +
       '<strong style="color: var(--ax-accent-gold);">' + escapeHtml(R.nombre) + '</strong>. ' +
-      'La ruta no sale nunca de esta region; las visitas se agrupan por comuna.' +
+      'La ruta no sale nunca de esta región; las visitas se agrupan por comuna.' +
       (sugerida ? ' Elige otra en el selector para cambiarla.' : '');
   }
 
   if (!jornadas.length) {
     cont.innerHTML = '<p style="text-align:center;color:var(--ax-text-tertiary);padding:2rem;">' +
-      'Ningun cliente de ' + escapeHtml(R.nombre) + ' cumple el filtro de segmento elegido.</p>';
+      'Ningún cliente de ' + escapeHtml(R.nombre) + ' cumple el filtro de segmento elegido.</p>';
     return;
   }
 
@@ -13447,8 +13447,8 @@ function prospPintarRuta(M) {
       '</tr></thead><tbody>' + filas + '</tbody></table></div></div>';
   }).join('') +
   '<p style="font-size:0.75rem;color:var(--ax-text-tertiary);margin-top:0.25rem;">' +
-  '&#8635; producto que el cliente ya compra y se le paso el ciclo de reposicion &nbsp;&middot;&nbsp; ' +
-  '&#43; producto que compran sus pares de la region y el todavia no.</p>';
+  '&#8635; producto que el cliente ya compra y se le paso el ciclo de reposición &nbsp;&middot;&nbsp; ' +
+  '&#43; producto que compran sus pares de la región y él todavía no.</p>';
 }
 
 function prospPintarCartera(M) {
@@ -13512,7 +13512,7 @@ function prospPintarCartera(M) {
  */
 function prospCarteraVaciaHtml(M, R) {
   const activos = [];
-  if (R) activos.push('la region <strong>' + escapeHtml(R.nombre) + '</strong>');
+  if (R) activos.push('la región <strong>' + escapeHtml(R.nombre) + '</strong>');
   if (prospSegmentoSel !== 'ALL') {
     activos.push('el segmento <strong>' +
       escapeHtml((PROSP_SEGMENTOS[prospSegmentoSel] || {}).etiqueta || prospSegmentoSel) + '</strong>');
@@ -13554,7 +13554,7 @@ function prospPintarMetodologia(M) {
       : (M.usaCurva
           ? 'Se reconstruye la curva del mes de ' + M.mesNombre + ' juntando ese mismo mes de los tres anios anteriores. ' +
             'Historicamente al dia ' + M.dia + ' ya se lleva facturado el <strong>' + pct + '%</strong> del mes, ' +
-            'asi que el cierre estimado es lo facturado dividido por esa fraccion. Prorratear por dias transcurridos ' +
+            'así que el cierre estimado es lo facturado dividido por esa fracción. Prorratear por días transcurridos ' +
             'ignoraria que la venta mayorista se concentra hacia fin de mes.' +
             (M.hayBanda
               ? ' Entre esos ' + M.aniosCurva + ' anios la cifra no fue la misma: a esta altura del mes iban desde ' +
@@ -13648,7 +13648,7 @@ function prospPintarCinta(M) {
      como el mapa del pais. La RM sale la primera en plata pero va en su
      lugar entre Valparaiso y O'Higgins.
 
-     "Sin region asignada" se saca de la secuencia y se pinta aparte, despues
+     "Sin región asignada" se saca de la secuencia y se pinta aparte, despues
      del rotulo SUR: no es un lugar, y colgarlo debajo de Magallanes sugiere
      que queda en el extremo austral del pais. */
   const todas = M.regiones.slice().sort((a, b) => a.orden - b.orden || a.nombre.localeCompare(b.nombre));
