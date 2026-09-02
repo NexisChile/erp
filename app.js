@@ -3620,7 +3620,7 @@ function renderKPIs() {
 let currentSalesPeriod = 'mes';
 let chartSalesInst = null;
 let chartCanalInst = null;
-let chartFamiliaInst = null;
+let chartCategoriaInst = null;
 let chartTiendaInst = null;
 let chartVendedorInst = null;
 
@@ -4050,25 +4050,39 @@ function renderCharts() {
     }
   }
 
-  // 3. TOP FAMILIAS DE PRODUCTOS (HORIZONTAL BARS)
-  const famCanvas = document.getElementById('familiaChart') || document.getElementById('chartFamilia');
-  if (famCanvas) {
-    const famMap = {};
+  /* 3. TOP CATEGORIAS DE PRODUCTOS (BARRAS HORIZONTALES)
+
+     Agrupa por la columna Categoria y ya no por Familia. Las dos vienen vacias
+     en casi exactamente las mismas filas -106.627 y 106.641 de 186.283, el
+     57,2%- y esas filas suman el 1,5% del neto, asi que el cambio no cuesta
+     cobertura: solo cambia el grano. Familia son 38 valores anchos (MOVILIDAD,
+     DORMITORIO, BAÑO) y Categoria son 108 mas finos (ANDADOR, CATRE_CLI,
+     SILLARUEDA, COLCHON), que es el nivel al que se decide que reponer.
+
+     Los ids viejos se siguen aceptando por si algo externo todavia los usa. */
+  const catCanvas = document.getElementById('categoriaChart') ||
+    document.getElementById('familiaChart') || document.getElementById('chartFamilia');
+  if (catCanvas) {
+    const catMap = {};
     filtered.forEach(r => {
-      const f = r['FAMILIA'] || 'Sin Familia';
-      famMap[f] = (famMap[f] || 0) + (Number(r['NETO']) || 0);
+      /* normalizeRows ya escribe 'GENERAL' cuando la celda viene vacia, y
+         GENERAL no existe como categoria de verdad en la planilla (comprobado
+         sobre las 186.283 filas). Se traduce a algo legible en el eje. */
+      const c = r['CATEGORIA'] || 'GENERAL';
+      const clave = (c === 'GENERAL') ? 'Sin categoría' : c;
+      catMap[clave] = (catMap[clave] || 0) + (Number(r['NETO']) || 0);
     });
 
-    const sortedFam = Object.entries(famMap).sort((a, b) => b[1] - a[1]).slice(0, 6);
+    const sortedCat = Object.entries(catMap).sort((a, b) => b[1] - a[1]).slice(0, 6);
 
-    if (chartFamiliaInst) chartFamiliaInst.destroy();
-    chartFamiliaInst = new Chart(famCanvas.getContext('2d'), {
+    if (chartCategoriaInst) chartCategoriaInst.destroy();
+    chartCategoriaInst = new Chart(catCanvas.getContext('2d'), {
       type: 'bar',
       data: {
-        labels: sortedFam.map(f => f[0]),
+        labels: sortedCat.map(c => c[0]),
         datasets: [{
           label: 'Facturación ($)',
-          data: sortedFam.map(f => f[1]),
+          data: sortedCat.map(c => c[1]),
           backgroundColor: [
             '#A78BFA',
             '#8B7FE8',
@@ -4076,7 +4090,7 @@ function renderCharts() {
             '#2DD4CE',
             '#3DDC97',
             '#FFC46B'
-          ].slice(0, sortedFam.length),
+          ].slice(0, sortedCat.length),
           borderRadius: 8,
           borderSkipped: false,
           barThickness: 16
