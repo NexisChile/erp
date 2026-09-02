@@ -4554,13 +4554,19 @@ function renderExecutiveInsights() {
   });
   const topClientEntry = Object.entries(clientMap).sort((a, b) => b[1] - a[1])[0];
 
-  // 3. Familia más rentable
-  const famProfitMap = {};
+  /* 3. Categoria de mayor utilidad. Antes agrupaba por Familia, que es el
+     grano ancho -38 valores como MOVILIDAD o DORMITORIO-; Categoria son 108
+     y es el nivel al que se decide que reponer, el mismo que ya usa la
+     tarjeta Top Categorias del tablero. */
+  const catProfitMap = {};
   filtered.forEach(r => {
-    const f = r['FAMILIA'] || 'Sin Familia';
-    famProfitMap[f] = (famProfitMap[f] || 0) + (Number(r['($) UTILIDAD']) || 0);
+    /* normalizeRows escribe GENERAL cuando la celda viene vacia, y GENERAL no
+       existe como categoria de verdad en la planilla. */
+    const c = r['CATEGORIA'] || 'GENERAL';
+    const clave = (c === 'GENERAL') ? 'Sin categoría' : c;
+    catProfitMap[clave] = (catProfitMap[clave] || 0) + (Number(r['($) UTILIDAD']) || 0);
   });
-  const topFamProfitEntry = Object.entries(famProfitMap).sort((a, b) => b[1] - a[1])[0];
+  const topCatProfitEntry = Object.entries(catProfitMap).sort((a, b) => b[1] - a[1])[0];
 
   const itemsHTML = [
     `<div class="bi-briefing-item">
@@ -4577,7 +4583,7 @@ function renderExecutiveInsights() {
     </div>`,
     `<div class="bi-briefing-item">
       <span>🎯</span>
-      <div><strong>Familia de Mayor Aporte:</strong> La familia <strong>${topFamProfitEntry ? topFamProfitEntry[0] : 'N/A'}</strong> genera la mayor utilidad bruta acumulada (${formatCLP(topFamProfitEntry ? topFamProfitEntry[1] : 0)}).</div>
+      <div><strong>Categoría de Mayor Aporte:</strong> La categoría <strong>${topCatProfitEntry ? topCatProfitEntry[0] : 'N/A'}</strong> genera la mayor utilidad bruta acumulada (${formatCLP(topCatProfitEntry ? topCatProfitEntry[1] : 0)}).</div>
     </div>`
   ];
 
