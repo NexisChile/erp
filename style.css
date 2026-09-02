@@ -794,10 +794,6 @@ body.presentation-mode .ax-main {
 
   background: var(--ax-header-bg);
 
-  backdrop-filter: blur(16px);
-
-  -webkit-backdrop-filter: blur(16px);
-
   border-bottom: 1px solid var(--ax-border);
 
   display: flex;
@@ -3856,6 +3852,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   background: rgba(28, 36, 56, 0.45);
   border: 1px dashed rgba(255, 255, 255, 0.08);
   border-radius: var(--ax-radius-md);
+  -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
 }
 
@@ -4007,6 +4004,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   background: rgba(28, 36, 56, 0.92);
   border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
+  -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
   color: var(--ax-text-primary);
   font-size: 0.875rem;
@@ -4055,6 +4053,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   border-radius: 16px !important;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), 0 0 24px rgba(77, 159, 236, 0.12) !important;
   padding: 1.5rem !important;
+  -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
 }
 
@@ -4284,6 +4283,7 @@ select#comprasStrategySelect {
   position: sticky !important;
   top: 0 !important;
   background: var(--surf-3) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
   backdrop-filter: blur(8px) !important;
   padding: 0.75rem 1rem !important;
   font-size: 0.75rem !important;
@@ -4617,6 +4617,7 @@ select#comprasStrategySelect {
   position: relative !important;
   overflow: hidden !important;
   box-shadow: var(--el-2) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
   backdrop-filter: blur(20px) !important;
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
               border-color 0.25s ease, box-shadow 0.25s ease !important;
@@ -5032,6 +5033,7 @@ select#comprasStrategySelect {
   z-index: 1000 !important;
   box-shadow: 0 16px 36px rgba(0, 0, 0, 0.8), 0 0 20px rgba(167, 139, 250, 0.2) !important;
   margin-top: 4px !important;
+  -webkit-backdrop-filter: blur(8px) !important;
   backdrop-filter: blur(8px) !important;
 }
 
@@ -7174,8 +7176,6 @@ select#comprasStrategySelect {
   padding: 1.35rem 1.45rem !important;
   border-radius: 20px !important;
   background: var(--surf-2) !important;
-  backdrop-filter: blur(20px) !important;
-  -webkit-backdrop-filter: blur(20px) !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35) !important;
   transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
@@ -7335,8 +7335,6 @@ select#comprasStrategySelect {
   padding: 1.5rem !important;
   border-radius: 20px !important;
   background: var(--surf-2) !important;
-  backdrop-filter: blur(20px) !important;
-  -webkit-backdrop-filter: blur(20px) !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35) !important;
   display: flex !important;
@@ -7522,8 +7520,6 @@ select#comprasStrategySelect {
   padding: 1.25rem 1.5rem !important;
   border-radius: 20px !important;
   background: var(--surf-2) !important;
-  backdrop-filter: blur(24px) !important;
-  -webkit-backdrop-filter: blur(24px) !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35) !important;
   margin-bottom: 1.5rem !important;
@@ -7771,8 +7767,6 @@ html, body {
 /* --- 3. Executive Sidebar --- */
 .ax-sidebar {
   background: var(--surf-2) !important;
-  backdrop-filter: blur(28px) saturate(190%) !important;
-  -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
   border-right: 1px solid var(--ax-border-subtle) !important;
   box-shadow: 4px 0 30px rgba(0, 0, 0, 0.45) !important;
 }
@@ -7960,8 +7954,6 @@ html, body {
 /* --- 4. Executive Header --- */
 .ax-header {
   background: var(--surf-2) !important;
-  backdrop-filter: blur(28px) saturate(190%) !important;
-  -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
   border-bottom: 1px solid var(--ax-border-subtle) !important;
   padding: 0.85rem 1.75rem !important;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35) !important;
@@ -8045,6 +8037,7 @@ html, body {
 
 .btn-secondary {
   background: var(--surf-2) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
   backdrop-filter: blur(12px) !important;
   border: 1px solid var(--ax-border) !important;
   color: var(--ax-text-primary) !important;
@@ -8091,8 +8084,6 @@ html, body {
 /* --- 5. Global Filters Bar --- */
 .filters-bar {
   background: var(--surf-1) !important;
-  backdrop-filter: blur(24px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
   border: 1px solid var(--ax-border-subtle) !important;
   border-radius: 16px !important;
   padding: 1.15rem 1.4rem !important;
@@ -8186,8 +8177,6 @@ html, body {
 .hero-kpi-card {
   position: relative !important;
   background: linear-gradient(135deg, rgba(26, 35, 58, 0.75) 0%, var(--surf-2) 100%) !important;
-  backdrop-filter: blur(24px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
   border: 1px solid var(--ax-border) !important;
   border-radius: 20px !important;
   padding: 1.4rem 1.6rem !important;
@@ -8295,6 +8284,7 @@ html, body {
 
 .target-card {
   background: var(--surf-1) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
   backdrop-filter: blur(20px) !important;
   border: 1px solid var(--ax-border-subtle) !important;
   border-radius: 20px !important;
@@ -8323,8 +8313,6 @@ html, body {
 /* --- 8. Charts & Section Cards --- */
 .ax-card, .chart-card {
   background: var(--surf-1) !important;
-  backdrop-filter: blur(20px) !important;
-  -webkit-backdrop-filter: blur(20px) !important;
   border: 1px solid var(--ax-border-subtle) !important;
   border-radius: 20px !important;
   padding: 1.3rem !important;
@@ -8359,7 +8347,6 @@ html, body {
 /* --- 9. Luxury Tables --- */
 .table-card {
   background: var(--surf-2) !important;
-  backdrop-filter: blur(24px) !important;
   border: 1px solid var(--ax-border-subtle) !important;
   border-radius: 20px !important;
   overflow: hidden !important;
@@ -8485,6 +8472,7 @@ html, body {
   left: 0 !important;
   right: 0 !important;
   background: var(--surf-3) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
   backdrop-filter: blur(24px) !important;
   border: 1px solid rgba(167, 139, 250, 0.4) !important;
   border-radius: 12px !important;
@@ -8551,6 +8539,7 @@ html, body {
 
 .toast-msg {
   background: var(--surf-3) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
   backdrop-filter: blur(20px) !important;
   border: 1px solid rgba(77, 159, 236, 0.4) !important;
   border-radius: 12px !important;
