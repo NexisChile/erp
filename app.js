@@ -3631,10 +3631,12 @@ function factCeldas(d) {
 
 function factFilaHtml(d, clase, pref) {
   const hijos = d.hijos || [];
-  /* Con una sola tienda el desplegable repetiría la fila de arriba cifra por
-     cifra -ECOMMERCE es solo DRCARE.CL-, así que ahí no hay botón: un triángulo
-     que al abrirse muestra lo mismo se aprende a no tocar. */
-  const abre = hijos.length > 1;
+  /* El botón sale aunque el canal tenga una sola tienda. Repite la fila de
+     arriba cifra por cifra -ECOMMERCE es solo DRCARE.CL-, pero que TODOS los
+     canales se abran igual vale más que ahorrar ese clic: una fila sin triángulo
+     en medio de cinco que sí lo tienen se lee como que a esa le falta el dato,
+     no como que no tiene nada dentro. */
+  const abre = hijos.length > 0;
   const abierto = abre && factAbiertosDe(pref).has(d.nombre);
 
   const control = abre
@@ -3673,7 +3675,8 @@ function factNombre(control, nombre) {
 }
 
 function factToggleTitulo(abierto, n) {
-  return (abierto ? 'Ocultar' : 'Ver') + ' las ' + n + ' tiendas del canal';
+  return (abierto ? 'Ocultar' : 'Ver') +
+    (n === 1 ? ' la tienda del canal' : ' las ' + n + ' tiendas del canal');
 }
 
 /* Se muestran u ocultan las filas ya pintadas en vez de repintar la tabla:
@@ -3739,8 +3742,15 @@ function factPintarTabla(pref, filas, total, cabeceras, subtitulo) {
  * acumulado y todas comparten la misma curva global, así que repartir un canal
  * en sus tiendas no mueve ninguna cifra. Lo único que las separa del total es
  * el redondeo de cada proyección, unos pocos pesos.
+ *
+ * Con parejo las dos tablas listan exactamente las mismas filas: entra en las
+ * dos lo que se movió en ALGUNA de las dos ventanas. Sin esto, la tarjeta del
+ * mes esconde lo que no facturó en septiembre y la del año lo muestra, y las
+ * dos listas dejan de cuadrar sin que nada lo explique -el 3 de septiembre eran
+ * 19 tiendas contra 27-. Además, y sobre todo, un cero es información: dice que
+ * esa tienda no ha vendido nada este mes, que es justo lo que hay que ver.
  */
-function factAgrupar(ctx, claveDe, subclaveDe) {
+function factAgrupar(ctx, claveDe, subclaveDe, parejo) {
   const mesPrevISO = ctx.prevYyyy + '-' + ctx.refMm;
   const corteMesPrev = mesPrevISO + '-' + ctx.refDd;
   const corteAnioPrev = ctx.prevYyyy + '-' + ctx.refMm + '-' + ctx.refDd;
@@ -3779,24 +3789,38 @@ function factAgrupar(ctx, claveDe, subclaveDe) {
     }
   });
 
+  /* peso no se pinta: es el desempate de factOrdenPeriodo cuando las cuatro
+     cifras del mes son cero. Sin él, las tiendas paradas quedan al final en el
+     orden en que las devolvió la planilla y CENABAST -$167M el año pasado, nada
+     este- cae entre medio de otras que nunca facturaron gran cosa. */
+  const peso = function (b) { return Math.max(b.anioPrevFull || 0, b.ytd || 0); };
   const filaMes = function (nombre, b) {
     return {
       nombre: nombre, prev: b.mtdPrev, act: b.mtd, prevFull: b.mesPrevFull,
-      proy: proyectarCierre(b.mtd, ctx.progresoMes, ctx.curvaMes)
+      proy: proyectarCierre(b.mtd, ctx.progresoMes, ctx.curvaMes), peso: peso(b)
     };
   };
   const filaAnio = function (nombre, b) {
     return {
       nombre: nombre, prev: b.ytdPrev, act: b.ytd, prevFull: b.anioPrevFull,
-      proy: proyectarCierre(b.ytd, ctx.progresoAnio, ctx.curvaAnio)
+      proy: proyectarCierre(b.ytd, ctx.progresoAnio, ctx.curvaAnio), peso: peso(b)
     };
   };
   /* Una línea sin nada este año ni el pasado no aporta información, solo
      ruido: se cae de la tabla. Vale igual para un canal y para una tienda. */
   const tieneAlgo = function (f) { return !!(f.prev || f.act || f.prevFull || f.proy); };
+  /* Con parejo la pregunta no es "¿se movió en ESTA ventana?" sino "¿se movió en
+     alguna?", y la respuesta es la misma para las dos tablas. */
+  const entra = function (b) {
+    return parejo
+      ? (tieneAlgo(filaMes('', b)) || tieneAlgo(filaAnio('', b)))
+      : null;
+  };
   const hijosDe = function (subs, hacer) {
-    return Object.keys(subs).map(function (k) { return hacer(k, subs[k]); })
-      .filter(tieneAlgo).sort(factOrdenPeriodo);
+    return Object.keys(subs).filter(function (k) {
+      const e = entra(subs[k]);
+      return e === null ? tieneAlgo(hacer(k, subs[k])) : e;
+    }).map(function (k) { return hacer(k, subs[k]); }).sort(factOrdenPeriodo);
   };
 
   const mes = [], anio = [];
@@ -3811,12 +3835,14 @@ function factAgrupar(ctx, claveDe, subclaveDe) {
       fm.hijos = hijosDe(b.subs, filaMes);
       fa.hijos = hijosDe(b.subs, filaAnio);
     }
-    if (tieneAlgo(fm)) {
+    /* Las filas en cero suman cero: incluirlas no mueve el Total. */
+    const e = entra(b);
+    if (e === null ? tieneAlgo(fm) : e) {
       mes.push(fm);
       totalMes.prev += fm.prev; totalMes.act += fm.act;
       totalMes.prevFull += fm.prevFull; totalMes.proy += fm.proy;
     }
-    if (tieneAlgo(fa)) {
+    if (e === null ? tieneAlgo(fa) : e) {
       anio.push(fa);
       totalAnio.prev += fa.prev; totalAnio.act += fa.act;
       totalAnio.prevFull += fa.prevFull; totalAnio.proy += fa.proy;
@@ -3832,7 +3858,11 @@ function factAgrupar(ctx, claveDe, subclaveDe) {
    lo que facturaron el año pasado: lo que más se está dejando de vender queda
    arriba. */
 function factOrdenPeriodo(a, b) {
-  return (b.act - a.act) || (b.proy - a.proy) || (b.prevFull - a.prevFull);
+  return (b.act - a.act) || (b.proy - a.proy) || (b.prevFull - a.prevFull) ||
+    /* Último desempate, el que ordena las tiendas paradas entre sí: las cuatro
+       cifras del mes les dan cero a todas y sin esto quedarían en el orden en
+       que salieron de la planilla. peso es lo que mueven en el año. */
+    ((b.peso || 0) - (a.peso || 0));
 }
 
 /* Para las categorías el orden decide además QUÉ entra en la tabla, y ahí
@@ -3906,10 +3936,11 @@ function renderCanalesFacturacion(ctx, E) {
          categorías: GENERAL no es una tienda, es un hueco de la planilla. */
       const t = r['TIENDA FINAL'] || 'GENERAL';
       return t === 'GENERAL' ? 'Sin tienda' : t;
-    });
+    }, true);
   g.mes.sort(factOrdenPeriodo);
   g.anio.sort(factOrdenPeriodo);
-  const nota = ' Cada canal se abre en sus tiendas.';
+  const nota = ' Cada canal se abre en sus tiendas, incluidas las que no han ' +
+    'facturado en el periodo: un cero también es una señal.';
   factPintarTabla('canalMes', g.mes, g.totalMes, E.mes, factSubMes(ctx, E, nota));
   factPintarTabla('canalAnio', g.anio, g.totalAnio, E.anio, factSubAnio(ctx, E, nota));
 }
