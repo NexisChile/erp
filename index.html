@@ -34,7 +34,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <!-- Stylesheets & Libraries -->
-  <link rel="stylesheet" href="style.css?v=20260902_SCROLL_V77" />
+  <link rel="stylesheet" href="style.css?v=20260902_TIPO_V79" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -2066,6 +2066,14 @@
             <div class="ax-card table-card" style="margin-top: 1.25rem;">
               <div class="precios-toolbar">
                 <input type="text" id="preciosFiltro" class="filter-input" placeholder="Filtrar por código, descripción o competidor&hellip;" />
+                <!-- Las opciones las escribe renderPreciosView() a partir de la columna
+                     TIPO de PreciosMapa: si aparece una letra nueva en la hoja, sale sola. -->
+                <label class="precios-canal">
+                  <span class="precios-canal__label">Tipo</span>
+                  <select id="preciosTipo" class="precios-canal__select">
+                    <option value="">Todos</option>
+                  </select>
+                </label>
                 <div class="precios-tabs" role="group" aria-label="Filtrar por situación">
                   <button type="button" class="preset-btn active" data-precio-tab="todos">Todos</button>
                   <button type="button" class="preset-btn" data-precio-tab="caro">Más caro</button>
@@ -2082,6 +2090,7 @@
                       <th class="precios-th-foto"><span class="sr-only">Foto</span></th>
                       <th>Código</th>
                       <th>Descripción</th>
+                      <th class="precios-th-tipo">Tipo</th>
                       <th>Competidor</th>
                       <th class="num">Mi precio</th>
                       <th class="num">Su precio</th>
@@ -2091,7 +2100,7 @@
                     </tr>
                   </thead>
                   <tbody id="preciosTableBody">
-                    <tr><td colspan="9" style="text-align:center; color: var(--ax-text-tertiary); padding: 2rem;">Cargando precios&hellip;</td></tr>
+                    <tr><td colspan="10" style="text-align:center; color: var(--ax-text-tertiary); padding: 2rem;">Cargando precios&hellip;</td></tr>
                   </tbody>
                 </table>
               </div>
@@ -3501,7 +3510,7 @@
   </div>
 
   <!-- Scripts -->
-  <script src="config.js?v=20260902_SCROLL_V77"></script>
-  <script src="app.js?v=20260902_SCROLL_V77"></script>
+  <script src="config.js?v=20260902_TIPO_V79"></script>
+  <script src="app.js?v=20260902_TIPO_V79"></script>
 </body>
 </html>

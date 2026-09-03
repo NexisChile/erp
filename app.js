@@ -9760,6 +9760,7 @@ let preciosFallidos = [];      // filas que el scraper no pudo leer
 let preciosMisPrecios = new Map(); // codigo -> { DRCARE: n, MELI: n, ... }
 let preciosImagenes = new Map();   // codigo -> URL de la foto en PreciosMapa
 let preciosCanalPorUrl = new Map(); // url -> canal marcado a mano en PreciosMapa
+let preciosTipos = new Map();      // codigo -> TIPO (A/B/C) en PreciosMapa
 let preciosCanalSinReconocer = [];  // textos de la columna CANAL que no se entienden
 let preciosCanal = 'DRCARE';        // tienda elegida: filtra competidores y tu precio
 /* Lo que la tabla acaba de pintar, tal cual, para que el Excel salga de ahi y
@@ -9769,6 +9770,7 @@ let preciosCanal = 'DRCARE';        // tienda elegida: filtra competidores y tu 
 let preciosVisibles = [];
 let preciosFallidosVisibles = [];
 let preciosTab = 'todos';
+let preciosTipoSel = '';           // '' = todos los tipos
 let preciosCargando = false;
 let preciosUltimaCarga = null;        // cuando se trajo, para saber si ya vencio
 /* Codigos desplegados. Vive fuera del render porque la tabla se vuelve a pintar
@@ -9982,6 +9984,71 @@ function preciosPropiosDesdeMapa(filas) {
     });
   });
   return mapa;
+}
+
+/* Nombres aceptados para la columna del tipo. En la hoja de Glomax es la Q y
+   se llama TIPO, pero se busca por NOMBRE y no por letra, igual que las
+   columnas de tienda: basta que alguien inserte una columna en medio para que
+   la posicion Q pase a ser otra cosa y la tabla mostrara IMAGE como tipo sin
+   que nada falle. El nombre se mueve con su columna. */
+const PRECIOS_COL_TIPO = ['TIPO', 'TIPO PRODUCTO', 'CLASE', 'CLASIFICACION',
+                          'ABC', 'CATEGORIA ABC'];
+
+/**
+ * Lee de PreciosMapa el tipo de cada codigo.
+ *
+ * El tipo es del PRODUCTO, no de la fila: un mismo codigo aparece varias veces
+ * -una por competidor- y solo hace falta que la letra este en una de ellas.
+ * Comprobado sobre la hoja: 29 codigos, ninguno sin letra y ninguno con dos
+ * letras distintas. Si alguna vez se contradicen, gana la primera y se avisa
+ * en la consola en vez de elegir en silencio.
+ */
+function preciosTiposDesdeMapa(filas) {
+  const mapa = new Map();
+  if (!Array.isArray(filas) || !filas.length) return mapa;
+
+  const col = PRECIOS_COL_TIPO.find(n =>
+    Object.prototype.hasOwnProperty.call(filas[0], n));
+  if (!col) return mapa;
+
+  const choques = [];
+  filas.forEach(f => {
+    const codigo = String(f['CODIGO'] || '').trim();
+    const tipo = String(f[col] || '').trim().toUpperCase();
+    if (!codigo || !tipo) return;
+    const previo = mapa.get(codigo);
+    if (previo === undefined) mapa.set(codigo, tipo);
+    else if (previo !== tipo && choques.indexOf(codigo) === -1) choques.push(codigo);
+  });
+  if (choques.length) {
+    console.warn('[Precios] estos codigos traen mas de un TIPO en ' +
+      PRECIOS_HOJA_MAPA + '; se usa el primero: ' + choques.join(', '));
+  }
+  return mapa;
+}
+
+/** El tipo de un codigo, o cadena vacia si la hoja no se lo puso. */
+function preciosTipoDe(codigo) {
+  return preciosTipos.get(String(codigo || '').trim()) || '';
+}
+
+/**
+ * La pastilla de la columna Tipo.
+ *
+ * Cada letra lleva su tono, pero ninguno es de alarma: A, B y C son una
+ * clasificacion de la hoja y aqui no se sabe cual es la buena. El color esta
+ * para poder agrupar de un vistazo, no para juzgar. Una letra que no sea A, B
+ * o C se pinta igual pero en gris, en vez de desaparecer.
+ */
+function preciosTipoHtml(tipo) {
+  if (!tipo) {
+    return '<span class="precios-tipo precios-tipo--sd" title="Sin letra en la ' +
+      'columna TIPO de PreciosMapa">&mdash;</span>';
+  }
+  const conocida = ['A', 'B', 'C'].indexOf(tipo) !== -1;
+  return '<span class="precios-tipo precios-tipo--' + (conocida ? tipo.toLowerCase() : 'otro') +
+    '" title="Tipo ' + escapeHtml(tipo) + ', de la columna TIPO de PreciosMapa">' +
+    escapeHtml(tipo) + '</span>';
 }
 
 /* Nombres aceptados para la columna de la foto. Se miran TODOS en cada fila y
@@ -10223,10 +10290,12 @@ async function loadPrecios(forzar) {
       const filasMapa = await fetchGVizViaJSONP(spId, gidMapa, 20000) || [];
       preciosMisPrecios = preciosPropiosDesdeMapa(filasMapa);
       preciosImagenes = preciosImagenesDesdeMapa(filasMapa);
+      preciosTipos = preciosTiposDesdeMapa(filasMapa);
     } catch (e) {
       console.warn('[Precios] No se pudo leer ' + gidMapa + ', se usa el PREUNI:', e);
       preciosMisPrecios = new Map();
       preciosImagenes = new Map();
+      preciosTipos = new Map();
     }
 
     preciosUltimaCarga = new Date();
@@ -10505,6 +10574,19 @@ function renderPreciosView() {
       (g.lecturas || []).some(l => (l.competidor || '').toLowerCase().includes(q)));
   }
 
+  /* El desplegable de tipos se arma con lo que dejaron los OTROS filtros, no
+     con la hoja entera: asi el numero que va al lado de cada letra es el de lo
+     que se veria al elegirla, y no una promesa que la pestana o el texto ya
+     descartaron. */
+  preciosSincronizarTipos(visibles);
+  if (preciosTipoSel) {
+    /* '(sin)' no es una letra: es la opcion de ver justo lo que la hoja dejo sin
+       clasificar, que es como se descubre que falta llenar la columna. */
+    visibles = (preciosTipoSel === '(sin)')
+      ? visibles.filter(g => !preciosTipoDe(g.codigo))
+      : visibles.filter(g => preciosTipoDe(g.codigo) === preciosTipoSel);
+  }
+
   /* Se ordena por brecha descendente: arriba queda donde mas caro estoy, que
      es lo unico que exige una decision hoy. */
   visibles.sort((a, b) =>
@@ -10518,7 +10600,7 @@ function renderPreciosView() {
     /* Vacio por filtrar y vacio por no tener datos son cosas distintas, y la
        diferencia es lo unico que dice que hacer a continuacion. */
     const sinLecturasDelCanal = !enCanal.length && todas.length;
-    tbody.innerHTML = '<tr><td colspan="9" class="precios-vacio">' +
+    tbody.innerHTML = '<tr><td colspan="10" class="precios-vacio">' +
       (sinLecturasDelCanal
         ? '<strong>Ninguna lectura es de ' + escapeHtml(etiqueta) + '</strong>' +
           '<span>Hay ' + todas.length + (todas.length === 1 ? ' lectura' : ' lecturas') +
@@ -10558,6 +10640,7 @@ function renderPreciosView() {
       '<td class="mono"><span class="precios-codigo">' + control +
         escapeHtml(g.codigo) + '</span></td>' +
       '<td>' + escapeHtml(g.descripcion || '—') + aviso + '</td>' +
+      '<td class="precios-td-tipo">' + preciosTipoHtml(preciosTipoDe(g.codigo)) + '</td>' +
       '<td>' + preciosEnlace(g.competidor, g.url, g.canal) +
         (varios ? '<span class="precios-mas">más barato de ' + g.competidores +
           '</span>' : '') + '</td>' +
@@ -10586,6 +10669,9 @@ function renderPreciosView() {
         '<td class="precios-td-foto"></td>' +
         '<td></td>' +
         '<td class="precios-detalle__hueco"></td>' +
+        /* El tipo es del producto, no del competidor: repetirlo en cada linea
+           desplegada seria la misma letra copiada tres veces. */
+        '<td></td>' +
         '<td>' + preciosEnlace(l.competidor, l.url, l.canal) +
           (esMejor ? '<span class="precios-mas">el más barato</span>' : '') + '</td>' +
         '<td class="num">' + (l.miPrecio > 0 ? formatCLP(l.miPrecio) : '—') + '</td>' +
@@ -10600,6 +10686,51 @@ function renderPreciosView() {
   }).join('');
 }
 
+/**
+ * Rellena el desplegable de tipos con las letras que hay a la vista y cuantos
+ * productos tiene cada una.
+ *
+ * La letra elegida se conserva aunque se quede en cero: si al filtrar por
+ * 'Mas caro' no queda ningun tipo C, la opcion tiene que seguir ahi para poder
+ * salir de ella. Quitarla dejaria el desplegable mostrando 'Todos' mientras el
+ * filtro sigue puesto.
+ */
+function preciosSincronizarTipos(lista) {
+  const sel = document.getElementById('preciosTipo');
+  if (!sel) return;
+
+  const cuenta = new Map();
+  let sinLetra = 0;
+  lista.forEach(g => {
+    const t = preciosTipoDe(g.codigo);
+    if (!t) { sinLetra++; return; }
+    cuenta.set(t, (cuenta.get(t) || 0) + 1);
+  });
+
+  const letras = Array.from(cuenta.keys()).sort();
+  if (preciosTipoSel && preciosTipoSel !== '(sin)' && letras.indexOf(preciosTipoSel) === -1) {
+    letras.push(preciosTipoSel);
+    letras.sort();
+  }
+
+  const opciones = [{ valor: '', texto: 'Todos' }].concat(
+    letras.map(t => ({ valor: t, texto: t + ' (' + (cuenta.get(t) || 0) + ')' })));
+  /* La opcion 'sin letra' solo aparece si de verdad hay productos sin ella:
+     en la hoja actual no hay ninguno y una opcion que siempre da vacio es
+     ruido. */
+  if (sinLetra || preciosTipoSel === '(sin)') {
+    opciones.push({ valor: '(sin)', texto: 'Sin tipo (' + sinLetra + ')' });
+  }
+
+  const firma = opciones.map(o => o.valor + '|' + o.texto).join(';');
+  if (sel._firma !== firma) {
+    sel._firma = firma;
+    sel.innerHTML = opciones.map(o =>
+      '<option value="' + escapeHtml(o.valor) + '">' + escapeHtml(o.texto) + '</option>').join('');
+  }
+  if (sel.value !== preciosTipoSel) sel.value = preciosTipoSel;
+}
+
 function setupPreciosListeners() {
   const filtro = document.getElementById('preciosFiltro');
   if (filtro && !filtro._bound) {
@@ -10610,6 +10741,15 @@ function setupPreciosListeners() {
       t = setTimeout(renderPreciosView, 180); // no repintar en cada tecla
     });
   }
+  const selTipo = document.getElementById('preciosTipo');
+  if (selTipo && !selTipo._bound) {
+    selTipo._bound = true;
+    selTipo.addEventListener('change', () => {
+      preciosTipoSel = selTipo.value;
+      renderPreciosView();
+    });
+  }
+
   document.querySelectorAll('[data-precio-tab]').forEach(btn => {
     if (btn._bound) return;
     btn._bound = true;
@@ -10994,6 +11134,7 @@ function xlsxDescargar(blob, nombre) {
 const PRECIOS_COLUMNAS_EXCEL = [
   { titulo: 'CÓDIGO',        ancho: 14, tipo: 'texto' },
   { titulo: 'DESCRIPCIÓN',   ancho: 42, tipo: 'texto' },
+  { titulo: 'TIPO',          ancho:  7, tipo: 'texto' },
   { titulo: 'COMPETIDOR',    ancho: 22, tipo: 'texto' },
   { titulo: 'TIENDA',        ancho: 13, tipo: 'texto' },
   { titulo: 'MI PRECIO',     ancho: 13, tipo: 'clp' },
@@ -11010,6 +11151,7 @@ function preciosFilaExcel(g, l, total, esMejor) {
   return [
     g.codigo,
     g.descripcion || '',
+    preciosTipoDe(g.codigo),
     l.competidor || '',
     preciosEtiquetaDeCanal(l.canal) || 'Web propia',
     l.miPrecio > 0 ? l.miPrecio : null,
