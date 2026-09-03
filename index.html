@@ -34,7 +34,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <!-- Stylesheets & Libraries -->
-  <link rel="stylesheet" href="style.css?v=20260902_CANALES_V68" />
+  <link rel="stylesheet" href="style.css?v=20260902_CATCARD_V71" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -820,7 +820,7 @@
                  Proyeccion de Cierre. Los encabezados de las columnas y el
                  subtitulo los escribe renderCanalesFacturacion() porque
                  dependen de la fecha de corte, que sale de los datos. -->
-            <div class="ax-card chart-card gradient-border-card canal-tabla-card">
+            <div class="ax-card chart-card gradient-border-card fact-tabla-card">
               <div class="chart-card-header">
                 <div class="chart-title-group">
                   <div class="chart-header-badge">&#128197;</div>
@@ -830,21 +830,21 @@
                   </div>
                 </div>
               </div>
-              <div class="canal-tabla-wrap">
-                <table class="advisor-table canal-tabla" id="canalMesTabla">
+              <div class="fact-tabla-wrap">
+                <table class="advisor-table fact-tabla" id="canalMesTabla">
                   <thead>
-                    <tr class="canal-tabla__grupos">
-                      <th rowspan="2" class="canal-tabla__canal">Canal</th>
+                    <tr class="fact-tabla__grupos">
+                      <th rowspan="2" class="fact-tabla__nombre">Canal</th>
                       <th colspan="3">Mes a la fecha</th>
                       <th colspan="3">Cierre del mes</th>
                     </tr>
                     <tr>
                       <th id="canalMesThPrev">&mdash;</th>
                       <th id="canalMesThAct">&mdash;</th>
-                      <th class="canal-tabla__var">&Delta;%</th>
+                      <th class="fact-tabla__var">&Delta;%</th>
                       <th id="canalMesThPrevFull">&mdash;</th>
                       <th id="canalMesThProy">&mdash;</th>
-                      <th class="canal-tabla__var">&Delta;%</th>
+                      <th class="fact-tabla__var">&Delta;%</th>
                     </tr>
                   </thead>
                   <tbody id="canalMesBody"></tbody>
@@ -854,7 +854,7 @@
             </div>
 
             <!-- 3. FACTURACION POR CANAL: ANIO EN CURSO -->
-            <div class="ax-card chart-card gradient-border-card canal-tabla-card">
+            <div class="ax-card chart-card gradient-border-card fact-tabla-card">
               <div class="chart-card-header">
                 <div class="chart-title-group">
                   <div class="chart-header-badge">&#128200;</div>
@@ -864,21 +864,21 @@
                   </div>
                 </div>
               </div>
-              <div class="canal-tabla-wrap">
-                <table class="advisor-table canal-tabla" id="canalAnioTabla">
+              <div class="fact-tabla-wrap">
+                <table class="advisor-table fact-tabla" id="canalAnioTabla">
                   <thead>
-                    <tr class="canal-tabla__grupos">
-                      <th rowspan="2" class="canal-tabla__canal">Canal</th>
+                    <tr class="fact-tabla__grupos">
+                      <th rowspan="2" class="fact-tabla__nombre">Canal</th>
                       <th colspan="3">A&ntilde;o a la fecha</th>
                       <th colspan="3">Cierre del a&ntilde;o</th>
                     </tr>
                     <tr>
                       <th id="canalAnioThPrev">&mdash;</th>
                       <th id="canalAnioThAct">&mdash;</th>
-                      <th class="canal-tabla__var">&Delta;%</th>
+                      <th class="fact-tabla__var">&Delta;%</th>
                       <th id="canalAnioThPrevFull">&mdash;</th>
                       <th id="canalAnioThProy">&mdash;</th>
-                      <th class="canal-tabla__var">&Delta;%</th>
+                      <th class="fact-tabla__var">&Delta;%</th>
                     </tr>
                   </thead>
                   <tbody id="canalAnioBody"></tbody>
@@ -953,6 +953,78 @@
               </div>
               <div class="chart-container">
                 <canvas id="vendedorChart"></canvas>
+              </div>
+            </div>
+
+            <!-- 8. FACTURACION POR CATEGORIA: MES EN CURSO
+                 Mismas columnas y misma aritmetica que las tablas por canal de mas
+                 arriba, abiertas por Categoria. Como son 108,
+                 renderCategoriasFacturacion() lista las mayores y suma el resto en
+                 una linea "Otras", para que el Total siga cuadrando. -->
+            <div class="ax-card chart-card gradient-border-card fact-tabla-card">
+              <div class="chart-card-header">
+                <div class="chart-title-group">
+                  <div class="chart-header-badge">&#127991;&#65039;</div>
+                  <div>
+                    <h3 class="chart-main-title">Facturaci&oacute;n por Categor&iacute;a &middot; Mes</h3>
+                    <p class="chart-subtitle" id="catMesSub">Calculando&hellip;</p>
+                  </div>
+                </div>
+              </div>
+              <div class="fact-tabla-wrap">
+                <table class="advisor-table fact-tabla" id="catMesTabla">
+                  <thead>
+                    <tr class="fact-tabla__grupos">
+                      <th rowspan="2" class="fact-tabla__nombre">Categor&iacute;a</th>
+                      <th colspan="3">Mes a la fecha</th>
+                      <th colspan="3">Cierre del mes</th>
+                    </tr>
+                    <tr>
+                      <th id="catMesThPrev">&mdash;</th>
+                      <th id="catMesThAct">&mdash;</th>
+                      <th class="fact-tabla__var">&Delta;%</th>
+                      <th id="catMesThPrevFull">&mdash;</th>
+                      <th id="catMesThProy">&mdash;</th>
+                      <th class="fact-tabla__var">&Delta;%</th>
+                    </tr>
+                  </thead>
+                  <tbody id="catMesBody"></tbody>
+                  <tfoot id="catMesFoot"></tfoot>
+                </table>
+              </div>
+            </div>
+
+            <!-- 9. FACTURACION POR CATEGORIA: ANIO EN CURSO -->
+            <div class="ax-card chart-card gradient-border-card fact-tabla-card">
+              <div class="chart-card-header">
+                <div class="chart-title-group">
+                  <div class="chart-header-badge">&#128202;</div>
+                  <div>
+                    <h3 class="chart-main-title">Facturaci&oacute;n por Categor&iacute;a &middot; A&ntilde;o</h3>
+                    <p class="chart-subtitle" id="catAnioSub">Calculando&hellip;</p>
+                  </div>
+                </div>
+              </div>
+              <div class="fact-tabla-wrap">
+                <table class="advisor-table fact-tabla" id="catAnioTabla">
+                  <thead>
+                    <tr class="fact-tabla__grupos">
+                      <th rowspan="2" class="fact-tabla__nombre">Categor&iacute;a</th>
+                      <th colspan="3">A&ntilde;o a la fecha</th>
+                      <th colspan="3">Cierre del a&ntilde;o</th>
+                    </tr>
+                    <tr>
+                      <th id="catAnioThPrev">&mdash;</th>
+                      <th id="catAnioThAct">&mdash;</th>
+                      <th class="fact-tabla__var">&Delta;%</th>
+                      <th id="catAnioThPrevFull">&mdash;</th>
+                      <th id="catAnioThProy">&mdash;</th>
+                      <th class="fact-tabla__var">&Delta;%</th>
+                    </tr>
+                  </thead>
+                  <tbody id="catAnioBody"></tbody>
+                  <tfoot id="catAnioFoot"></tfoot>
+                </table>
               </div>
             </div>
           </div>
@@ -3429,7 +3501,7 @@
   </div>
 
   <!-- Scripts -->
-  <script src="config.js?v=20260902_CANALES_V68"></script>
-  <script src="app.js?v=20260902_CANALES_V68"></script>
+  <script src="config.js?v=20260902_CATCARD_V71"></script>
+  <script src="app.js?v=20260902_CATCARD_V71"></script>
 </body>
 </html>

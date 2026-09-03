@@ -11362,7 +11362,7 @@ button, input, select, textarea, optgroup {
 }
 
 /* ----------------------------------------------------------------------------
-   FACTURACION POR CANAL (tablero)
+   FACTURACION DESGLOSADA: CANAL Y CATEGORIA (tablero)
    Dos tarjetas de la charts-grid que llevan una tabla en vez de un lienzo, asi
    que no usan .chart-container (que fija 280px de alto para Chart.js).
 
@@ -11373,19 +11373,19 @@ button, input, select, textarea, optgroup {
    conserva el scroll horizontal como red por si el idioma o el zoom estiran
    algo.
 
-   Todo cuelga de .canal-tabla-card a proposito: index.html trae un <style> en
+   Todo cuelga de .fact-tabla-card a proposito: index.html trae un <style> en
    linea con .advisor-table td/th y, al ir despues de esta hoja, ganaba los
    empates de especificidad. Con el ancestro estas reglas pesan mas y no
    dependen del orden de carga.
    -------------------------------------------------------------------------- */
 
-.canal-tabla-card .canal-tabla-wrap {
+.fact-tabla-card .fact-tabla-wrap {
   overflow-x: auto;
   margin: 0 -0.35rem;
   padding: 0 0.35rem;
 }
 
-.canal-tabla-card .canal-tabla {
+.fact-tabla-card .fact-tabla {
   /* Hay una regla global -.ax-table, .advisor-table, .data-table...- que clava
      min-width: 680px !important en todas las tablas del proyecto. Sirve para
      las de ancho completo; aqui, dentro de media rejilla, obligaba a la tabla
@@ -11401,7 +11401,7 @@ button, input, select, textarea, optgroup {
    tiene DOS filas: pegadas las dos al mismo top se montarian una sobre otra.
    Esta tabla no scrollea en vertical -son seis canales y el total-, asi que la
    cabecera no necesita pegarse a nada. */
-.canal-tabla-card .canal-tabla th {
+.fact-tabla-card .fact-tabla th {
   position: static !important;
   text-transform: none !important;
   font-size: 0.68rem !important;
@@ -11415,7 +11415,7 @@ button, input, select, textarea, optgroup {
   backdrop-filter: none !important;
 }
 
-.canal-tabla-card .canal-tabla__grupos th {
+.fact-tabla-card .fact-tabla__grupos th {
   text-align: center !important;
   text-transform: uppercase !important;
   font-size: 0.62rem !important;
@@ -11426,48 +11426,70 @@ button, input, select, textarea, optgroup {
 
 /* La franja separa visualmente los dos bloques -lo que va del periodo y el
    cierre- sin necesidad de una linea vertical que corte la tabla entera. */
-.canal-tabla-card .canal-tabla__grupos th[colspan] {
+.fact-tabla-card .fact-tabla__grupos th[colspan] {
   border-bottom: 2px solid var(--ax-card-border) !important;
 }
 
-.canal-tabla-card .canal-tabla td {
+.fact-tabla-card .fact-tabla td {
   padding: 0.45rem 0.45rem !important;
   font-size: 0.78rem !important;
   text-align: right !important;
   white-space: nowrap !important;
 }
 
-.canal-tabla-card .canal-tabla th.canal-tabla__canal,
-.canal-tabla-card .canal-tabla td.canal-tabla__canal {
+.fact-tabla-card .fact-tabla th.fact-tabla__nombre,
+.fact-tabla-card .fact-tabla td.fact-tabla__nombre {
   text-align: left !important;
   font-weight: 800 !important;
   color: var(--ax-text-primary) !important;
+  /* Los canales caben en una linea, pero hay categorias de 23 caracteres
+     -MANTAS TRANSFERENCIAS, CONTURON TRANSFERENCIAS- que con nowrap estirarian
+     la primera columna hasta desbordar la tarjeta. Se deja partir solo a esta
+     celda; las de importes siguen en una linea. */
+  white-space: normal !important;
+  /* 16ch deja en una linea los nombres largos de verdad que existen
+     -SILLARUEDA ELEC, CAMILLA MASAJE- y solo parte los de 20 o mas. */
+  max-width: 18ch;
+  line-height: 1.15 !important;
 }
 
-.canal-tabla-card .canal-tabla__grupos th.canal-tabla__canal {
+/* La linea que resume la cola larga. Va en cursiva y en gris para que se lea
+   como lo que es -un agregado, no una categoria mas- sin sacarla de la tabla,
+   porque forma parte del Total. */
+.fact-tabla-card .fact-tabla__resto td {
+  color: var(--ax-text-tertiary) !important;
+  font-style: italic !important;
+}
+.fact-tabla-card .fact-tabla__resto td.fact-tabla__nombre,
+.fact-tabla-card .fact-tabla__resto td.fact-tabla__act {
+  color: var(--ax-text-secondary) !important;
+  font-weight: 700 !important;
+}
+
+.fact-tabla-card .fact-tabla__grupos th.fact-tabla__nombre {
   vertical-align: bottom !important;
   border-bottom: 2px solid var(--ax-card-border) !important;
 }
 
 /* El importe del periodo en curso y el proyectado son las dos cifras que se
    miran; las del año anterior son el contexto. */
-.canal-tabla-card .canal-tabla td.canal-tabla__act {
+.fact-tabla-card .fact-tabla td.fact-tabla__act {
   color: var(--ax-text-primary) !important;
   font-weight: 700 !important;
 }
 
-.canal-tabla-card .canal-tabla__var { width: 1%; }
+.fact-tabla-card .fact-tabla__var { width: 1%; }
 
-.canal-tabla-card .canal-tabla__pct { font-weight: 800; }
+.fact-tabla-card .fact-tabla__pct { font-weight: 800; }
 /* Los tonos vienen de la paleta semantica del bloque :root, que ya tiene
    version clara y oscura medidas por contraste. Se reusan en vez de elegir un
    verde y un rojo nuevos que habria que volver a medir. */
-.canal-tabla-card .canal-tabla__pct.es-alza  { color: var(--prosp-var-alza); }
-.canal-tabla-card .canal-tabla__pct.es-baja  { color: var(--prosp-var-cae); }
-.canal-tabla-card .canal-tabla__pct.es-plano { color: var(--ax-text-secondary); }
-.canal-tabla-card .canal-tabla__sd           { color: var(--prosp-var-sd); font-weight: 700; }
+.fact-tabla-card .fact-tabla__pct.es-alza  { color: var(--prosp-var-alza); }
+.fact-tabla-card .fact-tabla__pct.es-baja  { color: var(--prosp-var-cae); }
+.fact-tabla-card .fact-tabla__pct.es-plano { color: var(--ax-text-secondary); }
+.fact-tabla-card .fact-tabla__sd           { color: var(--prosp-var-sd); font-weight: 700; }
 
-.canal-tabla-card .canal-tabla__total td {
+.fact-tabla-card .fact-tabla__total td {
   border-top: 2px solid var(--ax-card-border) !important;
   border-bottom: none !important;
   font-weight: 800 !important;
@@ -11475,9 +11497,9 @@ button, input, select, textarea, optgroup {
   padding-top: 0.6rem !important;
 }
 
-.canal-tabla-card .canal-tabla tfoot tr:hover td { background: transparent !important; }
+.fact-tabla-card .fact-tabla tfoot tr:hover td { background: transparent !important; }
 
-.canal-tabla-card .canal-tabla__vacio {
+.fact-tabla-card .fact-tabla__vacio {
   text-align: center !important;
   color: var(--ax-text-tertiary) !important;
   padding: 1.5rem 0 !important;
@@ -11486,6 +11508,6 @@ button, input, select, textarea, optgroup {
 /* Con la rejilla en una sola columna sobra ancho: se recupera la tipografia
    normal de la tabla. */
 @media (max-width: 900px) {
-  .canal-tabla-card .canal-tabla th { font-size: 0.72rem !important; }
-  .canal-tabla-card .canal-tabla td { font-size: 0.85rem !important; padding: 0.55rem 0.7rem !important; }
+  .fact-tabla-card .fact-tabla th { font-size: 0.72rem !important; }
+  .fact-tabla-card .fact-tabla td { font-size: 0.85rem !important; padding: 0.55rem 0.7rem !important; }
 }
