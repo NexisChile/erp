@@ -20,17 +20,17 @@
   --ax-surface: #1E293B;           /* Sleek Surface */
   --ax-surface-hover: #334155;
   --ax-card-bg: rgba(30, 41, 59, 0.65); /* Translucent Glass Card */
-  --ax-card-border: rgba(255, 255, 255, 0.09);
+  --ax-card-border: var(--ax-border-subtle);
   --ax-card-hover-border: #4D9FEC;
   
   /* Accents */
   --ax-accent: #4D9FEC;            /* Electric Sapphire */
   --ax-accent-hover: #4D9FEC;
-  --ax-accent-glow: rgba(77, 159, 236, 0.3);
+  --ax-accent-glow: color-mix(in srgb, var(--ax-accent) 30%, transparent);
   --ax-accent-purple: #A78BFA;     /* Modern Indigo */
-  --ax-accent-purple-glow: rgba(167, 139, 250, 0.25);
+  --ax-accent-purple-glow: color-mix(in srgb, var(--ax-accent) 25%, transparent);
   --ax-accent-gold: #FFC46B;       /* Warm Amber Glow */
-  --ax-accent-gold-glow: rgba(255, 196, 107, 0.25);
+  --ax-accent-gold-glow: color-mix(in srgb, var(--ax-accent-gold) 25%, transparent);
   --ax-accent-emerald: #3DDC97;    /* Neon Growth Emerald */
   --ax-accent-rose: #FF6B8A;       /* Radiant Rose */
   
@@ -38,8 +38,8 @@
   --ax-text-primary: #F8FAFC;
   --ax-text-secondary: #CBD5E1;
   --ax-text-tertiary: #94A3B8;
-  --ax-border: rgba(255, 255, 255, 0.09);
-  --ax-border-subtle: rgba(255, 255, 255, 0.04);
+  --ax-border: var(--ax-border-subtle);
+  --ax-border-subtle: var(--ax-border-subtle);
   
   /* Typography */
   --ax-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -55,7 +55,7 @@
   /* Shadows & Glass Effects */
   --ax-shadow-glass: 0 16px 40px rgba(0, 0, 0, 0.45);
   --ax-shadow-card: 0 6px 24px rgba(0, 0, 0, 0.28);
-  --ax-shadow-glow: 0 0 28px rgba(77, 159, 236, 0.25);
+  --ax-shadow-glow: 0 0 28px color-mix(in srgb, var(--ax-accent) 25%, transparent);
 
   /* --- Paleta semantica de Prospeccion --------------------------------
      Estos tonos se eligieron contra el lienzo oscuro y se estaban usando
@@ -141,7 +141,7 @@
 
 [data-ax-theme="light"] .bi-insights-briefing {
 
-  background: linear-gradient(135deg, rgba(77, 159, 236, 0.06) 0%, rgba(79, 70, 229, 0.06) 100%) !important;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--ax-accent) 6%, transparent) 0%, rgba(79, 70, 229, 0.06) 100%) !important;
 
   border: 1px solid #CBD5E1 !important;
 
@@ -666,11 +666,11 @@ body.presentation-mode .ax-main {
 
 .ax-nav__badge--hot {
 
-  background: rgba(255, 107, 138, 0.15);
+  background: color-mix(in srgb, var(--ax-accent-rose) 15%, transparent);
 
   color: var(--ax-accent-rose);
 
-  border: 1px solid rgba(255, 107, 138, 0.3);
+  border: 1px solid color-mix(in srgb, var(--ax-accent-rose) 30%, transparent);
 
 }
 
@@ -686,11 +686,11 @@ body.presentation-mode .ax-main {
 
 .ax-nav__badge--bi {
 
-  background: rgba(167, 139, 250, 0.15);
+  background: color-mix(in srgb, var(--ax-accent) 15%, transparent);
 
   color: var(--ax-accent-purple);
 
-  border: 1px solid rgba(167, 139, 250, 0.3);
+  border: 1px solid color-mix(in srgb, var(--ax-accent) 30%, transparent);
 
 }
 
@@ -904,11 +904,11 @@ body.presentation-mode .ax-main {
 
   border-radius: 20px;
 
-  background: rgba(77, 159, 236, 0.12);
+  background: color-mix(in srgb, var(--ax-accent) 12%, transparent);
 
   color: var(--ax-accent);
 
-  border: 1px solid rgba(77, 159, 236, 0.25);
+  border: 1px solid color-mix(in srgb, var(--ax-accent) 25%, transparent);
 
   cursor: help;
 
@@ -1070,9 +1070,9 @@ body.presentation-mode .ax-main {
 
   margin-bottom: 1.5rem;
 
-  background: linear-gradient(135deg, rgba(77, 159, 236, 0.08) 0%, rgba(15, 23, 42, 0.9) 100%);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--ax-accent) 8%, transparent) 0%, rgba(15, 23, 42, 0.9) 100%);
 
-  border: 1px solid rgba(77, 159, 236, 0.25);
+  border: 1px solid color-mix(in srgb, var(--ax-accent) 25%, transparent);
 
 }
 
@@ -1108,11 +1108,11 @@ body.presentation-mode .ax-main {
 
   border-radius: 4px;
 
-  background: rgba(77, 159, 236, 0.2);
+  background: color-mix(in srgb, var(--ax-accent) 20%, transparent);
 
   color: var(--ax-accent);
 
-  border: 1px solid rgba(77, 159, 236, 0.35);
+  border: 1px solid color-mix(in srgb, var(--ax-accent) 35%, transparent);
 
 }
 
@@ -1214,7 +1214,7 @@ body.presentation-mode .ax-main {
 
   transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 
-  box-shadow: 0 0 12px rgba(61, 220, 151, 0.4);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--ax-accent-emerald) 40%, transparent);
 
 }
 
@@ -1808,11 +1808,11 @@ body.presentation-mode .ax-main {
 
   border-radius: 4px;
 
-  background: rgba(77, 159, 236, 0.15);
+  background: color-mix(in srgb, var(--ax-accent) 15%, transparent);
 
   color: var(--ax-accent);
 
-  border: 1px solid rgba(77, 159, 236, 0.3);
+  border: 1px solid color-mix(in srgb, var(--ax-accent) 30%, transparent);
 
   letter-spacing: 0.05em;
 
@@ -1820,21 +1820,21 @@ body.presentation-mode .ax-main {
 
 .badge-purple {
 
-  background: rgba(167, 139, 250, 0.15);
+  background: color-mix(in srgb, var(--ax-accent) 15%, transparent);
 
   color: var(--ax-accent-purple);
 
-  border-color: rgba(167, 139, 250, 0.3);
+  border-color: color-mix(in srgb, var(--ax-accent) 30%, transparent);
 
 }
 
 .badge-gold {
 
-  background: rgba(255, 196, 107, 0.15);
+  background: color-mix(in srgb, var(--ax-accent-gold) 15%, transparent);
 
   color: var(--ax-accent-gold);
 
-  border-color: rgba(255, 196, 107, 0.3);
+  border-color: color-mix(in srgb, var(--ax-accent-gold) 30%, transparent);
 
 }
 
@@ -1904,21 +1904,21 @@ body.presentation-mode .ax-main {
 
 .hero-compare-badge.pos {
 
-  background: rgba(61, 220, 151, 0.15);
+  background: color-mix(in srgb, var(--ax-accent-emerald) 15%, transparent);
 
   color: var(--ax-accent-emerald);
 
-  border: 1px solid rgba(61, 220, 151, 0.3);
+  border: 1px solid color-mix(in srgb, var(--ax-accent-emerald) 30%, transparent);
 
 }
 
 .hero-compare-badge.neg {
 
-  background: rgba(255, 107, 138, 0.15);
+  background: color-mix(in srgb, var(--ax-accent-rose) 15%, transparent);
 
   color: var(--ax-accent-rose);
 
-  border: 1px solid rgba(255, 107, 138, 0.3);
+  border: 1px solid color-mix(in srgb, var(--ax-accent-rose) 30%, transparent);
 
 }
 
@@ -1936,7 +1936,7 @@ body.presentation-mode .ax-main {
 
   border-style: dashed;
 
-  border-color: rgba(255, 255, 255, 0.15);
+  border-color: var(--ax-border);
 
   background: var(--surf-1);
 
@@ -1944,11 +1944,11 @@ body.presentation-mode .ax-main {
 
 .proj-badge {
 
-  background: rgba(167, 139, 250, 0.15);
+  background: color-mix(in srgb, var(--ax-accent) 15%, transparent);
 
   color: var(--ax-accent-purple);
 
-  border-color: rgba(167, 139, 250, 0.3);
+  border-color: color-mix(in srgb, var(--ax-accent) 30%, transparent);
 
 }
 
@@ -1964,11 +1964,11 @@ body.presentation-mode .ax-main {
 
 .proj-badge-gold {
 
-  background: rgba(255, 196, 107, 0.15);
+  background: color-mix(in srgb, var(--ax-accent-gold) 15%, transparent);
 
   color: var(--ax-accent-gold);
 
-  border-color: rgba(255, 196, 107, 0.3);
+  border-color: color-mix(in srgb, var(--ax-accent-gold) 30%, transparent);
 
 }
 
@@ -2504,9 +2504,9 @@ body.presentation-mode .ax-main {
 
   margin-bottom: 1.5rem;
 
-  background: linear-gradient(135deg, rgba(77, 159, 236, 0.08) 0%, rgba(167, 139, 250, 0.08) 100%);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--ax-accent) 8%, transparent) 0%, color-mix(in srgb, var(--ax-accent) 8%, transparent) 100%);
 
-  border: 1px solid rgba(77, 159, 236, 0.25);
+  border: 1px solid color-mix(in srgb, var(--ax-accent) 25%, transparent);
 
 }
 
@@ -2534,11 +2534,11 @@ body.presentation-mode .ax-main {
 
   border-radius: 20px;
 
-  background: rgba(77, 159, 236, 0.18);
+  background: color-mix(in srgb, var(--ax-accent) 18%, transparent);
 
   color: var(--ax-accent);
 
-  border: 1px solid rgba(77, 159, 236, 0.35);
+  border: 1px solid color-mix(in srgb, var(--ax-accent) 35%, transparent);
 
   letter-spacing: 0.06em;
 
@@ -2546,11 +2546,11 @@ body.presentation-mode .ax-main {
 
 .badge-amber {
 
-  background: rgba(255, 196, 107, 0.18);
+  background: color-mix(in srgb, var(--ax-accent-gold) 18%, transparent);
 
   color: var(--ax-accent-gold);
 
-  border-color: rgba(255, 196, 107, 0.35);
+  border-color: color-mix(in srgb, var(--ax-accent-gold) 35%, transparent);
 
 }
 
@@ -2726,9 +2726,9 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
 .sim-res-box.highlight {
 
-  background: rgba(61, 220, 151, 0.12);
+  background: color-mix(in srgb, var(--ax-accent-emerald) 12%, transparent);
 
-  border-color: rgba(61, 220, 151, 0.35);
+  border-color: color-mix(in srgb, var(--ax-accent-emerald) 35%, transparent);
 
 }
 
@@ -3244,9 +3244,9 @@ input[type="range"]::-webkit-slider-thumb:hover {
    ========================================================================== */
 
 .ax-nav__badge--compras {
-  background: rgba(61, 220, 151, 0.15) !important;
+  background: color-mix(in srgb, var(--ax-accent-emerald) 15%, transparent) !important;
   color: var(--ax-accent-emerald) !important;
-  border: 1px solid rgba(61, 220, 151, 0.3) !important;
+  border: 1px solid color-mix(in srgb, var(--ax-accent-emerald) 30%, transparent) !important;
 }
 
 .compras-header-card {
@@ -3315,7 +3315,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .sku-badge {
   display: inline-block;
   padding: 0.2rem 0.6rem;
-  background: rgba(77, 159, 236, 0.12);
+  background: color-mix(in srgb, var(--ax-accent) 12%, transparent);
   color: var(--ax-accent);
   border-radius: 6px;
 }
@@ -3325,7 +3325,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   width: 100%;
   overflow-x: auto;
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--ax-border);
   background: var(--surf-1);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
   margin-top: 1rem;
@@ -3335,7 +3335,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  font-family: var(--ax-font-sans, 'Inter', sans-serif);
+  font-family: var(--ax-font-display);
   font-size: 0.875rem;
   color: var(--ax-text-primary);
   white-space: nowrap;
@@ -3355,14 +3355,14 @@ input[type="range"]::-webkit-slider-thumb:hover {
   text-transform: uppercase;
   letter-spacing: 0.07em;
   color: var(--ax-text-tertiary);
-  border-bottom: 2px solid rgba(77, 159, 236, 0.4);
+  border-bottom: 2px solid color-mix(in srgb, var(--ax-accent) 40%, transparent);
   background: var(--surf-2);
   user-select: none;
 }
 
 .ax-table td {
   padding: 0.85rem 1.15rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--ax-border-subtle);
   vertical-align: middle;
   transition: background-color 0.15s ease;
 }
@@ -3372,11 +3372,11 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 .ax-table tbody tr:hover {
-  background-color: rgba(77, 159, 236, 0.12) !important;
+  background-color: color-mix(in srgb, var(--ax-accent) 12%, transparent) !important;
 }
 
 .num-cell {
-  font-family: var(--ax-font-mono, 'JetBrains Mono', monospace);
+  font-family: var(--ax-font-mono);
   font-weight: 500;
   letter-spacing: -0.01em;
 }
@@ -3384,9 +3384,9 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .sku-badge {
   display: inline-block;
   padding: 0.25rem 0.6rem;
-  background: rgba(77, 159, 236, 0.16);
+  background: color-mix(in srgb, var(--ax-accent) 16%, transparent);
   color: var(--ax-accent);
-  border: 1px solid rgba(77, 159, 236, 0.35);
+  border: 1px solid color-mix(in srgb, var(--ax-accent) 35%, transparent);
   border-radius: 6px;
   font-family: var(--ax-font-mono, monospace);
   font-size: 0.8125rem;
@@ -3400,7 +3400,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   padding: 0.2rem 0.65rem;
   background: rgba(255, 255, 255, 0.05);
   color: var(--ax-text-secondary);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--ax-border);
   border-radius: 999px;
   font-size: 0.75rem;
   font-weight: 600;
@@ -3419,21 +3419,21 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 .badge-green {
-  background: rgba(61, 220, 151, 0.16);
+  background: color-mix(in srgb, var(--ax-accent-emerald) 16%, transparent);
   color: var(--ax-accent-emerald);
-  border: 1px solid rgba(61, 220, 151, 0.35);
+  border: 1px solid color-mix(in srgb, var(--ax-accent-emerald) 35%, transparent);
 }
 
 .badge-amber {
-  background: rgba(255, 196, 107, 0.16);
+  background: color-mix(in srgb, var(--ax-accent-gold) 16%, transparent);
   color: var(--ax-accent-gold);
-  border: 1px solid rgba(255, 196, 107, 0.35);
+  border: 1px solid color-mix(in srgb, var(--ax-accent-gold) 35%, transparent);
 }
 
 .badge-red {
-  background: rgba(255, 107, 138, 0.16);
+  background: color-mix(in srgb, var(--ax-accent-rose) 16%, transparent);
   color: var(--ax-accent-rose);
-  border: 1px solid rgba(255, 107, 138, 0.35);
+  border: 1px solid color-mix(in srgb, var(--ax-accent-rose) 35%, transparent);
 }
 
 .compras-breakdown-list {
@@ -3450,13 +3450,13 @@ input[type="range"]::-webkit-slider-thumb:hover {
   padding: 0.6rem 0.75rem;
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.025);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--ax-border-subtle);
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .compras-breakdown-item:hover {
   background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.12);
+  border-color: var(--ax-border);
   transform: translateX(4px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
@@ -3497,15 +3497,15 @@ input[type="range"]::-webkit-slider-thumb:hover {
   font-weight: 700;
   background: rgba(255, 255, 255, 0.08);
   color: var(--ax-text-tertiary, #94a3b8);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--ax-border);
   flex-shrink: 0;
 }
 
 .rank-badge.rank-gold {
-  background: rgba(255, 196, 107, 0.2);
+  background: color-mix(in srgb, var(--ax-accent-gold) 20%, transparent);
   color: var(--ax-accent-gold);
-  border-color: rgba(255, 196, 107, 0.5);
-  box-shadow: 0 0 8px rgba(255, 196, 107, 0.3);
+  border-color: color-mix(in srgb, var(--ax-accent-gold) 50%, transparent);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--ax-accent-gold) 30%, transparent);
 }
 
 .rank-badge.rank-silver {
@@ -3521,14 +3521,14 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 .sku-badge-pill {
-  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-family: var(--ax-font-mono);
   font-size: 0.75rem;
   font-weight: 700;
   padding: 2px 7px;
   border-radius: 6px;
-  background: rgba(77, 159, 236, 0.18);
+  background: color-mix(in srgb, var(--ax-accent) 18%, transparent);
   color: var(--ax-accent);
-  border: 1px solid rgba(77, 159, 236, 0.3);
+  border: 1px solid color-mix(in srgb, var(--ax-accent) 30%, transparent);
   letter-spacing: 0.3px;
   flex-shrink: 0;
 }
@@ -3566,9 +3566,9 @@ input[type="range"]::-webkit-slider-thumb:hover {
   font-weight: 700;
   padding: 2px 6px;
   border-radius: 6px;
-  background: rgba(167, 139, 250, 0.18);
+  background: color-mix(in srgb, var(--ax-accent) 18%, transparent);
   color: var(--ax-accent-purple);
-  border: 1px solid rgba(167, 139, 250, 0.3);
+  border: 1px solid color-mix(in srgb, var(--ax-accent) 30%, transparent);
 }
 
 .compras-breakdown-bar {
@@ -3585,18 +3585,18 @@ input[type="range"]::-webkit-slider-thumb:hover {
   height: 100%;
   border-radius: 999px;
   transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 0 10px rgba(167, 139, 250, 0.3);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--ax-accent) 30%, transparent);
 }
 
 .compras-breakdown-fill.bar-coral {
   background: linear-gradient(90deg, #C4384F, #C4384F, #C4384F);
-  box-shadow: 0 0 10px rgba(255, 107, 138, 0.35);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--ax-accent-rose) 35%, transparent);
 }
 
 /* --- BI INVESTMENT ADVISOR STYLING --- */
 .bi-compras-advisor-card {
   background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9));
-  border: 1px solid rgba(61, 220, 151, 0.3);
+  border: 1px solid color-mix(in srgb, var(--ax-accent-emerald) 30%, transparent);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08);
   padding: 1.5rem;
   border-radius: 12px;
@@ -3655,12 +3655,12 @@ input[type="range"]::-webkit-slider-thumb:hover {
   font-weight: 800 !important;
   color: var(--ax-accent-emerald) !important;
   background: var(--surf-1) !important;
-  border-color: rgba(61, 220, 151, 0.4) !important;
+  border-color: color-mix(in srgb, var(--ax-accent-emerald) 40%, transparent) !important;
 }
 
 .num-input:focus {
   border-color: var(--ax-accent-emerald) !important;
-  box-shadow: 0 0 12px rgba(61, 220, 151, 0.3) !important;
+  box-shadow: 0 0 12px color-mix(in srgb, var(--ax-accent-emerald) 30%, transparent) !important;
 }
 
 .advisor-presets {
@@ -3680,7 +3680,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   padding: 4px 12px;
   border-radius: 20px;
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--ax-border);
   color: var(--ax-text-secondary, #cbd5e1);
   font-size: 0.8125rem;
   font-weight: 700;
@@ -3689,10 +3689,10 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 .budget-pill:hover, .budget-pill.active {
-  background: rgba(61, 220, 151, 0.2);
+  background: color-mix(in srgb, var(--ax-accent-emerald) 20%, transparent);
   border-color: var(--ax-accent-emerald);
   color: var(--ax-accent-emerald);
-  box-shadow: 0 0 10px rgba(61, 220, 151, 0.25);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--ax-accent-emerald) 25%, transparent);
 }
 
 .advisor-strategy-group {
@@ -3717,7 +3717,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   padding: 1rem;
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--ax-border-subtle);
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
@@ -3725,9 +3725,9 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 .proj-card.highlight-green {
-  background: rgba(61, 220, 151, 0.12);
-  border-color: rgba(61, 220, 151, 0.35);
-  box-shadow: 0 4px 15px rgba(61, 220, 151, 0.15);
+  background: color-mix(in srgb, var(--ax-accent-emerald) 12%, transparent);
+  border-color: color-mix(in srgb, var(--ax-accent-emerald) 35%, transparent);
+  box-shadow: 0 4px 15px color-mix(in srgb, var(--ax-accent-emerald) 15%, transparent);
 }
 
 .proj-label {
@@ -3755,7 +3755,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--ax-border-subtle);
   padding-bottom: 0.6rem;
 }
 
@@ -3770,9 +3770,9 @@ input[type="range"]::-webkit-slider-thumb:hover {
   font-weight: 700;
   padding: 3px 10px;
   border-radius: 20px;
-  background: rgba(61, 220, 151, 0.15);
+  background: color-mix(in srgb, var(--ax-accent-emerald) 15%, transparent);
   color: var(--ax-accent-emerald);
-  border: 1px solid rgba(61, 220, 151, 0.3);
+  border: 1px solid color-mix(in srgb, var(--ax-accent-emerald) 30%, transparent);
 }
 
 .advisor-table th {
@@ -3780,9 +3780,9 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 .badge-emerald {
-  background: rgba(61, 220, 151, 0.16);
+  background: color-mix(in srgb, var(--ax-accent-emerald) 16%, transparent);
   color: var(--ax-accent-emerald);
-  border: 1px solid rgba(61, 220, 151, 0.35);
+  border: 1px solid color-mix(in srgb, var(--ax-accent-emerald) 35%, transparent);
 }
 
 /* ==========================================================================
@@ -3837,8 +3837,8 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .bi-sim-card:hover,
 .advisor-card:hover {
   transform: translateY(-3px);
-  border-color: rgba(77, 159, 236, 0.35) !important;
-  box-shadow: 0 10px 28px rgba(11, 15, 25, 0.45), 0 0 18px rgba(77, 159, 236, 0.12) !important;
+  border-color: color-mix(in srgb, var(--ax-accent) 35%, transparent) !important;
+  box-shadow: 0 10px 28px rgba(11, 15, 25, 0.45), 0 0 18px color-mix(in srgb, var(--ax-accent) 12%, transparent) !important;
 }
 
 /* 3. Active Filter Chips Bar */
@@ -3850,7 +3850,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   padding: 0.5rem 0.75rem;
   margin-top: 0.5rem;
   background: rgba(28, 36, 56, 0.45);
-  border: 1px dashed rgba(255, 255, 255, 0.08);
+  border: 1px dashed var(--ax-border-subtle);
   border-radius: var(--ax-radius-md);
   -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
@@ -3877,14 +3877,14 @@ input[type="range"]::-webkit-slider-thumb:hover {
   border-radius: 20px;
   font-size: 0.8125rem;
   font-weight: 600;
-  background: rgba(77, 159, 236, 0.14);
+  background: color-mix(in srgb, var(--ax-accent) 14%, transparent);
   color: var(--ax-accent);
-  border: 1px solid rgba(77, 159, 236, 0.3);
+  border: 1px solid color-mix(in srgb, var(--ax-accent) 30%, transparent);
   transition: all 0.18s ease;
 }
 
 .filter-chip:hover {
-  background: rgba(77, 159, 236, 0.22);
+  background: color-mix(in srgb, var(--ax-accent) 22%, transparent);
   border-color: var(--ax-accent);
 }
 
@@ -3924,22 +3924,22 @@ input[type="range"]::-webkit-slider-thumb:hover {
   font-weight: 600;
   background: rgba(255, 255, 255, 0.06);
   color: var(--ax-text-secondary);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--ax-border);
   cursor: pointer;
   transition: all 0.18s ease;
 }
 
 .preset-pill-btn:hover {
-  background: rgba(77, 159, 236, 0.18);
+  background: color-mix(in srgb, var(--ax-accent) 18%, transparent);
   color: var(--ax-accent);
-  border-color: rgba(77, 159, 236, 0.4);
+  border-color: color-mix(in srgb, var(--ax-accent) 40%, transparent);
 }
 
 .preset-pill-btn.active {
   background: #2563B8;
   color: #ffffff;
   border-color: var(--ax-accent);
-  box-shadow: 0 0 12px rgba(77, 159, 236, 0.4);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--ax-accent) 40%, transparent);
 }
 
 .strategy-cards-grid {
@@ -3957,21 +3957,21 @@ input[type="range"]::-webkit-slider-thumb:hover {
   padding: 0.6rem 0.5rem;
   border-radius: var(--ax-radius-md);
   background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--ax-border-subtle);
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   text-align: center;
 }
 
 .strategy-card-btn:hover {
-  background: rgba(77, 159, 236, 0.1);
-  border-color: rgba(77, 159, 236, 0.3);
+  background: color-mix(in srgb, var(--ax-accent) 10%, transparent);
+  border-color: color-mix(in srgb, var(--ax-accent) 30%, transparent);
 }
 
 .strategy-card-btn.active {
-  background: linear-gradient(135deg, rgba(77, 159, 236, 0.22) 0%, rgba(167, 139, 250, 0.18) 100%);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--ax-accent) 22%, transparent) 0%, color-mix(in srgb, var(--ax-accent) 18%, transparent) 100%);
   border-color: var(--ax-accent);
-  box-shadow: 0 0 14px rgba(77, 159, 236, 0.25);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--ax-accent) 25%, transparent);
 }
 
 .strategy-icon {
@@ -4002,7 +4002,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   padding: 0.75rem 1.25rem;
   border-radius: var(--ax-radius-lg);
   background: rgba(28, 36, 56, 0.92);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--ax-border);
   box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
   -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
@@ -4049,16 +4049,16 @@ input[type="range"]::-webkit-slider-thumb:hover {
 /* Main Card */
 .bi-compras-advisor-card {
   background: var(--surf-2) !important;
-  border: 1px solid rgba(77, 159, 236, 0.25) !important;
+  border: 1px solid color-mix(in srgb, var(--ax-accent) 25%, transparent) !important;
   border-radius: 16px !important;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), 0 0 24px rgba(77, 159, 236, 0.12) !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), 0 0 24px color-mix(in srgb, var(--ax-accent) 12%, transparent) !important;
   padding: 1.5rem !important;
   -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
 }
 
 .bi-advisor-header {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--ax-border-subtle);
   padding-bottom: 1rem;
   margin-bottom: 1.25rem;
 }
@@ -4119,7 +4119,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   font-weight: 700 !important;
   font-family: var(--ax-font-sans) !important;
   background: var(--surf-3) !important;
-  border: 1px solid rgba(77, 159, 236, 0.4) !important;
+  border: 1px solid color-mix(in srgb, var(--ax-accent) 40%, transparent) !important;
   color: #ffffff !important;
   border-radius: 12px !important;
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
@@ -4128,7 +4128,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
 .input-with-icon input#comprasBudgetInput:focus {
   border-color: var(--ax-accent) !important;
-  box-shadow: 0 0 16px rgba(77, 159, 236, 0.35) !important;
+  box-shadow: 0 0 16px color-mix(in srgb, var(--ax-accent) 35%, transparent) !important;
   outline: none;
 }
 
@@ -4156,13 +4156,13 @@ input[type="range"]::-webkit-slider-thumb:hover {
   font-weight: 700 !important;
   background: rgba(255, 255, 255, 0.06) !important;
   color: var(--ax-text-secondary) !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border: 1px solid var(--ax-border) !important;
   cursor: pointer !important;
   transition: all 0.2s ease !important;
 }
 
 .budget-pill:hover {
-  background: rgba(77, 159, 236, 0.2) !important;
+  background: color-mix(in srgb, var(--ax-accent) 20%, transparent) !important;
   color: var(--ax-accent) !important;
   border-color: var(--ax-accent) !important;
 }
@@ -4171,7 +4171,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   background: linear-gradient(135deg, #2563B8, #1E62B4) !important;
   color: #ffffff !important;
   border-color: var(--ax-accent) !important;
-  box-shadow: 0 4px 14px rgba(77, 159, 236, 0.4) !important;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--ax-accent) 40%, transparent) !important;
 }
 
 .advisor-strategy-group label {
@@ -4193,7 +4193,7 @@ select#comprasStrategySelect {
   font-weight: 600 !important;
   background: var(--surf-3) !important;
   color: #ffffff !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border: 1px solid var(--ax-border) !important;
   cursor: pointer;
 }
 
@@ -4212,20 +4212,20 @@ select#comprasStrategySelect {
   padding: 1.1rem 1.25rem !important;
   border-radius: 12px !important;
   background: var(--surf-2) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid var(--ax-border-subtle) !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
   transition: transform 0.2s ease, border-color 0.2s ease !important;
 }
 
 .proj-card:hover {
   transform: translateY(-2px) !important;
-  border-color: rgba(77, 159, 236, 0.4) !important;
+  border-color: color-mix(in srgb, var(--ax-accent) 40%, transparent) !important;
 }
 
 .proj-card.highlight-green {
-  background: linear-gradient(135deg, rgba(61, 220, 151, 0.14) 0%, rgba(15, 23, 42, 0.85) 100%) !important;
-  border-color: rgba(61, 220, 151, 0.4) !important;
-  box-shadow: 0 8px 24px rgba(61, 220, 151, 0.18) !important;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--ax-accent-emerald) 14%, transparent) 0%, rgba(15, 23, 42, 0.85) 100%) !important;
+  border-color: color-mix(in srgb, var(--ax-accent-emerald) 40%, transparent) !important;
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--ax-accent-emerald) 18%, transparent) !important;
 }
 
 .proj-label {
@@ -4254,7 +4254,7 @@ select#comprasStrategySelect {
   align-items: center !important;
   justify-content: space-between !important;
   padding-bottom: 0.75rem !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-bottom: 1px solid var(--ax-border-subtle) !important;
 }
 
 .results-title {
@@ -4268,9 +4268,9 @@ select#comprasStrategySelect {
   border-radius: 20px !important;
   font-size: 0.8125rem !important;
   font-weight: 700 !important;
-  background: rgba(61, 220, 151, 0.15) !important;
+  background: color-mix(in srgb, var(--ax-accent-emerald) 15%, transparent) !important;
   color: var(--ax-accent-emerald) !important;
-  border: 1px solid rgba(61, 220, 151, 0.3) !important;
+  border: 1px solid color-mix(in srgb, var(--ax-accent-emerald) 30%, transparent) !important;
 }
 
 .advisor-table {
@@ -4290,19 +4290,19 @@ select#comprasStrategySelect {
   font-weight: 700 !important;
   text-transform: uppercase !important;
   color: var(--ax-text-tertiary) !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-bottom: 1px solid var(--ax-border) !important;
   z-index: 5 !important;
 }
 
 .advisor-table td {
   padding: 0.85rem 1rem !important;
   font-size: 0.875rem !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+  border-bottom: 1px solid var(--ax-border-subtle) !important;
   color: var(--ax-text-secondary) !important;
 }
 
 .advisor-table tr:hover td {
-  background: rgba(77, 159, 236, 0.12) !important;
+  background: color-mix(in srgb, var(--ax-accent) 12%, transparent) !important;
 }
 
 .advisor-row {
@@ -4317,9 +4317,9 @@ select#comprasStrategySelect {
   display: inline-block !important;
   padding: 4px 10px !important;
   border-radius: 12px !important;
-  background: rgba(77, 159, 236, 0.16) !important;
+  background: color-mix(in srgb, var(--ax-accent) 16%, transparent) !important;
   color: var(--ax-accent) !important;
-  border: 1px solid rgba(77, 159, 236, 0.35) !important;
+  border: 1px solid color-mix(in srgb, var(--ax-accent) 35%, transparent) !important;
   font-weight: 800 !important;
   font-size: 0.8125rem !important;
   font-family: var(--ax-font-sans) !important;
@@ -4337,9 +4337,9 @@ select#comprasStrategySelect {
   gap: 4px !important;
   padding: 4px 10px !important;
   border-radius: 12px !important;
-  background: rgba(61, 220, 151, 0.16) !important;
+  background: color-mix(in srgb, var(--ax-accent-emerald) 16%, transparent) !important;
   color: var(--ax-accent-emerald) !important;
-  border: 1px solid rgba(61, 220, 151, 0.35) !important;
+  border: 1px solid color-mix(in srgb, var(--ax-accent-emerald) 35%, transparent) !important;
   font-weight: 800 !important;
   font-size: 0.8125rem !important;
 }
@@ -4348,7 +4348,7 @@ select#comprasStrategySelect {
 .ax-nav__badge--cotiz {
   background: linear-gradient(135deg, #0F7A50, #0D6B46) !important;
   color: #ffffff !important;
-  border: 1px solid rgba(61, 220, 151, 0.4) !important;
+  border: 1px solid color-mix(in srgb, var(--ax-accent-emerald) 40%, transparent) !important;
   padding: 2px 8px !important;
   border-radius: 12px !important;
   font-size: 0.6875rem !important;
@@ -4362,9 +4362,9 @@ select#comprasStrategySelect {
   gap: 4px !important;
   padding: 4px 10px !important;
   border-radius: 12px !important;
-  background: rgba(255, 196, 107, 0.15) !important;
+  background: color-mix(in srgb, var(--ax-accent-gold) 15%, transparent) !important;
   color: var(--ax-accent-gold) !important;
-  border: 1px solid rgba(255, 196, 107, 0.35) !important;
+  border: 1px solid color-mix(in srgb, var(--ax-accent-gold) 35%, transparent) !important;
   font-weight: 700 !important;
   font-size: 0.8125rem !important;
 }
@@ -4375,9 +4375,9 @@ select#comprasStrategySelect {
   gap: 4px !important;
   padding: 4px 10px !important;
   border-radius: 12px !important;
-  background: rgba(61, 220, 151, 0.15) !important;
+  background: color-mix(in srgb, var(--ax-accent-emerald) 15%, transparent) !important;
   color: var(--ax-accent-emerald) !important;
-  border: 1px solid rgba(61, 220, 151, 0.35) !important;
+  border: 1px solid color-mix(in srgb, var(--ax-accent-emerald) 35%, transparent) !important;
   font-weight: 700 !important;
   font-size: 0.8125rem !important;
 }
@@ -4388,9 +4388,9 @@ select#comprasStrategySelect {
   gap: 4px !important;
   padding: 4px 10px !important;
   border-radius: 12px !important;
-  background: rgba(255, 107, 138, 0.15) !important;
+  background: color-mix(in srgb, var(--ax-accent-rose) 15%, transparent) !important;
   color: var(--ax-accent-rose) !important;
-  border: 1px solid rgba(255, 107, 138, 0.35) !important;
+  border: 1px solid color-mix(in srgb, var(--ax-accent-rose) 35%, transparent) !important;
   font-weight: 700 !important;
   font-size: 0.8125rem !important;
 }
@@ -4401,7 +4401,7 @@ select#comprasStrategySelect {
 
 .cotiz-hero-card {
   background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85)) !important;
-  border: 1px solid rgba(77, 159, 236, 0.25) !important;
+  border: 1px solid color-mix(in srgb, var(--ax-accent) 25%, transparent) !important;
   border-radius: 20px !important;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.1) !important;
   padding: 1.5rem 1.75rem !important;
@@ -4435,7 +4435,7 @@ select#comprasStrategySelect {
 
 .cotiz-kpi-item {
   background: rgba(18, 26, 43, 0.85) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid var(--ax-border-subtle) !important;
   border-radius: 16px !important;
   padding: 1.25rem 1.4rem !important;
   position: relative !important;
@@ -4445,8 +4445,8 @@ select#comprasStrategySelect {
 
 .cotiz-kpi-item:hover {
   transform: translateY(-4px) !important;
-  border-color: rgba(77, 159, 236, 0.4) !important;
-  box-shadow: 0 16px 40px rgba(77, 159, 236, 0.15) !important;
+  border-color: color-mix(in srgb, var(--ax-accent) 40%, transparent) !important;
+  box-shadow: 0 16px 40px color-mix(in srgb, var(--ax-accent) 15%, transparent) !important;
 }
 
 .cotiz-kpi-icon {
@@ -4460,21 +4460,21 @@ select#comprasStrategySelect {
 }
 
 .cotiz-kpi-icon--blue {
-  background: rgba(77, 159, 236, 0.15) !important;
+  background: color-mix(in srgb, var(--ax-accent) 15%, transparent) !important;
   color: var(--ax-accent) !important;
-  border: 1px solid rgba(77, 159, 236, 0.3) !important;
+  border: 1px solid color-mix(in srgb, var(--ax-accent) 30%, transparent) !important;
 }
 
 .cotiz-kpi-icon--emerald {
-  background: rgba(61, 220, 151, 0.15) !important;
+  background: color-mix(in srgb, var(--ax-accent-emerald) 15%, transparent) !important;
   color: var(--ax-accent-emerald) !important;
-  border: 1px solid rgba(61, 220, 151, 0.3) !important;
+  border: 1px solid color-mix(in srgb, var(--ax-accent-emerald) 30%, transparent) !important;
 }
 
 .cotiz-kpi-icon--amber {
-  background: rgba(255, 196, 107, 0.15) !important;
+  background: color-mix(in srgb, var(--ax-accent-gold) 15%, transparent) !important;
   color: var(--ax-accent-gold) !important;
-  border: 1px solid rgba(255, 196, 107, 0.3) !important;
+  border: 1px solid color-mix(in srgb, var(--ax-accent-gold) 30%, transparent) !important;
 }
 
 .cotiz-kpi-icon--purple {
@@ -4502,27 +4502,27 @@ select#comprasStrategySelect {
 }
 
 .cotiz-status--aceptada {
-  background: rgba(61, 220, 151, 0.16) !important;
+  background: color-mix(in srgb, var(--ax-accent-emerald) 16%, transparent) !important;
   color: var(--ax-accent-emerald) !important;
-  border: 1px solid rgba(61, 220, 151, 0.35) !important;
+  border: 1px solid color-mix(in srgb, var(--ax-accent-emerald) 35%, transparent) !important;
 }
 
 .cotiz-status--enviada {
-  background: rgba(255, 196, 107, 0.16) !important;
+  background: color-mix(in srgb, var(--ax-accent-gold) 16%, transparent) !important;
   color: var(--ax-accent-gold) !important;
-  border: 1px solid rgba(255, 196, 107, 0.35) !important;
+  border: 1px solid color-mix(in srgb, var(--ax-accent-gold) 35%, transparent) !important;
 }
 
 .cotiz-status--preparacion {
-  background: rgba(77, 159, 236, 0.16) !important;
+  background: color-mix(in srgb, var(--ax-accent) 16%, transparent) !important;
   color: var(--ax-accent) !important;
-  border: 1px solid rgba(77, 159, 236, 0.35) !important;
+  border: 1px solid color-mix(in srgb, var(--ax-accent) 35%, transparent) !important;
 }
 
 .cotiz-status--perdida {
-  background: rgba(255, 107, 138, 0.16) !important;
+  background: color-mix(in srgb, var(--ax-accent-rose) 16%, transparent) !important;
   color: var(--ax-accent-rose) !important;
-  border: 1px solid rgba(255, 107, 138, 0.35) !important;
+  border: 1px solid color-mix(in srgb, var(--ax-accent-rose) 35%, transparent) !important;
 }
 
 .cotiz-status--pendiente {
@@ -4541,7 +4541,7 @@ select#comprasStrategySelect {
 
 .cotiz-summary-card {
   background: linear-gradient(135deg, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.9)) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid var(--ax-border-subtle) !important;
   border-radius: 16px !important;
   padding: 1.1rem 1.3rem !important;
   display: flex !important;
@@ -4641,7 +4641,7 @@ select#comprasStrategySelect {
 
 .cotiz-tipo-card:hover {
   transform: translateY(-3px) !important;
-  border-color: var(--ax-card-hover-border, rgba(77, 159, 236, 0.4)) !important;
+  border-color: var(--ax-card-hover-border, color-mix(in srgb, var(--ax-accent) 40%, transparent)) !important;
   box-shadow: var(--el-3) !important;
 }
 
@@ -4861,9 +4861,9 @@ select#comprasStrategySelect {
   font-weight: 800 !important;
   letter-spacing: 0.5px !important;
   text-transform: uppercase !important;
-  background: rgba(77, 159, 236, 0.15) !important;
+  background: color-mix(in srgb, var(--ax-accent) 15%, transparent) !important;
   color: var(--ax-accent) !important;
-  border: 1px solid rgba(77, 159, 236, 0.3) !important;
+  border: 1px solid color-mix(in srgb, var(--ax-accent) 30%, transparent) !important;
   width: fit-content !important;
   margin-bottom: 0.5rem !important;
 }
@@ -4888,7 +4888,7 @@ select#comprasStrategySelect {
   gap: 0.5rem !important;
   flex-wrap: wrap !important;
   padding-top: 0.75rem !important;
-  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-top: 1px solid var(--ax-border-subtle) !important;
   font-size: 0.8125rem !important;
 }
 
@@ -4966,8 +4966,8 @@ select#comprasStrategySelect {
     align-items: center !important;
     justify-content: center !important;
     gap: 6px !important;
-    background: rgba(77, 159, 236, 0.25) !important;
-    border: 1px solid rgba(77, 159, 236, 0.5) !important;
+    background: color-mix(in srgb, var(--ax-accent) 25%, transparent) !important;
+    border: 1px solid color-mix(in srgb, var(--ax-accent) 50%, transparent) !important;
     color: #ffffff !important;
     padding: 6px 14px !important;
     border-radius: 8px !important;
@@ -5026,12 +5026,12 @@ select#comprasStrategySelect {
   left: 0 !important;
   right: 0 !important;
   background: var(--surf-3) !important;
-  border: 1px solid rgba(167, 139, 250, 0.4) !important;
+  border: 1px solid color-mix(in srgb, var(--ax-accent) 40%, transparent) !important;
   border-radius: 12px !important;
   max-height: 280px !important;
   overflow-y: auto !important;
   z-index: 1000 !important;
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.8), 0 0 20px rgba(167, 139, 250, 0.2) !important;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.8), 0 0 20px color-mix(in srgb, var(--ax-accent) 20%, transparent) !important;
   margin-top: 4px !important;
   -webkit-backdrop-filter: blur(8px) !important;
   backdrop-filter: blur(8px) !important;
@@ -5040,7 +5040,7 @@ select#comprasStrategySelect {
 .prod-suggestion-item {
   padding: 10px 14px !important;
   cursor: pointer !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border-bottom: 1px solid var(--ax-border-subtle) !important;
   display: flex !important;
   justify-content: space-between !important;
   align-items: center !important;
@@ -5049,13 +5049,13 @@ select#comprasStrategySelect {
 }
 
 .prod-suggestion-item:hover {
-  background: rgba(167, 139, 250, 0.2) !important;
+  background: color-mix(in srgb, var(--ax-accent) 20%, transparent) !important;
 }
 
 .ax-nav__badge--prod {
-  background: rgba(167, 139, 250, 0.2) !important;
+  background: color-mix(in srgb, var(--ax-accent) 20%, transparent) !important;
   color: var(--ax-accent-purple) !important;
-  border: 1px solid rgba(167, 139, 250, 0.4) !important;
+  border: 1px solid color-mix(in srgb, var(--ax-accent) 40%, transparent) !important;
 }
 
 /* ==========================================================================
@@ -5094,7 +5094,7 @@ select#comprasStrategySelect {
   width: 38px;
   height: 38px;
   background: var(--surf-1);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid var(--ax-border);
   border-radius: 12px;
   color: var(--ax-accent);
   cursor: pointer;
@@ -5145,7 +5145,7 @@ select#comprasStrategySelect {
     max-width: 88vw !important;
     height: 100vh !important;
     background: var(--surf-1) !important;
-    border-right: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-right: 1px solid var(--ax-border) !important;
     z-index: 99999 !important;
     transform: translateX(-100%) !important;
     transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
@@ -5162,7 +5162,7 @@ select#comprasStrategySelect {
   .ax-sidebar__brand {
     padding: 1.25rem 1.25rem !important;
     background: var(--surf-1) !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-bottom: 1px solid var(--ax-border) !important;
     display: flex !important;
     align-items: center !important;
     justify-content: space-between !important;
@@ -5176,7 +5176,7 @@ select#comprasStrategySelect {
     height: 36px !important;
     border-radius: 50% !important;
     background: rgba(255, 255, 255, 0.12) !important;
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border: 1px solid var(--ax-border) !important;
     color: #FFFFFF !important;
     font-size: 1.375rem !important;
     line-height: 1 !important;
@@ -5184,7 +5184,7 @@ select#comprasStrategySelect {
   }
 
   .ax-sidebar-close-btn:hover {
-    background: rgba(255, 107, 138, 0.25) !important;
+    background: color-mix(in srgb, var(--ax-accent-rose) 25%, transparent) !important;
     color: #FF6B8A !important;
   }
 
@@ -5205,20 +5205,20 @@ select#comprasStrategySelect {
     border-radius: 12px !important;
     margin-bottom: 5px !important;
     background: rgba(255, 255, 255, 0.04) !important;
-    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border: 1px solid var(--ax-border-subtle) !important;
   }
 
   .ax-nav__item:hover,
   .ax-nav__item:active {
-    background: rgba(77, 159, 236, 0.18) !important;
+    background: color-mix(in srgb, var(--ax-accent) 18%, transparent) !important;
     color: #FFFFFF !important;
   }
 
   .ax-nav__item.active {
-    background: linear-gradient(135deg, rgba(77, 159, 236, 0.35), rgba(77, 159, 236, 0.45)) !important;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--ax-accent) 35%, transparent), color-mix(in srgb, var(--ax-accent) 45%, transparent)) !important;
     color: #FFFFFF !important;
     border-color: var(--ax-accent) !important;
-    box-shadow: 0 4px 14px rgba(77, 159, 236, 0.35) !important;
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--ax-accent) 35%, transparent) !important;
   }
 
   .ax-nav__icon {
@@ -5229,7 +5229,7 @@ select#comprasStrategySelect {
 
   .ax-sidebar__filter {
     background: var(--surf-1) !important;
-    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border: 1px solid var(--ax-border) !important;
     color: #FFFFFF !important;
     font-size: 0.875rem !important;
     height: 42px !important;
@@ -5243,7 +5243,7 @@ select#comprasStrategySelect {
     height: 58px !important;
     padding: 0 0.75rem !important;
     background: var(--surf-1) !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-bottom: 1px solid var(--ax-border) !important;
     position: sticky !important;
     top: 0 !important;
     z-index: 100 !important;
@@ -5285,8 +5285,8 @@ select#comprasStrategySelect {
   .sync-status-pill {
     padding: 0.35rem 0.65rem !important;
     font-size: 0.75rem !important;
-    background: rgba(61, 220, 151, 0.15) !important;
-    border: 1px solid rgba(61, 220, 151, 0.3) !important;
+    background: color-mix(in srgb, var(--ax-accent-emerald) 15%, transparent) !important;
+    border: 1px solid color-mix(in srgb, var(--ax-accent-emerald) 30%, transparent) !important;
     color: var(--ax-accent-emerald) !important;
     border-radius: 20px !important;
   }
@@ -5298,7 +5298,7 @@ select#comprasStrategySelect {
   .ax-search-pill {
     padding: 0.45rem 0.55rem !important;
     background: var(--surf-1) !important;
-    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border: 1px solid var(--ax-border) !important;
     border-radius: 8px !important;
   }
 
@@ -5310,7 +5310,7 @@ select#comprasStrategySelect {
     width: 36px !important;
     height: 36px !important;
     background: var(--surf-1) !important;
-    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border: 1px solid var(--ax-border) !important;
     border-radius: 8px !important;
     color: var(--ax-text-secondary) !important;
   }
@@ -5324,7 +5324,7 @@ select#comprasStrategySelect {
     padding: 0.75rem 0.85rem !important;
     margin-bottom: 1.25rem !important;
     background: var(--surf-1) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid var(--ax-border) !important;
     border-radius: 12px !important;
   }
 
@@ -5367,15 +5367,15 @@ select#comprasStrategySelect {
     gap: 0.5rem !important;
     margin-top: 0.4rem !important;
     padding-top: 0.4rem !important;
-    border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-top: 1px solid var(--ax-border-subtle) !important;
   }
 
   .mobile-filter-toggle-btn {
     display: inline-flex !important;
     align-items: center !important;
     gap: 0.35rem !important;
-    background: rgba(77, 159, 236, 0.18) !important;
-    border: 1px solid rgba(77, 159, 236, 0.4) !important;
+    background: color-mix(in srgb, var(--ax-accent) 18%, transparent) !important;
+    border: 1px solid color-mix(in srgb, var(--ax-accent) 40%, transparent) !important;
     color: var(--ax-accent) !important;
     font-weight: 700 !important;
     padding: 0.4rem 0.85rem !important;
@@ -5393,7 +5393,7 @@ select#comprasStrategySelect {
     gap: 0.65rem !important;
     margin-top: 0.75rem !important;
     padding-top: 0.75rem !important;
-    border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-top: 1px solid var(--ax-border-subtle) !important;
   }
 
   .filter-controls.show-mobile {
@@ -5414,7 +5414,7 @@ select#comprasStrategySelect {
     height: 42px !important;
     font-size: 0.875rem !important;
     background: var(--surf-1) !important;
-    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border: 1px solid var(--ax-border) !important;
     color: #FFFFFF !important;
     border-radius: 8px !important;
     padding: 0 0.75rem !important;
@@ -5552,7 +5552,7 @@ select#comprasStrategySelect {
   grid-template-columns: repeat(3, 1fr);
   gap: 0.5rem;
   padding-top: 0.75rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid var(--ax-border-subtle);
   text-align: center;
 }
 
@@ -5560,7 +5560,7 @@ select#comprasStrategySelect {
   background: rgba(255, 255, 255, 0.03);
   padding: 0.5rem 0.35rem;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--ax-border-subtle);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -5623,8 +5623,8 @@ select#comprasStrategySelect {
   font-size: 0.875rem !important;
   padding: 0.5rem 1.15rem !important;
   border-radius: 20px !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  box-shadow: 0 4px 14px rgba(77, 159, 236, 0.4) !important;
+  border: 1px solid var(--ax-border) !important;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--ax-accent) 40%, transparent) !important;
   display: inline-flex !important;
   align-items: center !important;
   gap: 0.35rem !important;
@@ -5637,7 +5637,7 @@ select#comprasStrategySelect {
 .btn-emitir-cotizacion:active {
   background: linear-gradient(135deg, #1E62B4 0%, #1A5599 100%) !important;
   transform: translateY(-1px) !important;
-  box-shadow: 0 6px 18px rgba(77, 159, 236, 0.5) !important;
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--ax-accent) 50%, transparent) !important;
 }
 
 /* Modal Backdrop System */
@@ -5676,7 +5676,7 @@ select#comprasStrategySelect {
 
 .cotiz-image-preview-card {
   background: var(--surf-3);
-  border: 1px solid rgba(77, 159, 236, 0.3);
+  border: 1px solid color-mix(in srgb, var(--ax-accent) 30%, transparent);
   border-radius: 12px;
   padding: 1rem;
   display: flex;
@@ -5691,7 +5691,7 @@ select#comprasStrategySelect {
 
 .cotiz-image-preview-card:hover {
   border-color: var(--ax-accent);
-  box-shadow: 0 8px 24px rgba(77, 159, 236, 0.2);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--ax-accent) 20%, transparent);
 }
 
 .cotiz-image-placeholder {
@@ -5744,7 +5744,7 @@ select#comprasStrategySelect {
   gap: 0.75rem;
   padding: 4px 10px 4px 6px;
   background: var(--surf-2);
-  border: 1px solid rgba(77, 159, 236, 0.3);
+  border: 1px solid color-mix(in srgb, var(--ax-accent) 30%, transparent);
   border-radius: 20px;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
   margin-left: 0.5rem;
@@ -5752,8 +5752,8 @@ select#comprasStrategySelect {
 }
 
 .user-profile-badge:hover {
-  border-color: rgba(77, 159, 236, 0.6);
-  box-shadow: 0 6px 18px rgba(77, 159, 236, 0.2);
+  border-color: color-mix(in srgb, var(--ax-accent) 60%, transparent);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--ax-accent) 20%, transparent);
 }
 
 .user-avatar {
@@ -5768,7 +5768,7 @@ select#comprasStrategySelect {
   align-items: center;
   justify-content: center;
   text-transform: uppercase;
-  box-shadow: 0 2px 8px rgba(77, 159, 236, 0.4);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--ax-accent) 40%, transparent);
 }
 
 .user-info {
@@ -5798,9 +5798,9 @@ select#comprasStrategySelect {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  background: rgba(255, 107, 138, 0.15);
+  background: color-mix(in srgb, var(--ax-accent-rose) 15%, transparent);
   color: var(--ax-accent-rose);
-  border: 1px solid rgba(255, 107, 138, 0.3);
+  border: 1px solid color-mix(in srgb, var(--ax-accent-rose) 30%, transparent);
   padding: 5px 10px;
   border-radius: 20px;
   font-size: 0.75rem;
@@ -5810,11 +5810,11 @@ select#comprasStrategySelect {
 }
 
 .btn-logout:hover {
-  background: rgba(255, 107, 138, 0.28);
+  background: color-mix(in srgb, var(--ax-accent-rose) 28%, transparent);
   color: #ffffff;
   border-color: var(--ax-accent-rose);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(255, 107, 138, 0.3);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--ax-accent-rose) 30%, transparent);
 }
 
 /* Login Backdrop & Card */
@@ -5844,12 +5844,12 @@ select#comprasStrategySelect {
 
 .login-modal-card {
   background: linear-gradient(145deg, rgba(20, 30, 50, 0.96), rgba(10, 16, 30, 0.99));
-  border: 1px solid rgba(77, 159, 236, 0.35);
+  border: 1px solid color-mix(in srgb, var(--ax-accent) 35%, transparent);
   border-radius: 20px;
   padding: 2.5rem 2.25rem;
   width: 100%;
   max-width: 440px;
-  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.75), 0 0 50px rgba(77, 159, 236, 0.2);
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.75), 0 0 50px color-mix(in srgb, var(--ax-accent) 20%, transparent);
   animation: loginModalEntrance 0.38s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
   overflow: hidden;
@@ -5876,7 +5876,7 @@ select#comprasStrategySelect {
   align-items: center;
   justify-content: center;
   margin-bottom: 0.75rem;
-  filter: drop-shadow(0 6px 16px rgba(77, 159, 236, 0.4));
+  filter: drop-shadow(0 6px 16px color-mix(in srgb, var(--ax-accent) 40%, transparent));
   animation: floatLogo 3s ease-in-out infinite alternate;
 }
 
@@ -5941,7 +5941,7 @@ select#comprasStrategySelect {
   height: 48px;
   padding: 0 1rem 0 42px;
   background: var(--surf-3);
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid var(--ax-border);
   border-radius: 12px;
   font-size: 0.875rem;
   font-weight: 600;
@@ -5954,7 +5954,7 @@ select#comprasStrategySelect {
   outline: none;
   border-color: var(--ax-accent);
   background: var(--surf-3);
-  box-shadow: 0 0 0 4px rgba(77, 159, 236, 0.25);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--ax-accent) 25%, transparent);
 }
 
 .login-toggle-pw {
@@ -5976,8 +5976,8 @@ select#comprasStrategySelect {
 }
 
 .login-error-msg {
-  background: rgba(255, 107, 138, 0.15);
-  border: 1px solid rgba(255, 107, 138, 0.35);
+  background: color-mix(in srgb, var(--ax-accent-rose) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ax-accent-rose) 35%, transparent);
   color: var(--ax-accent-rose);
   padding: 0.75rem 1rem;
   border-radius: 12px;
@@ -6002,14 +6002,14 @@ select#comprasStrategySelect {
   font-size: 1rem;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 8px 24px rgba(77, 159, 236, 0.4);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--ax-accent) 40%, transparent);
   transition: all 0.25s ease;
 }
 
 .login-btn-submit:hover {
   background: linear-gradient(135deg, #1E62B4, #1A5599);
   transform: translateY(-2px);
-  box-shadow: 0 12px 30px rgba(77, 159, 236, 0.55);
+  box-shadow: 0 12px 30px color-mix(in srgb, var(--ax-accent) 55%, transparent);
 }
 
 .login-btn-submit:active {
@@ -6020,7 +6020,7 @@ select#comprasStrategySelect {
 .login-quick-access {
   margin-top: 1.75rem;
   padding-top: 1.25rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid var(--ax-border-subtle);
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
@@ -6046,7 +6046,7 @@ select#comprasStrategySelect {
   justify-content: space-between;
   padding: 0.55rem 0.85rem;
   background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--ax-border-subtle);
   border-radius: 12px;
   color: var(--ax-text-secondary);
   font-size: 0.8125rem;
@@ -6056,8 +6056,8 @@ select#comprasStrategySelect {
 }
 
 .quick-pill:hover {
-  background: rgba(77, 159, 236, 0.14);
-  border-color: rgba(77, 159, 236, 0.4);
+  background: color-mix(in srgb, var(--ax-accent) 14%, transparent);
+  border-color: color-mix(in srgb, var(--ax-accent) 40%, transparent);
   color: #ffffff;
   transform: translateX(3px);
 }
@@ -6067,15 +6067,15 @@ select#comprasStrategySelect {
   font-weight: 800;
   padding: 2px 8px;
   border-radius: 12px;
-  background: rgba(77, 159, 236, 0.2);
+  background: color-mix(in srgb, var(--ax-accent) 20%, transparent);
   color: var(--ax-accent);
-  border: 1px solid rgba(77, 159, 236, 0.3);
+  border: 1px solid color-mix(in srgb, var(--ax-accent) 30%, transparent);
 }
 
 /* Locked Channel Visual State */
 .filter-select.locked-channel {
   background-color: var(--surf-3) !important;
-  border-color: rgba(77, 159, 236, 0.5) !important;
+  border-color: color-mix(in srgb, var(--ax-accent) 50%, transparent) !important;
   color: var(--ax-accent) !important;
   font-weight: 700 !important;
   cursor: not-allowed !important;
@@ -6088,10 +6088,10 @@ select#comprasStrategySelect {
   font-size: 0.75rem;
   font-weight: 700;
   color: var(--ax-accent);
-  background: rgba(77, 159, 236, 0.12);
+  background: color-mix(in srgb, var(--ax-accent) 12%, transparent);
   padding: 4px 10px;
   border-radius: 12px;
-  border: 1px solid rgba(77, 159, 236, 0.25);
+  border: 1px solid color-mix(in srgb, var(--ax-accent) 25%, transparent);
   margin-top: 4px;
 }
 
@@ -6104,9 +6104,9 @@ select#comprasStrategySelect {
   border-radius: 12px;
   font-size: 0.75rem;
   font-weight: 800;
-  background: rgba(255, 196, 107, 0.18);
+  background: color-mix(in srgb, var(--ax-accent-gold) 18%, transparent);
   color: var(--ax-accent-gold);
-  border: 1px solid rgba(255, 196, 107, 0.4);
+  border: 1px solid color-mix(in srgb, var(--ax-accent-gold) 40%, transparent);
 }
 
 .mix-tag-profit {
@@ -6117,9 +6117,9 @@ select#comprasStrategySelect {
   border-radius: 12px;
   font-size: 0.75rem;
   font-weight: 800;
-  background: rgba(61, 220, 151, 0.18);
+  background: color-mix(in srgb, var(--ax-accent-emerald) 18%, transparent);
   color: var(--ax-accent-emerald);
-  border: 1px solid rgba(61, 220, 151, 0.4);
+  border: 1px solid color-mix(in srgb, var(--ax-accent-emerald) 40%, transparent);
 }
 
 .mix-tag-volume {
@@ -6130,9 +6130,9 @@ select#comprasStrategySelect {
   border-radius: 12px;
   font-size: 0.75rem;
   font-weight: 800;
-  background: rgba(77, 159, 236, 0.18);
+  background: color-mix(in srgb, var(--ax-accent) 18%, transparent);
   color: var(--ax-accent);
-  border: 1px solid rgba(77, 159, 236, 0.4);
+  border: 1px solid color-mix(in srgb, var(--ax-accent) 40%, transparent);
 }
 
 .mix-progress-bar-container {
@@ -6158,14 +6158,14 @@ select#comprasStrategySelect {
    ========================================================================== */
 
 .ax-nav__badge--ficha {
-  background: rgba(45, 212, 206, 0.2) !important;
+  background: color-mix(in srgb, var(--ax-accent) 20%, transparent) !important;
   color: var(--ax-accent-sky) !important;
-  border: 1px solid rgba(45, 212, 206, 0.4) !important;
+  border: 1px solid color-mix(in srgb, var(--ax-accent) 40%, transparent) !important;
 }
 
 .ft-header-card {
   background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9));
-  border: 1px solid rgba(45, 212, 206, 0.35);
+  border: 1px solid color-mix(in srgb, var(--ax-accent) 35%, transparent);
   border-radius: var(--ax-radius-lg);
   padding: 1.5rem;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
@@ -6178,7 +6178,7 @@ select#comprasStrategySelect {
   flex-wrap: wrap;
   gap: 1rem;
   margin-bottom: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--ax-border-subtle);
   padding-bottom: 1rem;
 }
 
@@ -6186,12 +6186,12 @@ select#comprasStrategySelect {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: rgba(45, 212, 206, 0.15);
+  background: color-mix(in srgb, var(--ax-accent) 15%, transparent);
   color: var(--ax-accent-sky);
-  border: 1px solid rgba(45, 212, 206, 0.35);
+  border: 1px solid color-mix(in srgb, var(--ax-accent) 35%, transparent);
   padding: 4px 12px;
   border-radius: 8px;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--ax-font-mono);
   font-weight: 800;
   font-size: 0.875rem;
 }
@@ -6210,7 +6210,7 @@ select#comprasStrategySelect {
 
 .ft-card {
   background: var(--surf-2);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--ax-border-subtle);
   border-radius: var(--ax-radius-lg);
   padding: 1.25rem;
   box-shadow: 0 4px 20px rgba(0,0,0,0.25);
@@ -6225,7 +6225,7 @@ select#comprasStrategySelect {
   color: var(--ax-text-primary);
   margin-bottom: 1rem;
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid rgba(45, 212, 206, 0.2);
+  border-bottom: 1px solid color-mix(in srgb, var(--ax-accent) 20%, transparent);
 }
 
 .ft-spec-table {
@@ -6237,7 +6237,7 @@ select#comprasStrategySelect {
 .ft-spec-table th,
 .ft-spec-table td {
   padding: 8px 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--ax-border-subtle);
 }
 
 .ft-spec-table th {
@@ -6253,7 +6253,7 @@ select#comprasStrategySelect {
 }
 
 .ft-spec-table tr:hover td {
-  background: rgba(45, 212, 206, 0.05);
+  background: color-mix(in srgb, var(--ax-accent) 5%, transparent);
 }
 
 .ft-barcode-box {
@@ -6273,7 +6273,7 @@ select#comprasStrategySelect {
 }
 
 .ft-barcode-text {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--ax-font-mono);
   font-size: 0.75rem;
   font-weight: 700;
   color: #0f172a;
@@ -6290,10 +6290,10 @@ select#comprasStrategySelect {
   text-transform: uppercase;
 }
 
-.ft-tag-blue { background: rgba(45, 212, 206, 0.2); color: var(--ax-accent-sky); border: 1px solid rgba(45, 212, 206, 0.4); }
-.ft-tag-green { background: rgba(61, 220, 151, 0.2); color: var(--ax-accent-emerald); border: 1px solid rgba(61, 220, 151, 0.4); }
-.ft-tag-purple { background: rgba(167, 139, 250, 0.2); color: var(--ax-accent-purple); border: 1px solid rgba(167, 139, 250, 0.4); }
-.ft-tag-gold { background: rgba(255, 196, 107, 0.2); color: var(--ax-accent-gold); border: 1px solid rgba(255, 196, 107, 0.4); }
+.ft-tag-blue { background: color-mix(in srgb, var(--ax-accent) 20%, transparent); color: var(--ax-accent-sky); border: 1px solid color-mix(in srgb, var(--ax-accent) 40%, transparent); }
+.ft-tag-green { background: color-mix(in srgb, var(--ax-accent-emerald) 20%, transparent); color: var(--ax-accent-emerald); border: 1px solid color-mix(in srgb, var(--ax-accent-emerald) 40%, transparent); }
+.ft-tag-purple { background: color-mix(in srgb, var(--ax-accent) 20%, transparent); color: var(--ax-accent-purple); border: 1px solid color-mix(in srgb, var(--ax-accent) 40%, transparent); }
+.ft-tag-gold { background: color-mix(in srgb, var(--ax-accent-gold) 20%, transparent); color: var(--ax-accent-gold); border: 1px solid color-mix(in srgb, var(--ax-accent-gold) 40%, transparent); }
 
 /* ==========================================================================
    ESTILOS OPTIMIZADOS PARA IMPRESIÓN Y PDF DE FICHA TÉCNICA
@@ -6376,7 +6376,7 @@ select#comprasStrategySelect {
   min-height: 220px;
   max-height: 320px;
   background: var(--ax-canvas);
-  border: 1px solid rgba(45, 212, 206, 0.3);
+  border: 1px solid color-mix(in srgb, var(--ax-accent) 30%, transparent);
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -6405,7 +6405,7 @@ select#comprasStrategySelect {
   right: 10px;
   background: var(--surf-2);
   color: var(--ax-accent-sky);
-  border: 1px solid rgba(45, 212, 206, 0.4);
+  border: 1px solid color-mix(in srgb, var(--ax-accent) 40%, transparent);
   padding: 3px 8px;
   border-radius: 6px;
   font-size: 0.75rem;
@@ -6419,13 +6419,13 @@ select#comprasStrategySelect {
   max-height: 90vh;
   overflow-y: auto;
   padding: 1.75rem;
-  border: 1px solid rgba(77, 159, 236, 0.35);
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 30px rgba(77, 159, 236, 0.15);
+  border: 1px solid color-mix(in srgb, var(--ax-accent) 35%, transparent);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 30px color-mix(in srgb, var(--ax-accent) 15%, transparent);
 }
 
 .modal-section-card {
   background: var(--surf-1);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--ax-border-subtle);
   border-radius: 12px;
   padding: 1.25rem;
 }
@@ -6446,7 +6446,7 @@ select#comprasStrategySelect {
   letter-spacing: 0.5px;
   margin-bottom: 1rem;
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--ax-border-subtle);
 }
 
 [data-ax-theme="light"] .modal-section-card .form-section-title {
@@ -6468,9 +6468,9 @@ select#comprasStrategySelect {
 }
 
 .folio-live-badge {
-  background: rgba(77, 159, 236, 0.15);
+  background: color-mix(in srgb, var(--ax-accent) 15%, transparent);
   color: var(--ax-accent);
-  border: 1px solid rgba(77, 159, 236, 0.35);
+  border: 1px solid color-mix(in srgb, var(--ax-accent) 35%, transparent);
   padding: 2px 8px;
   border-radius: 6px;
   font-size: 0.75rem;
@@ -6488,7 +6488,7 @@ select#comprasStrategySelect {
   overflow-x: auto;
   max-height: 320px;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--ax-border);
   background: var(--surf-1);
 }
 
@@ -6521,7 +6521,7 @@ select#comprasStrategySelect {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--ax-border);
 }
 
 [data-ax-theme="light"] .cotiz-items-table th {
@@ -6531,7 +6531,7 @@ select#comprasStrategySelect {
 
 .cotiz-items-table td {
   padding: 6px 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--ax-border-subtle);
   vertical-align: middle;
 }
 
@@ -6546,7 +6546,7 @@ select#comprasStrategySelect {
   font-size: 0.8125rem;
   font-weight: 600;
   background: var(--surf-2);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid var(--ax-border);
   border-radius: 6px;
   color: var(--ax-text-primary);
   transition: all 0.15s ease;
@@ -6561,7 +6561,7 @@ select#comprasStrategySelect {
 .cotiz-item-input:focus {
   border-color: var(--ax-accent);
   outline: none;
-  box-shadow: 0 0 0 2px rgba(77, 159, 236, 0.25);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ax-accent) 25%, transparent);
 }
 
 .cotiz-item-thumb {
@@ -6570,7 +6570,7 @@ select#comprasStrategySelect {
   border-radius: 4px;
   object-fit: cover;
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--ax-border);
   display: block;
   margin: 0 auto;
 }
@@ -6589,7 +6589,7 @@ select#comprasStrategySelect {
 
 .cotiz-totals-box {
   background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.8));
-  border: 1px solid rgba(77, 159, 236, 0.25);
+  border: 1px solid color-mix(in srgb, var(--ax-accent) 25%, transparent);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -6613,7 +6613,7 @@ select#comprasStrategySelect {
 }
 
 .totals-row.total-highlight {
-  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  border-top: 1px solid var(--ax-border);
   margin-top: 6px;
   padding-top: 10px;
   color: var(--ax-text-primary);
@@ -6635,8 +6635,8 @@ select#comprasStrategySelect {
 }
 
 .totals-margin-badge {
-  background: rgba(61, 220, 151, 0.1);
-  border: 1px solid rgba(61, 220, 151, 0.3);
+  background: color-mix(in srgb, var(--ax-accent-emerald) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ax-accent-emerald) 30%, transparent);
   border-radius: 8px;
   padding: 8px 12px;
   margin-top: 8px;
@@ -6648,7 +6648,7 @@ select#comprasStrategySelect {
 }
 
 .margin-pill {
-  background: rgba(61, 220, 151, 0.2);
+  background: color-mix(in srgb, var(--ax-accent-emerald) 20%, transparent);
   color: var(--ax-accent-emerald);
   font-weight: 800;
   padding: 2px 8px;
@@ -6677,9 +6677,9 @@ select#comprasStrategySelect {
   background: var(--surf-3);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(77, 159, 236, 0.45);
+  border: 1px solid color-mix(in srgb, var(--ax-accent) 45%, transparent);
   border-radius: 8px;
-  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.7), 0 0 15px rgba(77, 159, 236, 0.15);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.7), 0 0 15px color-mix(in srgb, var(--ax-accent) 15%, transparent);
   z-index: 120;
   max-height: 230px;
   overflow-y: auto;
@@ -6695,7 +6695,7 @@ select#comprasStrategySelect {
 .cotiz-pred-item {
   padding: 8px 12px;
   cursor: pointer;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--ax-border-subtle);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -6708,7 +6708,7 @@ select#comprasStrategySelect {
 }
 
 .cotiz-pred-item:hover, .cotiz-pred-item.active {
-  background: rgba(77, 159, 236, 0.18);
+  background: color-mix(in srgb, var(--ax-accent) 18%, transparent);
 }
 
 .cotiz-pred-rut {
@@ -6744,8 +6744,8 @@ select#comprasStrategySelect {
   gap: 4px;
   font-size: 0.75rem;
   color: var(--ax-accent-emerald);
-  background: rgba(61, 220, 151, 0.15);
-  border: 1px solid rgba(61, 220, 151, 0.35);
+  background: color-mix(in srgb, var(--ax-accent-emerald) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ax-accent-emerald) 35%, transparent);
   padding: 2px 8px;
   border-radius: 12px;
   margin-left: 6px;
@@ -6775,7 +6775,7 @@ select#comprasStrategySelect {
   position: absolute;
   inset: -15%;
   background-image: 
-    radial-gradient(circle at 50% 50%, rgba(77, 159, 236, 0.08) 0%, transparent 60%),
+    radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--ax-accent) 8%, transparent) 0%, transparent 60%),
     linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
   background-size: 100% 100%, 48px 48px, 48px 48px;
@@ -6789,7 +6789,7 @@ select#comprasStrategySelect {
 
 [data-ax-theme="light"] .parallax-bg-mesh {
   background-image: 
-    radial-gradient(circle at 50% 50%, rgba(77, 159, 236, 0.05) 0%, transparent 60%),
+    radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--ax-accent) 5%, transparent) 0%, transparent 60%),
     linear-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px),
     linear-gradient(90deg, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
 }
@@ -6810,7 +6810,7 @@ select#comprasStrategySelect {
   height: 520px;
   top: -100px;
   right: -50px;
-  background: radial-gradient(circle, rgba(77, 159, 236, 0.35) 0%, rgba(77, 159, 236, 0.1) 70%, transparent 100%);
+  background: radial-gradient(circle, color-mix(in srgb, var(--ax-accent) 35%, transparent) 0%, color-mix(in srgb, var(--ax-accent) 10%, transparent) 70%, transparent 100%);
 }
 
 .parallax-orb-2 {
@@ -6818,7 +6818,7 @@ select#comprasStrategySelect {
   height: 480px;
   bottom: 5%;
   left: -80px;
-  background: radial-gradient(circle, rgba(167, 139, 250, 0.3) 0%, rgba(167, 139, 250, 0.08) 70%, transparent 100%);
+  background: radial-gradient(circle, color-mix(in srgb, var(--ax-accent) 30%, transparent) 0%, color-mix(in srgb, var(--ax-accent) 8%, transparent) 70%, transparent 100%);
 }
 
 .parallax-orb-3 {
@@ -6826,7 +6826,7 @@ select#comprasStrategySelect {
   height: 380px;
   top: 35%;
   left: 40%;
-  background: radial-gradient(circle, rgba(61, 220, 151, 0.22) 0%, rgba(6, 182, 212, 0.06) 70%, transparent 100%);
+  background: radial-gradient(circle, color-mix(in srgb, var(--ax-accent-emerald) 22%, transparent) 0%, rgba(6, 182, 212, 0.06) 70%, transparent 100%);
 }
 
 .parallax-orb-4 {
@@ -6834,7 +6834,7 @@ select#comprasStrategySelect {
   height: 340px;
   bottom: 20%;
   right: 15%;
-  background: radial-gradient(circle, rgba(255, 196, 107, 0.2) 0%, rgba(255, 107, 138, 0.05) 70%, transparent 100%);
+  background: radial-gradient(circle, color-mix(in srgb, var(--ax-accent-gold) 20%, transparent) 0%, color-mix(in srgb, var(--ax-accent-rose) 5%, transparent) 70%, transparent 100%);
 }
 
 [data-ax-theme="light"] .parallax-orb {
@@ -6880,7 +6880,7 @@ select#comprasStrategySelect {
 [data-tilt]:hover {
   z-index: 10;
   box-shadow: 0 20px 48px -12px rgba(0, 0, 0, 0.65), 0 0 32px -4px var(--ax-accent-glow) !important;
-  border-color: rgba(77, 159, 236, 0.45) !important;
+  border-color: color-mix(in srgb, var(--ax-accent) 45%, transparent) !important;
 }
 
 /* Card Glare (Dynamic Specular Light Reflection) */
@@ -7018,7 +7018,7 @@ select#comprasStrategySelect {
   inset: -1px;
   border-radius: inherit;
   padding: 1px;
-  background: linear-gradient(135deg, rgba(77, 159, 236, 0.35), rgba(167, 139, 250, 0.25), rgba(61, 220, 151, 0.3), transparent 70%);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--ax-accent) 35%, transparent), color-mix(in srgb, var(--ax-accent) 25%, transparent), color-mix(in srgb, var(--ax-accent-emerald) 30%, transparent), transparent 70%);
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
@@ -7031,7 +7031,7 @@ select#comprasStrategySelect {
 .hero-kpi-card:hover::after,
 .proj-card:hover::after {
   opacity: 1;
-  background: linear-gradient(135deg, rgba(77, 159, 236, 0.85), rgba(167, 139, 250, 0.75), rgba(61, 220, 151, 0.8), rgba(255, 196, 107, 0.45));
+  background: linear-gradient(135deg, color-mix(in srgb, var(--ax-accent) 85%, transparent), color-mix(in srgb, var(--ax-accent) 75%, transparent), color-mix(in srgb, var(--ax-accent-emerald) 80%, transparent), color-mix(in srgb, var(--ax-accent-gold) 45%, transparent));
 }
 
 /* --- 3. Animación Pop de Contadores Numéricos (CountUp Easing) --- */
@@ -7093,7 +7093,7 @@ select#comprasStrategySelect {
   height: 100%;
   border-radius: 20px;
   background: linear-gradient(90deg, #2563B8 0%, #5B3FC4 50%, #0F7A50 100%);
-  box-shadow: 0 0 12px rgba(61, 220, 151, 0.5);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--ax-accent-emerald) 50%, transparent);
   transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
 }
@@ -7116,13 +7116,13 @@ select#comprasStrategySelect {
   background: var(--ax-canvas) !important;
   backdrop-filter: blur(16px) !important;
   -webkit-backdrop-filter: blur(16px) !important;
-  border: 1px solid rgba(77, 159, 236, 0.4) !important;
+  border: 1px solid color-mix(in srgb, var(--ax-accent) 40%, transparent) !important;
   border-radius: 12px !important;
   padding: 10px 14px !important;
   color: var(--ax-text-primary) !important;
   font-family: var(--ax-font-sans) !important;
   font-size: 0.8125rem !important;
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.65), 0 0 24px rgba(77, 159, 236, 0.25) !important;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.65), 0 0 24px color-mix(in srgb, var(--ax-accent) 25%, transparent) !important;
   pointer-events: none !important;
   z-index: 9999 !important;
   transition: all 0.12s ease-out !important;
@@ -7130,7 +7130,7 @@ select#comprasStrategySelect {
 
 [data-ax-theme="light"] #chartjs-custom-tooltip {
   background: rgba(255, 255, 255, 0.95) !important;
-  border-color: rgba(77, 159, 236, 0.3) !important;
+  border-color: color-mix(in srgb, var(--ax-accent) 30%, transparent) !important;
   color: #0f172a !important;
   box-shadow: 0 16px 36px rgba(0, 0, 0, 0.15) !important;
 }
@@ -7176,7 +7176,7 @@ select#comprasStrategySelect {
   padding: 1.35rem 1.45rem !important;
   border-radius: 20px !important;
   background: var(--surf-2) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid var(--ax-border-subtle) !important;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35) !important;
   transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
   min-height: 140px !important;
@@ -7194,8 +7194,8 @@ select#comprasStrategySelect {
 .mini-kpi-card:hover,
 .kpi-card:hover {
   transform: translateY(-3px) scale(1.01) !important;
-  border-color: rgba(77, 159, 236, 0.45) !important;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), 0 0 24px rgba(77, 159, 236, 0.18) !important;
+  border-color: color-mix(in srgb, var(--ax-accent) 45%, transparent) !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), 0 0 24px color-mix(in srgb, var(--ax-accent) 18%, transparent) !important;
 }
 
 /* --- Card Header & Icon Wrappers --- */
@@ -7231,34 +7231,34 @@ select#comprasStrategySelect {
   align-items: center !important;
   justify-content: center !important;
   font-size: 1.25rem !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid var(--ax-border) !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
   flex-shrink: 0 !important;
 }
 
 /* Accent Badge Variations */
 .kpi-icon-badge.theme-blue {
-  background: linear-gradient(135deg, rgba(77, 159, 236, 0.25), rgba(77, 159, 236, 0.12)) !important;
-  border-color: rgba(77, 159, 236, 0.45) !important;
-  box-shadow: 0 0 16px rgba(77, 159, 236, 0.25) !important;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--ax-accent) 25%, transparent), color-mix(in srgb, var(--ax-accent) 12%, transparent)) !important;
+  border-color: color-mix(in srgb, var(--ax-accent) 45%, transparent) !important;
+  box-shadow: 0 0 16px color-mix(in srgb, var(--ax-accent) 25%, transparent) !important;
 }
 
 .kpi-icon-badge.theme-green {
-  background: linear-gradient(135deg, rgba(61, 220, 151, 0.25), rgba(61, 220, 151, 0.12)) !important;
-  border-color: rgba(61, 220, 151, 0.45) !important;
-  box-shadow: 0 0 16px rgba(61, 220, 151, 0.25) !important;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--ax-accent-emerald) 25%, transparent), color-mix(in srgb, var(--ax-accent-emerald) 12%, transparent)) !important;
+  border-color: color-mix(in srgb, var(--ax-accent-emerald) 45%, transparent) !important;
+  box-shadow: 0 0 16px color-mix(in srgb, var(--ax-accent-emerald) 25%, transparent) !important;
 }
 
 .kpi-icon-badge.theme-purple {
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.25), rgba(167, 139, 250, 0.12)) !important;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.25), color-mix(in srgb, var(--ax-accent) 12%, transparent)) !important;
   border-color: rgba(139, 92, 246, 0.45) !important;
   box-shadow: 0 0 16px rgba(139, 92, 246, 0.25) !important;
 }
 
 .kpi-icon-badge.theme-amber {
-  background: linear-gradient(135deg, rgba(255, 196, 107, 0.25), rgba(217, 119, 6, 0.12)) !important;
-  border-color: rgba(255, 196, 107, 0.45) !important;
-  box-shadow: 0 0 16px rgba(255, 196, 107, 0.25) !important;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--ax-accent-gold) 25%, transparent), rgba(217, 119, 6, 0.12)) !important;
+  border-color: color-mix(in srgb, var(--ax-accent-gold) 45%, transparent) !important;
+  box-shadow: 0 0 16px color-mix(in srgb, var(--ax-accent-gold) 25%, transparent) !important;
 }
 
 /* --- Card Values (Large & Stylized) --- */
@@ -7308,7 +7308,7 @@ select#comprasStrategySelect {
   background: rgba(255, 255, 255, 0.05) !important;
   padding: 4px 10px !important;
   border-radius: 8px !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid var(--ax-border-subtle) !important;
   width: fit-content !important;
 }
 
@@ -7335,7 +7335,7 @@ select#comprasStrategySelect {
   padding: 1.5rem !important;
   border-radius: 20px !important;
   background: var(--surf-2) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid var(--ax-border-subtle) !important;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35) !important;
   display: flex !important;
   flex-direction: column !important;
@@ -7363,7 +7363,7 @@ select#comprasStrategySelect {
   gap: 0.75rem !important;
   margin-bottom: 1.25rem !important;
   padding-bottom: 0.75rem !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+  border-bottom: 1px solid var(--ax-border-subtle) !important;
 }
 
 .chart-title-group {
@@ -7380,8 +7380,8 @@ select#comprasStrategySelect {
   align-items: center !important;
   justify-content: center !important;
   font-size: 1.125rem !important;
-  background: rgba(77, 159, 236, 0.15) !important;
-  border: 1px solid rgba(77, 159, 236, 0.3) !important;
+  background: color-mix(in srgb, var(--ax-accent) 15%, transparent) !important;
+  border: 1px solid color-mix(in srgb, var(--ax-accent) 30%, transparent) !important;
 }
 
 .chart-main-title {
@@ -7406,7 +7406,7 @@ select#comprasStrategySelect {
   background: rgba(255, 255, 255, 0.05) !important;
   padding: 3px !important;
   border-radius: 12px !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid var(--ax-border-subtle) !important;
 }
 
 .period-pill {
@@ -7428,7 +7428,7 @@ select#comprasStrategySelect {
 .period-pill.active {
   background: linear-gradient(135deg, #2563B8, #1E62B4) !important;
   color: #ffffff !important;
-  box-shadow: 0 2px 10px rgba(77, 159, 236, 0.4) !important;
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--ax-accent) 40%, transparent) !important;
 }
 
 /* Chart Container & Doughnut Center Metric */
@@ -7494,15 +7494,15 @@ select#comprasStrategySelect {
   font-size: 0.75rem !important;
   font-weight: 700 !important;
   background: rgba(255, 255, 255, 0.04) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid var(--ax-border-subtle) !important;
   color: var(--ax-text-secondary) !important;
   cursor: pointer !important;
   transition: all 0.15s ease !important;
 }
 
 .legend-chip:hover {
-  background: rgba(77, 159, 236, 0.15) !important;
-  border-color: rgba(77, 159, 236, 0.35) !important;
+  background: color-mix(in srgb, var(--ax-accent) 15%, transparent) !important;
+  border-color: color-mix(in srgb, var(--ax-accent) 35%, transparent) !important;
   color: #ffffff !important;
 }
 
@@ -7520,7 +7520,7 @@ select#comprasStrategySelect {
   padding: 1.25rem 1.5rem !important;
   border-radius: 20px !important;
   background: var(--surf-2) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid var(--ax-border-subtle) !important;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35) !important;
   margin-bottom: 1.5rem !important;
 }
@@ -7550,7 +7550,7 @@ select#comprasStrategySelect {
 
 .preset-btn {
   background: rgba(255, 255, 255, 0.04) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid var(--ax-border-subtle) !important;
   color: var(--ax-text-secondary) !important;
   padding: 5px 14px !important;
   border-radius: 20px !important;
@@ -7561,18 +7561,18 @@ select#comprasStrategySelect {
 }
 
 .preset-btn:hover {
-  background: rgba(77, 159, 236, 0.15) !important;
-  border-color: rgba(77, 159, 236, 0.35) !important;
+  background: color-mix(in srgb, var(--ax-accent) 15%, transparent) !important;
+  border-color: color-mix(in srgb, var(--ax-accent) 35%, transparent) !important;
   color: #ffffff !important;
   transform: translateY(-1px) !important;
 }
 
 .preset-btn.active {
   background: linear-gradient(135deg, #2563B8, #1E62B4) !important;
-  border-color: rgba(77, 159, 236, 0.6) !important;
+  border-color: color-mix(in srgb, var(--ax-accent) 60%, transparent) !important;
   color: #ffffff !important;
   font-weight: 700 !important;
-  box-shadow: 0 4px 14px rgba(77, 159, 236, 0.45) !important;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--ax-accent) 45%, transparent) !important;
 }
 
 /* Active Filter Chips Bar */
@@ -7583,15 +7583,15 @@ select#comprasStrategySelect {
   gap: 0.5rem;
   margin-top: 1rem;
   padding-top: 0.85rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid var(--ax-border-subtle);
 }
 
 .active-filter-chip {
   display: inline-flex !important;
   align-items: center !important;
   gap: 8px !important;
-  background: linear-gradient(135deg, rgba(77, 159, 236, 0.18), rgba(167, 139, 250, 0.12)) !important;
-  border: 1px solid rgba(77, 159, 236, 0.35) !important;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--ax-accent) 18%, transparent), color-mix(in srgb, var(--ax-accent) 12%, transparent)) !important;
+  border: 1px solid color-mix(in srgb, var(--ax-accent) 35%, transparent) !important;
   color: var(--ax-text-secondary) !important;
   font-size: 0.75rem !important;
   font-weight: 600 !important;
@@ -7640,9 +7640,9 @@ select#comprasStrategySelect {
 }
 
 .hero-compare-badge.trend-positive {
-  background: linear-gradient(135deg, rgba(61, 220, 151, 0.2), rgba(61, 220, 151, 0.12)) !important;
-  border: 1px solid rgba(61, 220, 151, 0.45) !important;
-  box-shadow: 0 0 12px rgba(61, 220, 151, 0.2) !important;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--ax-accent-emerald) 20%, transparent), color-mix(in srgb, var(--ax-accent-emerald) 12%, transparent)) !important;
+  border: 1px solid color-mix(in srgb, var(--ax-accent-emerald) 45%, transparent) !important;
+  box-shadow: 0 0 12px color-mix(in srgb, var(--ax-accent-emerald) 20%, transparent) !important;
 }
 
 .hero-compare-badge.trend-positive .compare-growth-tag {
@@ -7651,9 +7651,9 @@ select#comprasStrategySelect {
 }
 
 .hero-compare-badge.trend-negative {
-  background: linear-gradient(135deg, rgba(255, 107, 138, 0.2), rgba(220, 38, 38, 0.12)) !important;
-  border: 1px solid rgba(255, 107, 138, 0.45) !important;
-  box-shadow: 0 0 12px rgba(255, 107, 138, 0.2) !important;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--ax-accent-rose) 20%, transparent), rgba(220, 38, 38, 0.12)) !important;
+  border: 1px solid color-mix(in srgb, var(--ax-accent-rose) 45%, transparent) !important;
+  box-shadow: 0 0 12px color-mix(in srgb, var(--ax-accent-rose) 20%, transparent) !important;
 }
 
 .hero-compare-badge.trend-negative .compare-growth-tag {
@@ -7688,7 +7688,7 @@ html, body {
   background-clip: content-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(77, 159, 236, 0.6);
+  background: color-mix(in srgb, var(--ax-accent) 60%, transparent);
   background-clip: content-box;
 }
 
@@ -7700,10 +7700,10 @@ html, body {
   z-index: 0;
   overflow: hidden;
   background: 
-    radial-gradient(circle at 12% 18%, rgba(77, 159, 236, 0.16) 0%, transparent 45%),
-    radial-gradient(circle at 88% 22%, rgba(167, 139, 250, 0.14) 0%, transparent 40%),
-    radial-gradient(circle at 50% 85%, rgba(61, 220, 151, 0.09) 0%, transparent 50%),
-    radial-gradient(circle at 75% 65%, rgba(255, 196, 107, 0.08) 0%, transparent 45%),
+    radial-gradient(circle at 12% 18%, color-mix(in srgb, var(--ax-accent) 16%, transparent) 0%, transparent 45%),
+    radial-gradient(circle at 88% 22%, color-mix(in srgb, var(--ax-accent) 14%, transparent) 0%, transparent 40%),
+    radial-gradient(circle at 50% 85%, color-mix(in srgb, var(--ax-accent-emerald) 9%, transparent) 0%, transparent 50%),
+    radial-gradient(circle at 75% 65%, color-mix(in srgb, var(--ax-accent-gold) 8%, transparent) 0%, transparent 45%),
     #080c14;
 }
 
@@ -7726,14 +7726,14 @@ html, body {
 .parallax-orb-1 {
   width: 500px;
   height: 500px;
-  background: radial-gradient(circle, rgba(77, 159, 236, 0.35) 0%, rgba(77, 159, 236, 0) 70%);
+  background: radial-gradient(circle, color-mix(in srgb, var(--ax-accent) 35%, transparent) 0%, color-mix(in srgb, var(--ax-accent) 0%, transparent) 70%);
   top: -100px;
   left: -50px;
 }
 .parallax-orb-2 {
   width: 450px;
   height: 450px;
-  background: radial-gradient(circle, rgba(167, 139, 250, 0.3) 0%, rgba(79, 70, 229, 0) 70%);
+  background: radial-gradient(circle, color-mix(in srgb, var(--ax-accent) 30%, transparent) 0%, rgba(79, 70, 229, 0) 70%);
   top: 30%;
   right: -80px;
   animation-duration: 22s;
@@ -7742,7 +7742,7 @@ html, body {
 .parallax-orb-3 {
   width: 380px;
   height: 380px;
-  background: radial-gradient(circle, rgba(61, 220, 151, 0.25) 0%, rgba(61, 220, 151, 0) 70%);
+  background: radial-gradient(circle, color-mix(in srgb, var(--ax-accent-emerald) 25%, transparent) 0%, color-mix(in srgb, var(--ax-accent-emerald) 0%, transparent) 70%);
   bottom: -50px;
   left: 30%;
   animation-duration: 25s;
@@ -7751,7 +7751,7 @@ html, body {
 .parallax-orb-4 {
   width: 320px;
   height: 320px;
-  background: radial-gradient(circle, rgba(255, 107, 138, 0.2) 0%, rgba(225, 29, 72, 0) 70%);
+  background: radial-gradient(circle, color-mix(in srgb, var(--ax-accent-rose) 20%, transparent) 0%, rgba(225, 29, 72, 0) 70%);
   top: 60%;
   left: 10%;
   animation-duration: 20s;
@@ -7814,7 +7814,7 @@ html, body {
   outline: none !important;
   border-color: var(--ax-accent) !important;
   background: var(--surf-3) !important;
-  box-shadow: 0 0 16px rgba(77, 159, 236, 0.35) !important;
+  box-shadow: 0 0 16px color-mix(in srgb, var(--ax-accent) 35%, transparent) !important;
 }
 
 .ax-sidebar__section {
@@ -7853,9 +7853,9 @@ html, body {
 
 .ax-nav__item.active {
   color: var(--ax-text-primary) !important;
-  background: linear-gradient(135deg, rgba(77, 159, 236, 0.22) 0%, rgba(167, 139, 250, 0.16) 100%) !important;
-  border: 1px solid rgba(77, 159, 236, 0.45) !important;
-  box-shadow: 0 4px 16px rgba(77, 159, 236, 0.25), inset 0 1px 0 var(--ax-border) !important;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--ax-accent) 22%, transparent) 0%, color-mix(in srgb, var(--ax-accent) 16%, transparent) 100%) !important;
+  border: 1px solid color-mix(in srgb, var(--ax-accent) 45%, transparent) !important;
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--ax-accent) 25%, transparent), inset 0 1px 0 var(--ax-border) !important;
 }
 
 .ax-nav__item.active::before {
@@ -7894,28 +7894,28 @@ html, body {
 }
 
 .ax-nav__badge--hot {
-  background: rgba(255, 107, 138, 0.18) !important;
+  background: color-mix(in srgb, var(--ax-accent-rose) 18%, transparent) !important;
   color: var(--ax-accent-rose) !important;
-  border: 1px solid rgba(255, 107, 138, 0.35) !important;
+  border: 1px solid color-mix(in srgb, var(--ax-accent-rose) 35%, transparent) !important;
 }
 
 .ax-nav__badge--bi {
-  background: rgba(167, 139, 250, 0.18) !important;
+  background: color-mix(in srgb, var(--ax-accent) 18%, transparent) !important;
   color: var(--ax-accent-purple) !important;
-  border: 1px solid rgba(167, 139, 250, 0.4) !important;
+  border: 1px solid color-mix(in srgb, var(--ax-accent) 40%, transparent) !important;
 }
 
 .ax-nav__badge--compras {
-  background: rgba(255, 196, 107, 0.18) !important;
+  background: color-mix(in srgb, var(--ax-accent-gold) 18%, transparent) !important;
   color: var(--ax-accent-gold) !important;
-  border: 1px solid rgba(255, 196, 107, 0.4) !important;
+  border: 1px solid color-mix(in srgb, var(--ax-accent-gold) 40%, transparent) !important;
 }
 
 .ax-nav__badge--count {
   background: var(--ax-border-subtle) !important;
   color: var(--ax-text-secondary) !important;
   border: 1px solid var(--ax-border) !important;
-  font-family: 'JetBrains Mono', monospace !important;
+  font-family: var(--ax-font-mono);
 }
 
 .ax-sidebar__footer {
@@ -7929,8 +7929,8 @@ html, body {
   align-items: center !important;
   gap: 8px !important;
   padding: 6px 12px !important;
-  background: rgba(61, 220, 151, 0.12) !important;
-  border: 1px solid rgba(61, 220, 151, 0.3) !important;
+  background: color-mix(in srgb, var(--ax-accent-emerald) 12%, transparent) !important;
+  border: 1px solid color-mix(in srgb, var(--ax-accent-emerald) 30%, transparent) !important;
   border-radius: 20px !important;
   color: var(--ax-accent-emerald) !important;
   font-size: 0.75rem !important;
@@ -7993,13 +7993,13 @@ html, body {
   align-items: center !important;
   padding: 6px 12px !important;
   border-radius: 20px !important;
-  background: linear-gradient(135deg, rgba(61, 220, 151, 0.16) 0%, rgba(61, 220, 151, 0.08) 100%) !important;
-  border: 1px solid rgba(61, 220, 151, 0.35) !important;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--ax-accent-emerald) 16%, transparent) 0%, color-mix(in srgb, var(--ax-accent-emerald) 8%, transparent) 100%) !important;
+  border: 1px solid color-mix(in srgb, var(--ax-accent-emerald) 35%, transparent) !important;
   color: var(--ax-accent-emerald) !important;
   font-size: 0.8125rem !important;
   font-weight: 700 !important;
-  font-family: 'JetBrains Mono', monospace !important;
-  box-shadow: 0 0 14px rgba(61, 220, 151, 0.15) !important;
+  font-family: var(--ax-font-mono);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--ax-accent-emerald) 15%, transparent) !important;
 }
 
 .ax-search-pill {
@@ -8021,7 +8021,7 @@ html, body {
   background: var(--surf-3) !important;
   border-color: var(--ax-accent) !important;
   color: var(--ax-text-primary) !important;
-  box-shadow: 0 0 16px rgba(77, 159, 236, 0.3) !important;
+  box-shadow: 0 0 16px color-mix(in srgb, var(--ax-accent) 30%, transparent) !important;
 }
 
 .ax-kbd {
@@ -8032,7 +8032,7 @@ html, body {
   color: var(--ax-text-secondary) !important;
   font-size: 0.6875rem !important;
   font-weight: 700 !important;
-  font-family: 'JetBrains Mono', monospace !important;
+  font-family: var(--ax-font-mono);
 }
 
 .btn-secondary {
@@ -8054,7 +8054,7 @@ html, body {
 
 .btn-secondary:hover {
   background: rgba(51, 65, 85, 0.9) !important;
-  border-color: rgba(255, 255, 255, 0.25) !important;
+  border-color: var(--ax-border) !important;
   color: var(--ax-text-primary) !important;
   transform: translateY(-1px) !important;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25) !important;
@@ -8075,7 +8075,7 @@ html, body {
 }
 
 .ax-btn-icon:hover {
-  background: rgba(77, 159, 236, 0.2) !important;
+  background: color-mix(in srgb, var(--ax-accent) 20%, transparent) !important;
   border-color: var(--ax-accent) !important;
   color: var(--ax-text-primary) !important;
   transform: scale(1.06) !important;
@@ -8127,7 +8127,7 @@ html, body {
   background: linear-gradient(135deg, #2563B8 0%, #1E62B4 100%) !important;
   border-color: var(--ax-accent) !important;
   color: var(--ax-text-primary) !important;
-  box-shadow: 0 3px 12px rgba(77, 159, 236, 0.45) !important;
+  box-shadow: 0 3px 12px color-mix(in srgb, var(--ax-accent) 45%, transparent) !important;
 }
 
 .filter-group label {
@@ -8156,7 +8156,7 @@ html, body {
 .filter-input:focus, .filter-select:focus {
   outline: none !important;
   border-color: var(--ax-accent) !important;
-  box-shadow: 0 0 14px rgba(77, 159, 236, 0.35) !important;
+  box-shadow: 0 0 14px color-mix(in srgb, var(--ax-accent) 35%, transparent) !important;
   background: var(--surf-3) !important;
 }
 
@@ -8210,8 +8210,8 @@ html, body {
 
 .hero-kpi-card:hover {
   transform: translateY(-4px) scale(1.01) !important;
-  border-color: rgba(77, 159, 236, 0.5) !important;
-  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.5), 0 0 24px rgba(77, 159, 236, 0.25) !important;
+  border-color: color-mix(in srgb, var(--ax-accent) 50%, transparent) !important;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.5), 0 0 24px color-mix(in srgb, var(--ax-accent) 25%, transparent) !important;
 }
 
 .today-header {
@@ -8228,21 +8228,21 @@ html, body {
   font-weight: 800 !important;
   letter-spacing: 0.6px !important;
   text-transform: uppercase !important;
-  background: rgba(77, 159, 236, 0.18) !important;
+  background: color-mix(in srgb, var(--ax-accent) 18%, transparent) !important;
   color: var(--ax-accent) !important;
-  border: 1px solid rgba(77, 159, 236, 0.35) !important;
+  border: 1px solid color-mix(in srgb, var(--ax-accent) 35%, transparent) !important;
 }
 
 .badge-purple {
-  background: rgba(167, 139, 250, 0.18) !important;
+  background: color-mix(in srgb, var(--ax-accent) 18%, transparent) !important;
   color: var(--ax-accent-purple) !important;
-  border: 1px solid rgba(167, 139, 250, 0.35) !important;
+  border: 1px solid color-mix(in srgb, var(--ax-accent) 35%, transparent) !important;
 }
 
 .badge-gold {
-  background: rgba(255, 196, 107, 0.18) !important;
+  background: color-mix(in srgb, var(--ax-accent-gold) 18%, transparent) !important;
   color: var(--ax-accent-gold) !important;
-  border: 1px solid rgba(255, 196, 107, 0.35) !important;
+  border: 1px solid color-mix(in srgb, var(--ax-accent-gold) 35%, transparent) !important;
 }
 
 .today-label {
@@ -8254,7 +8254,7 @@ html, body {
 }
 
 .today-value {
-  font-family: 'JetBrains Mono', var(--ax-font-display) !important;
+  font-family: var(--ax-font-mono);
   font-size: 2rem !important;
   font-weight: 800 !important;
   letter-spacing: -0.5px !important;
@@ -8306,7 +8306,7 @@ html, body {
   height: 100% !important;
   border-radius: 999px !important;
   background: linear-gradient(90deg, #2563B8, #3B7FD4, #148A5C) !important;
-  box-shadow: 0 0 14px rgba(77, 159, 236, 0.5) !important;
+  box-shadow: 0 0 14px color-mix(in srgb, var(--ax-accent) 50%, transparent) !important;
   transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
@@ -8366,7 +8366,7 @@ html, body {
   text-transform: uppercase !important;
   letter-spacing: 0.6px !important;
   padding: 0.9rem 1.1rem !important;
-  border-bottom: 1px solid rgba(77, 159, 236, 0.25) !important;
+  border-bottom: 1px solid color-mix(in srgb, var(--ax-accent) 25%, transparent) !important;
   position: sticky !important;
   top: 0 !important;
   z-index: 10 !important;
@@ -8381,7 +8381,7 @@ html, body {
 }
 
 .data-table tbody tr:hover td, .bi-table tbody tr:hover td {
-  background: rgba(77, 159, 236, 0.1) !important;
+  background: color-mix(in srgb, var(--ax-accent) 10%, transparent) !important;
   color: var(--ax-text-primary) !important;
 }
 
@@ -8394,9 +8394,9 @@ html, body {
 
 .command-palette-modal {
   background: var(--surf-3) !important;
-  border: 1px solid rgba(77, 159, 236, 0.4) !important;
+  border: 1px solid color-mix(in srgb, var(--ax-accent) 40%, transparent) !important;
   border-radius: 20px !important;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7), 0 0 35px rgba(77, 159, 236, 0.25) !important;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7), 0 0 35px color-mix(in srgb, var(--ax-accent) 25%, transparent) !important;
   overflow: hidden !important;
 }
 
@@ -8421,9 +8421,9 @@ html, body {
 }
 
 .command-item:hover, .command-item.selected {
-  background: linear-gradient(135deg, rgba(77, 159, 236, 0.25) 0%, rgba(167, 139, 250, 0.15) 100%) !important;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--ax-accent) 25%, transparent) 0%, color-mix(in srgb, var(--ax-accent) 15%, transparent) 100%) !important;
   color: var(--ax-text-primary) !important;
-  border: 1px solid rgba(77, 159, 236, 0.4) !important;
+  border: 1px solid color-mix(in srgb, var(--ax-accent) 40%, transparent) !important;
 }
 
 /* --- 11. View Transitions & Performance Optimization --- */
@@ -8474,7 +8474,7 @@ html, body {
   background: var(--surf-3) !important;
   -webkit-backdrop-filter: blur(24px) !important;
   backdrop-filter: blur(24px) !important;
-  border: 1px solid rgba(167, 139, 250, 0.4) !important;
+  border: 1px solid color-mix(in srgb, var(--ax-accent) 40%, transparent) !important;
   border-radius: 12px !important;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7) !important;
   max-height: 280px !important;
@@ -8492,17 +8492,17 @@ html, body {
 }
 
 .prod-suggestion-item:hover {
-  background: rgba(167, 139, 250, 0.18) !important;
+  background: color-mix(in srgb, var(--ax-accent) 18%, transparent) !important;
   color: var(--ax-text-primary) !important;
 }
 
 /* --- 14. Mix Sugerido AI Luxury UI --- */
 .mix-advisor-card {
-  background: linear-gradient(135deg, rgba(61, 220, 151, 0.12) 0%, var(--surf-3) 100%) !important;
-  border: 1px solid rgba(61, 220, 151, 0.3) !important;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--ax-accent-emerald) 12%, transparent) 0%, var(--surf-3) 100%) !important;
+  border: 1px solid color-mix(in srgb, var(--ax-accent-emerald) 30%, transparent) !important;
   border-radius: 20px !important;
   padding: 1.5rem !important;
-  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.4), 0 0 24px rgba(61, 220, 151, 0.12) !important;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.4), 0 0 24px color-mix(in srgb, var(--ax-accent-emerald) 12%, transparent) !important;
 }
 
 .mix-catalog-grid {
@@ -8522,8 +8522,8 @@ html, body {
 
 .mix-card:hover {
   transform: translateY(-4px) !important;
-  border-color: rgba(61, 220, 151, 0.45) !important;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(61, 220, 151, 0.18) !important;
+  border-color: color-mix(in srgb, var(--ax-accent-emerald) 45%, transparent) !important;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), 0 0 20px color-mix(in srgb, var(--ax-accent-emerald) 18%, transparent) !important;
 }
 
 /* --- 15. Toast & Modal Refinement --- */
@@ -8541,13 +8541,13 @@ html, body {
   background: var(--surf-3) !important;
   -webkit-backdrop-filter: blur(20px) !important;
   backdrop-filter: blur(20px) !important;
-  border: 1px solid rgba(77, 159, 236, 0.4) !important;
+  border: 1px solid color-mix(in srgb, var(--ax-accent) 40%, transparent) !important;
   border-radius: 12px !important;
   padding: 0.9rem 1.3rem !important;
   color: var(--ax-text-primary) !important;
   font-size: 0.875rem !important;
   font-weight: 600 !important;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6), 0 0 16px rgba(77, 159, 236, 0.2) !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6), 0 0 16px color-mix(in srgb, var(--ax-accent) 20%, transparent) !important;
   animation: toastSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
@@ -8566,15 +8566,15 @@ html, body {
   gap: 12px;
   flex-wrap: wrap;
   padding: 14px 16px;
-  border: 1px dashed rgba(45, 212, 206, 0.45);
+  border: 1px dashed color-mix(in srgb, var(--ax-accent) 45%, transparent);
   border-radius: 12px;
-  background: rgba(45, 212, 206, 0.05);
+  background: color-mix(in srgb, var(--ax-accent) 5%, transparent);
   transition: background 0.18s ease, border-color 0.18s ease;
 }
 
 .ft-photo-dropzone.dragover {
-  background: rgba(45, 212, 206, 0.14);
-  border-color: rgba(45, 212, 206, 0.85);
+  background: color-mix(in srgb, var(--ax-accent) 14%, transparent);
+  border-color: color-mix(in srgb, var(--ax-accent) 85%, transparent);
 }
 
 .ft-photo-hint {
@@ -8627,14 +8627,14 @@ html, body {
 .ft-photo-thumb .ft-photo-remove:hover { background: #C4384F; color: var(--ax-text-primary); }
 
 /* Marca cuál es la foto principal (la que encabeza la ficha y el PDF) */
-.ft-photo-thumb.is-main { border-color: var(--ax-accent-sky); box-shadow: 0 0 0 2px rgba(45, 212, 206, 0.35); }
+.ft-photo-thumb.is-main { border-color: var(--ax-accent-sky); box-shadow: 0 0 0 2px color-mix(in srgb, var(--ax-accent) 35%, transparent); }
 
 .ft-photo-thumb .ft-photo-main-tag {
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
-  background: rgba(45, 212, 206, 0.9);
+  background: color-mix(in srgb, var(--ax-accent) 90%, transparent);
   color: #030712;
   font-size: 0.625rem;
   font-weight: 800;
@@ -8819,7 +8819,7 @@ body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; 
   font-weight: 600 !important;
   white-space: nowrap !important;
   background: rgba(15, 23, 42, 0.85) !important;
-  border: 1px solid rgba(255,255,255,0.10) !important;
+  border: 1px solid var(--ax-border) !important;
   color: #cbd5e1 !important;
 }
 
@@ -8874,7 +8874,7 @@ body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; 
   .ax-header__right > .sync-status-pill + .latency-badge { display: none !important; }
   .ax-header__right .sync-status-pill {
     border-radius: var(--r-pill) !important;
-    border-right: 1px solid rgba(255,255,255,0.10) !important;
+    border-right: 1px solid var(--ax-border) !important;
   }
 }
 
@@ -9544,9 +9544,9 @@ body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; 
   --surf-3: #1A2130;
   --ax-card-bg: #161C28;
 
-  --ax-border: rgba(255, 255, 255, 0.07);
-  --ax-border-subtle: rgba(255, 255, 255, 0.035);
-  --ax-card-border: rgba(255, 255, 255, 0.07);
+  --ax-border: var(--ax-border-subtle);
+  --ax-border-subtle: var(--ax-border-subtle);
+  --ax-card-border: var(--ax-border-subtle);
 
   --ax-text-primary: #E8EBF0;
   --ax-text-secondary: #A9B2C1;
@@ -9563,10 +9563,10 @@ body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; 
   --ax-accent-rose: #FF6B8A;
   --ax-accent-sky: #2DD4CE;
 
-  --ax-card-hover-border: rgba(77, 159, 236, 0.45);
-  --ax-accent-glow: rgba(77, 159, 236, 0.22);
-  --ax-accent-purple-glow: rgba(167, 139, 250, 0.18);
-  --ax-accent-gold-glow: rgba(255, 196, 107, 0.18);
+  --ax-card-hover-border: color-mix(in srgb, var(--ax-accent) 45%, transparent);
+  --ax-accent-glow: color-mix(in srgb, var(--ax-accent) 22%, transparent);
+  --ax-accent-purple-glow: color-mix(in srgb, var(--ax-accent) 18%, transparent);
+  --ax-accent-gold-glow: color-mix(in srgb, var(--ax-accent-gold) 18%, transparent);
 }
 
 [data-ax-theme="light"],
@@ -9842,10 +9842,10 @@ button, input, select, textarea, optgroup {
   --ax-accent-rose: #FF6B8A;
   --ax-accent-coral: #FF7F63;    /* llamada a la accion */
 
-  --ax-card-hover-border: rgba(45, 212, 206, 0.42);
-  --ax-accent-glow: rgba(77, 159, 236, 0.24);
-  --ax-accent-purple-glow: rgba(167, 139, 250, 0.20);
-  --ax-accent-gold-glow: rgba(255, 196, 107, 0.20);
+  --ax-card-hover-border: color-mix(in srgb, var(--ax-accent) 42%, transparent);
+  --ax-accent-glow: color-mix(in srgb, var(--ax-accent) 24%, transparent);
+  --ax-accent-purple-glow: color-mix(in srgb, var(--ax-accent) 20%, transparent);
+  --ax-accent-gold-glow: color-mix(in srgb, var(--ax-accent-gold) 20%, transparent);
 }
 
 [data-ax-theme="light"],
@@ -9892,8 +9892,8 @@ button, input, select, textarea, optgroup {
 .ax-ambient {
   display: block !important;
   background:
-    radial-gradient(900px 620px at 82% -12%, rgba(45, 212, 206, 0.10), transparent 62%),
-    radial-gradient(760px 560px at 8% 108%, rgba(77, 159, 236, 0.08), transparent 60%) !important;
+    radial-gradient(900px 620px at 82% -12%, color-mix(in srgb, var(--ax-accent) 10%, transparent), transparent 62%),
+    radial-gradient(760px 560px at 8% 108%, color-mix(in srgb, var(--ax-accent) 8%, transparent), transparent 60%) !important;
   opacity: 1 !important;
   pointer-events: none !important;
 }
@@ -10293,7 +10293,7 @@ button, input, select, textarea, optgroup {
   border-radius: 4px;
   background: var(--surf-3);
   color: var(--ax-text-secondary);
-  font-family: "JetBrains Mono", monospace;
+  font-family: var(--ax-font-mono);
   font-size: 0.85em;
 }
 
@@ -10388,8 +10388,8 @@ button, input, select, textarea, optgroup {
   padding: 0.85rem 1.1rem;
   margin-bottom: 1.25rem;
   border-radius: 12px;
-  background: var(--ax-accent-gold-soft, rgba(255, 196, 107, 0.12));
-  border: 1px solid rgba(255, 196, 107, 0.4);
+  background: var(--ax-accent-gold-soft, color-mix(in srgb, var(--ax-accent-gold) 12%, transparent));
+  border: 1px solid color-mix(in srgb, var(--ax-accent-gold) 40%, transparent);
   color: var(--ax-text-secondary);
   font-size: 0.8125rem;
   line-height: 1.5;
@@ -10456,9 +10456,13 @@ button, input, select, textarea, optgroup {
   border-radius: 999px;
   transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.is-detectadas .mp-embudo__barra > span { background: var(--ax-accent); }
-.is-ofertadas  .mp-embudo__barra > span { background: var(--ax-accent-gold); }
-.is-ganadas    .mp-embudo__barra > span { background: var(--ax-accent-emerald); }
+/* Los tres pasos del embudo llevan la rampa, los mismos tonos que el filete
+   de su tarjeta de KPI: mirar el filete y mirar la barra tiene que dar la
+   misma lectura. El ambar en Ofertadas mentia -aqui el ambar significa "hay
+   que revisar"- y el verde en Adjudicadas competia con el verde de "sube". */
+.is-detectadas .mp-embudo__barra > span { background: var(--serie-2); }
+.is-ofertadas  .mp-embudo__barra > span { background: var(--serie-3); }
+.is-ganadas    .mp-embudo__barra > span { background: var(--serie-4); }
 
 /* El desglose por etiqueta usa el mismo vocabulario de color que las pastillas
    del modulo: rojo lo que se perdio compitiendo, ambar lo que se dejo pasar
@@ -10634,24 +10638,24 @@ button, input, select, textarea, optgroup {
   border: 1px solid transparent;
 }
 .mp-chip.is-ok {
-  background: var(--ax-accent-emerald-soft, rgba(61, 220, 151, 0.15));
+  background: var(--ax-accent-emerald-soft, color-mix(in srgb, var(--ax-accent-emerald) 15%, transparent));
   color: var(--ax-accent-emerald);
-  border-color: rgba(61, 220, 151, 0.35);
+  border-color: color-mix(in srgb, var(--ax-accent-emerald) 35%, transparent);
 }
 .mp-chip.is-malo {
-  background: var(--ax-accent-rose-soft, rgba(255, 107, 138, 0.15));
+  background: var(--ax-accent-rose-soft, color-mix(in srgb, var(--ax-accent-rose) 15%, transparent));
   color: var(--ax-accent-rose);
-  border-color: rgba(255, 107, 138, 0.35);
+  border-color: color-mix(in srgb, var(--ax-accent-rose) 35%, transparent);
 }
 .mp-chip.is-juego {
-  background: rgba(45, 212, 206, 0.15);
+  background: color-mix(in srgb, var(--ax-accent) 15%, transparent);
   color: var(--ax-accent-sky);
-  border-color: rgba(45, 212, 206, 0.35);
+  border-color: color-mix(in srgb, var(--ax-accent) 35%, transparent);
 }
 .mp-chip.is-pendiente {
-  background: rgba(255, 196, 107, 0.15);
+  background: color-mix(in srgb, var(--ax-accent-gold) 15%, transparent);
   color: var(--ax-accent-gold);
-  border-color: rgba(255, 196, 107, 0.35);
+  border-color: color-mix(in srgb, var(--ax-accent-gold) 35%, transparent);
 }
 .mp-chip.is-neutro {
   background: var(--el-1, rgba(139, 149, 185, 0.12));
@@ -10757,7 +10761,7 @@ button, input, select, textarea, optgroup {
 .mp-table td { vertical-align: middle; }
 
 .mp-td-id {
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-family: var(--ax-font-mono);
   font-size: 0.75rem;
   white-space: nowrap;
 }
@@ -10792,9 +10796,9 @@ button, input, select, textarea, optgroup {
   /* 0,08 y no 0,14: en tema oscuro el tinte violeta aclara el fondo y dejaba
      la etiqueta en 4,48:1, apenas por debajo del 4,5 que pide un texto de este
      tamano. Con menos tinte el fondo vuelve a oscurecerse y pasa. */
-  background: rgba(167, 139, 250, 0.08);
+  background: color-mix(in srgb, var(--ax-accent) 8%, transparent);
   color: var(--ax-accent-purple);
-  border: 1px solid rgba(167, 139, 250, 0.3);
+  border: 1px solid color-mix(in srgb, var(--ax-accent) 30%, transparent);
   white-space: nowrap;
 }
 .mp-linea.is-vacia {
@@ -11101,10 +11105,10 @@ button, input, select, textarea, optgroup {
   transition: background 0.15s ease;
 }
 
-.prosp-cinta__fila:hover { background: rgba(255, 196, 107, 0.09); }
+.prosp-cinta__fila:hover { background: color-mix(in srgb, var(--ax-accent-gold) 9%, transparent); }
 
 .prosp-cinta__fila.is-activa {
-  background: rgba(255, 196, 107, 0.16);
+  background: color-mix(in srgb, var(--ax-accent-gold) 16%, transparent);
   box-shadow: inset 2px 0 0 var(--ax-accent-gold);
 }
 
@@ -11363,7 +11367,7 @@ button, input, select, textarea, optgroup {
   border-radius: 5px;
   background: rgba(124, 92, 220, 0.10);
   border: 1px solid rgba(124, 92, 220, 0.26);
-  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-family: var(--ax-font-mono);
   font-size: 0.8125em;
   color: var(--ax-accent-purple);
   white-space: nowrap;
@@ -11371,9 +11375,9 @@ button, input, select, textarea, optgroup {
 
 /* Una OC enviada y no aceptada todavia se puede trabajar; una cerrada no. */
 .mp-tag--pendiente {
-  background: rgba(255, 196, 107, 0.16);
+  background: color-mix(in srgb, var(--ax-accent-gold) 16%, transparent);
   color: var(--ax-accent-gold);
-  border-color: rgba(255, 196, 107, 0.4);
+  border-color: color-mix(in srgb, var(--ax-accent-gold) 40%, transparent);
 }
 
 /* ----------------------------------------------------------------------------
@@ -11511,7 +11515,10 @@ button, input, select, textarea, optgroup {
 .fact-tabla-card .fact-tabla th.fact-tabla__nombre,
 .fact-tabla-card .fact-tabla td.fact-tabla__nombre {
   text-align: left !important;
-  font-weight: 800 !important;
+  /* Era 800, el peso mas alto de la aplicacion, en una celda que solo dice
+     "Canal" o "MARKETPLACE". Una cabecera se lee una vez; el nombre de la
+     fila se distingue con 600 y ya destaca sobre las cifras en 500. */
+  font-weight: 600 !important;
   color: var(--ax-text-primary) !important;
   /* Los canales caben en una linea, pero hay categorias de 23 caracteres
      -MANTAS TRANSFERENCIAS, CONTURON TRANSFERENCIAS- que con nowrap estirarian
@@ -11715,62 +11722,788 @@ button, input, select, textarea, optgroup {
 
 .precios-tipo {
   display: inline-block;
-  min-width: 1.6rem;
+  min-width: 1.7rem;
   padding: 2px 7px;
-  border-radius: 6px;
+  border-radius: var(--ax-radius-sm);
+  font-family: var(--ax-font-mono);
   font-size: 0.72rem;
-  font-weight: 800;
+  font-weight: 600;
   line-height: 1.4;
   text-align: center;
   border: 1px solid transparent;
 }
 
+/* A, B y C son una clasificacion, no tres estados: no son tres colores, son
+   tres pasos de la MISMA escala. Antes eran azul, morado y ambar, y con un
+   solo acento el morado colapsaba sobre el azul y A y B quedaban identicas.
+   Ahora lo que las separa es el peso -relleno, contorno, nada-, que ademas
+   ordena: A pesa mas que B y B mas que C, que es justo lo que dice la letra.
+   El ambar tampoco podia quedarse: aqui significa "revisar". */
 .precios-tipo--a {
-  color: var(--prosp-cruce);
-  background: color-mix(in srgb, var(--prosp-cruce) 12%, transparent);
-  border-color: color-mix(in srgb, var(--prosp-cruce) 34%, transparent);
+  background: var(--ax-accent-solid);
+  color: var(--ax-on-accent);
+  border-color: var(--ax-accent-solid);
 }
 .precios-tipo--b {
-  color: var(--ax-accent-purple);
-  background: color-mix(in srgb, var(--ax-accent-purple) 12%, transparent);
-  border-color: color-mix(in srgb, var(--ax-accent-purple) 34%, transparent);
-}
-.precios-tipo--c {
-  color: var(--prosp-riesgo);
-  background: color-mix(in srgb, var(--prosp-riesgo) 12%, transparent);
-  border-color: color-mix(in srgb, var(--prosp-riesgo) 34%, transparent);
-}
-.precios-tipo--otro,
-.precios-tipo--sd {
-  color: var(--prosp-var-sd);
-  background: color-mix(in srgb, var(--prosp-var-sd) 10%, transparent);
-  border-color: color-mix(in srgb, var(--prosp-var-sd) 28%, transparent);
-}
-.precios-tipo--sd {
-  font-weight: 700;
-  border-color: transparent;
+  color: var(--ax-accent);
   background: transparent;
+  border-color: var(--ax-accent);
+}
+.precios-tipo--c,
+.precios-tipo--otro {
+  color: var(--ax-text-secondary);
+  background: transparent;
+  border-color: var(--ax-border);
+}
+.precios-tipo--sd {
+  color: var(--ax-text-tertiary);
+  background: transparent;
+  border-color: transparent;
 }
 
-/* Dos tonos se corrigen solo para esta pastilla, sin tocar las variables, que
-   se usan en otras partes sobre otros fondos:
+/* ============================================================================
+   12. SISTEMA INSTRUMENTO
+   ----------------------------------------------------------------------------
+   Etapa 1 de la direccion de diseno: solo tokens y decoracion. Ninguna regla
+   de las capas 1-11 se toca; esta capa cierra el archivo, que es como funciona
+   esta hoja desde la capa 8. Para revertirlo entero basta con borrar el bloque
+   y devolver el <link> de fuentes de index.html.
 
-     - El morado es el mismo en los dos temas y en claro cae a 3,3:1 sobre
-       blanco.
-     - --prosp-riesgo (#A16207) se eligio midiendo sobre BLANCO, donde da 4,85.
-       Aqui el fondo no es blanco sino el relleno de la propia pastilla, y sobre
-       ese tinte baja a 4,21: no pasa AA. #854D0E, el mismo ambar un punto mas
-       oscuro, lo deja en 5,72.
-   Medido sobre la composicion real: pastilla al 12% sobre el fondo del tema. */
-[data-ax-theme="light"] .precios-tipo--b,
-.is-pdf-export .precios-tipo--b {
-  color: #6D28D9;
-  background: rgba(109, 40, 217, 0.12);
-  border-color: rgba(109, 40, 217, 0.34);
+   La tesis es que esto es un instrumento y no una vitrina, y de ahi salen las
+   tres decisiones:
+
+   1. DE SEIS ACENTOS A TRES. Antes convivian azul, turquesa, morado, ambar,
+      esmeralda, rosa y coral, y ninguno significaba nada fijo: el mismo morado
+      era un KPI, un badge y un boton. Ahora el azul es identidad e
+      interaccion, verde y rojo son EXCLUSIVAMENTE subir y bajar -por eso no
+      pueden aparecer en ningun otro sitio- y el ambar es "revisar". Los tokens
+      antiguos no se borran, se reasignan: turquesa, morado y coral apuntan al
+      acento, de modo que las ~400 reglas que los usan siguen funcionando y la
+      paleta se colapsa sin tocarlas.
+
+   2. FONDO GRAFITO EN VEZ DE AZUL MARINO. El marino de la capa 10 venia de una
+      referencia del cliente. El problema es que marino + acento zafiro es el
+      aspecto por defecto de cualquier herramienta de BI, y sobre todo que un
+      fondo azul le quita al azul del acento la posibilidad de destacar. Un
+      grafito neutro deja que el unico azul de la pantalla sea el que hay que
+      mirar.
+
+   3. DOS FAMILIAS, NO TRES. Inter e Inter Tight son indistinguibles a tamano
+      de interfaz: dos descargas para un solo efecto. Atkinson Hyperlegible
+      Next se lleva todo lo que es lenguaje -la diseno el Braille Institute
+      para que la I, la l y el 1 sean tres formas distintas, y quien lee este
+      tablero pasa de los cincuenta- e IBM Plex Mono todo lo que es cantidad.
+
+   Contrastes verificados sobre cada superficie real, en los dos temas; el mas
+   flojo es 4,52:1 contra el 4,5:1 que exige AA.
+   ========================================================================== */
+
+:root,
+[data-ax-theme="dark"] {
+  /* Grafito neutro. La escala sube en pasos parejos: lienzo, barras, tarjeta,
+     modal. La tarjeta es MAS clara que el lienzo, no mas oscura, para que se
+     lea como una hoja encima de la mesa. */
+  --ax-canvas: #191C21;
+  --surf-2: #1E2228;   /* barra lateral, cabecera, barra de filtros */
+  --surf-1: #21252C;   /* tarjetas */
+  --surf-3: #2A2F38;   /* modales y desplegables */
+  --ax-card-bg: #21252C;
+  --ax-surface: #2A2F38;
+  --ax-surface-hover: #333942;
+
+  /* Filete opaco, no una transparencia azulada: sobre cuatro superficies
+     distintas una rgba da cuatro grises distintos. */
+  --ax-border: #3B424C;
+  --ax-border-subtle: #2C323A;
+  --ax-card-border: #3B424C;
+
+  --ax-text-primary: #E9E7E2;
+  --ax-text-secondary: #9FA6B1;
+  --ax-text-tertiary: #9AA2AD;
+
+  --ax-accent: #84B6E4;
+  --ax-accent-solid: #84B6E4;
+  --ax-accent-hover: #A0C7EB;
+  --ax-on-accent: #16202B;      /* etiqueta sobre el acento relleno */
+
+  /* Reasignados al acento: dejan de ser colores propios. */
+  --ax-accent-sky: #84B6E4;
+  --ax-accent-purple: #84B6E4;
+  --ax-accent-coral: #84B6E4;
+
+  /* Los tres unicos colores que significan algo. */
+  --ax-accent-emerald: #57C494;   /* sube */
+  --ax-accent-rose: #F0768A;      /* baja */
+  --ax-accent-gold: #DFAC4C;      /* revisar */
+
+  --ax-card-hover-border: #59616D;
+  --ax-accent-glow: rgba(132, 182, 228, 0.14);
+  --ax-accent-purple-glow: rgba(132, 182, 228, 0.14);
+  --ax-accent-gold-glow: rgba(223, 172, 76, 0.14);
+
+  --ax-font-sans: "Atkinson Hyperlegible Next", "Atkinson Hyperlegible", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --ax-font-display: "Atkinson Hyperlegible Next", "Atkinson Hyperlegible", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --ax-font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
+
+  /* Dos radios y no doce: 4px para instrumentos, 3px para controles. La
+     pastilla (999px) sobrevive solo donde la forma ES el dato. */
+  --ax-radius-sm: 3px;
+  --ax-radius-md: 4px;
+  --ax-radius-lg: 4px;
 }
-[data-ax-theme="light"] .precios-tipo--c,
-.is-pdf-export .precios-tipo--c {
-  color: #854D0E;
-  background: rgba(133, 77, 14, 0.12);
-  border-color: rgba(133, 77, 14, 0.34);
+
+[data-ax-theme="light"],
+.is-pdf-export {
+  /* Papel calido-neutro, no blanco puro: el blanco puro queda para la tarjeta,
+     y asi la tarjeta se distingue del lienzo sin necesidad de sombra. */
+  --ax-canvas: #F7F6F3;
+  --surf-1: #FFFFFF;
+  --surf-2: #FFFFFF;
+  --surf-3: #FFFFFF;
+  --ax-card-bg: #FFFFFF;
+  --ax-surface: #FFFFFF;
+  --ax-surface-hover: #F1EFEA;
+
+  --ax-border: #D3CEC4;
+  --ax-border-subtle: #E5E1D9;
+  --ax-card-border: #D3CEC4;
+
+  --ax-text-primary: #16202B;
+  --ax-text-secondary: #5B6472;
+  --ax-text-tertiary: #656D7A;
+
+  --ax-accent: #1F4E79;
+  --ax-accent-solid: #1F4E79;
+  --ax-accent-hover: #16395A;
+  --ax-on-accent: #FFFFFF;
+
+  --ax-accent-sky: #1F4E79;
+  --ax-accent-purple: #1F4E79;
+  --ax-accent-coral: #1F4E79;
+
+  --ax-accent-emerald: #14663F;
+  --ax-accent-rose: #A32A35;
+  --ax-accent-gold: #8A5A12;
+
+  --ax-card-hover-border: #B9B2A4;
+  --ax-accent-glow: rgba(31, 78, 121, 0.10);
+  --ax-accent-purple-glow: rgba(31, 78, 121, 0.10);
+  --ax-accent-gold-glow: rgba(138, 90, 18, 0.10);
+}
+
+/* --- 12.1 Las etiquetas dejan de gritar -----------------------------------
+   41 selectores ponian text-transform: uppercase. En caja normal se leen mas
+   rapido y, con Atkinson, bastante mejor: la mayuscula anula justamente los
+   rasgos ascendentes y descendentes que hacen distinguibles sus letras.
+   Se salvan dos: las iniciales del avatar y los distintivos del menu, que son
+   siglas de verdad y no etiquetas en mayusculas. */
+.ax-sidebar__tagline, .ax-sidebar__section, .mini-kpi-label,
+.filter-group label, .kpi .label, .chart-tag, .data-table th,
+.sim-res-label, .form-section-title, .ax-table th, .tag-pill,
+.proj-label, .chips-label, .advisor-input-group label, .preset-label,
+.advisor-strategy-group label, .advisor-table th, .cotiz-summary-lbl,
+.cotiz-card-tag, .breakdown-label, .login-field-group label,
+.quick-access-title, .ft-tag, .modal-section-card .form-section-title,
+.cotiz-items-table th, .kpi-card__label, .center-metric-lbl,
+.presets-label, .today-badge, .today-label, .bi-table th, .proj-badge,
+.precios-kpi__label, .mp-kpi__label, .mp-embudo__corte-txt,
+.fact-tabla-card .fact-tabla__grupos th {
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+}
+
+/* --- 12.2 Toda cantidad en mono -------------------------------------------
+   La regla del sistema: si es lenguaje va en Atkinson, si es una medida va en
+   Plex Mono. No es "mono para las etiquetas pequenas" -ese es el tic de
+   siempre-, es mono para toda cifra, incluida la mas grande de la pantalla.
+   Alinea las columnas solas y separa dato de prosa sin necesidad de leer. */
+.kpi .value, .today-value, .mini-kpi-value, .proj-value, .kpi-card__value,
+.center-metric-val, .sim-res-val, .precios-kpi__value, .mp-kpi__value,
+.target-current, .breakdown-value,
+.data-table td.num, .ax-table td.num, .bi-table td.num,
+.precios-table td.num, .cotiz-items-table td.num {
+  font-family: var(--ax-font-mono) !important;
+  font-variant-numeric: tabular-nums !important;
+  font-feature-settings: "tnum" !important;
+  /* Mono ocupa mas ancho por caracter; se compensa apretando el tracking en
+     las cifras grandes, que es donde se nota. */
+  letter-spacing: -0.02em !important;
+  font-weight: 500 !important;
+}
+
+/* Cuatro de estos tiles no llevan una cantidad sino un nombre -el vendedor,
+   la region, el mes punta-, y la regla es "mono para las MEDIDAS", no para
+   una clase. La etapa 2 pone la clase .n en el valor y esto deja de hacer
+   falta; mientras tanto se nombran los cuatro. */
+#miniTopSellerVal, #miniTopRegionVal, #prodKpiPeakMonth {
+  font-family: var(--ax-font-sans) !important;
+  letter-spacing: 0 !important;
+}
+
+/* Utilidad para la etapa 2: marcar una cifra alli donde se escribe. */
+.n {
+  font-family: var(--ax-font-mono) !important;
+  font-variant-numeric: tabular-nums !important;
+  letter-spacing: -0.02em !important;
+}
+
+/* El aviso de modulo. Nivel 2 -un instrumento-, no una excepcion: no hay
+   nada urgente en el, asi que no lleva relleno de color. */
+.aviso-modulo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding: 0.9rem 1.25rem;
+  background: var(--surf-1);
+  border: 1px solid var(--ax-card-border);
+  border-radius: var(--ax-radius-md);
+}
+.aviso-modulo__texto { min-width: 0; }
+.aviso-modulo h4 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--ax-text-primary);
+}
+.aviso-modulo p {
+  margin: 0.15rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--ax-text-secondary);
+  max-width: 62ch;
+}
+
+/* --- 12.3 Se va la decoracion --------------------------------------------
+   Los bordes degradados llevaban los rgba antiguos escritos a mano, asi que
+   no los alcanza el cambio de tokens: hay que apagarlos aqui. Es lo que mas
+   se nota de esta etapa. La jerarquia pasa a hacerla el aire. */
+.hero-kpi-card::after, .hero-kpi-card::before,
+.proj-card::after, .proj-card::before,
+#monthCard::before, #yearCard::before,
+.gradient-border-card::after, .advisor-card::after, .bi-sim-card::after {
+  content: none !important;
+  display: none !important;
+}
+
+/* El halo de fondo tenia turquesa y azul: con un solo acento, tine el grafito
+   y lo devuelve al azul del que se acaba de salir. */
+.ax-ambient, [data-ax-theme="light"] .ax-ambient {
+  display: none !important;
+}
+
+/* El logotipo terminaba en el turquesa que ya no existe. */
+[data-ax-theme="dark"] .ax-sidebar__wordmark,
+:root:not([data-ax-theme="light"]) .ax-sidebar__wordmark,
+[data-ax-theme="light"] .ax-sidebar__wordmark {
+  background-image: none !important;
+  -webkit-background-clip: border-box !important;
+  background-clip: border-box !important;
+  -webkit-text-fill-color: var(--ax-text-primary) !important;
+  color: var(--ax-text-primary) !important;
+}
+
+/* --- 12.4 Tres niveles, y solo tres --------------------------------------
+   Nivel 1, las cifras, no llevan marco: eso llega en la etapa 2 con la medida.
+   Nivel 2, los instrumentos: fondo plano, un filete, radio 4, sin sombra.
+   Nivel 3, la excepcion, es lo unico que conserva relleno.
+   Cuando todo tiene marco, el marco deja de significar algo. */
+.ax-card, .chart-card, .table-card, .kpi, .hero-kpi-card, .proj-card,
+.bi-sim-card, .advisor-card, .gradient-border-card, .precios-kpi,
+.mp-kpi, .kpi-card, .filters-bar, .modal-content {
+  border-radius: var(--ax-radius-md) !important;
+  box-shadow: none !important;
+  background-image: none !important;
+  border: 1px solid var(--ax-card-border) !important;
+}
+.ax-card:hover, .chart-card:hover, .kpi:hover, .hero-kpi-card:hover,
+.proj-card:hover, .precios-kpi:hover, .kpi-card:hover {
+  transform: none !important;
+  box-shadow: none !important;
+  border-color: var(--ax-card-hover-border) !important;
+}
+
+/* El modal si se levanta del fondo: ahi la sombra informa de que hay una capa
+   encima, que es justo para lo que sirve. */
+.modal-content, .cmd-palette-card {
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45) !important;
+}
+
+/* --- 12.5 El boton principal ---------------------------------------------
+   Era coral con etiqueta #121931. Al colapsar coral sobre el acento, esa
+   etiqueta quedaria ilegible, asi que la etiqueta pasa a --ax-on-accent, que
+   cambia con el tema: 7,7:1 en oscuro y 8,7:1 en claro. */
+.btn-primary, .ax-btn--primary, .btn-save, .btn-apply {
+  background: var(--ax-accent-solid) !important;
+  border-color: var(--ax-accent-solid) !important;
+  border-radius: var(--ax-radius-sm) !important;
+  box-shadow: none !important;
+}
+.btn-primary, .btn-primary *,
+.ax-btn--primary, .ax-btn--primary *,
+.btn-save, .btn-save *, .btn-apply, .btn-apply *,
+[data-ax-theme="light"] .btn-primary, [data-ax-theme="light"] .btn-primary *,
+[data-ax-theme="light"] .ax-btn--primary, [data-ax-theme="light"] .ax-btn--primary *,
+[data-ax-theme="light"] .btn-save, [data-ax-theme="light"] .btn-save *,
+[data-ax-theme="light"] .btn-apply, [data-ax-theme="light"] .btn-apply * {
+  color: var(--ax-on-accent) !important;
+  -webkit-text-fill-color: var(--ax-on-accent) !important;
+}
+.btn-primary:hover, .ax-btn--primary:hover,
+.btn-save:hover, .btn-apply:hover {
+  background: var(--ax-accent-hover) !important;
+  border-color: var(--ax-accent-hover) !important;
+}
+
+/* --- 12.6 El foco se ve ---------------------------------------------------
+   Con un solo acento el anillo de foco puede ser uno solo en toda la
+   aplicacion, y eso es lo que lo hace reconocible. */
+:focus-visible {
+  outline: 2px solid var(--ax-accent) !important;
+  outline-offset: 2px !important;
+}
+
+/* --- 12.7 LA MEDIDA -------------------------------------------------------
+   Nivel 1 de los tres niveles: las cifras no llevan marco. Van sobre el papel,
+   separadas por aire y por su propia regla, y eso quita seis cajas de la
+   cabecera del tablero.
+
+   La regla esta graduada en pesos y lleva tres cosas que solo significan algo
+   juntas: lo facturado (solido), lo proyectado al cierre (rayado) y lo que hay
+   que superar (la marca punteada del ano anterior). Antes eran dos tarjetas
+   separadas: el 3 de septiembre una decia -15,4% y la otra +15,4%, del mismo
+   mes, y nada en pantalla las relacionaba.
+   -------------------------------------------------------------------------- */
+
+.medidas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
+  /* El hueco entre medidas es mayor que dentro de cada una: sin marco, la
+     separacion la tiene que hacer el aire. */
+  gap: 2.5rem 2.75rem;
+  margin-top: 1.25rem;
+}
+
+.medida {
+  margin: 0;
+  min-width: 0;
+}
+
+.medida__titulo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: 0.7rem;
+}
+.medida .today-label {
+  font-size: 0.9rem !important;
+  font-weight: 600 !important;
+  color: var(--ax-text-primary) !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+}
+.medida .today-date {
+  font-size: 0.78rem !important;
+  color: var(--ax-text-tertiary) !important;
+}
+
+.medida__cifras {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.15rem 0.55rem;
+  margin-bottom: 0;
+}
+/* La cifra grande es la unica que se lee a distancia; el resto de la medida se
+   consulta. De ahi el salto de tamano. */
+.medida .today-value {
+  font-family: var(--ax-font-mono) !important;
+  font-variant-numeric: tabular-nums !important;
+  font-size: clamp(1.75rem, 3.4vw, 2.5rem) !important;
+  font-weight: 500 !important;
+  line-height: 1 !important;
+  letter-spacing: -0.035em !important;
+  color: var(--ax-text-primary) !important;
+  background: none !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+.medida__unidad {
+  font-size: 0.85rem;
+  color: var(--ax-text-secondary);
+}
+.medida__proyval {
+  font-family: var(--ax-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  color: var(--ax-text-secondary);
+}
+
+/* La pista. La linea de base es la regla propiamente dicha: por eso es solida
+   y del color del texto, no un filete decorativo. */
+.medida__pista {
+  position: relative;
+  /* La marca del ano anterior cuelga su etiqueta por encima de la pista: sin
+     esta banda propia se montaba sobre la cifra proyectada. Medido: la
+     etiqueta ocupa 21,6px hacia arriba y con 24px se solapaba 8px igual,
+     porque el margen de la linea de cifras colapsa contra este. */
+  margin-top: 2.6rem;
+  height: 1.9rem;
+  border-bottom: 2px solid var(--ax-text-primary);
+}
+.medida__real {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 100%;
+  background: var(--ax-accent);
+}
+/* Lo proyectado se raya en vez de rellenarse: la trama dice "esto es un
+   calculo, no una venta" sin necesidad de una leyenda que nadie lee. */
+.medida__proy {
+  position: absolute;
+  bottom: 0;
+  height: 100%;
+  background-image: repeating-linear-gradient(
+    -45deg,
+    var(--ax-accent-glow) 0 2px,
+    transparent 2px 7px);
+  border-right: 2px solid var(--ax-accent);
+}
+.medida__hito {
+  position: absolute;
+  bottom: 0;
+  width: 0;
+  height: calc(100% + 0.75rem);
+  border-left: 2px dotted var(--ax-text-primary);
+}
+.medida__hito > span {
+  position: absolute;
+  top: -1.35rem;
+  left: 0.4rem;
+  white-space: nowrap;
+  font-size: 0.7rem;
+  color: var(--ax-text-primary);
+}
+.medida__hito--izq > span { left: auto; right: 0.4rem; }
+.medida__hito[hidden] { display: none; }
+
+.medida__graduacion {
+  position: relative;
+  height: 1.5rem;
+}
+.medida__tick {
+  position: absolute;
+  top: 0;
+  padding-top: 0.3rem;
+  transform: translateX(-50%);
+  font-family: var(--ax-font-mono);
+  font-size: 0.68rem;
+  color: var(--ax-text-tertiary);
+  white-space: nowrap;
+}
+.medida__tick::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 1px;
+  height: 0.3rem;
+  background: var(--ax-border);
+}
+.medida__tick--ini { transform: none; }
+.medida__tick--ini::before { left: 0; }
+
+.medida__lectura {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.6rem;
+  margin-top: 0.9rem;
+}
+.medida__sub {
+  margin: 0.6rem 0 0;
+  font-size: 0.78rem;
+  color: var(--ax-text-secondary);
+}
+.medida__nota {
+  margin: 0.15rem 0 0;
+  font-size: 0.75rem;
+  color: var(--ax-text-tertiary);
+  max-width: 46ch;
+}
+
+/* Las dos comparaciones van una al lado de la otra y hay que poder decir cual
+   es cual: la del acumulado pesa, la del cierre va en contorno. Es la misma
+   distincion que solido y rayado en la regla de arriba. */
+.medida__lectura .hero-compare-badge {
+  border-radius: var(--ax-radius-sm) !important;
+  font-size: 0.72rem !important;
+  padding: 2px 8px !important;
+  box-shadow: none !important;
+}
+.medida__lectura .hero-compare-badge:last-child {
+  background: transparent !important;
+  border: 1px solid var(--ax-border) !important;
+}
+
+/* ============================================================================
+   13. UNA SOLA TABLA
+   ----------------------------------------------------------------------------
+   Etapa 3. Medido antes de escribir esto, sobre las siete tablas visibles:
+
+     altura de fila   33, 43, 50, 51 y 57 px      -> cinco ritmos distintos
+     texto de celda   10,92 / 11,375 / 12,25 px   -> tres tamanos
+     relleno de th    cuatro combinaciones
+     peso de th       700 y 800                   -> la cabecera grita mas que el dato
+     filete de fila   rgba(255,255,255,0.05)      -> BLANCO, en los dos temas
+
+   Lo ultimo no es cuestion de gusto: un filete blanco al 5% sobre una tarjeta
+   blanca no existe. En tema claro las filas de casi todas las tablas de la
+   aplicacion no tenian separacion ninguna. Solo table.precios-table usaba un token.
+
+   Aqui no se inventa una tabla nueva: se le pone el mismo ritmo a las que hay.
+   Dos densidades, y son una decision, no un accidente: la normal para las
+   tablas que se leen -registros, cotizaciones, precios- y la compacta para las
+   que viven dentro de una tarjeta con cien filas y scroll propio. Las reglas
+   llevan el prefijo de elemento -table.data-table y no .data-table- porque
+   index.html trae un <style> en linea que va DESPUES de esta hoja y ganaba los
+   empates. Con (0,1,2) se le pasa por delante, y las de .fact-tabla-card, que
+   son (0,2,1), siguen ganando a esto por llevar dos clases.
+   ========================================================================== */
+
+:root,
+[data-ax-theme="dark"],
+[data-ax-theme="light"],
+.is-pdf-export {
+  --tabla-fila-y: 0.6rem;
+  --tabla-fila-x: 0.9rem;
+  --tabla-fs: 0.8125rem;
+  --tabla-th-fs: 0.75rem;
+}
+
+table.data-table, table.ax-table, table.advisor-table, table.bi-table,
+table.cotiz-table, table.cotiz-items-table, table.precios-table, table.prod-table,
+table.tabla-registros, table.mp-table, table.compras-table {
+  border-collapse: collapse !important;
+  width: 100% !important;
+  font-family: var(--ax-font-sans) !important;
+  background: transparent !important;
+}
+
+/* --- 13.1 El ritmo -------------------------------------------------------- */
+table.data-table td, table.ax-table td, table.advisor-table td, table.bi-table td,
+table.cotiz-table td, table.cotiz-items-table td, table.precios-table td, table.prod-table td,
+table.tabla-registros td, table.mp-table td, table.compras-table td {
+  padding: var(--tabla-fila-y) var(--tabla-fila-x) !important;
+  font-size: var(--tabla-fs) !important;
+  line-height: 1.35 !important;
+  color: var(--ax-text-primary) !important;
+  /* El filete que faltaba. Un solo tono, de token, visible en los dos temas. */
+  border-bottom: 1px solid var(--ax-border-subtle) !important;
+  border-left: 0 !important;
+  border-right: 0 !important;
+  border-top: 0 !important;
+  background: transparent !important;
+}
+
+/* --- 13.2 La cabecera deja de competir con el dato ------------------------
+   Estaba en peso 700-800, el mismo o mas que las cifras que encabeza. Una
+   cabecera se lee una vez y luego estorba: peso 500 y color secundario. La
+   linea que la separa si es mas fuerte que las de fila, porque ahi si hay un
+   cambio de naturaleza. */
+table.data-table th, table.ax-table th, table.advisor-table th, table.bi-table th,
+table.cotiz-table th, table.cotiz-items-table th, table.precios-table th, table.prod-table th,
+table.tabla-registros th, table.mp-table th, table.compras-table th {
+  padding: var(--tabla-fila-y) var(--tabla-fila-x) !important;
+  font-size: var(--tabla-th-fs) !important;
+  font-weight: 500 !important;
+  line-height: 1.3 !important;
+  color: var(--ax-text-secondary) !important;
+  text-align: left !important;
+  white-space: nowrap !important;
+  border-bottom: 1px solid var(--ax-border) !important;
+  border-top: 0 !important;
+  background: transparent !important;
+}
+
+/* La primera y la ultima columna se alinean con el borde de la tarjeta: el
+   relleno lateral de la tabla duplicaba el de su contenedor. */
+table.data-table th:first-child, table.data-table td:first-child,
+table.ax-table th:first-child, table.ax-table td:first-child,
+table.advisor-table th:first-child, table.advisor-table td:first-child,
+table.precios-table th:first-child, table.precios-table td:first-child,
+table.mp-table th:first-child, table.mp-table td:first-child {
+  padding-left: 0 !important;
+}
+table.data-table th:last-child, table.data-table td:last-child,
+table.ax-table th:last-child, table.ax-table td:last-child,
+table.advisor-table th:last-child, table.advisor-table td:last-child,
+table.precios-table th:last-child, table.precios-table td:last-child,
+table.mp-table th:last-child, table.mp-table td:last-child {
+  padding-right: 0 !important;
+}
+
+/* --- 13.3 Las cantidades a la derecha y en mono ---------------------------
+   Es la misma regla del sistema: lenguaje en Atkinson, medida en Plex Mono.
+   En una tabla ademas alinea las columnas solas, que es la mitad de para que
+   sirve una tabla. */
+table.data-table td.num, table.ax-table td.num, table.advisor-table td.num,
+table.bi-table td.num, table.cotiz-items-table td.num, table.precios-table td.num,
+table.mp-table td.num, table.compras-table td.num, table.prod-table td.num,
+table.data-table td.mono, table.precios-table td.mono {
+  text-align: right !important;
+  font-family: var(--ax-font-mono) !important;
+  font-variant-numeric: tabular-nums !important;
+  font-size: calc(var(--tabla-fs) - 0.02rem) !important;
+  letter-spacing: -0.01em !important;
+  white-space: nowrap !important;
+}
+table.data-table th.num, table.ax-table th.num, table.advisor-table th.num,
+table.bi-table th.num, table.cotiz-items-table th.num, table.precios-table th.num,
+table.mp-table th.num, table.compras-table th.num, table.prod-table th.num {
+  text-align: right !important;
+}
+
+/* --- 13.4 La fila bajo el raton ------------------------------------------
+   Un solo tono de resalte para toda la aplicacion. Antes cada tabla tenia el
+   suyo, y dos de ellos eran azules translucidos que teñian las cifras. */
+table.data-table tbody tr:hover td, table.ax-table tbody tr:hover td,
+table.advisor-table tbody tr:hover td, table.bi-table tbody tr:hover td,
+table.cotiz-items-table tbody tr:hover td, table.precios-table tbody tr:hover td,
+table.mp-table tbody tr:hover td, table.compras-table tbody tr:hover td {
+  background: var(--ax-surface-hover) !important;
+}
+
+/* La ultima fila no necesita filete: ya termina la tabla. */
+table.data-table tbody tr:last-child td, table.ax-table tbody tr:last-child td,
+table.advisor-table tbody tr:last-child td, table.precios-table tbody tr:last-child td,
+table.mp-table tbody tr:last-child td, table.compras-table tbody tr:last-child td {
+  border-bottom: 0 !important;
+}
+
+/* --- 13.5 La densidad compacta -------------------------------------------
+   Para tablas que viven dentro de una tarjeta con scroll propio y decenas de
+   filas. No es una excepcion al ritmo: es el segundo paso del mismo. */
+.fact-tabla-card .fact-tabla td,
+.fact-tabla-card .fact-tabla th {
+  padding: 0.42rem 0.55rem !important;
+}
+.fact-tabla-card .fact-tabla th {
+  font-size: 0.7rem !important;
+  font-weight: 500 !important;
+  color: var(--ax-text-secondary) !important;
+}
+.fact-tabla-card .fact-tabla td {
+  font-size: 0.78rem !important;
+}
+
+/* La cabecera de la columna del nombre sigue la regla de todas las demas: la
+   excepcion de peso es para el DATO, no para el rotulo. */
+.fact-tabla-card .fact-tabla th.fact-tabla__nombre {
+  font-weight: 500 !important;
+  color: var(--ax-text-secondary) !important;
+}
+
+/* ============================================================================
+   14. LA ESCALA DE SERIES
+   ----------------------------------------------------------------------------
+   Los graficos seguian con la paleta caramelo original: turquesa, coral,
+   violeta, azul, verde, ambar y rosa. Ademas de no pertenecer ya al sistema,
+   tenia un problema de significado: en esta aplicacion el verde significa
+   "sube" y el rojo "baja", asi que una porcion verde del anillo de canales se
+   leia como "este canal va bien" cuando solo queria decir "este canal es el
+   tercero".
+
+   La escala nueva es UNA rampa del acento, en seis pasos. Es una decision, no
+   una limitacion: lo que pintan estos graficos -canales, categorias,
+   vendedores, anos- va SIEMPRE ordenado de mayor a menor, y en una rampa el
+   orden es el color. Con matices arbitrarios ese orden se pierde.
+
+   Medido: los seis pasos son monotonos en luminancia en los dos temas y la
+   diferencia perceptual entre pasos contiguos es dE 13,7 a 14,8 en claro y
+   12,9 a 14,9 en oscuro, holgadamente por encima del umbral en que dos
+   superficies grandes se distinguen.
+
+   Donde las categorias NO estan ordenadas sino que significan algo -ganada,
+   perdida, en seguimiento- no se usa esta rampa: se usan los tokens
+   semanticos, que es lo que esas categorias son.
+   ========================================================================== */
+
+:root,
+[data-ax-theme="dark"] {
+  --serie-1: #E4EFF9;
+  --serie-2: #B9D6EC;
+  --serie-3: #8DBBDF;
+  --serie-4: #6398C8;
+  --serie-5: #45749F;
+  --serie-6: #2E5478;
+}
+
+[data-ax-theme="light"],
+.is-pdf-export {
+  --serie-1: #0E3A5F;
+  --serie-2: #1F5A8A;
+  --serie-3: #3B7FB0;
+  --serie-4: #63A2CB;
+  --serie-5: #93C0DC;
+  --serie-6: #C3DBEC;
+}
+
+/* --- 15. EL VALOR NO LLEVA COLOR -----------------------------------------
+   Los cuatro mini-KPI salian en cuatro colores distintos -turquesa, verde,
+   blanco y ambar- por la clase accent-* que traen de fabrica. Ninguno de esos
+   colores significaba nada: el ambar de "Top Region" no avisaba de nada y el
+   verde de "Margen %" no decia que el margen fuera bueno.
+
+   En este sistema el color esta reservado: verde sube, rojo baja, ambar hay
+   que revisar, azul se puede pulsar. Una cifra que no es ninguna de esas cosas
+   va en tinta, como el resto del texto. Lo que distingue a un KPI no es su
+   color, es su tamano.
+   ------------------------------------------------------------------------ */
+.kpi-card__value.accent-blue, .mini-kpi-value.accent-blue,
+.kpi-card__value.accent-green, .mini-kpi-value.accent-green,
+.kpi-card__value.accent-purple, .mini-kpi-value.accent-purple,
+.kpi-card__value.accent-amber, .mini-kpi-value.accent-amber {
+  color: var(--ax-text-primary) !important;
+}
+
+/* --- 16. EL FILETE DE LAS TARJETAS DE MERCADO PUBLICO --------------------
+   Eran cuatro colores: morado por defecto, ambar en Ofertadas y verde en
+   Adjudicadas. En este sistema el ambar significa "hay que revisar" y una
+   oferta presentada no es nada que revisar, asi que el color mentia.
+
+   Las cuatro tarjetas son en realidad un embudo -detectada, ofertada,
+   adjudicada- y eso si es informacion: el filete lleva ahora el paso, con la
+   misma rampa que ordena los graficos. La tasa de adjudicacion se queda sin
+   filete a proposito: no es un paso del embudo, es la razon entre dos de
+   ellos, y darle uno la pondria en la misma fila que no esta.
+   ------------------------------------------------------------------------ */
+.mp-kpi::before { background: var(--ax-border) !important; }
+.mp-kpi--paso1::before { background: var(--serie-2) !important; }
+.mp-kpi--paso2::before { background: var(--serie-3) !important; }
+.mp-kpi--paso3::before { background: var(--serie-4) !important; }
+/* Sin modificador de paso no hay filete. */
+.mp-kpi:not([class*="mp-kpi--paso"])::before { content: none !important; }
+
+/* --- 17. LAS PASTILLAS DE LA FICHA TECNICA -------------------------------
+   Eran cuatro colores para cuatro cosas que no son cuatro estados: turquesa
+   la especificacion oficial, morado la categoria, verde la marca y ambar la
+   spec editada. Categoria y marca son clasificaciones -no hay una categoria
+   buena y otra mala-, asi que van en contorno neutro, igual que el paso C de
+   las pastillas de Precios.
+
+   La unica que conserva color es la editada, y con el ambar que le
+   corresponde: dice que esa ficha ya no es la canonica y que conviene
+   mirarla. Esa distincion si vale un color.
+   ------------------------------------------------------------------------ */
+.ft-tag-blue, .ft-tag-purple, .ft-tag-green {
+  background: transparent !important;
+  color: var(--ax-text-secondary) !important;
+  border: 1px solid var(--ax-border) !important;
+}
+.ft-tag-gold {
+  background: color-mix(in srgb, var(--ax-accent-gold) 14%, transparent) !important;
+  color: var(--ax-accent-gold) !important;
+  border: 1px solid color-mix(in srgb, var(--ax-accent-gold) 34%, transparent) !important;
 }

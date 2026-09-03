@@ -650,7 +650,7 @@ const CmdPalette = {
   },
   render() {
     if (!this.items.length) {
-      this.results.innerHTML = `<div style="padding:1.5rem; text-align:center; color:var(--ax-text-tertiary);">No se encontraron comandos ni registros</div>`;
+      this.results.innerHTML = `<div style="padding: 1.5rem; text-align: center; color: var(--ax-text-tertiary);">No se encontraron comandos ni registros</div>`;
       return;
     }
     this.results.innerHTML = this.items.map((item, idx) => `
@@ -910,7 +910,7 @@ const AuthManager = {
     if (typeof applyFilters === 'function') applyFilters();
 
     if (typeof showToast === 'function') {
-      showToast(`🔓 Sesión iniciada: ${cleanEmail} (${selectedCanal})`);
+      showToast(`Sesión iniciada: ${cleanEmail} (${selectedCanal})`);
     }
 
     return true;
@@ -1335,7 +1335,11 @@ function applyTheme(theme) {
 
 function syncThemeIcon() {
   const icon = document.getElementById('themeToggleIcon');
-  if (icon) icon.textContent = getTheme() === 'dark' ? '🌙' : '☀️';
+  /* SVG y no emoji: la luna y el sol de emoji los dibuja cada sistema a su
+     manera y no se pueden tenir con el color del boton. */
+  if (icon) icon.innerHTML = getTheme() === 'dark'
+    ? '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>'
+    : '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
   const btn = document.getElementById('themeToggleBtn');
   if (btn) {
     const claro = getTheme() === 'light';
@@ -1398,6 +1402,16 @@ function toggleTheme() {
       typeof renderProspeccionView === 'function') {
     renderProspeccionView();
   }
+
+  /* Lo mismo, por la misma razon, con las series: serieColor() resuelve el
+     token en el momento de construir el grafico, y refreshChartsTheme solo
+     reajusta ejes y leyendas. Rehacer la vista activa -y solo la activa- es
+     lo que hace que la rampa siga al tema sin recalcular las 89.000 filas. */
+  const activa = document.querySelector('.view.active');
+  const nombre = activa && activa.id ? activa.id.replace('view-', '') : '';
+  if (nombre && nombre !== 'prospeccion' && typeof renderVista === 'function') {
+    try { renderVista(nombre); } catch (e) { console.warn('[Tema] no se pudo rehacer ' + nombre, e); }
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -1421,7 +1435,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function exportCsv() {
   const dataToExport = (filtered && filtered.length > 0) ? filtered : rows;
   if (!dataToExport || dataToExport.length === 0) {
-    if (typeof showToast === 'function') showToast('⚠️ No hay datos para exportar');
+    if (typeof showToast === 'function') showToast('No hay datos para exportar');
     return;
   }
 
@@ -1449,7 +1463,7 @@ function exportCsv() {
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 
-  showToast('📄 CSV exportado exitosamente');
+  showToast('CSV exportado exitosamente');
 }
 
 function exportPdf() {
@@ -1464,11 +1478,11 @@ function toggleSound() {
   }
   const btn = document.getElementById('soundToggleBtn');
   if (btn) {
-    btn.innerHTML = soundEnabled ? '🔊 Sonido: ON' : '🔇 Sonido: OFF';
+    btn.innerHTML = soundEnabled ? 'Sonido: ON' : 'Sonido: OFF';
     btn.classList.toggle('active', soundEnabled);
   }
   if (typeof showToast === 'function') {
-    showToast(soundEnabled ? '🔊 Efectos de sonido activados' : '🔇 Efectos de sonido desactivados');
+    showToast(soundEnabled ? 'Efectos de sonido activados' : 'Efectos de sonido desactivados');
   }
 }
 
@@ -1481,7 +1495,7 @@ function togglePresentationMode() {
     btn.classList.toggle('active', isPresentationMode);
   }
   if (typeof showToast === 'function') {
-    showToast(isPresentationMode ? '📺 Modo Presentación activado' : '📺 Modo Presentación desactivado');
+    showToast(isPresentationMode ? 'Modo Presentación activado' : 'Modo Presentación desactivado');
   }
 }
 
@@ -1504,7 +1518,7 @@ function resetBIAdvisorSim() {
   if (typeof updateWhatIfSimulation === 'function') {
     updateWhatIfSimulation();
   }
-  if (typeof showToast === 'function') showToast('🔄 Simulador BI restablecido');
+  if (typeof showToast === 'function') showToast('Simulador BI restablecido');
 }
 
 
@@ -1575,8 +1589,8 @@ function renderProductosView() {
         suggestions.innerHTML = '<div style="padding: 10px; color: var(--ax-text-tertiary); font-size: 0.8125rem;">No se encontraron productos coincidentes</div>';
       } else {
         suggestions.innerHTML = matches.map(m => `
-          <div class="prod-suggestion-item" data-sku="${escapeHtml(m.sku)}" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: space-between;">
-            <span style="font-weight: 700; color: var(--ax-accent-purple); font-family: monospace;">${escapeHtml(m.sku)}</span>
+          <div class="prod-suggestion-item" data-sku="${escapeHtml(m.sku)}" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid var(--ax-border-subtle); display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-weight: 700; color: var(--ax-accent); font-family: monospace;">${escapeHtml(m.sku)}</span>
             <span style="font-size: 0.8125rem; color: var(--ax-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px;">${escapeHtml(m.desc)}</span>
           </div>
         `).join('');
@@ -1883,7 +1897,7 @@ function renderProdProjectionCurveChart(initialQty, monthlySpeed, totalMonths) {
       datasets: [{
         label: 'Stock Proyectado (Unidades)',
         data: dataPoints,
-        borderColor: '#A78BFA',
+        borderColor: tokenColor('--ax-accent', '#84B6E4'),
         backgroundColor: 'rgba(167, 139, 250, 0.15)',
         fill: true,
         tension: 0.35,
@@ -1937,7 +1951,8 @@ function renderProdYearlyAnalytics(byYearMap, totalNetoGlobal) {
       prodYearlyChartInstance = null;
     }
 
-    const palette = ['#2DD4CE', '#3DDC97', '#FFC46B', '#A78BFA', '#FF6B8A'];
+    /* Los anos van ordenados, asi que la rampa los ordena tambien. */
+    const palette = serieColores(Math.max(years.length, 1));
     const datasets = years.map((y, idx) => {
       const color = palette[idx % palette.length];
       const isQty = currentProdChartMetric === 'qty';
@@ -2019,11 +2034,11 @@ function renderProdYearlyAnalytics(byYearMap, totalNetoGlobal) {
         <tr>
           <td style="font-weight: 800; color: var(--ax-text-primary);">${y.year}</td>
           <td style="text-align: right; font-weight: 700;">${Math.round(y.qty).toLocaleString('es-CL')} un.</td>
-          <td style="text-align: right; font-weight: 800; color: var(--ax-accent-sky);">${typeof formatCLP === 'function' ? formatCLP(y.neto) : '$'+Math.round(y.neto).toLocaleString('es-CL')}</td>
+          <td style="text-align: right; font-weight: 800; color: var(--ax-accent);">${typeof formatCLP === 'function' ? formatCLP(y.neto) : '$'+Math.round(y.neto).toLocaleString('es-CL')}</td>
           <td style="text-align: right; color: var(--ax-accent-rose);">${typeof formatCLP === 'function' ? formatCLP(y.costo) : '$'+Math.round(y.costo).toLocaleString('es-CL')}</td>
           <td style="text-align: right; font-weight: 700; color: var(--ax-accent-emerald);">${typeof formatCLP === 'function' ? formatCLP(y.util) : '$'+Math.round(y.util).toLocaleString('es-CL')}</td>
           <td style="text-align: right; font-weight: 800; color: ${Number(marg) >= 30 ? 'var(--ax-accent-emerald)' : 'var(--ax-accent-gold)'};">${marg}%</td>
-          <td style="text-align: right; font-weight: 700; color: #A78BFA;">${part}%</td>
+          <td style="text-align: right; font-weight: 700; color: var(--ax-accent);">${part}%</td>
           <td style="text-align: center; color: var(--ax-text-secondary);">${monthFull[maxMonthIdx]}</td>
         </tr>
       `;
@@ -2090,10 +2105,10 @@ function renderProdCustomerBreakdown(skuRows, totalSkuQty) {
         <td style="text-align: center; font-weight: 700;">${c.comprasCount}</td>
         <td style="text-align: right; font-weight: 700;">${Math.round(c.cantidadTotal).toLocaleString('es-CL')}</td>
         <td style="text-align: right;">${typeof formatCLP === 'function' ? formatCLP(avgPrice) : '$'+Math.round(avgPrice).toLocaleString('es-CL')}</td>
-        <td style="text-align: right; font-weight: 800; color: var(--ax-accent-sky);">${typeof formatCLP === 'function' ? formatCLP(c.netoTotal) : '$'+Math.round(c.netoTotal).toLocaleString('es-CL')}</td>
+        <td style="text-align: right; font-weight: 800; color: var(--ax-accent);">${typeof formatCLP === 'function' ? formatCLP(c.netoTotal) : '$'+Math.round(c.netoTotal).toLocaleString('es-CL')}</td>
         <td style="text-align: right; font-weight: 700; color: var(--ax-accent-emerald);">${typeof formatCLP === 'function' ? formatCLP(c.utilidadTotal) : '$'+Math.round(c.utilidadTotal).toLocaleString('es-CL')}</td>
         <td style="text-align: right; font-weight: 700; color: ${Number(marg) >= 30 ? 'var(--ax-accent-emerald)' : 'var(--ax-accent-gold)'};">${marg}%</td>
-        <td style="text-align: right; font-weight: 700; color: #A78BFA;">${part}%</td>
+        <td style="text-align: right; font-weight: 700; color: var(--ax-accent);">${part}%</td>
       </tr>
     `;
   }).join('');
@@ -2129,7 +2144,7 @@ function randomizeProductSelection() {
   if (skuList.length === 0) return;
   const randSku = skuList[Math.floor(Math.random() * skuList.length)];
   selectProductFor360(randSku);
-  if (typeof showToast === 'function') showToast(`🎲 SKU Seleccionado: ${randSku}`);
+  if (typeof showToast === 'function') showToast(`SKU Seleccionado: ${randSku}`);
 }
 
 function clearProductSearch() {
@@ -2162,8 +2177,8 @@ function renderMixSugeridoModule() {
   // 1. Poblar canales en selector si está vacío
   if (canalSelect && canalSelect.options.length <= 1) {
     const canales = Array.from(new Set(rows.map(r => (r['CANAL FINAL'] || '').trim()).filter(Boolean))).sort();
-    canalSelect.innerHTML = '<option value="ALL">🌐 Global (Todos los Canales)</option>' +
-      canales.map(c => `<option value="${c}">🏷️ Canal: ${c}</option>`).join('');
+    canalSelect.innerHTML = '<option value="ALL">Global (Todos los Canales)</option>' +
+      canales.map(c => `<option value="${c}">Canal: ${c}</option>`).join('');
 
     canalSelect.onchange = () => {
       mixCurrentCanal = canalSelect.value;
@@ -2254,9 +2269,9 @@ function updateMixSugeridoView() {
   skuList.forEach(p => {
     cumNeto += p.neto;
     const cumPct = totalCanalNeto > 0 ? (cumNeto / totalCanalNeto) * 100 : 100;
-    if (cumPct <= 80) p.clasificacion = '⭐ Estrella A';
-    else if (cumPct <= 95) p.clasificacion = p.marg >= 25 ? '💎 Rentable B' : '📦 Volumen B';
-    else p.clasificacion = '🔄 Rotación C';
+    if (cumPct <= 80) p.clasificacion = 'Estrella A';
+    else if (cumPct <= 95) p.clasificacion = p.marg >= 25 ? 'Rentable B' : 'Volumen B';
+    else p.clasificacion = 'Rotación C';
   });
 
   // Filtrar por búsqueda
@@ -2302,12 +2317,12 @@ function updateMixSugeridoView() {
           <td style="text-align: left;"><span class="sku-badge-pill js-sku-drill" data-sku="${escapeHtml(p.sku)}" style="font-weight: 800; font-size: 0.8125rem; cursor: pointer;" title="Ver análisis 360 de este producto">${escapeHtml(p.sku)}</span></td>
           <td style="text-align: left; max-width: 260px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; color: var(--ax-text-primary);" title="${escapeHtml(p.desc)}">${escapeHtml(p.desc)}</td>
           <td style="text-align: left;"><span class="tag-pill" style="font-size: 0.75rem;">${escapeHtml(p.familia)}</span></td>
-          <td style="text-align: center;"><span style="padding: 3px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; ${badgeStyle}">${escapeHtml(p.clasificacion)}</span></td>
+          <td style="text-align: center;"><span style="padding: 3px 8px; border-radius: var(--ax-radius-md); font-size: 0.75rem; font-weight: 700; ${badgeStyle}">${escapeHtml(p.clasificacion)}</span></td>
           <td style="text-align: right; font-weight: 700;">${Math.round(p.cant).toLocaleString('es-CL')} un.</td>
-          <td style="text-align: right; font-weight: 800; color: var(--ax-accent-sky);">${typeof formatCLP === 'function' ? formatCLP(p.neto) : '$'+Math.round(p.neto).toLocaleString('es-CL')}</td>
+          <td style="text-align: right; font-weight: 800; color: var(--ax-accent);">${typeof formatCLP === 'function' ? formatCLP(p.neto) : '$'+Math.round(p.neto).toLocaleString('es-CL')}</td>
           <td style="text-align: right; font-weight: 700; color: var(--ax-accent-emerald);">${typeof formatCLP === 'function' ? formatCLP(p.utilidad) : '$'+Math.round(p.utilidad).toLocaleString('es-CL')}</td>
           <td style="text-align: right; font-weight: 800; color: ${p.marg >= 30 ? 'var(--ax-accent-emerald)' : 'var(--ax-accent-gold)'};">${p.marg.toFixed(1)}%</td>
-          <td style="text-align: right; font-weight: 800; color: #A78BFA;">${p.part.toFixed(1)}%</td>
+          <td style="text-align: right; font-weight: 800; color: var(--ax-accent);">${p.part.toFixed(1)}%</td>
         </tr>
       `;
     }).join('');
@@ -3028,11 +3043,11 @@ function renderActiveFilterChips() {
   const chips = [];
 
   if (f.desde && f.hasta) {
-    chips.push({ label: `📅 Rango: ${f.desde} al ${f.hasta}`, clear: () => { document.getElementById('fltDesde').value = ''; document.getElementById('fltHasta').value = ''; } });
+    chips.push({ label: `Rango: ${f.desde} al ${f.hasta}`, clear: () => { document.getElementById('fltDesde').value = ''; document.getElementById('fltHasta').value = ''; } });
   } else if (f.desde) {
-    chips.push({ label: `📅 Desde: ${f.desde}`, clear: () => { document.getElementById('fltDesde').value = ''; } });
+    chips.push({ label: `Desde: ${f.desde}`, clear: () => { document.getElementById('fltDesde').value = ''; } });
   } else if (f.hasta) {
-    chips.push({ label: `📅 Hasta: ${f.hasta}`, clear: () => { document.getElementById('fltHasta').value = ''; } });
+    chips.push({ label: `Hasta: ${f.hasta}`, clear: () => { document.getElementById('fltHasta').value = ''; } });
   }
 
   if (f.canal) chips.push({ label: `Canal: ${f.canal}`, clear: () => { document.getElementById('fltCanal').value = ''; } });
@@ -3121,7 +3136,7 @@ function clearAllFilters() {
   if (typeof AuthManager !== 'undefined') AuthManager.applyUserChannelPermissions();
 
   applyFilters();
-  showToast('🧹 Todos los filtros fueron limpiados');
+  showToast('Todos los filtros fueron limpiados');
 }
 
 const clearBtn = document.getElementById('clearFiltersBtn');
@@ -3158,8 +3173,8 @@ function renderTicker() {
   ];
   const track = document.getElementById('tickerTrack');
   if (!track) return;
-  const html = items.map(i => `<span>${i}</span>`).join('<span style="opacity:0.4"> // </span>');
-  track.innerHTML = html + '<span style="opacity:0.4"> // </span>' + html;
+  const html = items.map(i => `<span>${i}</span>`).join('<span style="opacity: 0.4"> // </span>');
+  track.innerHTML = html + '<span style="opacity: 0.4"> // </span>' + html;
 }
 
 // ---------- Venta del día ----------
@@ -3179,7 +3194,7 @@ function renderCompareBadge(el, prevVal, growthPct, labelText) {
   if (!el) return;
   const isPos = growthPct > 0;
   const isNeg = growthPct < 0;
-  const arrow = isPos ? '▲' : (isNeg ? '▼' : '●');
+  const arrow = isPos ? '' : (isNeg ? '' : '');
   const sign = isPos ? '+' : '';
   const valFormatted = formatCLP(prevVal);
   const pctFormatted = `${sign}${growthPct.toFixed(1)}%`;
@@ -3442,14 +3457,14 @@ function renderSummaryCards() {
   }
   if (elTodayDate) elTodayDate.textContent = diaNombre;
   if (elTodaySub) {
-    const detalle = `${formatNum(docsHoy)} documentos · ${formatNum(cantHoy)} unidades`;
+    const detalle = `${formatNum(docsHoy)} documentos, ${formatNum(cantHoy)} unidades`;
     elTodaySub.textContent = refEsHoy
       ? detalle
-      : `${detalle} · sin ventas nuevas hace ${diasDesdeRef} ${diasDesdeRef === 1 ? 'día' : 'días'}`;
+      : `${detalle}. Sin ventas nuevas hace ${diasDesdeRef} ${diasDesdeRef === 1 ? 'día' : 'días'}`;
   }
   const elTodayBadge = document.getElementById('todayBadge');
   const elTodayLabel = document.getElementById('todayLabel');
-  if (elTodayBadge) elTodayBadge.textContent = refEsHoy ? 'EN VIVO' : 'ÚLTIMO DÍA CON VENTAS';
+  if (elTodayBadge) elTodayBadge.textContent = refEsHoy ? 'En vivo' : 'Último día con ventas';
   if (elTodayLabel) elTodayLabel.textContent = refEsHoy ? 'Ventas de Hoy' : 'Últimas Ventas Registradas';
   renderCompareBadge(elTodayComp, totalHoyPrev, growthHoy, `Mismo Día ${prevYyyy}`);
 
@@ -3464,7 +3479,7 @@ function renderSummaryCards() {
     elMonthVal._currentVal = totalMes;
   }
   if (elMonthDate) elMonthDate.textContent = mesNombre;
-  if (elMonthSub) elMonthSub.textContent = `${formatNum(docsMes)} documentos · ${formatNum(cantMes)} unidades`;
+  if (elMonthSub) elMonthSub.textContent = `${formatNum(docsMes)} documentos, ${formatNum(cantMes)} unidades`;
   renderCompareBadge(elMonthComp, totalMesPrev, growthMes, `MTD ${prevYyyy}`);
 
   // RENDER CARD 3: AÑO (YTD)
@@ -3493,7 +3508,7 @@ function renderSummaryCards() {
   }
   const elTodayProjBadge = document.getElementById('todayProjBadge');
   const elTodayProjLabel = document.getElementById('todayProjLabel');
-  if (elTodayProjBadge) elTodayProjBadge.textContent = refEsHoy ? 'PROYECCIÓN DÍA' : 'DÍA CERRADO';
+  if (elTodayProjBadge) elTodayProjBadge.textContent = refEsHoy ? 'Cierre del día' : 'Día cerrado';
   if (elTodayProjLabel) elTodayProjLabel.textContent = refEsHoy ? 'Proyección Cierre de Hoy' : 'Cierre Real del Último Día';
   if (elTodayProjDate) elTodayProjDate.textContent = refEsHoy ? 'Cierre de Hoy' : `Cierre de ${diaNombre}`;
   if (elTodayProjSub) elTodayProjSub.textContent = refEsHoy
@@ -3530,8 +3545,20 @@ function renderSummaryCards() {
   if (elYearProjDate) elYearProjDate.textContent = `Cierre Año ${refDate.getFullYear()}`;
   if (elYearProjSub) elYearProjSub.textContent = curvaAnio
     ? 'Ritmo actual ajustado por la estacionalidad de años anteriores'
-    : 'Extrapolación anual completa AI Forecast';
+    : 'Extrapolación lineal: falta historia para la curva';
   renderCompareBadge(elYearProjComp, totalAnioFullPrev, growthProjAnio, `Cierre Año ${prevYyyy}`);
+
+  /* La medida se dibuja con las cifras que se acaban de calcular, no con
+     otras propias: si divergieran, la regla y el numero de encima dirian
+     cosas distintas sobre el mismo mes. */
+  renderMedidas([
+    { clave: 'dia',  act: totalHoy,  proy: projHoy,  hito: totalHoyPrev,
+      hitoTxt: `Mismo día ${prevYyyy}` },
+    { clave: 'mes',  act: totalMes,  proy: projMes,  hito: totalMesFullPrev,
+      hitoTxt: `Cierre de ${FACT_MESES_LARGOS[refDate.getMonth()]} ${prevYyyy}` },
+    { clave: 'anio', act: totalAnio, proy: projAnio, hito: totalAnioFullPrev,
+      hitoTxt: `Cierre ${prevYyyy}` }
+  ], hasPriorYearData);
 
   /* Las dos tablas por canal cuelgan de aqui a proposito. No recalculan nada:
      reciben las mismas baseRows, la misma fecha de referencia y las mismas
@@ -3551,6 +3578,94 @@ function renderSummaryCards() {
 }
 
 
+/* ==========================================================================
+   LA MEDIDA
+   --------------------------------------------------------------------------
+   Una regla graduada en pesos por cada pregunta -el dia, el mes, el ano-. En
+   ella caben a la vez lo facturado (solido), lo proyectado al cierre (rayado)
+   y lo que hay que superar (la marca del ano anterior). Antes eso eran dos
+   tarjetas separadas y la comparacion habia que hacerla de cabeza.
+
+   No calcula nada: recibe las cifras que renderSummaryCards ya obtuvo. Si
+   calculara las suyas, la regla podria contradecir al numero que tiene encima.
+   ========================================================================== */
+
+/** Un paso de escala que caiga en numero redondo: 1, 2, 2,5 o 5 por decada. */
+function medidaPaso(tope) {
+  if (!(tope > 0)) return 1;
+  const bruto = tope / 6;
+  const dec = Math.pow(10, Math.floor(Math.log10(bruto)));
+  const n = bruto / dec;
+  return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10) * dec;
+}
+
+/** Etiqueta corta para las graduaciones. En una regla no cabe $13.755.865. */
+function medidaCorto(v) {
+  if (v === 0) return '0';
+  /* Todo en millones, tambien los miles de millones: '2.500M' se lee sin
+     pensar y '2,5MM' obliga a traducir. */
+  if (Math.abs(v) >= 1e6) {
+    const m = v / 1e6;
+    return (m % 1 ? m.toFixed(1).replace('.', ',') : m.toLocaleString('es-CL')) + 'M';
+  }
+  if (Math.abs(v) >= 1e3) return Math.round(v / 1e3) + 'K';
+  return String(Math.round(v));
+}
+
+function renderMedidas(medidas, hayAnioPrevio) {
+  if (!document.querySelector('.medidas')) return;
+
+  medidas.forEach(function (m) {
+    const q = function (n) {
+      return document.querySelector('[data-medida="' + m.clave + '-' + n + '"]');
+    };
+    const real = q('real'), proy = q('proy'), hito = q('hito'),
+          hitoTxt = q('hitotxt'), ticks = q('ticks');
+    if (!real || !proy || !ticks) return;
+
+    const act = Math.max(0, m.act || 0);
+    const cierre = Math.max(act, m.proy || 0);
+    /* La marca del ano anterior entra en la escala aunque quede por encima de
+       la proyeccion: ese es justo el caso que hay que ver, el de no llegar. */
+    const marca = hayAnioPrevio ? Math.max(0, m.hito || 0) : 0;
+    const alto = Math.max(cierre, marca);
+    if (!(alto > 0)) {
+      real.style.width = '0%'; proy.style.width = '0%';
+      if (hito) hito.hidden = true;
+      ticks.innerHTML = '';
+      return;
+    }
+
+    const paso = medidaPaso(alto);
+    const tope = Math.ceil(alto / paso) * paso;
+    const pct = function (v) { return (v / tope) * 100; };
+
+    real.style.width = pct(act).toFixed(3) + '%';
+    proy.style.left = pct(act).toFixed(3) + '%';
+    proy.style.width = Math.max(0, pct(cierre) - pct(act)).toFixed(3) + '%';
+
+    if (hito) {
+      const mostrar = marca > 0;
+      hito.hidden = !mostrar;
+      if (mostrar) {
+        const p = pct(marca);
+        hito.style.left = p.toFixed(3) + '%';
+        /* Pasado el 60% de la regla la etiqueta se saldria por la derecha; a
+           partir de ahi cuelga hacia el otro lado. */
+        hito.classList.toggle('medida__hito--izq', p > 60);
+        if (hitoTxt) hitoTxt.textContent = m.hitoTxt + ': ' + formatCLP(marca);
+      }
+    }
+
+    let html = '';
+    for (let v = 0; v <= tope + paso / 2; v += paso) {
+      const p = Math.min(100, pct(v));
+      html += '<span class="medida__tick' + (v === 0 ? ' medida__tick--ini' : '') +
+        '" style="left: ' + p.toFixed(3) + '%">' + medidaCorto(v) + '</span>';
+    }
+    ticks.innerHTML = html;
+  });
+}
 /* ---------- Facturación desglosada: canal y categoría, mes y año -----------
    Cuatro tablas que abren el mismo total que muestran las tarjetas de
    Proyección de Cierre. Es lo que hace falta para saber DE DÓNDE sale la
@@ -4040,12 +4155,12 @@ function renderKPIs() {
   const elTopSeller = document.getElementById('miniTopSellerVal');
   const elTopSellerSub = document.getElementById('miniTopSellerSub');
   if (elTopSeller) elTopSeller.textContent = sortedVend.length > 0 ? sortedVend[0][0] : '--';
-  if (elTopSellerSub) elTopSellerSub.textContent = sortedVend.length > 0 ? `⭐ ${formatCLP(sortedVend[0][1])} Facturado` : '⭐ $0 Facturado';
+  if (elTopSellerSub) elTopSellerSub.textContent = sortedVend.length > 0 ? `${formatCLP(sortedVend[0][1])} Facturado` : '$0 Facturado';
 
   const elTopRegion = document.getElementById('miniTopRegionVal');
   const elTopRegionSub = document.getElementById('miniTopRegionSub');
   if (elTopRegion) elTopRegion.textContent = sortedReg.length > 0 ? sortedReg[0][0] : '--';
-  if (elTopRegionSub) elTopRegionSub.textContent = sortedReg.length > 0 ? `🗺️ ${formatCLP(sortedReg[0][1])} Facturado` : '🗺️ $0 Facturado';
+  if (elTopRegionSub) elTopRegionSub.textContent = sortedReg.length > 0 ? `${formatCLP(sortedReg[0][1])} Facturado` : '$0 Facturado';
 
   // Fallback si existe kpiGrid
   const grid = document.getElementById('kpiGrid');
@@ -4067,21 +4182,31 @@ let chartCategoriaInst = null;
 let chartTiendaInst = null;
 let chartVendedorInst = null;
 
-/* Paleta categorica mate. Los ocho tonos se separan por matiz, no por
-   intensidad: a saturacion pareja (~35%) ninguna serie pesa mas que otra,
-   que era lo que pasaba cuando el ambar y el rosa iban al 90%. */
-/* Orden tomado del referente: el turquesa lleva la voz cantante y el coral
-   entra como contrapunto calido. Los ocho superan 4.5:1 sobre la tarjeta. */
-const luxuryPalette = [
-  '#2DD4CE', // Turquesa
-  '#FF7F63', // Coral
-  '#A78BFA', // Violeta
-  '#4D9FEC', // Azul
-  '#3DDC97', // Verde
-  '#FFC46B', // Ambar
-  '#FF6B8A', // Rosa
-  '#8B95B9'  // Pizarra
-];
+/* El color de un token, resuelto en el momento de dibujar. Chart.js necesita
+   una cadena de color de verdad, no un var(), asi que hay que leerlo. */
+function tokenColor(nombre, alt) {
+  const v = getComputedStyle(document.documentElement).getPropertyValue(nombre);
+  return (v || '').trim() || alt;
+}
+
+/* La escala de series: UNA rampa del acento en seis pasos, no siete matices
+   sueltos. Lo que pintan estos graficos -canales, categorias, vendedores,
+   anos- va siempre ordenado de mayor a menor, y en una rampa el orden ES el
+   color; con matices arbitrarios ese orden se pierde. Ademas quita un choque
+   de significado: una porcion verde del anillo de canales se leia como "este
+   canal va bien" cuando solo decia "este canal es el tercero". */
+const SERIE_RESPALDO = ['#E4EFF9', '#B9D6EC', '#8DBBDF', '#6398C8', '#45749F', '#2E5478'];
+
+function serieColor(i) {
+  const n = ((i % SERIE_RESPALDO.length) + SERIE_RESPALDO.length) % SERIE_RESPALDO.length;
+  return tokenColor('--serie-' + (n + 1), SERIE_RESPALDO[n]);
+}
+
+function serieColores(n) {
+  const out = [];
+  for (let i = 0; i < n; i++) out.push(serieColor(i));
+  return out;
+}
 
 function setupChartPeriodListeners() {
   const container = document.getElementById('salesPeriodSelector');
@@ -4331,7 +4456,7 @@ function renderCharts() {
           {
             label: `Ventas ${activeY} ($)`,
             data: timeSorted.map(m => m.totalNeto),
-            borderColor: '#4D9FEC',
+            borderColor: tokenColor('--ax-accent', '#84B6E4'),
             backgroundColor: gradBlue,
             fill: true,
             tension: 0.42,
@@ -4346,7 +4471,7 @@ function renderCharts() {
           {
             label: `Ventas ${prevY} ($)`,
             data: timeSorted.map(m => m.totalPrev),
-            borderColor: '#FF6B8A',
+            borderColor: tokenColor('--ax-accent-rose', '#F0768A'),
             backgroundColor: gradRed,
             fill: true,
             tension: 0.42,
@@ -4354,7 +4479,7 @@ function renderCharts() {
             borderWidth: 2.8,
             pointRadius: pointRadius,
             pointHoverRadius: 7,
-            pointBackgroundColor: '#FF6B8A',
+            pointBackgroundColor: tokenColor('--ax-accent-rose', '#F0768A'),
             pointBorderColor: '#1B2342',
             pointBorderWidth: 2
           }
@@ -4392,9 +4517,9 @@ function renderCharts() {
                   const prevVal = items[1].parsed.y || 0;
                   if (prevVal > 0) {
                     const delta = ((currentVal - prevVal) / prevVal) * 100;
-                    const arrow = delta >= 0 ? '▲' : '▼';
+                    const arrow = delta >= 0 ? '' : '';
                     const sign = delta >= 0 ? '+' : '';
-                    return `📈 Crecimiento YoY: ${arrow} ${sign}${delta.toFixed(1)}%`;
+                    return `Crecimiento YoY: ${arrow} ${sign}${delta.toFixed(1)}%`;
                   }
                 }
                 return '';
@@ -4449,10 +4574,15 @@ function renderCharts() {
         labels: sortedCanal.map(c => c[0]),
         datasets: [{
           data: sortedCanal.map(c => c[1]),
-          backgroundColor: luxuryPalette.slice(0, sortedCanal.length),
-          borderColor: 'rgba(18, 24, 38, 0.95)',
-          borderWidth: 3,
-          borderRadius: 6,
+          backgroundColor: serieColores(sortedCanal.length),
+          /* El corte entre porciones es del color de la TARJETA, no una linea
+             oscura: lo que separa dos porciones es el fondo que hay detras, no
+             un trazo dibujado encima. Con un borde oscuro de 3px cada porcion
+             se lee como una pieza suelta y el anillo deja de ser un entero.
+             Sin borderRadius por lo mismo: las esquinas redondeadas convertian
+             el anillo en una fila de cuentas. */
+          borderColor: tokenColor('--surf-1', '#21252C'),
+          borderWidth: 2,
           hoverOffset: 6
         }]
       },
@@ -4470,13 +4600,13 @@ function renderCharts() {
     const legendWrap = document.getElementById('canalLegendWrap');
     if (legendWrap) {
       legendWrap.innerHTML = sortedCanal.map((c, i) => {
-        const color = luxuryPalette[i % luxuryPalette.length];
+        const color = serieColor(i);
         const pct = totalCanal > 0 ? ((c[1] / totalCanal) * 100).toFixed(1) : '0';
         return `
           <div class="legend-chip" data-canal="${escapeHtml(c[0])}" title="Filtrar por ${escapeHtml(c[0])}">
-            <span class="legend-dot" style="background:${color};"></span>
+            <span class="legend-dot" style="background: ${color};"></span>
             <span>${escapeHtml(c[0])}</span>
-            <span style="color:var(--ax-text-tertiary); font-weight:600;">${pct}%</span>
+            <span style="color: var(--ax-text-tertiary); font-weight: 600;">${pct}%</span>
           </div>
         `;
       }).join('');
@@ -4526,14 +4656,7 @@ function renderCharts() {
         datasets: [{
           label: 'Facturación ($)',
           data: sortedCat.map(c => c[1]),
-          backgroundColor: [
-            '#A78BFA',
-            '#8B7FE8',
-            '#4D9FEC',
-            '#2DD4CE',
-            '#3DDC97',
-            '#FFC46B'
-          ].slice(0, sortedCat.length),
+          backgroundColor: serieColores(sortedCat.length),
           borderRadius: 8,
           borderSkipped: false,
           barThickness: 16
@@ -4587,7 +4710,9 @@ function renderCharts() {
         datasets: [{
           label: 'Ventas por Sucursal ($)',
           data: sortedTienda.map(t => t[1]),
-          backgroundColor: '#3DDC97',
+          /* Barras ordenadas de mayor a menor: el color lleva el rango. Antes
+             iban todas de verde plano, y el verde aqui significa "sube". */
+          backgroundColor: serieColores(sortedTienda.length),
           borderRadius: 8,
           borderSkipped: false,
           barThickness: 16
@@ -4641,7 +4766,7 @@ function renderCharts() {
         datasets: [{
           label: 'Facturación ($)',
           data: sortedVend.map(v => v[1]),
-          backgroundColor: '#FFC46B',
+          backgroundColor: serieColores(sortedVend.length),
           borderRadius: 8,
           borderSkipped: false,
           barThickness: 16
@@ -4687,7 +4812,7 @@ function renderTable() {
   if (!body) return;
 
   if (!filtered.length) {
-    body.innerHTML = '<tr><td colspan="11" style="text-align:center; padding: 2rem; color: var(--ax-text-tertiary);">No se encontraron registros de ventas que coincidan con los filtros.</td></tr>';
+    body.innerHTML = '<tr><td colspan="11" style="text-align: center; padding: 2rem; color: var(--ax-text-tertiary);">No se encontraron registros de ventas que coincidan con los filtros.</td></tr>';
     const pageInfo = document.getElementById('pageInfo');
     if (pageInfo) pageInfo.textContent = 'Página 0 de 0';
     return;
@@ -4707,13 +4832,13 @@ function renderTable() {
       <td>${escapeHtml(r['CLIENTE'] || '')}</td>
       <td>${escapeHtml(r['DESCRIPCION'] || r['CODIGO'] || '')}</td>
       <td><span class="pill-tag">${escapeHtml(r['CANAL FINAL'] || 'Público')}</span></td>
-      <td style="text-align:right;">${formatNum(r['CANTFACTURADA'])}</td>
-      <td style="text-align:right;">${formatCLP(r['PREUNI'])}</td>
-      <td style="text-align:right; font-weight:700; color:var(--ax-accent);">${formatCLP(r['NETO'])}</td>
-      <td style="text-align:right;">${formatCLP(r['COSTOS'])}</td>
-      <td style="text-align:right; font-weight:700; color:var(--ax-accent-emerald);">${formatCLP(r['($) UTILIDAD'])}</td>
-      <td style="text-align:center;">
-        <button type="button" class="btn-sm btn-secondary js-edit-row" title="Editar registro">✏️</button>
+      <td style="text-align: right;">${formatNum(r['CANTFACTURADA'])}</td>
+      <td style="text-align: right;">${formatCLP(r['PREUNI'])}</td>
+      <td style="text-align: right; font-weight: 700; color: var(--ax-accent);">${formatCLP(r['NETO'])}</td>
+      <td style="text-align: right;">${formatCLP(r['COSTOS'])}</td>
+      <td style="text-align: right; font-weight: 700; color: var(--ax-accent-emerald);">${formatCLP(r['($) UTILIDAD'])}</td>
+      <td style="text-align: center;">
+        <button type="button" class="btn-sm btn-secondary js-edit-row" title="Editar registro"></button>
       </td>
     </tr>
   `).join('');
@@ -4891,15 +5016,15 @@ async function saveRow() {
       // expectedFolio deja que el backend verifique que la fila sigue siendo este
       // registro: si otro usuario borró filas encima, el índice ya no corresponde.
       await apiPost({ action: 'update', row: rowId, expectedFolio: editingFolio, data });
-      showToast('✅ Registro actualizado exitosamente');
+      showToast('Registro actualizado exitosamente');
     } else {
       await apiPost({ action: 'add', data });
-      showToast('✅ Registro creado exitosamente');
+      showToast('Registro creado exitosamente');
     }
     closeModal();
     loadData(false);
   } catch (err) {
-    showToast('⚠️ Error al guardar: ' + err.message, 'error');
+    showToast('Error al guardar: ' + err.message, 'error');
   }
 }
 
@@ -4910,11 +5035,11 @@ async function deleteCurrentRow() {
   if (!confirm('¿Eliminar este registro? Esta acción no se puede deshacer.')) return;
   try {
     await apiPost({ action: 'delete', row: rowId, expectedFolio: editingFolio });
-    showToast('🗑️ Registro eliminado');
+    showToast('Registro eliminado');
     closeModal();
     loadData(false);
   } catch (err) {
-    showToast('⚠️ Error al eliminar: ' + err.message, 'error');
+    showToast('Error al eliminar: ' + err.message, 'error');
   }
 }
 
@@ -5013,19 +5138,19 @@ function renderExecutiveInsights() {
 
   const itemsHTML = [
     `<div class="bi-briefing-item">
-      <span>💡</span>
+      <span></span>
       <div><strong>Canal Líder:</strong> El canal <strong>${topCanalEntry ? topCanalEntry[0] : 'N/A'}</strong> concentra el <strong>${canalPct}%</strong> de las ventas totales (${formatCLP(topCanalEntry ? topCanalEntry[1] : 0)}).</div>
     </div>`,
     `<div class="bi-briefing-item">
-      <span>👑</span>
+      <span></span>
       <div><strong>Cliente Principal:</strong> <strong>${topClientEntry ? topClientEntry[0] : 'N/A'}</strong> genera ${formatCLP(topClientEntry ? topClientEntry[1] : 0)} en facturación neta.</div>
     </div>`,
     `<div class="bi-briefing-item">
-      <span>📈</span>
+      <span></span>
       <div><strong>Margen Bruto Global:</strong> Operando con un margen promedio del <strong>${avgMargin.toFixed(1)}%</strong> (${formatCLP(totalProfit)} utilidad total).</div>
     </div>`,
     `<div class="bi-briefing-item">
-      <span>🎯</span>
+      <span></span>
       <div><strong>Categoría de Mayor Aporte:</strong> La categoría <strong>${topCatProfitEntry ? topCatProfitEntry[0] : 'N/A'}</strong> genera la mayor utilidad bruta acumulada (${formatCLP(topCatProfitEntry ? topCatProfitEntry[1] : 0)}).</div>
     </div>`
   ];
@@ -5120,24 +5245,24 @@ function renderRFMGrid() {
   });
 
   container.innerHTML = `
-    <div class="rfm-card" style="border-color:rgba(109, 92, 240, 0.4);">
-      <span class="rfm-card-title">👑 VIP Champions</span>
-      <span class="rfm-card-count" style="color:var(--ax-accent-purple);">${vipCount}</span>
+    <div class="rfm-card" style="border-color: rgba(109, 92, 240, 0.4);">
+      <span class="rfm-card-title">VIP Champions</span>
+      <span class="rfm-card-count" style="color: var(--ax-accent);">${vipCount}</span>
       <span class="rfm-card-sub">Alto valor y frecuencia</span>
     </div>
-    <div class="rfm-card" style="border-color:rgba(43, 196, 176, 0.4);">
-      <span class="rfm-card-title">⭐ Leales</span>
-      <span class="rfm-card-count" style="color:var(--ax-accent);">${loyalCount}</span>
+    <div class="rfm-card" style="border-color: rgba(43, 196, 176, 0.4);">
+      <span class="rfm-card-title">Leales</span>
+      <span class="rfm-card-count" style="color: var(--ax-accent);">${loyalCount}</span>
       <span class="rfm-card-sub">Compras recurrentes</span>
     </div>
-    <div class="rfm-card" style="border-color:rgba(255, 107, 138, 0.4);">
-      <span class="rfm-card-title">⚠️ En Riesgo</span>
-      <span class="rfm-card-count" style="color:var(--ax-accent-rose);">${atRiskCount}</span>
+    <div class="rfm-card" style="border-color: color-mix(in srgb, var(--ax-accent-rose) 40%, transparent);">
+      <span class="rfm-card-title">En Riesgo</span>
+      <span class="rfm-card-count" style="color: var(--ax-accent-rose);">${atRiskCount}</span>
       <span class="rfm-card-sub">Inactivos > 60 días</span>
     </div>
-    <div class="rfm-card" style="border-color:rgba(255, 196, 107, 0.4);">
-      <span class="rfm-card-title">🌱 Oportunidad / Nuevos</span>
-      <span class="rfm-card-count" style="color:var(--ax-accent-gold);">${newCount}</span>
+    <div class="rfm-card" style="border-color: color-mix(in srgb, var(--ax-accent-gold) 40%, transparent);">
+      <span class="rfm-card-title">Oportunidad / Nuevos</span>
+      <span class="rfm-card-count" style="color: var(--ax-accent-gold);">${newCount}</span>
       <span class="rfm-card-sub">Primeras ventas</span>
     </div>
   `;
@@ -5302,13 +5427,13 @@ function getComprasProducts() {
         if (q || selectedFam || (typeof filtered !== 'undefined' && rows && filtered.length < rows.length)) {
           tbody.innerHTML = `
             <tr>
-              <td colspan="10" style="text-align:center; padding:2.5rem 1rem; color:var(--ax-text-tertiary);">
-                🔍 No se encontraron productos que coincidan con los filtros aplicados.<br/><br/>
+              <td colspan="10" style="text-align: center; padding: 2.5rem 1rem; color: var(--ax-text-tertiary);">
+                 No se encontraron productos que coincidan con los filtros aplicados.<br/><br/>
                 <button type="button" class="btn-secondary btn-sm" onclick="clearComprasSearch()">Limpiar Filtros de Compras</button>
               </td>
             </tr>`;
         } else {
-          tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:2.5rem 1rem; color:var(--ax-text-tertiary);">Cargando catálogo de productos y costos…</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 2.5rem 1rem; color: var(--ax-text-tertiary);">Cargando catálogo de productos y costos…</td></tr>`;
         }
       } else {
         tbody.innerHTML = pageProducts.map(p => {
@@ -5320,16 +5445,16 @@ function getComprasProducts() {
 
           return `
             <tr>
-              <td style="text-align:left;"><span class="sku-badge">${p.codigo}</span></td>
-              <td style="text-align:left;"><strong style="color:var(--ax-text-primary); font-size:0.875rem;">${escapeHtml(p.descripcion)}</strong></td>
-              <td style="text-align:left;"><span class="tag-pill">${p.familia}</span></td>
-              <td style="text-align:right;" class="num-cell">${fmtCLP(p.costoUnit)}</td>
-              <td style="text-align:right;" class="num-cell">${fmtCLP(p.preuni)}</td>
-              <td style="text-align:center;"><span class="badge ${badgeClass}">${p.margenPct.toFixed(1)}%</span></td>
-              <td style="text-align:right;" class="num-cell">${fmtN(p.cantTotal)}</td>
-              <td style="text-align:right; font-weight:700; color:var(--ax-accent-rose);" class="num-cell">${fmtCLP(p.costoTotalNet)}</td>
-              <td style="text-align:right; font-weight:600;" class="num-cell">${fmtCLP(p.netoTotal)}</td>
-              <td style="text-align:right; font-weight:700; color:${utilColor};" class="num-cell">${fmtCLP(p.utilidadTotal)}</td>
+              <td style="text-align: left;"><span class="sku-badge">${p.codigo}</span></td>
+              <td style="text-align: left;"><strong style="color: var(--ax-text-primary); font-size: 0.875rem;">${escapeHtml(p.descripcion)}</strong></td>
+              <td style="text-align: left;"><span class="tag-pill">${p.familia}</span></td>
+              <td style="text-align: right;" class="num-cell">${fmtCLP(p.costoUnit)}</td>
+              <td style="text-align: right;" class="num-cell">${fmtCLP(p.preuni)}</td>
+              <td style="text-align: center;"><span class="badge ${badgeClass}">${p.margenPct.toFixed(1)}%</span></td>
+              <td style="text-align: right;" class="num-cell">${fmtN(p.cantTotal)}</td>
+              <td style="text-align: right; font-weight: 700; color: var(--ax-accent-rose);" class="num-cell">${fmtCLP(p.costoTotalNet)}</td>
+              <td style="text-align: right; font-weight: 600;" class="num-cell">${fmtCLP(p.netoTotal)}</td>
+              <td style="text-align: right; font-weight: 700; color: ${utilColor};" class="num-cell">${fmtCLP(p.utilidadTotal)}</td>
             </tr>
           `;
         }).join('');
@@ -5353,7 +5478,7 @@ function getComprasProducts() {
     const famBreakdownEl = document.getElementById('comprasFamilyBreakdown');
     if (famBreakdownEl) {
       if (!famList.length) {
-        famBreakdownEl.innerHTML = `<p style="text-align:center; color:var(--ax-text-tertiary);">Sin datos de costo</p>`;
+        famBreakdownEl.innerHTML = `<p style="text-align: center; color: var(--ax-text-tertiary);">Sin datos de costo</p>`;
       } else {
         famBreakdownEl.innerHTML = famList.map(([famName, famCost]) => {
           const pct = totalCostos > 0 ? (famCost / totalCostos) * 100 : 0;
@@ -5377,7 +5502,7 @@ function getComprasProducts() {
     const topCostEl = document.getElementById('comprasTopCostProducts');
     if (topCostEl) {
       if (!top10Cost.length) {
-        topCostEl.innerHTML = `<p style="text-align:center; color:var(--ax-text-tertiary);">Sin datos de costo</p>`;
+        topCostEl.innerHTML = `<p style="text-align: center; color: var(--ax-text-tertiary);">Sin datos de costo</p>`;
       } else {
         topCostEl.innerHTML = top10Cost.map(p => {
           const pct = maxTopCost > 0 ? (p.costoTotalNet / maxTopCost) * 100 : 0;
@@ -5542,31 +5667,31 @@ function renderComprasBIAdvisor() {
   const tbody = document.getElementById('comprasAdvisorTableBody');
   if (tbody) {
     if (!basket.length) {
-      tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding: 2rem; color:var(--ax-text-tertiary);">El presupuesto de $${fmtCLP(budget)} es inferior al costo unitario del producto mínimo. Aumenta el monto de inversión.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 2rem; color: var(--ax-text-tertiary);">El presupuesto de $${fmtCLP(budget)} es inferior al costo unitario del producto mínimo. Aumenta el monto de inversión.</td></tr>`;
     } else {
       tbody.innerHTML = basket.map(b => {
         let tagClass = 'badge-blue';
-        let tagText = '⚡ Alta Rotación';
+        let tagText = 'Alta Rotación';
         if (b.margenPct >= 50) {
           tagClass = 'badge-green';
-          tagText = '💎 Alto Margen';
+          tagText = 'Alto Margen';
         } else if (b.cantTotal >= 100) {
           tagClass = 'badge-amber';
-          tagText = '🔥 Top Ventas';
+          tagText = 'Top Ventas';
         }
 
         return `
           <tr>
-            <td style="text-align:left;"><span class="sku-badge-pill">${b.codigo}</span></td>
-            <td style="text-align:left;"><strong style="color:var(--ax-text-primary); font-size:0.8125rem;">${b.descripcion}</strong></td>
-            <td style="text-align:left;"><span class="tag-pill">${b.familia}</span></td>
-            <td style="text-align:right;" class="num-cell">${fmtCLP(b.costoUnit)}</td>
-            <td style="text-align:right;" class="num-cell">${fmtCLP(b.preuni)}</td>
-            <td style="text-align:center;"><span class="badge ${b.margenPct >= 30 ? 'badge-green' : 'badge-amber'}">${b.margenPct.toFixed(1)}%</span></td>
-            <td style="text-align:center; font-weight:800; color:var(--ax-accent);" class="num-cell">+${b.suggestedUnits} un.</td>
-            <td style="text-align:right; font-weight:700; color:var(--ax-accent-rose);" class="num-cell">${fmtCLP(b.allocatedCost)}</td>
-            <td style="text-align:right; font-weight:700; color:var(--ax-accent-emerald);" class="num-cell">${fmtCLP(b.expectedProfit)}</td>
-            <td style="text-align:center;"><span class="badge ${tagClass}">${tagText}</span></td>
+            <td style="text-align: left;"><span class="sku-badge-pill">${b.codigo}</span></td>
+            <td style="text-align: left;"><strong style="color: var(--ax-text-primary); font-size: 0.8125rem;">${b.descripcion}</strong></td>
+            <td style="text-align: left;"><span class="tag-pill">${b.familia}</span></td>
+            <td style="text-align: right;" class="num-cell">${fmtCLP(b.costoUnit)}</td>
+            <td style="text-align: right;" class="num-cell">${fmtCLP(b.preuni)}</td>
+            <td style="text-align: center;"><span class="badge ${b.margenPct >= 30 ? 'badge-green' : 'badge-amber'}">${b.margenPct.toFixed(1)}%</span></td>
+            <td style="text-align: center; font-weight: 800; color: var(--ax-accent);" class="num-cell">+${b.suggestedUnits} un.</td>
+            <td style="text-align: right; font-weight: 700; color: var(--ax-accent-rose);" class="num-cell">${fmtCLP(b.allocatedCost)}</td>
+            <td style="text-align: right; font-weight: 700; color: var(--ax-accent-emerald);" class="num-cell">${fmtCLP(b.expectedProfit)}</td>
+            <td style="text-align: center;"><span class="badge ${tagClass}">${tagText}</span></td>
           </tr>
         `;
       }).join('');
@@ -5873,7 +5998,7 @@ async function refreshCotizacionesLive(silent = false) {
 
   const syncPill = document.getElementById('syncStatus');
   if (syncPill && !silent) {
-    syncPill.innerHTML = `<span class="dot" style="background:#FFC46B;"></span> <span>Sincronizando Google Sheets...</span>`;
+    syncPill.innerHTML = `<span class="dot" style="background: var(--ax-accent-gold);"></span> <span>Sincronizando Google Sheets...</span>`;
   }
 
   try {
@@ -5884,23 +6009,23 @@ async function refreshCotizacionesLive(silent = false) {
       populateCotizFilterOptions();
       applyCotizacionesFilters();
       if (!silent && typeof showToast === 'function') {
-        showToast(`✅ Pestaña Mayoristas sincronizada (${cotizacionesRows.length.toLocaleString('es-CL')} cotizaciones)`);
+        showToast(`Pestaña Mayoristas sincronizada (${cotizacionesRows.length.toLocaleString('es-CL')} cotizaciones)`);
       }
     } else {
       if (!silent && typeof showToast === 'function') {
-        showToast('⚠️ No se recibieron datos desde la pestaña Mayoristas');
+        showToast('No se recibieron datos desde la pestaña Mayoristas');
       }
     }
   } catch (err) {
     console.warn('[Cotizaciones Sync Error]:', err);
     if (!silent && typeof showToast === 'function') {
-      showToast('⚠️ Error al sincronizar cotizaciones: ' + err.message);
+      showToast('Error al sincronizar cotizaciones: ' + err.message);
     }
   } finally {
     isCotizSyncing = false;
     if (syncPill) {
       const nowStr = new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      syncPill.innerHTML = `<span class="dot" style="background:#3DDC97;"></span> <span>En vivo (${nowStr})</span>`;
+      syncPill.innerHTML = `<span class="dot" style="background: var(--ax-accent-emerald);"></span> <span>En vivo (${nowStr})</span>`;
     }
   }
 }
@@ -5979,7 +6104,7 @@ function clearCotizFilters() {
   }
 
   applyCotizacionesFilters();
-  if (typeof showToast === 'function') showToast('🧹 Filtros de cotizaciones restablecidos');
+  if (typeof showToast === 'function') showToast('Filtros de cotizaciones restablecidos');
 }
 
 /**
@@ -6100,7 +6225,6 @@ function renderCotizacionesHeroCards(data) {
     if (summaryStrip) {
       summaryStrip.innerHTML = `
         <div class="cotiz-summary-card">
-          <div class="cotiz-summary-icon" style="background: rgba(77, 159, 236, 0.15); color: var(--ax-accent);">💰</div>
           <div>
             <div class="cotiz-summary-lbl">Cartera Total Cotizada</div>
             <div class="cotiz-summary-val" style="color: var(--ax-accent);">$0</div>
@@ -6108,7 +6232,6 @@ function renderCotizacionesHeroCards(data) {
           </div>
         </div>
         <div class="cotiz-summary-card">
-          <div class="cotiz-summary-icon" style="background: rgba(61, 220, 151, 0.15); color: var(--ax-accent-emerald);">🏆</div>
           <div>
             <div class="cotiz-summary-lbl">Negocios Ganados</div>
             <div class="cotiz-summary-val" style="color: var(--ax-accent-emerald);">$0</div>
@@ -6116,7 +6239,6 @@ function renderCotizacionesHeroCards(data) {
           </div>
         </div>
         <div class="cotiz-summary-card">
-          <div class="cotiz-summary-icon" style="background: rgba(255, 196, 107, 0.15); color: var(--ax-accent-gold);">⏳</div>
           <div>
             <div class="cotiz-summary-lbl">En Seguimiento Activo</div>
             <div class="cotiz-summary-val" style="color: var(--ax-accent-gold);">$0</div>
@@ -6124,18 +6246,17 @@ function renderCotizacionesHeroCards(data) {
           </div>
         </div>
         <div class="cotiz-summary-card">
-          <div class="cotiz-summary-icon" style="background: rgba(139, 92, 246, 0.15); color: var(--ax-accent-purple);">📈</div>
           <div>
             <div class="cotiz-summary-lbl">Tasa Global de Conversión</div>
-            <div class="cotiz-summary-val" style="color: var(--ax-accent-purple);">0.0%</div>
+            <div class="cotiz-summary-val" style="color: var(--ax-accent);">0.0%</div>
             <div class="cotiz-summary-sub">Efectividad de cierre comercial</div>
           </div>
         </div>
       `;
     }
     container.innerHTML = `
-      <div class="ax-card" style="grid-column: 1 / -1; padding: 3rem 2rem; text-align: center; color: var(--ax-text-tertiary); background: rgba(255,255,255,0.02); border: 1px dashed rgba(255,255,255,0.1); border-radius: 16px;">
-        <div style="font-size: 2.8rem; margin-bottom: 0.65rem;">📅</div>
+      <div class="ax-card" style="grid-column: 1 / -1; padding: 3rem 2rem; text-align: center; color: var(--ax-text-tertiary); background: rgba(255,255,255,0.02); border: 1px dashed var(--ax-border); border-radius: var(--ax-radius-md);">
+        <div style="font-size: 2.8rem; margin-bottom: 0.65rem;"></div>
         <div style="font-size: 1.125rem; font-weight: 700; color: var(--ax-text-primary); margin-bottom: 0.35rem;">No se registraron cotizaciones para el periodo o filtros seleccionados</div>
         <div style="font-size: 0.875rem; color: var(--ax-text-secondary);">Prueba seleccionando "Todo", "Este Año" o ajustando los filtros de búsqueda.</div>
       </div>
@@ -6212,7 +6333,6 @@ function renderCotizacionesHeroCards(data) {
   if (summaryStrip) {
     summaryStrip.innerHTML = `
       <div class="cotiz-summary-card">
-        <div class="cotiz-summary-icon" style="background: rgba(77, 159, 236, 0.15); color: var(--ax-accent);">💰</div>
         <div>
           <div class="cotiz-summary-lbl">Cartera Total Cotizada</div>
           <div class="cotiz-summary-val" style="color: var(--ax-accent);">${formatCLP(grandTotalMonto)}</div>
@@ -6221,7 +6341,6 @@ function renderCotizacionesHeroCards(data) {
       </div>
 
       <div class="cotiz-summary-card">
-        <div class="cotiz-summary-icon" style="background: rgba(61, 220, 151, 0.15); color: var(--ax-accent-emerald);">🏆</div>
         <div>
           <div class="cotiz-summary-lbl">Negocios Ganados</div>
           <div class="cotiz-summary-val" style="color: var(--ax-accent-emerald);">${formatCLP(grandAceptadasMonto)}</div>
@@ -6230,7 +6349,6 @@ function renderCotizacionesHeroCards(data) {
       </div>
 
       <div class="cotiz-summary-card">
-        <div class="cotiz-summary-icon" style="background: rgba(255, 196, 107, 0.15); color: var(--ax-accent-gold);">⏳</div>
         <div>
           <div class="cotiz-summary-lbl">En Seguimiento Activo</div>
           <div class="cotiz-summary-val" style="color: var(--ax-accent-gold);">${formatCLP(grandEnviadasMonto)}</div>
@@ -6239,10 +6357,9 @@ function renderCotizacionesHeroCards(data) {
       </div>
 
       <div class="cotiz-summary-card">
-        <div class="cotiz-summary-icon" style="background: rgba(167, 139, 250, 0.15); color: var(--ax-accent-purple);">📈</div>
         <div>
           <div class="cotiz-summary-lbl">Tasa Global de Conversión</div>
-          <div class="cotiz-summary-val" style="color: var(--ax-accent-purple);">${grandWinRate}%</div>
+          <div class="cotiz-summary-val" style="color: var(--ax-accent);">${grandWinRate}%</div>
           <div style="font-size: 0.75rem; color: var(--ax-text-tertiary);">Efectividad de cierre comercial</div>
         </div>
       </div>
@@ -6263,10 +6380,10 @@ function renderCotizacionesHeroCards(data) {
   byTipo.forEach(val => sortedTipos.push(val));
 
   const tipoIcons = {
-    'Estándar': '📋',
-    'Promoción': '🔥',
-    'Cyber': '⚡',
-    'Especial': '💎'
+    'Estándar': '',
+    'Promoción': '',
+    'Cyber': '',
+    'Especial': ''
   };
 
   const tipoClasses = {
@@ -6287,7 +6404,7 @@ function renderCotizacionesHeroCards(data) {
 
   container.innerHTML = sortedTipos.map(item => {
     const winRate = item.count > 0 ? ((item.aceptadasCnt / item.count) * 100).toFixed(1) : '0';
-    const icon = tipoIcons[item.tipo] || '📑';
+    const icon = tipoIcons[item.tipo] || '';
     const cardClass = tipoClasses[item.tipo] || '';
     const estados = estadosDe(item);
 
@@ -6298,7 +6415,7 @@ function renderCotizacionesHeroCards(data) {
 
     const mezcla = sumaEstados > 0 ? estados.filter(e => e.monto > 0).map(e => {
       const pct = (e.monto / sumaEstados) * 100;
-      return `<span class="cotiz-mezcla__seg is-${e.clave}" style="width:${pct.toFixed(2)}%"
+      return `<span class="cotiz-mezcla__seg is-${e.clave}" style="width: ${pct.toFixed(2)}%"
         title="${e.etiqueta}: ${formatCLP(e.monto)} (${pct.toFixed(1)}% del monto)"></span>`;
     }).join('') : '';
 
@@ -6403,21 +6520,21 @@ function renderCotizacionesCharts(data) {
             label: 'Aceptadas ($)',
             data: aceptadasByMonth,
             backgroundColor: 'rgba(61, 220, 151, 0.85)',
-            borderColor: '#3DDC97',
+            borderColor: tokenColor('--ax-accent-emerald', '#57C494'),
             borderRadius: 6
           },
           {
             label: 'Enviadas / Proceso ($)',
             data: enviadasByMonth,
             backgroundColor: 'rgba(255, 196, 107, 0.85)',
-            borderColor: '#FFC46B',
+            borderColor: tokenColor('--ax-accent-gold', '#DFAC4C'),
             borderRadius: 6
           },
           {
             label: 'Perdidas ($)',
             data: perdidasByMonth,
             backgroundColor: 'rgba(255, 107, 138, 0.85)',
-            borderColor: '#FF6B8A',
+            borderColor: tokenColor('--ax-accent-rose', '#F0768A'),
             borderRadius: 6
           }
         ]
@@ -6475,9 +6592,8 @@ function renderCotizacionesCharts(data) {
     const labels = sortedEstados.map(e => e[0]);
     const values = sortedEstados.map(e => e[1]);
 
-    const colorPalette = [
-      '#3DDC97', '#4D9FEC', '#FFC46B', '#FF6B8A', '#A78BFA', '#2DD4CE', '#E58BB8', '#8B95B9'
-    ];
+    /* Los estados vienen ordenados por cantidad, de mayor a menor. */
+    const colorPalette = serieColores(Math.max(labels.length, 1));
 
     chartCotizEstadoInstance = new Chart(ctxEstado, {
       type: 'doughnut',
@@ -6486,8 +6602,8 @@ function renderCotizacionesCharts(data) {
         datasets: [{
           data: values,
           backgroundColor: colorPalette.slice(0, labels.length),
-          borderWidth: 2,
-          borderColor: '#1B2342'
+          borderColor: tokenColor('--surf-1', '#21252C'),
+          borderWidth: 2
         }]
       },
       options: {
@@ -6542,7 +6658,7 @@ function renderCotizacionesCharts(data) {
           label: 'Total Cotizado ($)',
           data: totals,
           backgroundColor: 'rgba(77, 159, 236, 0.85)',
-          borderColor: '#4D9FEC',
+          borderColor: tokenColor('--ax-accent', '#84B6E4'),
           borderRadius: 6
         }]
       },
@@ -6619,17 +6735,17 @@ function renderCotizacionesTopProducts(data) {
   container.innerHTML = top10.map((p, idx) => {
     const pct = Math.min(100, Math.max(5, (p.total / maxTotal) * 100));
     let rankBadge = `<span class="badge badge-blue">#${idx + 1}</span>`;
-    if (idx === 0) rankBadge = `<span class="badge badge-amber" style="background: rgba(255, 196, 107, 0.2); color: var(--ax-accent-gold);">🥇 1°</span>`;
-    if (idx === 1) rankBadge = `<span class="badge" style="background: rgba(203, 213, 225, 0.2); color: var(--ax-text-secondary);">🥈 2°</span>`;
-    if (idx === 2) rankBadge = `<span class="badge" style="background: rgba(217, 119, 6, 0.2); color: var(--ax-accent-gold);">🥉 3°</span>`;
+    if (idx === 0) rankBadge = `<span class="badge badge-amber" style="background: color-mix(in srgb, var(--ax-accent-gold) 20%, transparent); color: var(--ax-accent-gold);">1°</span>`;
+    if (idx === 1) rankBadge = `<span class="badge" style="background: rgba(203, 213, 225, 0.2); color: var(--ax-text-secondary);">2°</span>`;
+    if (idx === 2) rankBadge = `<span class="badge" style="background: rgba(217, 119, 6, 0.2); color: var(--ax-accent-gold);">3°</span>`;
 
     const imgObj = typeof productImagesMap !== 'undefined' ? productImagesMap.get(p.sku) : null;
     const imgThumb = imgObj && imgObj.url ?
-      `<img src="${encodeURI(imgObj.url)}" alt="${escapeHtml(p.sku)}" style="width: 38px; height: 38px; object-fit: contain; border-radius: 8px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1);" onerror="this.style.display='none'" />` :
-      `<div style="width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); border-radius: 8px; font-size: 1rem;">📦</div>`;
+      `<img src="${encodeURI(imgObj.url)}" alt="${escapeHtml(p.sku)}" style="width: 38px; height: 38px; object-fit: contain; border-radius: var(--ax-radius-md); background: rgba(0,0,0,0.3); border: 1px solid var(--ax-border);" onerror="this.style.display='none'" />` :
+      `<div style="width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); border-radius: var(--ax-radius-md); font-size: 1rem;"></div>`;
 
     return `
-      <div class="compras-breakdown-item" style="padding: 0.85rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
+      <div class="compras-breakdown-item" style="padding: 0.85rem 1rem; border-bottom: 1px solid var(--ax-border-subtle); display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
         <div style="display: flex; align-items: center; gap: 0.85rem; min-width: 0; flex: 1;">
           ${rankBadge}
           ${imgThumb}
@@ -6647,7 +6763,7 @@ function renderCotizacionesTopProducts(data) {
         <div style="text-align: right; min-width: 130px;">
           <strong style="color: var(--ax-accent); font-size: 1rem; font-weight: 800;">${formatCLP(p.total)}</strong>
           <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.08); border-radius: 4px; margin-top: 5px; overflow: hidden;">
-            <div style="width: ${pct}%; height: 100%; background: linear-gradient(90deg, #4D9FEC, #3DDC97); border-radius: 4px;"></div>
+            <div style="width: ${pct}%; height: 100%; background: var(--ax-accent); border-radius: 4px;"></div>
           </div>
         </div>
       </div>
@@ -6666,7 +6782,7 @@ function renderCotizacionesTable(data) {
   if (!tbody) return;
 
   if (!data || data.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="12" style="text-align:center; padding: 3rem; color:var(--ax-text-tertiary); font-size: 1rem;">No hay cotizaciones para mostrar con los filtros aplicados.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="12" style="text-align: center; padding: 3rem; color: var(--ax-text-tertiary); font-size: 1rem;">No hay cotizaciones para mostrar con los filtros aplicados.</td></tr>`;
     if (pageInfo) pageInfo.textContent = 'Página 0 de 0 (0 cotizaciones)';
     if (prevBtn) prevBtn.disabled = true;
     if (nextBtn) nextBtn.disabled = true;
@@ -6690,40 +6806,40 @@ function renderCotizacionesTable(data) {
   tbody.innerHTML = pageRows.map(r => {
     const stLow = (r.estadoFinal || r.estado || '').toLowerCase();
     let statusClass = 'cotiz-status--enviada';
-    let statusIcon = '⏳';
+    let statusIcon = '';
 
     if (stLow.includes('aceptada')) {
       statusClass = 'cotiz-status--aceptada';
-      statusIcon = '✅';
+      statusIcon = '';
     } else if (stLow.includes('perdida')) {
       statusClass = 'cotiz-status--perdida';
-      statusIcon = '❌';
+      statusIcon = '';
     } else if (stLow.includes('preparación') || stLow.includes('preparacion')) {
       statusClass = 'cotiz-status--preparacion';
-      statusIcon = '⚙️';
+      statusIcon = '';
     } else if (stLow.includes('stock')) {
       statusClass = 'cotiz-status--pendiente';
-      statusIcon = '📦';
+      statusIcon = '';
     }
 
     const nvFaText = (r.nv || r.fa) ?
-      `<span style="font-size:0.8125rem; font-weight: 600; color:var(--ax-text-secondary);">${r.nv ? 'NV:'+r.nv : ''} ${r.fa ? 'FA:'+r.fa : ''}</span>` :
-      `<span style="color:var(--ax-text-tertiary); font-size:0.8125rem;">—</span>`;
+      `<span style="font-size: 0.8125rem; font-weight: 600; color: var(--ax-text-secondary);">${r.nv ? 'NV:'+r.nv : ''} ${r.fa ? 'FA:'+r.fa : ''}</span>` :
+      `<span style="color: var(--ax-text-tertiary); font-size: 0.8125rem;">—</span>`;
 
     return `
       <tr style="height: 48px;">
-        <td style="text-align:left;"><span class="tag-pill" style="font-size:0.8125rem; font-weight:700;">${escapeHtml(r.tipo)}</span></td>
-        <td style="text-align:left;"><span class="sku-badge-pill" style="font-weight:800; font-size:0.875rem;">#${escapeHtml(r.numCot)}</span></td>
-        <td style="text-align:center; font-size:0.875rem; color:var(--ax-text-secondary);">${escapeHtml(r.fecha || '—')}</td>
-        <td style="text-align:left;"><strong style="color:var(--ax-text-primary); font-size:0.875rem;">${escapeHtml(r.cliente)}</strong></td>
-        <td style="text-align:left; font-size:0.8125rem; color:var(--ax-text-secondary);">${escapeHtml(r.rut || '—')}</td>
-        <td style="text-align:left;"><span class="sku-badge-pill" style="background:rgba(77, 159, 236,0.18); color:var(--ax-accent); border-color:rgba(77, 159, 236,0.35); font-weight:700; font-size:0.8125rem;">${escapeHtml(r.sku)}</span></td>
-        <td style="text-align:left; max-width:280px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(r.producto)}"><span style="font-size:0.875rem; font-weight:500;">${escapeHtml(r.producto)}</span></td>
-        <td style="text-align:center; font-weight:800; font-size:0.875rem;" class="num-cell">${Math.round(r.cantidad).toLocaleString('es-CL')}</td>
-        <td style="text-align:right; font-weight:900; color:var(--ax-accent); font-size:1rem;" class="num-cell">${formatCLP(r.total)}</td>
-        <td style="text-align:center;"><span class="tag-pill" style="font-size:0.8125rem; font-weight:600;">Cod. ${escapeHtml(r.vendedor)}</span></td>
-        <td style="text-align:center;">${nvFaText}</td>
-        <td style="text-align:center;">
+        <td style="text-align: left;"><span class="tag-pill" style="font-size: 0.8125rem; font-weight: 700;">${escapeHtml(r.tipo)}</span></td>
+        <td style="text-align: left;"><span class="sku-badge-pill" style="font-weight: 800; font-size: 0.875rem;">#${escapeHtml(r.numCot)}</span></td>
+        <td style="text-align: center; font-size: 0.875rem; color: var(--ax-text-secondary);">${escapeHtml(r.fecha || '—')}</td>
+        <td style="text-align: left;"><strong style="color: var(--ax-text-primary); font-size: 0.875rem;">${escapeHtml(r.cliente)}</strong></td>
+        <td style="text-align: left; font-size: 0.8125rem; color: var(--ax-text-secondary);">${escapeHtml(r.rut || '—')}</td>
+        <td style="text-align: left;"><span class="sku-badge-pill" style="background: color-mix(in srgb, var(--ax-accent) 18%, transparent); color: var(--ax-accent); border-color: color-mix(in srgb, var(--ax-accent) 35%, transparent); font-weight: 700; font-size: 0.8125rem;">${escapeHtml(r.sku)}</span></td>
+        <td style="text-align: left; max-width: 280px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(r.producto)}"><span style="font-size: 0.875rem; font-weight: 500;">${escapeHtml(r.producto)}</span></td>
+        <td style="text-align: center; font-weight: 800; font-size: 0.875rem;" class="num-cell">${Math.round(r.cantidad).toLocaleString('es-CL')}</td>
+        <td style="text-align: right; font-weight: 900; color: var(--ax-accent); font-size: 1rem;" class="num-cell">${formatCLP(r.total)}</td>
+        <td style="text-align: center;"><span class="tag-pill" style="font-size: 0.8125rem; font-weight: 600;">Cod. ${escapeHtml(r.vendedor)}</span></td>
+        <td style="text-align: center;">${nvFaText}</td>
+        <td style="text-align: center;">
           <span class="cotiz-status-pill ${statusClass}" style="font-size: 0.8125rem; padding: 4px 10px;">
             <span>${statusIcon}</span>
             <span>${escapeHtml(r.estadoFinal || r.estado)}</span>
@@ -7017,7 +7133,7 @@ function onCotizRutInput(val) {
       <div class="cotiz-pred-item" data-idx="${i}">
         <div>
           <div class="cotiz-pred-name">${escapeHtml(c.cliente)}</div>
-          <div class="cotiz-pred-loc">${loc ? '📍 ' + escapeHtml(loc) : 'Cliente Registrado'}</div>
+          <div class="cotiz-pred-loc">${loc ? '' + escapeHtml(loc) : 'Cliente Registrado'}</div>
         </div>
         <div style="text-align: right;">
           <span class="cotiz-pred-rut">${escapeHtml(c.rut || formatChileanRut(c.rutClean))}</span>
@@ -7077,7 +7193,7 @@ function onCotizClientNameInput(val) {
       <div class="cotiz-pred-item" data-idx="${i}">
         <div>
           <div class="cotiz-pred-name">${escapeHtml(c.cliente)}</div>
-          <div class="cotiz-pred-loc">${loc ? '📍 ' + escapeHtml(loc) : ''}</div>
+          <div class="cotiz-pred-loc">${loc ? '' + escapeHtml(loc) : ''}</div>
         </div>
         <div style="text-align: right;">
           <span class="cotiz-pred-rut">${escapeHtml(c.rut || formatChileanRut(c.rutClean))}</span>
@@ -7160,7 +7276,7 @@ function addCotizProductRow(initialData = null) {
       <img src="${data.imgUrl || 'https://via.placeholder.com/32?text=SKU'}" id="itemThumb_${rowId}" class="cotiz-item-thumb" alt="SKU" onerror="this.onerror=null; this.src='https://via.placeholder.com/32?text=SKU';" />
     </td>
     <td>
-      <input type="text" class="cotiz-item-input" id="itemSku_${rowId}" value="${data.sku}" placeholder="Ej: ARM012" oninput="onCotizItemSkuInput(${rowId}, this.value)" style="text-transform: uppercase; font-family: monospace; font-weight: 700;" required />
+      <input type="text" class="cotiz-item-input" id="itemSku_${rowId}" value="${data.sku}" placeholder="Ej: ARM012" oninput="onCotizItemSkuInput(${rowId}, this.value)" style="font-family: monospace; font-weight: 700;" required />
     </td>
     <td>
       <input type="text" class="cotiz-item-input" id="itemDesc_${rowId}" value="${data.desc}" placeholder="Descripción detallada del producto" required />
@@ -7169,7 +7285,7 @@ function addCotizProductRow(initialData = null) {
       <input type="number" class="cotiz-item-input" id="itemCant_${rowId}" value="${data.cant}" min="0.1" step="any" style="text-align: right; font-weight: 700;" oninput="recalcCotizTotals()" required />
     </td>
     <td>
-      <input type="number" class="cotiz-item-input" id="itemPrecio_${rowId}" value="${data.precio}" min="0" step="any" style="text-align: right; font-weight: 700; color: var(--ax-accent-sky);" oninput="recalcCotizTotals()" required />
+      <input type="number" class="cotiz-item-input" id="itemPrecio_${rowId}" value="${data.precio}" min="0" step="any" style="text-align: right; font-weight: 700; color: var(--ax-accent);" oninput="recalcCotizTotals()" required />
     </td>
     <td>
       <input type="number" class="cotiz-item-input" id="itemCosto_${rowId}" value="${data.costo}" min="0" step="any" style="text-align: right; color: var(--ax-accent-rose);" oninput="recalcCotizTotals()" placeholder="0" />
@@ -7181,7 +7297,7 @@ function addCotizProductRow(initialData = null) {
       <span class="margin-pill" id="itemMargin_${rowId}" style="font-size: 0.75rem; padding: 2px 6px;">0%</span>
     </td>
     <td style="text-align: center;">
-      <button type="button" class="mini-action-btn" onclick="removeCotizProductRow(${rowId})" title="Eliminar este producto" style="color: var(--ax-accent-rose);">🗑️</button>
+      <button type="button" class="mini-action-btn" onclick="removeCotizProductRow(${rowId})" title="Eliminar este producto" style="color: var(--ax-accent-rose);"></button>
     </td>
   `;
 
@@ -7368,12 +7484,12 @@ async function saveCotizacion() {
   const observaciones = document.getElementById('cObservaciones')?.value?.trim() || '';
 
   if (!cliente) {
-    showToast('⚠️ Por favor ingresa el nombre o razón social del cliente', 'warn');
+    showToast('Por favor ingresa el nombre o razón social del cliente', 'warn');
     return;
   }
 
   if (rut && !isValidChileanRut(rut)) {
-    showToast(`⚠️ El RUT ${rut} no es válido (dígito verificador incorrecto)`, 'warn');
+    showToast(`El RUT ${rut} no es válido (dígito verificador incorrecto)`, 'warn');
     return;
   }
 
@@ -7395,7 +7511,7 @@ async function saveCotizacion() {
   });
 
   if (items.length === 0) {
-    if (typeof showToast === 'function') showToast('⚠️ Debes ingresar al menos 1 producto con cantidad válida');
+    if (typeof showToast === 'function') showToast('Debes ingresar al menos 1 producto con cantidad válida');
     return;
   }
 
@@ -7478,9 +7594,9 @@ async function saveCotizacion() {
   } catch (e) {}
 
   if (syncError) {
-    showToast(`⚠️ Cotización ${folio} guardada solo localmente: no se pudo sincronizar (${syncError.message})`, 'warn');
+    showToast(`Cotización ${folio} guardada solo localmente: no se pudo sincronizar (${syncError.message})`, 'warn');
   } else {
-    showToast(`✅ Cotización ${folio} con ${items.length} productos guardada exitosamente`);
+    showToast(`Cotización ${folio} con ${items.length} productos guardada exitosamente`);
   }
 
   closeCotizacionModal();
@@ -7538,7 +7654,7 @@ function printCotizacionDocument() {
 
   const printWindow = window.open('', '_blank');
   if (!printWindow) {
-    if (typeof showToast === 'function') showToast('⚠️ Permite las ventanas emergentes para imprimir la cotización');
+    if (typeof showToast === 'function') showToast('Permite las ventanas emergentes para imprimir la cotización');
     return;
   }
 
@@ -7778,9 +7894,9 @@ function renderMonthlyTargetProgress() {
     const expectedPct = (dayToday / daysInMonth) * 100;
 
     if (pct >= expectedPct) {
-      subEl.innerHTML = `🔥 <strong>Avance en ${monthName} ${targetYear}:</strong> Superando el ritmo esperado del mes (${expectedPct.toFixed(1)}%).`;
+      subEl.innerHTML = `<strong>Avance en ${monthName} ${targetYear}:</strong> Superando el ritmo esperado del mes (${expectedPct.toFixed(1)}%).`;
     } else {
-      subEl.innerHTML = `⚠️ <strong>Ritmo Requerido (${monthName} ${targetYear}):</strong> ${expectedPct.toFixed(1)}% esperado al día ${dayToday}.`;
+      subEl.innerHTML = `<strong>Ritmo Requerido (${monthName} ${targetYear}):</strong> ${expectedPct.toFixed(1)}% esperado al día ${dayToday}.`;
     }
   }
 }
@@ -7796,13 +7912,13 @@ function saveTargetSettings() {
   try {
     localStorage.setItem('glomax_monthly_targets', JSON.stringify(monthlyTargets));
   } catch (e) {
-    showToast('⚠️ No se pudieron guardar las metas en este navegador', 'warn');
+    showToast('No se pudieron guardar las metas en este navegador', 'warn');
   }
 
   closeTargetModal();
   renderMonthlyTargetProgress();
   if (typeof AudioSynth !== 'undefined') AudioSynth.play('success');
-  showToast('🎯 Metas de ventas mensuales actualizadas correctamente.');
+  showToast('Metas de ventas mensuales actualizadas correctamente.');
 }
 
 document.getElementById('targetModalForm')?.addEventListener('submit', (e) => {
@@ -8202,7 +8318,7 @@ function handleFtSearchInput(val) {
     html += `
       <div class="prod-suggestion-item" data-sku="${escapeHtml(p.sku)}">
         <div>
-          <strong style="color: var(--ax-accent-sky); font-family: 'JetBrains Mono', monospace;">${escapeHtml(p.sku)}</strong>
+          <strong style="color: var(--ax-accent); font-family: var(--ax-font-mono);">${escapeHtml(p.sku)}</strong>
           <span style="color: var(--ax-text-secondary); margin-left: 6px;">${escapeHtml(p.descripcion)}</span>
         </div>
         <div style="font-size: 0.8125rem; color: var(--ax-text-tertiary); text-align: right;">
@@ -8236,7 +8352,7 @@ function selectFtProductSku(sku) {
   if (!container) return;
 
   if (!prod) {
-    container.innerHTML = '<div style="text-align: center; color: var(--ax-accent-rose); padding: 3rem; background: rgba(255, 107, 138, 0.05); border: 1px dashed #FF6B8A; border-radius: 12px;">⚠️ No se encontraron datos técnicos para el SKU seleccionado.</div>';
+    container.innerHTML = '<div style="text-align: center; color: var(--ax-accent-rose); padding: 3rem; background: color-mix(in srgb, var(--ax-accent-rose) 5%, transparent); border: 1px dashed var(--ax-accent-rose); border-radius: var(--ax-radius-md);">No se encontraron datos técnicos para el SKU seleccionado.</div>';
     return;
   }
 
@@ -8255,11 +8371,11 @@ function selectFtProductSku(sku) {
     bomRowsHtml += `
       <tr>
         <td style="font-weight: 600; color: var(--ax-text-secondary);">${idx + 1}. ${b.parte}</td>
-        <td style="text-align: center; font-weight: 700; color: var(--ax-accent-sky);">${b.cant} und.</td>
+        <td style="text-align: center; font-weight: 700; color: var(--ax-accent);">${b.cant} und.</td>
         <td style="text-align: right;">
           <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
             <div style="width: 60px; height: 6px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden;">
-              <div style="width: ${pctNum}%; height: 100%; background: linear-gradient(90deg, #2DD4CE, #A78BFA);"></div>
+              <div style="width: ${pctNum}%; height: 100%; background: var(--ax-accent);"></div>
             </div>
             <span class="ft-tag ft-tag-purple" style="font-size: 0.75rem;">${b.participacion}</span>
           </div>
@@ -8286,8 +8402,8 @@ function selectFtProductSku(sku) {
   // Tarjeta con los campos que agrego el usuario; se omite si no definio ninguno.
   const camposValidos = (spec.camposCustom || []).filter(c => c && (c.etiqueta || c.valor));
   const camposCustomHtml = camposValidos.length ? `
-    <div class="ft-card" style="background: var(--surf-3); border: 1px solid rgba(139, 92, 246, 0.35); border-radius: 12px; padding: 1.25rem;">
-      <div class="ft-card-header" style="display: flex; align-items: center; gap: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 10px; margin-bottom: 12px; color: var(--ax-accent-purple); font-weight: 700;">
+    <div class="ft-card" style="background: var(--surf-3); border: 1px solid rgba(139, 92, 246, 0.35); border-radius: var(--ax-radius-md); padding: 1.25rem;">
+      <div class="ft-card-header" style="display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--ax-border); padding-bottom: 10px; margin-bottom: 12px; color: var(--ax-accent); font-weight: 700;">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         <span>ESPECIFICACIONES ADICIONALES</span>
       </div>
@@ -8308,26 +8424,26 @@ function selectFtProductSku(sku) {
     <div class="ft-card">
       <div class="ft-card-header" style="justify-content: space-between;">
         <div style="display: flex; align-items: center; gap: 8px;">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2DD4CE" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-          <span style="font-weight: 700; color: var(--ax-text-primary);">REGISTRO FOTOGRÁFICO OFICIAL</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#84B6E4" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          <span style="font-weight: 700; color: var(--ax-text-primary);">Registro fotográfico oficial</span>
         </div>
         <span class="ft-tag ft-tag-blue">Glomax HD Asset</span>
       </div>
       <div class="ft-photo-frame">
-        <img src="${escapeHtml(photoUrl)}" alt="${escapeHtml(prod.descripcion)}" class="ft-product-photo" id="ftMainPhoto" onerror="this.onerror=null; this.parentElement.innerHTML='<div style=\'color:var(--ax-text-tertiary); font-size:0.875rem; padding: 2rem; text-align: center;\'>📷 Fotografía no disponible</div>';" />
-        <span class="ft-photo-badge">🔒 Certificado Glomax.cl</span>
+        <img src="${escapeHtml(photoUrl)}" alt="${escapeHtml(prod.descripcion)}" class="ft-product-photo" id="ftMainPhoto" onerror="this.onerror=null; this.parentElement.innerHTML='<div style=\'color:var(--ax-text-tertiary); font-size:0.875rem; padding: 2rem; text-align: center;\'>Fotografía no disponible</div>';" />
+        <span class="ft-photo-badge">Certificado Glomax.cl</span>
       </div>
       ${galeriaHtml}
     </div>
   ` : `
     <div class="ft-card">
       <div class="ft-card-header">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2DD4CE" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#84B6E4" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
         <span style="font-weight: 700; color: var(--ax-text-primary);">ESQUEMA TÉCNICO CAD 3D</span>
       </div>
-      <div style="background: linear-gradient(135deg, var(--surf-3), var(--surf-3)); border: 1px dashed rgba(45, 212, 206, 0.4); border-radius: 12px; padding: 2.5rem 1.5rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center;">
-        <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="#2DD4CE" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-        <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.875rem; color: var(--ax-accent-sky); font-weight: 700; letter-spacing: 1px;">DIAGRAMA TÉCNICO CAD #${escapeHtml(prod.sku)}</div>
+      <div style="background: linear-gradient(135deg, var(--surf-3), var(--surf-3)); border: 1px dashed color-mix(in srgb, var(--ax-accent) 40%, transparent); border-radius: var(--ax-radius-md); padding: 2.5rem 1.5rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center;">
+        <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="#84B6E4" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+        <div style="font-family: var(--ax-font-mono); font-size: 0.875rem; color: var(--ax-accent); font-weight: 700; letter-spacing: 1px;">DIAGRAMA TÉCNICO CAD #${escapeHtml(prod.sku)}</div>
         <div style="font-size: 0.8125rem; color: var(--ax-text-tertiary);">Glomax SA Industrial Engineering Standard</div>
       </div>
     </div>
@@ -8335,28 +8451,28 @@ function selectFtProductSku(sku) {
 
   const html = `
     <!-- MEMBRETE OFICIAL DE LICITACIONES Y CERTIFICACIÓN -->
-    <div class="ft-header-card" style="background: linear-gradient(135deg, var(--surf-3), var(--surf-3)); border: 1px solid rgba(45, 212, 206, 0.4); border-radius: 16px; padding: 1.75rem; box-shadow: 0 12px 36px rgba(0,0,0,0.5);">
+    <div class="ft-header-card" style="background: linear-gradient(135deg, var(--surf-3), var(--surf-3)); border: 1px solid color-mix(in srgb, var(--ax-accent) 40%, transparent); border-radius: var(--ax-radius-md); padding: 1.75rem;">
       
       <!-- FRANJA SUPREMA DE CERTIFICACIÓN Y MEMBRETE -->
-      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 1rem; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--ax-border); padding-bottom: 1rem; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
         <div style="display: flex; align-items: center; gap: 12px;">
-          <div style="background: linear-gradient(135deg, #4D9FEC, #2563B8); width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(77, 159, 236,0.4);">
+          <div style="background: var(--ax-accent); width: 42px; height: 42px; border-radius: var(--ax-radius-md); display: flex; align-items: center; justify-content: center;">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
           </div>
           <div>
-            <div style="font-family: 'Inter Tight', 'Inter', sans-serif; font-weight: 800; font-size: 1rem; color: var(--ax-text-primary); letter-spacing: 0.5px;">GLOMAX S.A. · CHILE</div>
-            <div style="font-size: 0.75rem; color: var(--ax-accent-sky); font-weight: 600;">DEPARTAMENTO DE INGENIERÍA & CONTROL DE CALIDAD</div>
+            <div style="font-family: var(--ax-font-display); font-weight: 800; font-size: 1rem; color: var(--ax-text-primary); letter-spacing: 0.5px;">GLOMAX S.A. · CHILE</div>
+            <div style="font-size: 0.75rem; color: var(--ax-accent); font-weight: 600;">DEPARTAMENTO DE INGENIERÍA & CONTROL DE CALIDAD</div>
           </div>
         </div>
 
         <div style="display: flex; align-items: center; gap: 1rem;">
-          <div style="text-align: right; border-right: 1px solid rgba(255,255,255,0.1); padding-right: 1rem;">
-            <div style="font-size: 0.6875rem; color: var(--ax-text-tertiary); font-weight: 700; text-transform: uppercase;">Código Documento</div>
-            <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.875rem; color: var(--ax-accent-gold); font-weight: 700;">DOC-FT-${escapeHtml(prod.sku)}</div>
+          <div style="text-align: right; border-right: 1px solid var(--ax-border); padding-right: 1rem;">
+            <div style="font-size: 0.6875rem; color: var(--ax-text-tertiary); font-weight: 700;">Código Documento</div>
+            <div style="font-family: var(--ax-font-mono); font-size: 0.875rem; color: var(--ax-text-secondary); font-weight: 500;">DOC-FT-${escapeHtml(prod.sku)}</div>
           </div>
           <div style="text-align: right;">
-            <div style="font-size: 0.6875rem; color: var(--ax-text-tertiary); font-weight: 700; text-transform: uppercase;">Normativa / Tipo</div>
-            <div style="font-size: 0.8125rem; color: var(--ax-accent-emerald); font-weight: 700;">Apta para Licitaciones</div>
+            <div style="font-size: 0.6875rem; color: var(--ax-text-tertiary); font-weight: 700;">Normativa / Tipo</div>
+            <div style="font-size: 0.8125rem; color: var(--ax-text-primary); font-weight: 500;">Apta para licitaciones</div>
           </div>
         </div>
       </div>
@@ -8364,12 +8480,12 @@ function selectFtProductSku(sku) {
       <div class="ft-title-bar" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1.5rem; flex-wrap: wrap;">
         <div style="flex: 1; min-width: 280px;">
           <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 8px;">
-            <span class="ft-sku-badge" style="background: rgba(45, 212, 206, 0.2); color: var(--ax-accent-sky); border: 1px solid rgba(45, 212, 206, 0.4); padding: 4px 10px; border-radius: 6px; font-weight: 800; font-family: 'JetBrains Mono', monospace;">SKU: ${escapeHtml(prod.sku)}</span>
-            ${isCustomized ? '<span class="ft-tag ft-tag-gold">✏️ Spec Editada / Personalizada</span>' : '<span class="ft-tag ft-tag-blue">🛡️ Especificación Oficial Glomax</span>'}
-            <span class="ft-tag ft-tag-purple">📂 ${prod.categoria || 'Sin Categoría'}</span>
-            <span class="ft-tag ft-tag-green">🏷️ ${prod.marca || 'Glomax Standard'}</span>
+            <span class="ft-sku-badge" style="background: color-mix(in srgb, var(--ax-accent) 20%, transparent); color: var(--ax-accent); border: 1px solid color-mix(in srgb, var(--ax-accent) 40%, transparent); padding: 4px 10px; border-radius: 6px; font-weight: 800; font-family: var(--ax-font-mono);">SKU: ${escapeHtml(prod.sku)}</span>
+            ${isCustomized ? '<span class="ft-tag ft-tag-gold">Spec Editada / Personalizada</span>' : '<span class="ft-tag ft-tag-blue">Especificación Oficial Glomax</span>'}
+            <span class="ft-tag ft-tag-purple">${prod.categoria || 'Sin Categoría'}</span>
+            <span class="ft-tag ft-tag-green">${prod.marca || 'Glomax Standard'}</span>
           </div>
-          <h1 style="font-family: 'Inter Tight', 'Inter', sans-serif; font-size: 1.5rem; font-weight: 800; color: var(--ax-text-primary); margin: 6px 0 8px 0; line-height: 1.3;">${escapeHtml(prod.descripcion)}</h1>
+          <h1 style="font-family: var(--ax-font-display); font-size: 1.5rem; font-weight: 800; color: var(--ax-text-primary); margin: 6px 0 8px 0; line-height: 1.3;">${escapeHtml(prod.descripcion)}</h1>
           <div style="font-size: 0.8125rem; color: var(--ax-text-secondary); display: flex; gap: 12px; flex-wrap: wrap;">
             <span>Familia: <strong style="color: var(--ax-text-primary);">${prod.familia || 'General'}</strong></span>
             <span>|</span>
@@ -8380,37 +8496,37 @@ function selectFtProductSku(sku) {
         </div>
 
         <!-- CÓDIGO DE BARRAS VECTORIAL CON SELLO -->
-        <div style="text-align: right; background: #ffffff; padding: 10px 14px; border-radius: 12px; box-shadow: 0 4px 14px rgba(0,0,0,0.3);">
+        <div style="text-align: right; background: #ffffff; padding: 10px 14px; border-radius: var(--ax-radius-md);">
           <div class="ft-barcode-box" style="background: #ffffff; padding: 0; border: none;">
             <svg viewBox="0 0 240 48" width="180" height="38" xmlns="http://www.w3.org/2000/svg">
               ${barcodeBars}
             </svg>
-            <div class="ft-barcode-text" style="font-family: 'JetBrains Mono', monospace; font-size: 0.8125rem; font-weight: 800; color: #0f172a; text-align: center; margin-top: 2px;">${fullEan13}</div>
+            <div class="ft-barcode-text" style="font-family: var(--ax-font-mono); font-size: 0.8125rem; font-weight: 800; color: #0f172a; text-align: center; margin-top: 2px;">${fullEan13}</div>
           </div>
-          <div style="font-size: 0.6875rem; color: #475569; font-weight: 700; margin-top: 2px; text-transform: uppercase;">EAN-13 VERIFIED ASSET</div>
+          <div style="font-size: 0.6875rem; color: #475569; font-weight: 700; margin-top: 2px;">EAN-13 VERIFIED ASSET</div>
         </div>
       </div>
 
       <!-- MÉTRICAS COMERCIALES & LOGÍSTICAS DE CABECERA -->
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-top: 1.25rem;">
-        <div style="background: var(--surf-2); padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(45, 212, 206, 0.25);">
-          <div style="font-size: 0.75rem; color: var(--ax-text-tertiary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Precio Lista Prom.</div>
-          <div style="font-size: 1.25rem; font-weight: 800; color: var(--ax-accent-sky); font-family: 'JetBrains Mono', monospace;">${formatCLP(prod.precioPromedio)}</div>
+        <div style="background: var(--surf-2); padding: 12px 16px; border-radius: var(--ax-radius-md); border: 1px solid color-mix(in srgb, var(--ax-accent) 25%, transparent);">
+          <div style="font-size: 0.75rem; color: var(--ax-text-tertiary); font-weight: 700;">Precio Lista Prom.</div>
+          <div style="font-size: 1.25rem; font-weight: 800; color: var(--ax-accent); font-family: var(--ax-font-mono);">${formatCLP(prod.precioPromedio)}</div>
         </div>
 
-        <div style="background: var(--surf-2); padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(167, 139, 250, 0.25);">
-          <div style="font-size: 0.75rem; color: var(--ax-text-tertiary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Costo Neto Unitario</div>
-          <div style="font-size: 1.25rem; font-weight: 800; color: var(--ax-accent-purple); font-family: 'JetBrains Mono', monospace;">${formatCLP(prod.costoUnitario)}</div>
+        <div style="background: var(--surf-2); padding: 12px 16px; border-radius: var(--ax-radius-md); border: 1px solid color-mix(in srgb, var(--ax-accent) 25%, transparent);">
+          <div style="font-size: 0.75rem; color: var(--ax-text-tertiary); font-weight: 700;">Costo Neto Unitario</div>
+          <div style="font-size: 1.25rem; font-weight: 800; color: var(--ax-accent); font-family: var(--ax-font-mono);">${formatCLP(prod.costoUnitario)}</div>
         </div>
 
-        <div style="background: var(--surf-2); padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(61, 220, 151, 0.25);">
-          <div style="font-size: 0.75rem; color: var(--ax-text-tertiary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Margen Prom. (%)</div>
-          <div style="font-size: 1.25rem; font-weight: 800; color: ${prod.margenPct >= 30 ? 'var(--ax-accent-emerald)' : 'var(--ax-accent-gold)'}; font-family: 'JetBrains Mono', monospace;">${prod.margenPct.toFixed(1)}%</div>
+        <div style="background: var(--surf-2); padding: 12px 16px; border-radius: var(--ax-radius-md); border: 1px solid color-mix(in srgb, var(--ax-accent-emerald) 25%, transparent);">
+          <div style="font-size: 0.75rem; color: var(--ax-text-tertiary); font-weight: 700;">Margen Prom. (%)</div>
+          <div style="font-size: 1.25rem; font-weight: 500; color: var(--ax-text-primary); font-family: var(--ax-font-mono);">${prod.margenPct.toFixed(1)}%</div>
         </div>
 
-        <div style="background: var(--surf-2); padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1);">
-          <div style="font-size: 0.75rem; color: var(--ax-text-tertiary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Unidades Movilizadas</div>
-          <div style="font-size: 1.25rem; font-weight: 800; color: var(--ax-text-primary); font-family: 'JetBrains Mono', monospace;">${formatNum(prod.cantTotal)} und.</div>
+        <div style="background: var(--surf-2); padding: 12px 16px; border-radius: var(--ax-radius-md); border: 1px solid var(--ax-border);">
+          <div style="font-size: 0.75rem; color: var(--ax-text-tertiary); font-weight: 700;">Unidades Movilizadas</div>
+          <div style="font-size: 1.25rem; font-weight: 800; color: var(--ax-text-primary); font-family: var(--ax-font-mono);">${formatNum(prod.cantTotal)} und.</div>
         </div>
       </div>
     </div>
@@ -8423,19 +8539,19 @@ function selectFtProductSku(sku) {
         ${photoCardHtml}
 
         <!-- I. ESPECIFICACIONES LOGÍSTICAS & EMPAQUE -->
-        <div class="ft-card" style="background: var(--surf-3); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 1.25rem;">
-          <div class="ft-card-header" style="display: flex; align-items: center; gap: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 10px; margin-bottom: 12px; color: var(--ax-accent-sky); font-weight: 700;">
+        <div class="ft-card" style="background: var(--surf-3); border: 1px solid var(--ax-border); border-radius: var(--ax-radius-md); padding: 1.25rem;">
+          <div class="ft-card-header" style="display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--ax-border); padding-bottom: 10px; margin-bottom: 12px; color: var(--ax-accent); font-weight: 700;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8.5V17a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8.5"/><path d="M3 8.5L12 4l9 4.5"/><line x1="12" y1="4" x2="12" y2="19"/></svg>
-            <span>I. LOGÍSTICA, EMBALAJE & EMPAQUE</span>
+            <span>I. Logística, embalaje y empaque</span>
           </div>
           <table class="ft-spec-table" style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
             <tbody>
               <tr><th style="padding: 8px 0; color: var(--ax-text-tertiary); width: 45%;">Dimensiones (L x A x H):</th><td style="color: var(--ax-text-primary); font-weight: 600;">${escapeHtml(spec.dimensiones)}</td></tr>
               <tr><th style="padding: 8px 0; color: var(--ax-text-tertiary);">Peso Neto Unitario:</th><td style="color: var(--ax-text-primary); font-weight: 600;">${escapeHtml(spec.pesoNeto)}</td></tr>
               <tr><th style="padding: 8px 0; color: var(--ax-text-tertiary);">Peso Bruto Empacado:</th><td style="color: var(--ax-text-primary); font-weight: 600;">${escapeHtml(spec.pesoBruto)}</td></tr>
-              <tr><th style="padding: 8px 0; color: var(--ax-text-tertiary);">Volumen Unitario (m³):</th><td style="color: var(--ax-accent-sky); font-weight: 700;">${escapeHtml(spec.volumen)}</td></tr>
+              <tr><th style="padding: 8px 0; color: var(--ax-text-tertiary);">Volumen Unitario (m³):</th><td style="color: var(--ax-text-primary); font-weight: 700;">${escapeHtml(spec.volumen)}</td></tr>
               <tr><th style="padding: 8px 0; color: var(--ax-text-tertiary);">Capacidad Cajas x Pallet:</th><td style="color: var(--ax-text-primary); font-weight: 600;">${escapeHtml(spec.cajasPallet)}</td></tr>
-              <tr><th style="padding: 8px 0; color: var(--ax-text-tertiary);">Código Arancelario (HS):</th><td><code style="background: rgba(45, 212, 206,0.15); color: var(--ax-accent-sky); padding: 2px 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace;">${escapeHtml(spec.hsCode)}</code></td></tr>
+              <tr><th style="padding: 8px 0; color: var(--ax-text-tertiary);">Código Arancelario (HS):</th><td><code style="background: color-mix(in srgb, var(--ax-accent) 15%, transparent); color: var(--ax-text-primary); padding: 2px 6px; border-radius: 4px; font-family: var(--ax-font-mono);">${escapeHtml(spec.hsCode)}</code></td></tr>
               <tr><th style="padding: 8px 0; color: var(--ax-text-tertiary);">País de Origen / Fabricación:</th><td style="color: var(--ax-text-primary); font-weight: 600;">${escapeHtml(spec.origen)}</td></tr>
             </tbody>
           </table>
@@ -8445,37 +8561,37 @@ function selectFtProductSku(sku) {
       <!-- COLUMNA DERECHA: PARÁMETROS TÉCNICOS, BOM & NORMATIVA -->
       <div style="display: flex; flex-direction: column; gap: 1.5rem;">
         
-        <!-- II. PARÁMETROS TÉCNICOS & RENDIMIENTO -->
-        <div class="ft-card" style="background: var(--surf-3); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 1.25rem;">
-          <div class="ft-card-header" style="display: flex; align-items: center; gap: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 10px; margin-bottom: 12px; color: var(--ax-accent-sky); font-weight: 700;">
+        <!-- II. Parámetros técnicos y rendimiento -->
+        <div class="ft-card" style="background: var(--surf-3); border: 1px solid var(--ax-border); border-radius: var(--ax-radius-md); padding: 1.25rem;">
+          <div class="ft-card-header" style="display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--ax-border); padding-bottom: 10px; margin-bottom: 12px; color: var(--ax-accent); font-weight: 700;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-            <span>II. PARÁMETROS TÉCNICOS & RENDIMIENTO</span>
+            <span>II. Parámetros técnicos y rendimiento</span>
           </div>
           <table class="ft-spec-table" style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
             <tbody>
-              <tr><th style="padding: 8px 0; color: var(--ax-text-tertiary); width: 45%;">Material Principal:</th><td><strong style="color: var(--ax-accent-sky);">${escapeHtml(spec.material)}</strong></td></tr>
+              <tr><th style="padding: 8px 0; color: var(--ax-text-tertiary); width: 45%;">Material Principal:</th><td><strong style="color: var(--ax-text-primary);">${escapeHtml(spec.material)}</strong></td></tr>
               <tr><th style="padding: 8px 0; color: var(--ax-text-tertiary);">Acabado Superficial:</th><td style="color: var(--ax-text-primary);">${escapeHtml(spec.acabado)}</td></tr>
               <tr><th style="padding: 8px 0; color: var(--ax-text-tertiary);">Rango Temperatura:</th><td style="color: var(--ax-text-primary);">${escapeHtml(spec.tempRango)}</td></tr>
               <tr><th style="padding: 8px 0; color: var(--ax-text-tertiary);">Certificaciones Calidad:</th><td><span class="ft-tag ft-tag-green" style="font-weight: 700;">${escapeHtml(spec.certificaciones)}</span></td></tr>
               <tr><th style="padding: 8px 0; color: var(--ax-text-tertiary);">Grado Protección IP:</th><td><span class="ft-tag ft-tag-blue" style="font-weight: 700;">${escapeHtml(spec.gradoIP)}</span></td></tr>
               <tr><th style="padding: 8px 0; color: var(--ax-text-tertiary);">Especificación Eléctrica:</th><td style="color: var(--ax-text-primary);">${escapeHtml(spec.electrico)}</td></tr>
-              <tr><th style="padding: 8px 0; color: var(--ax-text-tertiary);">Garantía Comercial:</th><td><strong style="color: var(--ax-accent-emerald); font-size: 0.875rem;">${escapeHtml(spec.garantia)}</strong></td></tr>
+              <tr><th style="padding: 8px 0; color: var(--ax-text-tertiary);">Garantía Comercial:</th><td><strong style="color: var(--ax-text-primary); font-size: 0.875rem;">${escapeHtml(spec.garantia)}</strong></td></tr>
             </tbody>
           </table>
         </div>
 
         <!-- III. BOM (BILL OF MATERIALS / COMPONENTES) -->
-        <div class="ft-card" style="background: var(--surf-3); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 1.25rem;">
-          <div class="ft-card-header" style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 10px; margin-bottom: 12px; color: var(--ax-accent-purple); font-weight: 700;">
+        <div class="ft-card" style="background: var(--surf-3); border: 1px solid var(--ax-border); border-radius: var(--ax-radius-md); padding: 1.25rem;">
+          <div class="ft-card-header" style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--ax-border); padding-bottom: 10px; margin-bottom: 12px; color: var(--ax-accent); font-weight: 700;">
             <div style="display: flex; align-items: center; gap: 8px;">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
-              <span>III. LISTA DE MATERIALES Y PIEZAS (BOM)</span>
+              <span>III. Lista de materiales y piezas (BOM)</span>
             </div>
             <span class="ft-tag ft-tag-purple">Despiece Estructural</span>
           </div>
           <table class="ft-spec-table" style="width: 100%; border-collapse: collapse; font-size: 0.8125rem;">
             <thead>
-              <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+              <tr style="border-bottom: 1px solid var(--ax-border);">
                 <th style="color: var(--ax-text-tertiary); text-align: left; padding: 6px 0;">Subcomponente / Pieza</th>
                 <th style="color: var(--ax-text-tertiary); text-align: center; padding: 6px 0;">Cant.</th>
                 <th style="color: var(--ax-text-tertiary); text-align: right; padding: 6px 0;">Participación %</th>
@@ -8490,26 +8606,26 @@ function selectFtProductSku(sku) {
         ${camposCustomHtml}
 
         <!-- IV. TIMBRE DE LICITACIÓN & APROBACIÓN DE CALIDAD -->
-        <div class="ft-card" style="background: var(--surf-3); border: 1px solid rgba(45, 212, 206, 0.4); border-radius: 12px; padding: 1.25rem;">
-          <div class="ft-card-header" style="display: flex; align-items: center; gap: 8px; color: var(--ax-accent-sky); font-weight: 700; margin-bottom: 8px;">
+        <div class="ft-card" style="background: var(--surf-3); border: 1px solid color-mix(in srgb, var(--ax-accent) 40%, transparent); border-radius: var(--ax-radius-md); padding: 1.25rem;">
+          <div class="ft-card-header" style="display: flex; align-items: center; gap: 8px; color: var(--ax-accent); font-weight: 700; margin-bottom: 8px;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            <span>IV. ENSAYOS, SEGURIDAD & TIMBRE DE APORBACIÓN LICITACIONES</span>
+            <span>IV. Ensayos, seguridad y timbre de aprobación para licitaciones</span>
           </div>
           <p style="font-size: 0.8125rem; color: var(--ax-text-secondary); line-height: 1.6; margin: 0 0 12px 0;">
             ${escapeHtml(spec.notas)}
           </p>
           
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; border-top: 1px dashed rgba(255,255,255,0.15); padding-top: 12px;">
-            <div style="border-right: 1px solid rgba(255,255,255,0.1); padding-right: 10px;">
-              <div style="font-size: 0.6875rem; color: var(--ax-text-tertiary); text-transform: uppercase; font-weight: 700;">Ingeniería & Producto</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; border-top: 1px dashed var(--ax-border); padding-top: 12px;">
+            <div style="border-right: 1px solid var(--ax-border); padding-right: 10px;">
+              <div style="font-size: 0.6875rem; color: var(--ax-text-tertiary); font-weight: 700;">Ingeniería & Producto</div>
               <div style="font-size: 0.8125rem; color: var(--ax-text-primary); font-weight: 700; margin-top: 2px;">Depto. Técnico Glomax S.A.</div>
-              <div style="font-size: 0.75rem; color: var(--ax-accent-emerald); margin-top: 2px;">✔ Aprobación Técnica Vigente</div>
+              <div style="font-size: 0.75rem; color: var(--ax-accent-emerald); margin-top: 2px;">Aprobación Técnica Vigente</div>
             </div>
 
             <div>
-              <div style="font-size: 0.6875rem; color: var(--ax-text-tertiary); text-transform: uppercase; font-weight: 700;">Acreditación Licitaciones</div>
+              <div style="font-size: 0.6875rem; color: var(--ax-text-tertiary); font-weight: 700;">Acreditación Licitaciones</div>
               <div style="font-size: 0.8125rem; color: var(--ax-text-primary); font-weight: 700; margin-top: 2px;">ISO 9001:2015 / NCh</div>
-              <div style="font-size: 0.75rem; color: var(--ax-accent-sky); margin-top: 2px;">🔒 Documento Oficial Verificado</div>
+              <div style="font-size: 0.75rem; color: var(--ax-accent); margin-top: 2px;">Documento Oficial Verificado</div>
             </div>
           </div>
         </div>
@@ -8545,12 +8661,12 @@ function renderFtEditGallery() {
   }
 
   cont.innerHTML = _ftEditFotos.map((src, i) => `
-    <div class="ft-photo-thumb ${i === 0 ? 'is-main' : ''}" title="${i === 0 ? 'Foto principal' : 'Clic en ★ para hacerla principal'}">
+    <div class="ft-photo-thumb ${i === 0 ? 'is-main' : ''}" title="${i === 0 ? 'Foto principal' : 'Clic en  para hacerla principal'}">
       <img src="${escapeHtml(src)}" alt="Foto ${i + 1}" />
       <button type="button" class="ft-photo-remove" data-idx="${i}" title="Quitar foto">✕</button>
       ${i === 0
         ? '<span class="ft-photo-main-tag">PRINCIPAL</span>'
-        : `<button type="button" class="ft-photo-remove" data-main="${i}" style="left:3px; right:auto; color:var(--ax-accent-gold);" title="Hacer principal">★</button>`}
+        : `<button type="button" class="ft-photo-remove" data-main="${i}" style="left: 3px; right: auto; color: var(--ax-accent-gold);" title="Hacer principal"></button>`}
     </div>
   `).join('');
 
@@ -8663,7 +8779,7 @@ function leerFtCustomFields() {
 
 function openFtEditModal() {
   if (!currentFtSelectedSku) {
-    showToast('Selecciona un producto primero para editar su Ficha Técnica ⚠️');
+    showToast('Selecciona un producto primero para editar su Ficha Técnica ');
     return;
   }
   const prod = ftProductsMap.get(currentFtSelectedSku);
@@ -8672,7 +8788,7 @@ function openFtEditModal() {
   const spec = generateDefaultFtSpecs(prod);
 
   document.getElementById('ftEditSku').value = prod.sku;
-  document.getElementById('ftEditModalTitle').textContent = `✏️ Editar Ficha Técnica: ${prod.sku}`;
+  document.getElementById('ftEditModalTitle').textContent = `Editar Ficha Técnica: ${prod.sku}`;
   document.getElementById('ftEditModalSub').textContent = prod.descripcion;
 
   // La galeria arranca desde una copia: si el usuario cancela, no se toca lo guardado.
@@ -8788,13 +8904,13 @@ function saveFtSpecs(e) {
   if (!saveFtSpecsForSku(sku, updatedSpecs)) {
     // Sin espacio en localStorage: no se cierra el modal para no perder lo editado.
     actualizarFtPhotoStatus('No hay espacio en este navegador para guardar. Quita algunas fotos e intenta de nuevo.', true);
-    showToast('⚠️ No se pudo guardar: almacenamiento del navegador lleno');
+    showToast('No se pudo guardar: almacenamiento del navegador lleno');
     return;
   }
 
   closeFtEditModal();
   const nFotos = updatedSpecs.fotos.length;
-  showToast(`✅ Ficha Técnica de ${sku} guardada${nFotos ? ` · ${nFotos} foto${nFotos === 1 ? '' : 's'}` : ''}`);
+  showToast(`Ficha Técnica de ${sku} guardada${nFotos ? ` · ${nFotos} foto${nFotos === 1 ? '' : 's'}` : ''}`);
   selectFtProductSku(sku);
 }
 
@@ -8805,7 +8921,7 @@ function openFtCompareModal() {
 
   const prods = Array.from(ftProductsMap.values()).sort((a, b) => b.cantTotal - a.cantTotal);
   if (prods.length === 0) {
-    showToast('No hay suficientes productos para comparar ⚠️');
+    showToast('No hay suficientes productos para comparar ');
     return;
   }
 
@@ -8871,9 +8987,9 @@ function renderFtComparison() {
   rows.forEach(r => {
     trsHtml += `
       <tr>
-        <th style="color: var(--ax-text-secondary); width: 28%; font-weight: 700; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.06); padding: 8px 12px;">${r.label}</th>
-        <td style="color: var(--ax-accent-sky); width: 36%; border-bottom: 1px solid rgba(255,255,255,0.06); padding: 8px 12px;">${r.a}</td>
-        <td style="color: var(--ax-accent-purple); width: 36%; border-bottom: 1px solid rgba(255,255,255,0.06); padding: 8px 12px;">${r.b}</td>
+        <th style="color: var(--ax-text-secondary); width: 28%; font-weight: 700; text-align: left; border-bottom: 1px solid var(--ax-border-subtle); padding: 8px 12px;">${r.label}</th>
+        <td style="color: var(--ax-accent); width: 36%; border-bottom: 1px solid var(--ax-border-subtle); padding: 8px 12px;">${r.a}</td>
+        <td style="color: var(--ax-accent); width: 36%; border-bottom: 1px solid var(--ax-border-subtle); padding: 8px 12px;">${r.b}</td>
       </tr>
     `;
   });
@@ -8883,8 +8999,8 @@ function renderFtComparison() {
       <thead>
         <tr style="background: var(--surf-3);">
           <th style="text-align: left; color: var(--ax-text-tertiary);">Atributo / Parámetro</th>
-          <th style="text-align: left; color: var(--ax-accent-sky); font-size: 1rem;">SKU: ${prodA.sku}</th>
-          <th style="text-align: left; color: var(--ax-accent-purple); font-size: 1rem;">SKU: ${prodB.sku}</th>
+          <th style="text-align: left; color: var(--ax-accent); font-size: 1rem;">SKU: ${prodA.sku}</th>
+          <th style="text-align: left; color: var(--ax-accent); font-size: 1rem;">SKU: ${prodB.sku}</th>
         </tr>
       </thead>
       <tbody>
@@ -8896,7 +9012,7 @@ function renderFtComparison() {
 
 function printFichaTecnica() {
   if (!currentFtSelectedSku) {
-    showToast('Selecciona una Ficha Técnica para imprimir ⚠️');
+    showToast('Selecciona una Ficha Técnica para imprimir ');
     return;
   }
   window.print();
@@ -8918,7 +9034,7 @@ let lastExtractedUrlData = null;
 // Export Ficha Técnica to PDF using html2pdf.js con inclusión de foto oficial
 function exportFtPdf() {
   if (!currentFtSelectedSku) {
-    showToast('Selecciona un producto primero para exportar su PDF ⚠️');
+    showToast('Selecciona un producto primero para exportar su PDF ');
     return;
   }
 
@@ -8931,7 +9047,7 @@ function exportFtPdf() {
     : (spec.fotoUrl || getFtProductPhoto(prod.sku) ? [spec.fotoUrl || getFtProductPhoto(prod.sku)] : []);
   const photoUrl = fotosPdf[0] || '';
 
-  showToast('📄 Generando PDF de Ficha Técnica oficial Glomax S.A...');
+  showToast('Generando PDF de Ficha Técnica oficial Glomax S.A...');
 
   const todayStr = new Date().toLocaleDateString('es-CL', { year: 'numeric', month: 'long', day: 'numeric' });
   const barcodeBars = Array.from({ length: 36 }, (_, i) => `<rect x="${i * 6 + 10}" y="4" width="${(i % 3 === 0 ? 3.5 : 1.5)}" height="32" fill="#0f172a" />`).join('');
@@ -8942,7 +9058,7 @@ function exportFtPdf() {
       <tr style="border-bottom: 1px solid #e2e8f0;">
         <td style="padding: 6px 10px; font-weight: 600; color: #1e293b;">${idx + 1}. ${b.parte}</td>
         <td style="padding: 6px 10px; text-align: center; color: #475569;">${b.cant} und.</td>
-        <td style="padding: 6px 10px; text-align: right; font-weight: 700; color: #2DD4CE;">${b.participacion}</td>
+        <td style="padding: 6px 10px; text-align: right; font-weight: 700; color: var(--ax-accent);">${b.participacion}</td>
       </tr>
     `;
   });
@@ -8951,7 +9067,7 @@ function exportFtPdf() {
   // licitacion muestre todas las vistas cargadas del producto.
   const secundariasPdf = fotosPdf.slice(1, 5);
   const photoPdfHtml = photoUrl ? `
-    <div style="text-align: center; margin-bottom: 15px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; background: #fafafa;">
+    <div style="text-align: center; margin-bottom: 15px; border: 1px solid #cbd5e1; border-radius: var(--ax-radius-md); padding: 10px; background: #fafafa;">
       <img src="${escapeHtml(photoUrl)}" style="max-height: 180px; max-width: 100%; object-fit: contain;" />
       <div style="font-size: 0.75rem; color: #8B95B9; margin-top: 4px; font-weight: 700;">FOTOGRAFÍA OFICIAL DE PRODUCTO GLOMAX</div>
       ${secundariasPdf.length ? `
@@ -8963,8 +9079,8 @@ function exportFtPdf() {
 
   const camposValidosPdf = (spec.camposCustom || []).filter(c => c && (c.etiqueta || c.valor));
   const camposCustomPdfHtml = camposValidosPdf.length ? `
-    <div style="margin-top: 12px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px;">
-      <div style="font-size: 0.8125rem; font-weight: 800; color: #2DD4CE; text-transform: uppercase; margin-bottom: 6px;">Especificaciones Adicionales</div>
+    <div style="margin-top: 12px; border: 1px solid #e2e8f0; border-radius: var(--ax-radius-md); padding: 10px 12px;">
+      <div style="font-size: 0.8125rem; font-weight: 800; color: var(--ax-accent); margin-bottom: 6px;">Especificaciones Adicionales</div>
       <table style="width: 100%; border-collapse: collapse; font-size: 0.8125rem;">
         <tbody>
           ${camposValidosPdf.map(c => `
@@ -8982,19 +9098,19 @@ function exportFtPdf() {
   pdfContainer.id = 'ftPdfExportTemp';
   pdfContainer.style.cssText = `
     position: absolute; left: -9999px; top: -9999px; width: 794px; background: #ffffff; color: #0f172a;
-    font-family: 'Inter', sans-serif; padding: 30px; box-sizing: border-box; font-size: 11pt; line-height: 1.4;
+    font-family: var(--ax-font-display); padding: 30px; box-sizing: border-box; font-size: 11pt; line-height: 1.4;
   `;
 
   pdfContainer.innerHTML = `
     <!-- CABECERA PDF DE FICHA TÉCNICA -->
-    <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #2DD4CE; padding-bottom: 15px; margin-bottom: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid var(--ax-accent); padding-bottom: 15px; margin-bottom: 20px;">
       <div>
-        <div style="font-size: 1.5rem; font-weight: 900; color: #2DD4CE; letter-spacing: -0.5px;">GLOMAX S.A.</div>
-        <div style="font-size: 0.875rem; font-weight: 700; color: #475569; text-transform: uppercase;">División de Ingeniería & Control de Calidad</div>
+        <div style="font-size: 1.5rem; font-weight: 900; color: var(--ax-accent); letter-spacing: -0.5px;">GLOMAX S.A.</div>
+        <div style="font-size: 0.875rem; font-weight: 700; color: #475569;">División de Ingeniería & Control de Calidad</div>
         <div style="font-size: 0.8125rem; color: #8B95B9; margin-top: 2px;">Casa Matriz · Santiago de Chile | www.glomax.cl</div>
       </div>
       <div style="text-align: right;">
-        <div style="font-size: 0.8125rem; font-weight: 800; color: #2DD4CE; text-transform: uppercase;">Ficha Técnica Oficial</div>
+        <div style="font-size: 0.8125rem; font-weight: 800; color: var(--ax-accent);">Ficha Técnica Oficial</div>
         <div style="font-size: 0.75rem; color: #8B95B9;">Fecha Emisión: ${todayStr}</div>
         <div style="background: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 6px; font-weight: 800; font-family: monospace; display: inline-block; margin-top: 6px;">
           SKU: ${escapeHtml(prod.sku)}
@@ -9003,7 +9119,7 @@ function exportFtPdf() {
     </div>
 
     <!-- TITULO PRODUCTO -->
-    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-left: 5px solid #2DD4CE; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-left: 5px solid var(--ax-accent); border-radius: var(--ax-radius-md); padding: 15px; margin-bottom: 20px;">
       <h1 style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0;">${escapeHtml(prod.descripcion)}</h1>
       <div style="font-size: 0.8125rem; color: #475569; display: flex; gap: 15px; flex-wrap: wrap;">
         <span>Categoría: <strong>${prod.categoria || 'General'}</strong></span>
@@ -9019,25 +9135,25 @@ function exportFtPdf() {
     <!-- REJILLA 2 COLUMNAS PDF -->
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
       <!-- COLUMNA 1: PARAMETROS TECNICOS -->
-      <div style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 14px;">
-        <div style="font-size: 0.875rem; font-weight: 800; color: #2DD4CE; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 10px; text-transform: uppercase;">
-          🛠️ Especificaciones Técnicas
+      <div style="border: 1px solid #cbd5e1; border-radius: var(--ax-radius-md); padding: 14px;">
+        <div style="font-size: 0.875rem; font-weight: 800; color: var(--ax-accent); border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 10px;">
+           Especificaciones Técnicas
         </div>
         <table style="width: 100%; border-collapse: collapse; font-size: 0.8125rem;">
           <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #8B95B9;">Material:</th><td style="padding: 5px 0; font-weight: 600; color: #0f172a;">${escapeHtml(spec.material)}</td></tr>
           <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #8B95B9;">Acabado:</th><td style="padding: 5px 0; color: #0f172a;">${escapeHtml(spec.acabado)}</td></tr>
           <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #8B95B9;">Temperatura:</th><td style="padding: 5px 0; color: #0f172a;">${escapeHtml(spec.tempRango)}</td></tr>
           <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #8B95B9;">Certificaciones:</th><td style="padding: 5px 0; font-weight: 700; color: #35C486;">${escapeHtml(spec.certificaciones)}</td></tr>
-          <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #8B95B9;">Protección IP:</th><td style="padding: 5px 0; font-weight: 700; color: #2DD4CE;">${escapeHtml(spec.gradoIP)}</td></tr>
+          <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #8B95B9;">Protección IP:</th><td style="padding: 5px 0; font-weight: 700; color: var(--ax-accent);">${escapeHtml(spec.gradoIP)}</td></tr>
           <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #8B95B9;">Eléctrico:</th><td style="padding: 5px 0; color: #0f172a;">${escapeHtml(spec.electrico)}</td></tr>
           <tr><th style="text-align: left; padding: 5px 0; color: #8B95B9;">Garantía:</th><td style="padding: 5px 0; font-weight: 700; color: #35C486;">${escapeHtml(spec.garantia)}</td></tr>
         </table>
       </div>
 
       <!-- COLUMNA 2: LOGISTICA Y EMPAQUE -->
-      <div style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 14px;">
-        <div style="font-size: 0.875rem; font-weight: 800; color: #2DD4CE; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 10px; text-transform: uppercase;">
-          📦 Logística, Empaque & Código
+      <div style="border: 1px solid #cbd5e1; border-radius: var(--ax-radius-md); padding: 14px;">
+        <div style="font-size: 0.875rem; font-weight: 800; color: var(--ax-accent); border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 10px;">
+           Logística, Empaque & Código
         </div>
         <table style="width: 100%; border-collapse: collapse; font-size: 0.8125rem;">
           <tr style="border-bottom: 1px solid #f1f5f9;"><th style="text-align: left; padding: 5px 0; color: #8B95B9;">Dimensiones:</th><td style="padding: 5px 0; font-weight: 600; color: #0f172a;">${escapeHtml(spec.dimensiones)}</td></tr>
@@ -9061,9 +9177,9 @@ function exportFtPdf() {
     </div>
 
     <!-- BOM / LISTA DE COMPONENTES -->
-    <div style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 14px; margin-bottom: 20px;">
-      <div style="font-size: 0.875rem; font-weight: 800; color: #2DD4CE; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 10px; text-transform: uppercase;">
-        ⚙️ Bill of Materials (Componentes & Estructura Interna)
+    <div style="border: 1px solid #cbd5e1; border-radius: var(--ax-radius-md); padding: 14px; margin-bottom: 20px;">
+      <div style="font-size: 0.875rem; font-weight: 800; color: var(--ax-accent); border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 10px;">
+         Bill of Materials (Componentes & Estructura Interna)
       </div>
       <table style="width: 100%; border-collapse: collapse; font-size: 0.8125rem;">
         <thead>
@@ -9082,8 +9198,8 @@ function exportFtPdf() {
     ${camposCustomPdfHtml}
 
     <!-- CONTROL DE CALIDAD & TIMBRE -->
-    <div style="border: 1px solid #2DD4CE; background: #f0f9ff; border-radius: 8px; padding: 14px; margin: 20px 0;">
-      <div style="font-size: 0.875rem; font-weight: 800; color: #0369a1; margin-bottom: 4px;">🛡️ Control de Calidad & Normas de Seguridad:</div>
+    <div style="border: 1px solid var(--ax-accent); background: #f0f9ff; border-radius: var(--ax-radius-md); padding: 14px; margin: 20px 0;">
+      <div style="font-size: 0.875rem; font-weight: 800; color: #0369a1; margin-bottom: 4px;">Control de Calidad & Normas de Seguridad:</div>
       <div style="font-size: 0.8125rem; color: #334155; line-height: 1.5;">${escapeHtml(spec.notas)}</div>
     </div>
 
@@ -9107,7 +9223,7 @@ function exportFtPdf() {
   if (typeof html2pdf !== 'undefined') {
     html2pdf().set(opt).from(pdfContainer).save().then(() => {
       if (document.body.contains(pdfContainer)) document.body.removeChild(pdfContainer);
-      showToast('✅ Ficha Técnica PDF descargada con éxito!');
+      showToast('Ficha Técnica PDF descargada con éxito!');
     }).catch(err => {
       console.warn('html2pdf error:', err);
       if (document.body.contains(pdfContainer)) document.body.removeChild(pdfContainer);
@@ -9178,7 +9294,7 @@ function updateImportPhotoPreview(url) {
 
   const cleanUrl = (url || '').trim();
   if (cleanUrl) {
-    container.innerHTML = `<img src="${cleanUrl}" style="max-height: 140px; max-width: 100%; border-radius: 8px; border: 1px solid rgba(45, 212, 206, 0.4); box-shadow: 0 4px 12px rgba(0,0,0,0.4);" onerror="this.parentElement.innerHTML='<span style=\'color:var(--ax-accent-rose); font-size:0.8125rem;\'>⚠️ Foto no accesible en esa URL</span>';" />`;
+    container.innerHTML = `<img src="${cleanUrl}" style="max-height: 140px; max-width: 100%; border-radius: var(--ax-radius-md); border: 1px solid color-mix(in srgb, var(--ax-accent) 40%, transparent);" onerror="this.parentElement.innerHTML='<span style=\'color:var(--ax-accent-rose); font-size:0.8125rem;\'>Foto no accesible en esa URL</span>';" />`;
   } else {
     container.innerHTML = '';
   }
@@ -9271,9 +9387,9 @@ async function handleFtPdfFileSelect(e) {
     if (applyBtn) applyBtn.style.display = 'inline-flex';
 
     if (extractedData.textExtracted) {
-      showToast(`📄 PDF procesado. Revisa y confirma los datos del SKU ${extractedData.sku}`);
+      showToast(`PDF procesado. Revisa y confirma los datos del SKU ${extractedData.sku}`);
     } else {
-      showToast('⚠️ No se pudo leer texto del PDF (¿escaneado o protegido?). Los campos son valores por defecto: complétalos a mano.', 'warn');
+      showToast('No se pudo leer texto del PDF (¿escaneado o protegido?). Los campos son valores por defecto: complétalos a mano.', 'warn');
     }
 
   } catch(err) {
@@ -9441,7 +9557,7 @@ function applyFtPdfImport() {
   selectFtProductSku(sku);
 
   if (typeof showToast === 'function') {
-    showToast(`🎉 ¡Ficha Técnica oficial generada en formato licitación para SKU ${sku}!`);
+    showToast(`¡Ficha Técnica oficial generada en formato licitación para SKU ${sku}!`);
   }
 }
 
@@ -9567,13 +9683,13 @@ function setSyncStatus(status, customText) {
   el.className = 'sync-status-pill';
   if (status === 'ok') {
     el.classList.add('synced');
-    el.innerHTML = '<span class="dot" style="background:#3DDC97;box-shadow:0 0 10px rgba(61, 220, 151,0.6);"></span> <span>Sincronizado</span>';
+    el.innerHTML = '<span class="dot" style="background: var(--ax-accent-emerald);"></span> <span>Sincronizado</span>';
   } else if (status === 'loading') {
     el.classList.add('syncing');
-    el.innerHTML = '<span class="dot" style="background:#FFC46B;box-shadow:0 0 10px rgba(255, 196, 107,0.6);"></span> <span>Sincronizando...</span>';
+    el.innerHTML = '<span class="dot" style="background: var(--ax-accent-gold);"></span> <span>Sincronizando...</span>';
   } else if (status === 'error') {
     el.classList.add('error');
-    el.innerHTML = '<span class="dot" style="background:#FF6B8A;box-shadow:0 0 10px rgba(255, 107, 138,0.6);"></span> <span>Desconectado</span>';
+    el.innerHTML = '<span class="dot" style="background: var(--ax-accent-rose);"></span> <span>Desconectado</span>';
   }
 }
 
@@ -9613,7 +9729,7 @@ async function loadData(showLoadingState = true) {
       if (cachedRows && cachedRows.length > 0) {
         rows = normalizeDataRows(cachedRows);
         setSyncStatus('ok');
-        if (latencyBadge) setLatencyBadge(latencyBadge, '⚡', '0ms', `Caché local · ${rows.length.toLocaleString()} registros`);
+        if (latencyBadge) setLatencyBadge(latencyBadge, '', '0ms', `Caché local · ${rows.length.toLocaleString()} registros`);
         updateNavBadge();
         populateFilterOptions();
         applyFilters();
@@ -9663,7 +9779,7 @@ async function loadData(showLoadingState = true) {
 
       setSyncStatus('ok');
       if (latencyBadge) {
-        setLatencyBadge(latencyBadge, '🟢', formatLatency(elapsed), `${modeLabel} · ${rows.length.toLocaleString()} registros`);
+        setLatencyBadge(latencyBadge, '', formatLatency(elapsed), `${modeLabel} · ${rows.length.toLocaleString()} registros`);
         latencyBadge.classList.remove('syncing');
       }
       updateNavBadge();
@@ -9673,14 +9789,14 @@ async function loadData(showLoadingState = true) {
       // Solo en cargas iniciadas por el usuario: el auto-refresco corre cada 15s
       // y notificar en cada ciclo llenaría la pantalla de avisos.
       if (showLoadingState) {
-        showToast(`✅ Conectado a Google Sheets (${rows.length.toLocaleString()} registros sincronizados)`);
+        showToast(`Conectado a Google Sheets (${rows.length.toLocaleString()} registros sincronizados)`);
       }
     } else {
       // Si no se obtuvieron datos frescos ni había datos en caché local, usar el dataset de respaldo de Glomax
       if (!rows || rows.length === 0) {
         applyFallbackDataIfEmpty();
         setSyncStatus('ok');
-        if (latencyBadge) setLatencyBadge(latencyBadge, '🟡', 'Respaldo', `Modo respaldo · ${rows.length.toLocaleString()} registros`);
+        if (latencyBadge) setLatencyBadge(latencyBadge, '', 'Respaldo', `Modo respaldo · ${rows.length.toLocaleString()} registros`);
       } else {
         setSyncStatus('ok');
       }
@@ -9692,7 +9808,7 @@ async function loadData(showLoadingState = true) {
     if (!rows || rows.length === 0) {
       applyFallbackDataIfEmpty();
       setSyncStatus('ok');
-      if (latencyBadge) setLatencyBadge(latencyBadge, '🟡', 'Respaldo', `Modo respaldo · ${rows.length.toLocaleString()} registros`);
+      if (latencyBadge) setLatencyBadge(latencyBadge, '', 'Respaldo', `Modo respaldo · ${rows.length.toLocaleString()} registros`);
     }
   } finally {
     isLoadingData = false;
@@ -11474,7 +11590,7 @@ function preciosSincronizarExportar() {
 function exportarPreciosExcel() {
   const filas = preciosFilasExcel(preciosVisibles);
   if (!filas.length) {
-    if (typeof showToast === 'function') showToast('⚠️ No hay nada que exportar en esta vista');
+    if (typeof showToast === 'function') showToast('No hay nada que exportar en esta vista');
     return;
   }
 
@@ -11508,12 +11624,12 @@ function exportarPreciosExcel() {
       ? todayInputValue() : new Date().toISOString().slice(0, 10);
     xlsxDescargar(blob, 'Glomax_Precios_' + etiqueta.replace(/\s+/g, '_') + '_' + fecha + '.xlsx');
     if (typeof showToast === 'function') {
-      showToast('📊 Excel exportado: ' + filas.length +
+      showToast('Excel exportado: ' + filas.length +
         (filas.length === 1 ? ' lectura' : ' lecturas') + ' de ' + etiqueta);
     }
   } catch (e) {
     console.error('[precios] no se pudo armar el Excel', e);
-    if (typeof showToast === 'function') showToast('⚠️ No se pudo generar el Excel');
+    if (typeof showToast === 'function') showToast('No se pudo generar el Excel');
   }
 }
 
@@ -12106,7 +12222,7 @@ function mpRenderKpis(res, datos) {
     formatCLP(res.netoTotal) + ' publicados (neto)');
 
   set('mpKpiOfertadas', formatNum(res.ofertadas),
-    '<strong>' + mpPct(res.tasaOferta) + '</strong> de las detectadas · ' +
+    '<strong>' + mpPct(res.tasaOferta) + '</strong> de las detectadas, por ' +
     formatCLP(res.netoOfertado));
 
   set('mpKpiGanadas', formatNum(res.ganadas), formatCLP(res.netoGanado) + ' adjudicados');
@@ -12114,7 +12230,7 @@ function mpRenderKpis(res, datos) {
   /* Dos tasas y no una: por cantidad y por monto. Cuando difieren mucho es que
      se gana lo chico y se pierde lo grande, y una sola cifra lo esconde. */
   set('mpKpiTasa', mpPct(res.tasaCantidad),
-    '<strong>' + mpPct(res.tasaMonto) + '</strong> del monto · sobre ' +
+    '<strong>' + mpPct(res.tasaMonto) + '</strong> del monto, sobre ' +
     formatNum(res.decididas) + ' resueltas');
 
   /* El embudo: detectadas -> ofertadas -> adjudicadas, a escala. */
@@ -12135,7 +12251,7 @@ function mpRenderKpis(res, datos) {
           '<span class="mp-embudo__etiqueta">' + escapeHtml(p.etiqueta) + '</span>' +
           '<span class="mp-embudo__n">' + formatNum(p.n) + '</span>' +
         '</div>' +
-        '<div class="mp-embudo__barra"><span style="width:' + ancho.toFixed(2) + '%"></span></div>' +
+        '<div class="mp-embudo__barra"><span style="width: ' + ancho.toFixed(2) + '%"></span></div>' +
         '<div class="mp-embudo__pie">' +
           '<span class="mp-embudo__monto">' + formatCLP(p.monto) + '</span>' +
           (p.costado ? '<span class="mp-embudo__conv">' + p.costado + '</span>' : '') +
@@ -12191,7 +12307,7 @@ function mpRenderKpis(res, datos) {
   if (aviso) {
     if (res.sinResolver > 0) {
       aviso.style.display = '';
-      aviso.innerHTML = '<span class="mp-aviso__icono" aria-hidden="true">◷</span>' +
+      aviso.innerHTML = '' +
         '<span><strong>' + formatNum(res.sinResolver) + ' ofertas presentadas siguen sin desenlace</strong> ' +
         '(' + formatCLP(res.netoSinResolver) + ' ofertados). Quedaron en «En seguimiento» sin pasar ' +
         'a Ganada ni a Perdida, por lo que no entran en la tasa de adjudicación.</span>';
@@ -12309,7 +12425,7 @@ function mpRenderOrganismos(datos) {
         '<span class="mp-org__nombre" title="' + escapeHtml(nombre) + '">' + escapeHtml(nombre) + '</span>' +
         '<span class="mp-org__n">' + formatNum(o.n) + '</span>' +
       '</div>' +
-      '<div class="mp-org__barra"><span style="width:' + ((o.n / maxN) * 100).toFixed(1) + '%"></span></div>' +
+      '<div class="mp-org__barra"><span style="width: ' + ((o.n / maxN) * 100).toFixed(1) + '%"></span></div>' +
       '<div class="mp-org__pie">' +
         '<span>' + formatNum(o.ganadas) + ' adjudicadas (' + mpPct(tasa) + ')</span>' +
         '<span class="mp-org__monto">' + formatCLP(o.ganado) + '</span>' +
@@ -12371,7 +12487,7 @@ function mpRenderCharts(datos) {
           { label: 'Ofertadas', data: claves.map(k => mapa.get(k).ofe),
             backgroundColor: 'rgba(255, 196, 107, 0.75)', borderRadius: 4, order: 2 },
           { label: 'Adjudicadas', data: claves.map(k => mapa.get(k).gan),
-            backgroundColor: '#3DDC97', borderRadius: 4, order: 1 }
+            backgroundColor: tokenColor('--ax-accent-emerald', '#57C494'), borderRadius: 4, order: 1 }
         ]
       },
       options: {
@@ -12413,9 +12529,16 @@ function mpRenderCharts(datos) {
     const orden = Array.from(mapa.entries()).sort((a, b) => b[1] - a[1]);
     if (otros) orden.push(['Otros', otros]);
     const tonos = {
-      'Ganada': '#3DDC97', 'Aceptada': '#2DD4CE', 'Postulada': '#4D9FEC',
-      'En seguimiento': '#8B95B9', 'Perdida': '#FF6B8A', 'Rechazada': '#E05E7B',
-      'Otros': '#5A6488'
+      /* Ganada y Perdida son semanticos y llevan sus tokens. Aceptada y
+         Postulada no significan bien ni mal: van a dos pasos de la rampa,
+         que ademas los ordena por cercania al cierre. */
+      'Ganada': tokenColor('--ax-accent-emerald', '#57C494'),
+      'Aceptada': tokenColor('--ax-accent', '#84B6E4'),
+      'Postulada': serieColor(3),
+      'En seguimiento': serieColor(4),
+      'Perdida': tokenColor('--ax-accent-rose', '#F0768A'),
+      'Rechazada': tokenColor('--ax-accent-rose', '#F0768A'),
+      'Otros': serieColor(5)
     };
 
     if (mpChartSeguimiento) mpChartSeguimiento.destroy();
@@ -12425,9 +12548,9 @@ function mpRenderCharts(datos) {
         labels: orden.map(e => e[0]),
         datasets: [{
           data: orden.map(e => e[1]),
-          backgroundColor: orden.map(e => tonos[e[0]] || '#A78BFA'),
-          borderWidth: 2,
-          borderColor: 'transparent'
+          backgroundColor: orden.map(e => tonos[e[0]] || serieColor(5)),
+          borderColor: tokenColor('--surf-1', '#21252C'),
+          borderWidth: 2
         }]
       },
       options: {
@@ -12467,7 +12590,7 @@ function mpRenderCharts(datos) {
     /* Rojo para lo que se pudo evitar (sin stock, falta de tiempo, postulacion
        incompleta), gris para lo que era decision de catalogo o del organismo.
        El color separa "hay que arreglarlo" de "esta bien asi". */
-    const tono = { propio: '#FF6B8A', precio: '#FFC46B', catalogo: '#8B95B9', externo: '#5A6488' };
+    const tono = { propio: tokenColor('--ax-accent-rose', '#F0768A'), precio: tokenColor('--ax-accent-gold', '#DFAC4C'), catalogo: '#8B95B9', externo: '#5A6488' };
 
     if (mpChartMotivos) mpChartMotivos.destroy();
     mpChartMotivos = new Chart(ctxMot.getContext('2d'), {
@@ -12527,7 +12650,7 @@ function mpRenderCharts(datos) {
           { label: 'Detectadas', data: orden.map(e => e[1].det),
             backgroundColor: 'rgba(77, 159, 236, 0.45)', borderRadius: 4 },
           { label: 'Adjudicadas', data: orden.map(e => e[1].gan),
-            backgroundColor: '#3DDC97', borderRadius: 4 }
+            backgroundColor: tokenColor('--ax-accent-emerald', '#57C494'), borderRadius: 4 }
         ]
       },
       options: {
@@ -12663,9 +12786,9 @@ function mpRenderCharts(datos) {
              para el fondo lo rompia, porque la leyenda tambien se ordena por
              ella y quedaba al reves. */
           datasets: [
-            linea('Ofertadas', 'ofe', '#FFC46B', true),
-            linea('Adjudicadas', 'gan', '#3DDC97', false),
-            linea('Perdidas', 'per', '#FF6B8A', false)
+            linea('Ofertadas', 'ofe', tokenColor('--ax-accent-gold', '#DFAC4C'), true),
+            linea('Adjudicadas', 'gan', tokenColor('--ax-accent-emerald', '#57C494'), false),
+            linea('Perdidas', 'per', tokenColor('--ax-accent-rose', '#F0768A'), false)
           ]
         },
         options: {
@@ -12838,7 +12961,7 @@ function mpRenderTabla(datos) {
   if (!cuerpo) return;
 
   if (!datos.length) {
-    cuerpo.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:2.5rem; color:var(--ax-text-tertiary);">' +
+    cuerpo.innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 2.5rem; color: var(--ax-text-tertiary);">' +
       (mpRows.length ? 'Ningún registro coincide con los filtros.' : 'Sin datos cargados.') + '</td></tr>';
     if (info) info.textContent = 'Página 1 de 1';
     if (prev) prev.disabled = true;
@@ -12856,7 +12979,7 @@ function mpRenderTabla(datos) {
 
   if (info) {
     info.innerHTML = 'Página <strong>' + mpPagina + '</strong> de <strong>' + paginas + '</strong> ' +
-      '(<span style="color: var(--ax-accent); font-weight:700;">' + formatNum(ordenados.length) +
+      '(<span style="color: var(--ax-accent); font-weight: 700;">' + formatNum(ordenados.length) +
       '</span> oportunidades)';
   }
   if (prev) prev.disabled = mpPagina <= 1;
@@ -13378,7 +13501,7 @@ function mpOcRenderEstado() {
 
   caja.innerHTML =
     '<div class="ax-card mp-vacio">' +
-      '<div class="mp-vacio__icono" aria-hidden="true">📥</div>' +
+      '' +
       '<h3 class="mp-vacio__titulo">La pestaña <code>OrdenesCompra</code> todavía no tiene datos</h3>' +
       '<p class="mp-vacio__texto">Esta vista lee las órdenes que los organismos le emiten a ' +
         'Glomax. No se piden desde el navegador: <code>api.mercadopublico.cl</code> no manda ' +
@@ -13481,7 +13604,7 @@ function mpOcRenderTabla() {
 
   if (info) {
     info.innerHTML = 'Página <strong>' + mpOcPagina + '</strong> de <strong>' + paginas + '</strong> ' +
-      '(<span style="color: var(--ax-accent); font-weight:700;">' + formatNum(ordenados.length) +
+      '(<span style="color: var(--ax-accent); font-weight: 700;">' + formatNum(ordenados.length) +
       '</span> órdenes)';
   }
   if (prev) prev.disabled = mpOcPagina <= 1;
@@ -13699,12 +13822,12 @@ const PROSP_SEGMENTOS = {
 const PROSP_TONOS_RESPALDO = {
   '--prosp-fuga':      '#F87171',
   '--prosp-dormido':   '#FB923C',
-  '--prosp-riesgo':    '#FFC46B',
+  '--prosp-riesgo':    tokenColor('--ax-accent-gold', '#DFAC4C'),
   '--prosp-caida':     '#FDE68A',
-  '--prosp-nuevo':     '#2DD4CE',
-  '--prosp-crece':     '#3DDC97',
+  '--prosp-nuevo':     tokenColor('--ax-accent', '#84B6E4'),
+  '--prosp-crece':     tokenColor('--ax-accent-emerald', '#57C494'),
   '--prosp-estable':   '#94A3B8',
-  '--prosp-var-alza':  '#3DDC97',
+  '--prosp-var-alza':  tokenColor('--ax-accent-emerald', '#57C494'),
   '--prosp-var-sube':  '#7FD8A8',
   '--prosp-var-plano': '#8B95B9',
   '--prosp-var-baja':  '#FFAE7B',
@@ -14475,7 +14598,7 @@ function prospPctBarra(v) {
     : 'right:50%; width:' + ancho.toFixed(1) + '%;';
   return '<span class="prosp-var">' + texto +
     '<span class="prosp-var__pista"><span class="prosp-var__cero"></span>' +
-    '<span class="prosp-var__barra" style="' + lado + 'background:' + color + ';"></span></span></span>';
+    '<span class="prosp-var__barra" style="' + lado + 'background: ' + color + ';"></span></span></span>';
 }
 
 function prospPlata(v) {
@@ -14531,8 +14654,8 @@ function renderProspeccionView() {
     const msg = (rows && rows.length)
       ? 'No hay ventas con canal MAYORISTAS en los datos cargados.'
       : 'Esperando la carga de datos&hellip;';
-    if (cuerpoReg) cuerpoReg.innerHTML = '<tr><td colspan="13" style="text-align:center;color:var(--ax-text-tertiary);padding:2rem;">' + msg + '</td></tr>';
-    if (cuerpoCart) cuerpoCart.innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--ax-text-tertiary);padding:2rem;">' + msg + '</td></tr>';
+    if (cuerpoReg) cuerpoReg.innerHTML = '<tr><td colspan="13" style="text-align: center; color: var(--ax-text-tertiary); padding: 2rem;">' + msg + '</td></tr>';
+    if (cuerpoCart) cuerpoCart.innerHTML = '<tr><td colspan="11" style="text-align: center; color: var(--ax-text-tertiary); padding: 2rem;">' + msg + '</td></tr>';
     return;
   }
 
@@ -14631,7 +14754,7 @@ function prospPintarKpis(M) {
   set('prospKpiClientes', formatNum(nClientes));
   const dc = nClientes - nPrev;
   set('prospKpiClientesSub', 'Compraron en ' + M.anio + '. Mismo periodo ' + M.anioPrev + ': ' + formatNum(nPrev) +
-      ' &nbsp;<span style="font-weight:800;color:' + (dc >= 0 ? 'var(--ax-accent-emerald)' : prospTono('--prosp-var-cae')) + '">' +
+      ' &nbsp;<span style="font-weight: 800; color: ' + (dc >= 0 ? 'var(--ax-accent-emerald)' : prospTono('--prosp-var-cae')) + '">' +
       (dc > 0 ? '+' : '') + dc + '</span>');
 
   set('prospKpiMesLabel', 'Cierre proyectado de ' + M.mesNombre);
@@ -14674,41 +14797,41 @@ function prospPintarRegiones(M) {
     const activa = R.clave === prospRegionSel;
     return '<tr class="js-prosp-region" data-region="' + escapeHtml(R.clave) + '" style="cursor: pointer;' +
       (activa ? ' background: rgba(255,196,107,0.10);' : '') + '" title="Clic para planificar la ruta de esta región">' +
-      '<td style="text-align:left;font-weight:800;color:' + (activa ? 'var(--ax-accent-gold)' : 'var(--ax-text-primary)') + ';">' +
-        escapeHtml(R.nombre) + (R.sinDato ? ' <span style="font-weight:600;color:var(--ax-text-tertiary);font-size:0.72rem;">(sin dirección)</span>' : '') + '</td>' +
-      '<td style="text-align:right;font-weight:700;">' + formatNum(R.clientesAct.size) + '</td>' +
-      '<td style="text-align:right;font-weight:800;color:' + (R.deltaClientes >= 0 ? 'var(--ax-accent-emerald)' : prospTono('--prosp-var-cae')) + ';">' +
+      '<td style="text-align: left; font-weight: 800; color: ' + (activa ? 'var(--ax-accent-gold)' : 'var(--ax-text-primary)') + ';">' +
+        escapeHtml(R.nombre) + (R.sinDato ? ' <span style="font-weight: 600; color: var(--ax-text-tertiary); font-size: 0.72rem;">(sin dirección)</span>' : '') + '</td>' +
+      '<td style="text-align: right; font-weight: 700;">' + formatNum(R.clientesAct.size) + '</td>' +
+      '<td style="text-align: right; font-weight: 800; color: ' + (R.deltaClientes >= 0 ? 'var(--ax-accent-emerald)' : prospTono('--prosp-var-cae')) + ';">' +
         (R.deltaClientes > 0 ? '+' : '') + R.deltaClientes + '</td>' +
-      '<td style="text-align:right;font-weight:800;color:var(--ax-accent-sky);">' + prospPlata(R.ytd) + '</td>' +
-      '<td style="text-align:right;">' + prospPlata(R.ytdPrev) + '</td>' +
-      '<td style="text-align:right;">' + prospPctBarra(R.deltaYtd) + '</td>' +
-      '<td style="text-align:right;">' + prospPlata(R.mtd) + '</td>' +
-      '<td style="text-align:right;font-weight:700;color:var(--ax-accent-gold);">' + prospPlata(R.proyMes) + '</td>' +
-      '<td style="text-align:right;">' + prospPct(R.deltaMes) + '</td>' +
-      '<td style="text-align:right;font-weight:800;color:var(--ax-accent-purple);">' + prospPlata(R.proyAnio) + '</td>' +
-      '<td style="text-align:right;">' + prospPlata(R.anioPrevFull) + '</td>' +
-      '<td style="text-align:right;">' + prospPctBarra(R.deltaAnio) + '</td>' +
-      '<td style="text-align:center;"><span style="font-size:0.72rem;font-weight:800;color:' + (conf[R.confianza] || prospTono('--prosp-estable')) + ';">' +
+      '<td style="text-align: right; font-weight: 800; color: var(--ax-accent);">' + prospPlata(R.ytd) + '</td>' +
+      '<td style="text-align: right;">' + prospPlata(R.ytdPrev) + '</td>' +
+      '<td style="text-align: right;">' + prospPctBarra(R.deltaYtd) + '</td>' +
+      '<td style="text-align: right;">' + prospPlata(R.mtd) + '</td>' +
+      '<td style="text-align: right; font-weight: 700; color: var(--ax-accent-gold);">' + prospPlata(R.proyMes) + '</td>' +
+      '<td style="text-align: right;">' + prospPct(R.deltaMes) + '</td>' +
+      '<td style="text-align: right; font-weight: 800; color: var(--ax-accent);">' + prospPlata(R.proyAnio) + '</td>' +
+      '<td style="text-align: right;">' + prospPlata(R.anioPrevFull) + '</td>' +
+      '<td style="text-align: right;">' + prospPctBarra(R.deltaAnio) + '</td>' +
+      '<td style="text-align: center;"><span style="font-size: 0.72rem; font-weight: 800; color: ' + (conf[R.confianza] || prospTono('--prosp-estable')) + ';">' +
         R.confianza + '</span></td>' +
       '</tr>';
-  }).join('') || '<tr><td colspan="13" style="text-align:center;color:var(--ax-text-tertiary);padding:2rem;">Sin regiones con venta mayorista.</td></tr>';
+  }).join('') || '<tr><td colspan="13" style="text-align: center; color: var(--ax-text-tertiary); padding: 2rem;">Sin regiones con venta mayorista.</td></tr>';
 
   if (tfoot) {
     const T = M.totales;
     tfoot.innerHTML = '<tr style="border-top: 2px solid var(--ax-border); font-weight: 800;">' +
-      '<td style="text-align:left;">TOTAL CANAL</td>' +
-      '<td style="text-align:right;">' + formatNum(T.clientesAct.size) + '</td>' +
-      '<td style="text-align:right;">' + ((T.clientesAct.size - T.clientesPrev.size) > 0 ? '+' : '') +
+      '<td style="text-align: left;">TOTAL CANAL</td>' +
+      '<td style="text-align: right;">' + formatNum(T.clientesAct.size) + '</td>' +
+      '<td style="text-align: right;">' + ((T.clientesAct.size - T.clientesPrev.size) > 0 ? '+' : '') +
         (T.clientesAct.size - T.clientesPrev.size) + '</td>' +
-      '<td style="text-align:right;color:var(--ax-accent-sky);">' + prospPlata(T.ytd) + '</td>' +
-      '<td style="text-align:right;">' + prospPlata(T.ytdPrev) + '</td>' +
-      '<td style="text-align:right;">' + prospPct(T.deltaYtd) + '</td>' +
-      '<td style="text-align:right;">' + prospPlata(T.mtd) + '</td>' +
-      '<td style="text-align:right;color:var(--ax-accent-gold);">' + prospPlata(T.proyMes) + '</td>' +
-      '<td style="text-align:right;">' + prospPct(T.deltaMes) + '</td>' +
-      '<td style="text-align:right;color:var(--ax-accent-purple);">' + prospPlata(T.proyAnio) + '</td>' +
-      '<td style="text-align:right;">' + prospPlata(T.anioPrevFull) + '</td>' +
-      '<td style="text-align:right;">' + prospPct(T.deltaAnio) + '</td>' +
+      '<td style="text-align: right; color: var(--ax-accent);">' + prospPlata(T.ytd) + '</td>' +
+      '<td style="text-align: right;">' + prospPlata(T.ytdPrev) + '</td>' +
+      '<td style="text-align: right;">' + prospPct(T.deltaYtd) + '</td>' +
+      '<td style="text-align: right;">' + prospPlata(T.mtd) + '</td>' +
+      '<td style="text-align: right; color: var(--ax-accent-gold);">' + prospPlata(T.proyMes) + '</td>' +
+      '<td style="text-align: right;">' + prospPct(T.deltaMes) + '</td>' +
+      '<td style="text-align: right; color: var(--ax-accent);">' + prospPlata(T.proyAnio) + '</td>' +
+      '<td style="text-align: right;">' + prospPlata(T.anioPrevFull) + '</td>' +
+      '<td style="text-align: right;">' + prospPct(T.deltaAnio) + '</td>' +
       '<td></td></tr>';
   }
 
@@ -14739,7 +14862,7 @@ function prospPintarRuta(M) {
   }
 
   if (!R) {
-    cont.innerHTML = '<p style="text-align:center;color:var(--ax-text-tertiary);padding:2rem;">No hay clientes ruteables.</p>';
+    cont.innerHTML = '<p style="text-align: center; color: var(--ax-text-tertiary); padding: 2rem;">No hay clientes ruteables.</p>';
     if (nota) nota.textContent = 'Sin datos de region suficientes para armar una ruta.';
     return;
   }
@@ -14754,7 +14877,7 @@ function prospPintarRuta(M) {
   }
 
   if (!jornadas.length) {
-    cont.innerHTML = '<p style="text-align:center;color:var(--ax-text-tertiary);padding:2rem;">' +
+    cont.innerHTML = '<p style="text-align: center; color: var(--ax-text-tertiary); padding: 2rem;">' +
       'Ningún cliente de ' + escapeHtml(R.nombre) + ' cumple el filtro de segmento elegido.</p>';
     return;
   }
@@ -14765,46 +14888,46 @@ function prospPintarRuta(M) {
       const mapa = 'https://www.google.com/maps/search/?api=1&query=' +
         encodeURIComponent(C.nombre + ', ' + C.comuna + ', Chile');
       return '<tr>' +
-        '<td style="text-align:center;font-weight:800;color:var(--ax-text-tertiary);">' + (i + 1) + '</td>' +
-        '<td style="text-align:left;">' +
-          '<div style="font-weight:800;color:var(--ax-text-primary);">' + escapeHtml(C.nombre) + '</div>' +
-          '<div style="font-size:0.72rem;color:var(--ax-text-tertiary);">' + escapeHtml(C.comuna) +
+        '<td style="text-align: center; font-weight: 800; color: var(--ax-text-tertiary);">' + (i + 1) + '</td>' +
+        '<td style="text-align: left;">' +
+          '<div style="font-weight: 800; color: var(--ax-text-primary);">' + escapeHtml(C.nombre) + '</div>' +
+          '<div style="font-size: 0.72rem; color: var(--ax-text-tertiary);">' + escapeHtml(C.comuna) +
           (C.rut ? ' &middot; ' + escapeHtml(C.rut) : '') + '</div></td>' +
-        '<td style="text-align:center;">' + prospBadgeSegmento(C.segmento) + '</td>' +
-        '<td style="text-align:right;font-size:0.78rem;">' + prospFechaCorta(C.ultima) +
-          '<div style="font-size:0.7rem;color:var(--ax-text-tertiary);">' +
+        '<td style="text-align: center;">' + prospBadgeSegmento(C.segmento) + '</td>' +
+        '<td style="text-align: right; font-size: 0.78rem;">' + prospFechaCorta(C.ultima) +
+          '<div style="font-size: 0.7rem; color: var(--ax-text-tertiary);">' +
           (C.diasSin === null ? '' : 'hace ' + C.diasSin + ' d&iacute;as') + '</div></td>' +
-        '<td style="text-align:right;font-weight:700;">' + prospPlata(C.neto12m) +
-          '<div style="font-size:0.7rem;color:var(--ax-text-tertiary);">ult. 12 meses</div></td>' +
-        '<td style="text-align:right;">' + prospPct(C.delta) + '</td>' +
-        '<td style="text-align:left;max-width:280px;">' + prospRecosHtml(C.recomendaciones) + '</td>' +
-        '<td style="text-align:center;"><a href="' + mapa + '" target="_blank" rel="noopener noreferrer" ' +
+        '<td style="text-align: right; font-weight: 700;">' + prospPlata(C.neto12m) +
+          '<div style="font-size: 0.7rem; color: var(--ax-text-tertiary);">ult. 12 meses</div></td>' +
+        '<td style="text-align: right;">' + prospPct(C.delta) + '</td>' +
+        '<td style="text-align: left; max-width: 280px;">' + prospRecosHtml(C.recomendaciones) + '</td>' +
+        '<td style="text-align: center;"><a href="' + mapa + '" target="_blank" rel="noopener noreferrer" ' +
           'class="tag-pill" style="font-size:0.7rem;text-decoration:none;display:inline-flex;' +
            'align-items:center;justify-content:center;min-height:24px;padding:0 10px;" ' +
            'title="Abrir en Google Maps">Mapa</a></td>' +
         '</tr>';
     }).join('');
 
-    return '<div class="ax-card" style="padding: 1rem 1.1rem; margin-bottom: 1rem; border-color: rgba(255,196,107,0.28);">' +
-      '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.6rem;">' +
-        '<div><span style="font-weight:900;font-size:0.95rem;color:var(--ax-accent-gold);">D&iacute;a ' + J.dia + '</span>' +
-        '<span style="margin-left:10px;font-size:0.8125rem;color:var(--ax-text-secondary);">' +
+    return '<div class="ax-card" style="padding: 1rem 1.1rem; margin-bottom: 1rem; border-color: color-mix(in srgb, var(--ax-accent-gold) 28%, transparent);">' +
+      '<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.6rem;">' +
+        '<div><span style="font-weight: 900; font-size: 0.95rem; color: var(--ax-accent-gold);">D&iacute;a ' + J.dia + '</span>' +
+        '<span style="margin-left: 10px; font-size: 0.8125rem; color: var(--ax-text-secondary);">' +
         J.comunas.map(c => escapeHtml(c)).join(' &rarr; ') + '</span></div>' +
-        '<span class="tag-pill" style="font-size:0.72rem;">' + J.visitas.length + ' visitas &middot; ' +
+        '<span class="tag-pill" style="font-size: 0.72rem;">' + J.visitas.length + ' visitas &middot; ' +
         prospPlata(netoDia) + ' en cartera</span>' +
       '</div>' +
-      '<div style="overflow-x:auto;"><table class="advisor-table"><thead><tr>' +
-        '<th style="text-align:center;width:44px;">#</th>' +
-        '<th style="text-align:left;">Cliente</th>' +
-        '<th style="text-align:center;">Segmento</th>' +
-        '<th style="text-align:right;">&Uacute;ltima compra</th>' +
-        '<th style="text-align:right;">Cartera 12m</th>' +
-        '<th style="text-align:right;">&Delta;% a&ntilde;o</th>' +
-        '<th style="text-align:left;">Productos a proponer</th>' +
-        '<th style="text-align:center;">Ir</th>' +
+      '<div style="overflow-x: auto;"><table class="advisor-table"><thead><tr>' +
+        '<th style="text-align: center; width: 44px;">#</th>' +
+        '<th style="text-align: left;">Cliente</th>' +
+        '<th style="text-align: center;">Segmento</th>' +
+        '<th style="text-align: right;">&Uacute;ltima compra</th>' +
+        '<th style="text-align: right;">Cartera 12m</th>' +
+        '<th style="text-align: right;">&Delta;% a&ntilde;o</th>' +
+        '<th style="text-align: left;">Productos a proponer</th>' +
+        '<th style="text-align: center;">Ir</th>' +
       '</tr></thead><tbody>' + filas + '</tbody></table></div></div>';
   }).join('') +
-  '<p style="font-size:0.75rem;color:var(--ax-text-tertiary);margin-top:0.25rem;">' +
+  '<p style="font-size: 0.75rem; color: var(--ax-text-tertiary); margin-top: 0.25rem;">' +
   '&#8635; producto que el cliente ya compra y se le paso el ciclo de reposición &nbsp;&middot;&nbsp; ' +
   '&#43; producto que compran sus pares de la región y él todavía no.</p>';
 }
@@ -14839,26 +14962,26 @@ function prospPintarCartera(M) {
   tbody.innerHTML = vista.map((C, i) => {
     const colScore = C.score >= 70 ? prospTono('--prosp-var-cae') : C.score >= 50 ? 'var(--ax-accent-gold)' : 'var(--ax-text-secondary)';
     return '<tr>' +
-      '<td style="text-align:center;"><span style="font-weight:900;color:' + colScore + ';" ' +
+      '<td style="text-align: center;"><span style="font-weight: 900; color: ' + colScore + ';" ' +
         'title="Puntaje 0-100: potencial 30%, caida 25%, dias sin comprar 25%, brecha de mix 12%, margen 8%">' +
         C.score + '</span></td>' +
-      '<td style="text-align:left;max-width:250px;"><div style="font-weight:700;color:var(--ax-text-primary);' +
+      '<td style="text-align: left; max-width: 250px;"><div style="font-weight:700;color:var(--ax-text-primary);' +
         'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="' + escapeHtml(C.nombre) + '">' +
-        escapeHtml(C.nombre) + '</div>' + (C.rut ? '<div style="font-size:0.7rem;color:var(--ax-text-tertiary);">' +
+        escapeHtml(C.nombre) + '</div>' + (C.rut ? '<div style="font-size: 0.7rem; color: var(--ax-text-tertiary);">' +
         escapeHtml(C.rut) + '</div>' : '') + '</td>' +
-      '<td style="text-align:left;font-size:0.8rem;">' + escapeHtml(C.comuna) + '</td>' +
-      '<td style="text-align:left;font-size:0.8rem;color:var(--ax-text-secondary);">' +
+      '<td style="text-align: left; font-size: 0.8rem;">' + escapeHtml(C.comuna) + '</td>' +
+      '<td style="text-align: left; font-size: 0.8rem; color: var(--ax-text-secondary);">' +
         escapeHtml(nombreReg[C.region] || C.region) + '</td>' +
-      '<td style="text-align:center;">' + prospBadgeSegmento(C.segmento) + '</td>' +
-      '<td style="text-align:right;font-size:0.78rem;">' + prospFechaCorta(C.ultima) +
-        (C.diasSin === null ? '' : '<div style="font-size:0.7rem;color:var(--ax-text-tertiary);">' +
+      '<td style="text-align: center;">' + prospBadgeSegmento(C.segmento) + '</td>' +
+      '<td style="text-align: right; font-size: 0.78rem;">' + prospFechaCorta(C.ultima) +
+        (C.diasSin === null ? '' : '<div style="font-size: 0.7rem; color: var(--ax-text-tertiary);">' +
         C.diasSin + ' d&iacute;as</div>') + '</td>' +
-      '<td style="text-align:right;font-weight:800;color:var(--ax-accent-sky);">' + prospPlata(C.ytd) + '</td>' +
-      '<td style="text-align:right;">' + prospPlata(C.ytdPrev) + '</td>' +
-      '<td style="text-align:right;">' + prospPct(C.delta) + '</td>' +
-      '<td style="text-align:right;font-weight:700;color:' + (C.margen >= 25 ? 'var(--ax-accent-emerald)' : 'var(--ax-accent-gold)') + ';">' +
+      '<td style="text-align: right; font-weight: 800; color: var(--ax-accent);">' + prospPlata(C.ytd) + '</td>' +
+      '<td style="text-align: right;">' + prospPlata(C.ytdPrev) + '</td>' +
+      '<td style="text-align: right;">' + prospPct(C.delta) + '</td>' +
+      '<td style="text-align: right; font-weight: 700; color: ' + (C.margen >= 25 ? 'var(--ax-accent-emerald)' : 'var(--ax-accent-gold)') + ';">' +
         C.margen.toFixed(1) + '%</td>' +
-      '<td style="text-align:left;max-width:300px;">' + prospRecosHtml(C.recomendaciones) + '</td>' +
+      '<td style="text-align: left; max-width: 300px;">' + prospRecosHtml(C.recomendaciones) + '</td>' +
       '</tr>';
   }).join('') || prospCarteraVaciaHtml(M, R);
 }
@@ -14881,8 +15004,8 @@ function prospCarteraVaciaHtml(M, R) {
     ? 'Ning&uacute;n cliente cumple a la vez ' + activos.join(' y ') + '.'
     : 'No hay clientes mayoristas que mostrar.';
 
-  return '<tr><td colspan="11" style="text-align:center;color:var(--ax-text-tertiary);padding:2rem;">' +
-    detalle + (activos.length > 1 ? '<br><span style="font-size:0.78rem;">Quita uno de los filtros para ampliar la lista.</span>' : '') +
+  return '<tr><td colspan="11" style="text-align: center; color: var(--ax-text-tertiary); padding: 2rem;">' +
+    detalle + (activos.length > 1 ? '<br><span style="font-size: 0.78rem;">Quita uno de los filtros para ampliar la lista.</span>' : '') +
     '</td></tr>';
 }
 
@@ -14891,22 +15014,22 @@ function prospPintarMetodologia(M) {
   if (!el) return;
   const pct = (M.cuota * 100).toFixed(1);
   el.innerHTML =
-    '<p style="margin:0 0 0.6rem 0;"><strong>Universo.</strong> Solo las lineas cuyo <em>Canal Final</em> es MAYORISTAS, ' +
+    '<p style="margin: 0 0 0.6rem 0;"><strong>Universo.</strong> Solo las lineas cuyo <em>Canal Final</em> es MAYORISTAS, ' +
     'sobre la planilla completa y sin los filtros globales del tablero: la comparativa interanual necesita los dos anios enteros. ' +
     'Los clientes se agrupan por RUT cuando existe, no por nombre, porque el mismo comprador viene escrito de varias formas.</p>' +
 
-    '<p style="margin:0 0 0.6rem 0;"><strong>Region de cada venta.</strong> Se toma la columna Region de la planilla. ' +
+    '<p style="margin: 0 0 0.6rem 0;"><strong>Region de cada venta.</strong> Se toma la columna Region de la planilla. ' +
     'Cuando esa columna viene vacia se completa con la region desde la que ese mismo cliente factura habitualmente, ' +
     'calculada sobre sus propias lineas que si traen el dato. Hoy eso afecta a <strong>' + formatNum(M.filasImputadas) +
     '</strong> lineas (' + prospPlata(M.netoImputadoYtd) + ' de ' + M.anio + '). Sin ese arreglo, las regiones ' +
     'apareceran cayendo contra el anio pasado cuando lo unico que se perdio fue el dato de direccion. ' +
     'Es una imputacion, no un dato: lo correcto es corregirlo en el origen.</p>' +
 
-    '<p style="margin:0 0 0.6rem 0;"><strong>Fecha de referencia.</strong> ' + prospFechaCorta(M.refDate) +
+    '<p style="margin: 0 0 0.6rem 0;"><strong>Fecha de referencia.</strong> ' + prospFechaCorta(M.refDate) +
     ', el ultimo dia con venta mayorista cargada. Todo lo "acumulado" llega hasta ahi, y el mismo periodo del anio anterior ' +
     'se corta en el mismo dia y mes.</p>' +
 
-    '<p style="margin:0 0 0.6rem 0;"><strong>Proyeccion del mes.</strong> ' +
+    '<p style="margin: 0 0 0.6rem 0;"><strong>Proyeccion del mes.</strong> ' +
     (M.mesCerrado
       ? 'El mes ya esta completo, asi que la proyeccion es la venta real.'
       : (M.usaCurva
@@ -14922,21 +15045,21 @@ function prospPintarMetodologia(M) {
           : 'No hay suficiente historia de ' + M.mesNombre + ' para reconstruir la curva, asi que se prorratea por dias ' +
             'transcurridos (' + M.dia + ' de ' + M.diasMes + '). Ese metodo tiende a quedarse corto.')) + '</p>' +
 
-    '<p style="margin:0 0 0.6rem 0;"><strong>Proyeccion del anio.</strong> Lo facturado hasta hoy, mas lo que falta del mes en curso, ' +
+    '<p style="margin: 0 0 0.6rem 0;"><strong>Proyeccion del anio.</strong> Lo facturado hasta hoy, mas lo que falta del mes en curso, ' +
     'mas los meses que quedan valorizados con lo que vendieron esos mismos meses el anio pasado corregidos por un factor de ' +
     'crecimiento. El factor se calcula solo con <em>meses ya cerrados</em> para no mezclar un mes a medias con doce completos, ' +
     'y se acota entre 0,4x y 2,5x: en una region de tres clientes un pedido grande no es una tendencia.</p>' +
 
-    '<p style="margin:0 0 0.6rem 0;"><strong>Prioridad de contacto (0-100).</strong> Suma ponderada de cinco factores: ' +
+    '<p style="margin: 0 0 0.6rem 0;"><strong>Prioridad de contacto (0-100).</strong> Suma ponderada de cinco factores: ' +
     'potencial 30% (venta de los ultimos 12 meses en escala logaritmica), caida 25% (cuanto perdio contra el mismo periodo del anio pasado), ' +
     'recencia 25% (dias sin comprar, saturando a 240), brecha de mix 12% (cuantos de los 15 productos mas penetrados de su region no compra) ' +
     'y margen 8%. Es una formula fija y auditable, no un modelo entrenado: mismos datos, mismo resultado.</p>' +
 
-    '<p style="margin:0 0 0.6rem 0;"><strong>Productos a proponer.</strong> Dos listas distintas. <em>Reposicion</em>: SKUs que el cliente ' +
+    '<p style="margin: 0 0 0.6rem 0;"><strong>Productos a proponer.</strong> Dos listas distintas. <em>Reposicion</em>: SKUs que el cliente ' +
     'ya compra con cadencia y cuyo ciclo mediano se paso en mas de un 30%. <em>Cruzado</em>: SKUs que compran sus pares de la misma region ' +
     'y el no, ordenados por penetracion x ticket medio, o sea por plata esperada y no por popularidad.</p>' +
 
-    '<p style="margin:0;"><strong>Ruta.</strong> Siempre dentro de una sola region. Se toman los mejor puntuados hasta llenar ' +
+    '<p style="margin: 0;"><strong>Ruta.</strong> Siempre dentro de una sola region. Se toman los mejor puntuados hasta llenar ' +
     'dias x visitas, se agrupan por comuna y se ordenan las comunas por prioridad acumulada; una comuna no se parte entre dos dias ' +
     'si cabe entera en uno. <strong>No se calculan distancias reales</strong>: la planilla no trae coordenadas y no se van a inventar. ' +
     'Agrupar por comuna es la mejor reduccion de traslado que permite el dato disponible; el enlace "Mapa" abre cada cliente en ' +
@@ -15032,10 +15155,10 @@ function prospPintarCinta(M) {
         prospPlata(R.ytdPrev) + ' el pasado. ' + R.clientesAct.size + ' clientes activos.') + '">' +
       '<span class="prosp-cinta__nombre">' + escapeHtml(R.nombre) + '</span>' +
       '<span class="prosp-cinta__pista">' +
-        '<span class="prosp-cinta__prev" style="width:' + anchoPrev.toFixed(2) + '%"></span>' +
-        '<span class="prosp-cinta__act" style="width:' + anchoAct.toFixed(2) + '%; background:' + color + ';"></span>' +
+        '<span class="prosp-cinta__prev" style="width: ' + anchoPrev.toFixed(2) + '%"></span>' +
+        '<span class="prosp-cinta__act" style="width: ' + anchoAct.toFixed(2) + '%; background: ' + color + ';"></span>' +
       '</span>' +
-      '<span class="prosp-cinta__delta" style="color:' + color + '">' + texto + '</span>' +
+      '<span class="prosp-cinta__delta" style="color: ' + color + '">' + texto + '</span>' +
       '</div>';
   };
 
@@ -15047,9 +15170,9 @@ function prospPintarCinta(M) {
     '<div style="font-size:0.68rem;font-weight:800;color:var(--ax-text-tertiary);' +
     'letter-spacing:0.6px;margin-top:6px;padding:0 6px;">SUR</div>' +
     (sueltas.length
-      ? '<div style="margin-top:10px;padding-top:9px;border-top:1px dashed rgba(148,163,184,0.28);">' +
+      ? '<div style="margin-top: 10px; padding-top: 9px; border-top: 1px dashed rgba(148,163,184,0.28);">' +
         sueltas.map(pintar).join('') +
-        '<p style="font-size:0.68rem;color:var(--ax-text-tertiary);margin:4px 6px 0 6px;">' +
+        '<p style="font-size: 0.68rem; color: var(--ax-text-tertiary); margin: 4px 6px 0 6px;">' +
         'Sin direcci&oacute;n en la planilla: no entra en ninguna ruta.</p></div>'
       : '');
 
@@ -15168,7 +15291,9 @@ function prospPintarCurva(M) {
   const etiquetas = [];
   for (let d = 1; d <= M.diasMes; d++) etiquetas.push(String(d));
 
-  const tonosPrevios = ['#5A6488', '#7C86AA', '#A78BFA'];
+  /* Los anos anteriores, del mas viejo al mas reciente: pasos 6, 5 y 4 de la
+     rampa, que dejan los tres primeros para el ano en curso. */
+  const tonosPrevios = [serieColor(5), serieColor(4), serieColor(3)];
   const series = [];
   let i = 0;
   (D.curva || []).filter(c => !c.esActual).forEach(c => {
@@ -15188,7 +15313,7 @@ function prospPintarCurva(M) {
     series.push({
       label: String(M.anio),
       data: etiquetas.map((_, k) => (k + 1) <= M.dia ? actual.acum[k + 1] : null),
-      borderColor: '#4D9FEC', borderWidth: 3, pointRadius: 0, tension: 0.2, fill: false
+      borderColor: tokenColor('--ax-accent', '#84B6E4'), borderWidth: 3, pointRadius: 0, tension: 0.2, fill: false
     });
 
     if (!M.mesCerrado) {
@@ -15204,7 +15329,7 @@ function prospPintarCurva(M) {
       });
       series.push({
         label: 'Proyección', data: puente,
-        borderColor: '#FFC46B', borderWidth: 2.2, borderDash: [5, 4],
+        borderColor: tokenColor('--ax-accent-gold', '#DFAC4C'), borderWidth: 2.2, borderDash: [5, 4],
         pointRadius: 0, tension: 0, fill: false
       });
     }
@@ -15381,7 +15506,7 @@ function prospPintarSegmentos(M) {
       'title="' + escapeHtml((PROSP_SEGMENTOS[clave] ? PROSP_SEGMENTOS[clave].ayuda : 'Toda la cartera') +
         '. ' + prospPlata(plata) + ' en cartera.') + '">' +
       '<span class="prosp-seg__top">' +
-        '<span class="prosp-seg__n" style="color:' + color + '">' + n + '</span>' +
+        '<span class="prosp-seg__n" style="color: ' + color + '">' + n + '</span>' +
         '<span class="prosp-seg__et">' + escapeHtml(etiqueta) + '</span>' +
       '</span>' +
       '<span class="prosp-seg__plata">' + prospPlata(plata) + '</span>' +

@@ -4,22 +4,22 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script>
-    /* Se aplica el tema guardado ANTES de pintar. Si esperara a app.js, quien
-       tiene el modo claro activo veria un destello oscuro en cada carga. */
+ /* Se aplica el tema guardado ANTES de pintar. Si esperara a app.js, quien
+ tiene el modo claro activo veria un destello oscuro en cada carga. */
     (function () {
-      try {
-        var t = localStorage.getItem('glomax_theme');
-        if (t === 'light' || t === 'dark') {
-          document.documentElement.setAttribute('data-ax-theme', t);
+ try {
+ var t = localStorage.getItem('glomax_theme');
+ if (t === 'light' || t === 'dark') {
+ document.documentElement.setAttribute('data-ax-theme', t);
         }
       } catch (e) { /* localStorage bloqueado: se queda el tema por defecto */ }
     })();
   </script>
   <title>Glomax S.A. · Business Intelligence & Dashboard de Ventas</title>
   <!-- FAVICON: la misma marca que el logo del sidebar (index.html linea ~316).
-       El SVG lo usan los navegadores modernos y escala sin perder filo; los PNG
-       y el .ico cubren al resto. El punto del logo va calado, asi que se ve
-       igual en una pestana clara que en una oscura. -->
+ El SVG lo usan los navegadores modernos y escala sin perder filo; los PNG
+ y el .ico cubren al resto. El punto del logo va calado, asi que se ve
+ igual en una pestana clara que en una oscura. -->
   <link rel="icon" href="favicon.ico" sizes="any" />
   <link rel="icon" type="image/svg+xml" href="favicon.svg?v=20260825_ICON_V50" />
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=20260825_ICON_V50" />
@@ -29,30 +29,30 @@
   <!-- Preconnect and Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <!-- Stylesheets & Libraries -->
-  <link rel="stylesheet" href="style.css?v=20260903_PAREJO_V84" />
+  <link rel="stylesheet" href="style.css?v=20260907_BARRIDO_V110" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <style>
-    /* CRITICAL UI OVERRIDE FOR PURCHASING BI ADVISOR & INVESTMENT TABLE */
+ /* CRITICAL UI OVERRIDE FOR PURCHASING BI ADVISOR & INVESTMENT TABLE */
     .bi-compras-advisor-card {
-      background: var(--surf-3) !important;
-      border: 1px solid rgba(77, 159, 236, 0.3) !important;
-      border-radius: 16px !important;
-      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), 0 0 24px rgba(77, 159, 236, 0.15) !important;
-      padding: 1.5rem !important;
+ background: var(--surf-3) !important;
+ border: 1px solid rgba(77, 159, 236, 0.3) !important;
+ border-radius: 16px !important;
+ box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), 0 0 24px rgba(77, 159, 236, 0.15) !important;
+ padding: 1.5rem !important;
     }
 
     .bi-advisor-grid {
-      display: grid !important;
-      grid-template-columns: 1fr 1.2fr !important;
-      gap: 1.5rem !important;
-      margin-top: 1.25rem !important;
+ display: grid !important;
+ grid-template-columns: 1fr 1.2fr !important;
+ gap: 1.5rem !important;
+ margin-top: 1.25rem !important;
     }
 
     @media (max-width: 900px) {
@@ -60,107 +60,107 @@
     }
 
     .bi-advisor-controls {
-      display: flex !important;
-      flex-direction: column !important;
-      gap: 1rem !important;
+ display: flex !important;
+ flex-direction: column !important;
+ gap: 1rem !important;
     }
 
     .advisor-input-group label {
-      display: block !important;
-      font-size: 0.8125rem !important;
-      font-weight: 700 !important;
-      color: var(--ax-text-secondary) !important;
-      text-transform: uppercase !important;
-      letter-spacing: 0.5px !important;
-      margin-bottom: 0.5rem !important;
+ display: block !important;
+ font-size: 0.8125rem !important;
+ font-weight: 700 !important;
+ color: var(--ax-text-secondary) !important;
+ text-transform: uppercase !important;
+ letter-spacing: 0.5px !important;
+ margin-bottom: 0.5rem !important;
     }
 
     .input-with-icon {
-      position: relative !important;
-      display: flex !important;
-      align-items: center !important;
-      width: 100% !important;
+ position: relative !important;
+ display: flex !important;
+ align-items: center !important;
+ width: 100% !important;
     }
 
     .currency-prefix {
-      position: absolute !important;
-      left: 14px !important;
-      font-size: 1.125rem !important;
-      font-weight: 700 !important;
-      color: var(--ax-accent) !important;
-      z-index: 2 !important;
+ position: absolute !important;
+ left: 14px !important;
+ font-size: 1.125rem !important;
+ font-weight: 700 !important;
+ color: var(--ax-accent) !important;
+ z-index: 2 !important;
     }
 
     .input-with-icon input#comprasBudgetInput {
-      width: 100% !important;
-      padding-left: 36px !important;
-      height: 48px !important;
-      font-size: 1.125rem !important;
-      font-weight: 700 !important;
-      background: var(--surf-3) !important;
-      border: 1px solid rgba(77, 159, 236, 0.4) !important;
-      color: #ffffff !important;
-      border-radius: 12px !important;
+ width: 100% !important;
+ padding-left: 36px !important;
+ height: 48px !important;
+ font-size: 1.125rem !important;
+ font-weight: 700 !important;
+ background: var(--surf-3) !important;
+ border: 1px solid rgba(77, 159, 236, 0.4) !important;
+ color: #ffffff !important;
+ border-radius: 12px !important;
     }
 
     .advisor-presets {
-      display: flex !important;
-      align-items: center !important;
-      gap: 0.5rem !important;
-      flex-wrap: wrap !important;
-      margin-top: 0.5rem !important;
+ display: flex !important;
+ align-items: center !important;
+ gap: 0.5rem !important;
+ flex-wrap: wrap !important;
+ margin-top: 0.5rem !important;
     }
 
     .preset-label {
-      font-size: 0.75rem !important;
-      font-weight: 700 !important;
-      color: var(--ax-text-tertiary) !important;
-      text-transform: uppercase !important;
+ font-size: 0.75rem !important;
+ font-weight: 700 !important;
+ color: var(--ax-text-tertiary) !important;
+ text-transform: uppercase !important;
     }
 
     .budget-pill {
-      padding: 6px 14px !important;
-      border-radius: 20px !important;
-      font-size: 0.8125rem !important;
-      font-weight: 700 !important;
-      background: rgba(255, 255, 255, 0.06) !important;
-      color: var(--ax-text-secondary) !important;
-      border: 1px solid rgba(255, 255, 255, 0.12) !important;
-      cursor: pointer !important;
+ padding: 6px 14px !important;
+ border-radius: 20px !important;
+ font-size: 0.8125rem !important;
+ font-weight: 700 !important;
+ background: rgba(255, 255, 255, 0.06) !important;
+ color: var(--ax-text-secondary) !important;
+ border: 1px solid rgba(255, 255, 255, 0.12) !important;
+ cursor: pointer !important;
     }
 
     .budget-pill:hover, .budget-pill.active {
-      background: linear-gradient(135deg, #2563B8, #1E62B4) !important;
-      color: #ffffff !important;
-      border-color: var(--ax-accent) !important;
-      box-shadow: 0 4px 14px rgba(77, 159, 236, 0.4) !important;
+ background: linear-gradient(135deg, #2563B8, #1E62B4) !important;
+ color: #ffffff !important;
+ border-color: var(--ax-accent) !important;
+ box-shadow: 0 4px 14px rgba(77, 159, 236, 0.4) !important;
     }
 
     .advisor-strategy-group label {
-      display: block !important;
-      font-size: 0.8125rem !important;
-      font-weight: 700 !important;
-      color: var(--ax-text-secondary) !important;
-      text-transform: uppercase !important;
-      margin-bottom: 0.4rem !important;
+ display: block !important;
+ font-size: 0.8125rem !important;
+ font-weight: 700 !important;
+ color: var(--ax-text-secondary) !important;
+ text-transform: uppercase !important;
+ margin-bottom: 0.4rem !important;
     }
 
-    select#comprasStrategySelect {
-      width: 100% !important;
-      height: 46px !important;
-      padding: 0 1rem !important;
-      border-radius: 12px !important;
-      font-size: 0.875rem !important;
-      font-weight: 600 !important;
-      background: var(--surf-3) !important;
-      color: #ffffff !important;
-      border: 1px solid rgba(255, 255, 255, 0.12) !important;
+ select#comprasStrategySelect {
+ width: 100% !important;
+ height: 46px !important;
+ padding: 0 1rem !important;
+ border-radius: 12px !important;
+ font-size: 0.875rem !important;
+ font-weight: 600 !important;
+ background: var(--surf-3) !important;
+ color: #ffffff !important;
+ border: 1px solid rgba(255, 255, 255, 0.12) !important;
     }
 
     .bi-advisor-projections {
-      display: grid !important;
-      grid-template-columns: repeat(3, 1fr) !important;
-      gap: 0.85rem !important;
+ display: grid !important;
+ grid-template-columns: repeat(3, 1fr) !important;
+ gap: 0.85rem !important;
     }
 
     @media (max-width: 768px) {
@@ -168,132 +168,132 @@
     }
 
     .proj-card {
-      display: flex !important;
-      flex-direction: column !important;
-      justify-content: center !important;
-      padding: 1.1rem 1.25rem !important;
-      border-radius: 12px !important;
-      background: var(--surf-2) !important;
-      border: 1px solid rgba(255, 255, 255, 0.08) !important;
+ display: flex !important;
+ flex-direction: column !important;
+ justify-content: center !important;
+ padding: 1.1rem 1.25rem !important;
+ border-radius: 12px !important;
+ background: var(--surf-2) !important;
+ border: 1px solid rgba(255, 255, 255, 0.08) !important;
     }
 
     .proj-card.highlight-green {
-      background: linear-gradient(135deg, rgba(61, 220, 151, 0.16) 0%, var(--surf-3) 100%) !important;
-      border-color: rgba(61, 220, 151, 0.4) !important;
-      box-shadow: 0 8px 24px rgba(61, 220, 151, 0.18) !important;
+ background: linear-gradient(135deg, rgba(61, 220, 151, 0.16) 0%, var(--surf-3) 100%) !important;
+ border-color: rgba(61, 220, 151, 0.4) !important;
+ box-shadow: 0 8px 24px rgba(61, 220, 151, 0.18) !important;
     }
 
     .proj-card.highlight-blue {
-      background: linear-gradient(135deg, rgba(77, 159, 236, 0.16) 0%, var(--surf-3) 100%) !important;
-      border-color: rgba(77, 159, 236, 0.4) !important;
-      box-shadow: 0 8px 24px rgba(77, 159, 236, 0.18) !important;
+ background: linear-gradient(135deg, rgba(77, 159, 236, 0.16) 0%, var(--surf-3) 100%) !important;
+ border-color: rgba(77, 159, 236, 0.4) !important;
+ box-shadow: 0 8px 24px rgba(77, 159, 236, 0.18) !important;
     }
 
     .proj-label {
-      font-size: 0.75rem !important;
-      font-weight: 700 !important;
-      color: var(--ax-text-tertiary) !important;
-      text-transform: uppercase !important;
-      margin-bottom: 0.35rem !important;
+ font-size: 0.75rem !important;
+ font-weight: 700 !important;
+ color: var(--ax-text-tertiary) !important;
+ text-transform: uppercase !important;
+ margin-bottom: 0.35rem !important;
     }
 
     .proj-val {
-      font-size: 1.25rem !important;
-      font-weight: 800 !important;
-      color: var(--ax-text-primary) !important;
+ font-size: 1.25rem !important;
+ font-weight: 800 !important;
+ color: var(--ax-text-primary) !important;
     }
 
     .proj-card.highlight-green .proj-val {
-      color: var(--ax-accent-emerald) !important;
-      font-size: 1.5rem !important;
+ color: var(--ax-accent-emerald) !important;
+ font-size: 1.5rem !important;
     }
 
     .proj-card.highlight-blue .proj-val {
-      color: var(--ax-accent) !important;
-      font-size: 1.5rem !important;
+ color: var(--ax-accent) !important;
+ font-size: 1.5rem !important;
     }
 
     .advisor-results-header {
-      display: flex !important;
-      align-items: center !important;
-      justify-content: space-between !important;
-      padding-bottom: 0.75rem !important;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+ display: flex !important;
+ align-items: center !important;
+ justify-content: space-between !important;
+ padding-bottom: 0.75rem !important;
+ border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
     }
 
     .results-title {
-      font-size: 1rem !important;
-      font-weight: 700 !important;
-      color: var(--ax-text-primary) !important;
+ font-size: 1rem !important;
+ font-weight: 700 !important;
+ color: var(--ax-text-primary) !important;
     }
 
     .skus-count-badge {
-      padding: 4px 12px !important;
-      border-radius: 20px !important;
-      font-size: 0.8125rem !important;
-      font-weight: 700 !important;
-      background: rgba(61, 220, 151, 0.15) !important;
-      color: var(--ax-accent-emerald) !important;
-      border: 1px solid rgba(61, 220, 151, 0.3) !important;
+ padding: 4px 12px !important;
+ border-radius: 20px !important;
+ font-size: 0.8125rem !important;
+ font-weight: 700 !important;
+ background: rgba(61, 220, 151, 0.15) !important;
+ color: var(--ax-accent-emerald) !important;
+ border: 1px solid rgba(61, 220, 151, 0.3) !important;
     }
 
     .advisor-table {
-      width: 100% !important;
-      border-collapse: separate !important;
-      border-spacing: 0 !important;
-      border-radius: 12px !important;
-      overflow: hidden !important;
-      border: 1px solid rgba(255, 255, 255, 0.08) !important;
+ width: 100% !important;
+ border-collapse: separate !important;
+ border-spacing: 0 !important;
+ border-radius: 12px !important;
+ overflow: hidden !important;
+ border: 1px solid rgba(255, 255, 255, 0.08) !important;
     }
 
     .advisor-table th {
-      position: sticky !important;
-      top: 0 !important;
-      background: var(--surf-3) !important;
-      padding: 0.85rem 1rem !important;
-      font-size: 0.75rem !important;
-      font-weight: 700 !important;
-      text-transform: uppercase !important;
-      color: var(--ax-text-tertiary) !important;
-      border-bottom: 2px solid rgba(77, 159, 236, 0.3) !important;
-      z-index: 5 !important;
-      letter-spacing: 0.5px !important;
+ position: sticky !important;
+ top: 0 !important;
+ background: var(--surf-3) !important;
+ padding: 0.85rem 1rem !important;
+ font-size: 0.75rem !important;
+ font-weight: 700 !important;
+ text-transform: uppercase !important;
+ color: var(--ax-text-tertiary) !important;
+ border-bottom: 2px solid rgba(77, 159, 236, 0.3) !important;
+ z-index: 5 !important;
+ letter-spacing: 0.5px !important;
     }
 
     .advisor-table td {
-      padding: 0.85rem 1rem !important;
-      font-size: 0.875rem !important;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
-      color: var(--ax-text-secondary) !important;
+ padding: 0.85rem 1rem !important;
+ font-size: 0.875rem !important;
+ border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+ color: var(--ax-text-secondary) !important;
     }
 
     .advisor-row:hover td {
-      background: rgba(77, 159, 236, 0.12) !important;
+ background: rgba(77, 159, 236, 0.12) !important;
     }
 
     .suggested-units-pill {
-      display: inline-block !important;
-      padding: 4px 10px !important;
-      border-radius: 12px !important;
-      background: rgba(77, 159, 236, 0.16) !important;
-      color: var(--ax-accent) !important;
-      border: 1px solid rgba(77, 159, 236, 0.35) !important;
-      font-weight: 800 !important;
+ display: inline-block !important;
+ padding: 4px 10px !important;
+ border-radius: 12px !important;
+ background: rgba(77, 159, 236, 0.16) !important;
+ color: var(--ax-accent) !important;
+ border: 1px solid rgba(77, 159, 236, 0.35) !important;
+ font-weight: 800 !important;
     }
 
     .investment-cost-cell {
-      font-weight: 800 !important;
-      color: var(--ax-accent-rose) !important;
+ font-weight: 800 !important;
+ color: var(--ax-accent-rose) !important;
     }
 
     .expected-profit-badge {
-      display: inline-flex !important;
-      padding: 4px 10px !important;
-      border-radius: 12px !important;
-      background: rgba(61, 220, 151, 0.16) !important;
-      color: var(--ax-accent-emerald) !important;
-      border: 1px solid rgba(61, 220, 151, 0.35) !important;
-      font-weight: 800 !important;
+ display: inline-flex !important;
+ padding: 4px 10px !important;
+ border-radius: 12px !important;
+ background: rgba(61, 220, 151, 0.16) !important;
+ color: var(--ax-accent-emerald) !important;
+ border: 1px solid rgba(61, 220, 151, 0.35) !important;
+ font-weight: 800 !important;
     }
   </style>
 </head>
@@ -380,13 +380,13 @@
                 <button class="ax-nav__item" data-view="productos">
           <svg class="ax-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
           <span class="ax-nav__label">Productos & SKUs</span>
-          <span class="ax-nav__badge ax-nav__badge--prod" style="background: rgba(167, 139, 250, 0.2); color: var(--ax-accent-purple); border: 1px solid rgba(167, 139, 250, 0.4);">SKU</span>
+          <span class="ax-nav__badge ax-nav__badge--prod" style="background: color-mix(in srgb, var(--ax-accent) 20%, transparent); color: var(--ax-accent); border: 1px solid color-mix(in srgb, var(--ax-accent) 40%, transparent);">SKU</span>
         </button>
 
         <button class="ax-nav__item" data-view="fichatecnica">
           <svg class="ax-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
           <span class="ax-nav__label">Ficha Técnica</span>
-          <span class="ax-nav__badge ax-nav__badge--ficha" style="background: rgba(45, 212, 206, 0.2); color: var(--ax-accent-sky); border: 1px solid rgba(45, 212, 206, 0.5);">SPEC</span>
+          <span class="ax-nav__badge ax-nav__badge--ficha" style="background: color-mix(in srgb, var(--ax-accent) 20%, transparent); color: var(--ax-accent); border: 1px solid color-mix(in srgb, var(--ax-accent) 50%, transparent);">SPEC</span>
         </button>
 
         <button class="ax-nav__item" data-view="cotizaciones">
@@ -398,7 +398,7 @@
         <button class="ax-nav__item" data-view="mixsugerido">
           <svg class="ax-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v1"/><path d="M18 8l4 4-4 4"/><path d="M22 12H9"/></svg>
           <span class="ax-nav__label">Mix Sugerido</span>
-          <span class="ax-nav__badge ax-nav__badge--hot" style="background: rgba(61, 220, 151, 0.2); color: var(--ax-accent-emerald); border: 1px solid rgba(61, 220, 151, 0.4);">AI Mix</span>
+          <span class="ax-nav__badge ax-nav__badge--hot" style="background: color-mix(in srgb, var(--ax-accent-emerald) 20%, transparent); color: var(--ax-accent-emerald); border: 1px solid color-mix(in srgb, var(--ax-accent-emerald) 40%, transparent);">AI Mix</span>
         </button>
 
         <button class="ax-nav__item" data-view="precios">
@@ -408,15 +408,15 @@
         </button>
 
         <!-- Mercado Publico es el unico modulo con submenu: son tres vistas
-             distintas sobre la misma fuente (el tablero, el buscador y las
-             ordenes recibidas) y colgarlas del mismo padre evita tres entradas
-             sueltas en una barra que ya tiene once. -->
+ distintas sobre la misma fuente (el tablero, el buscador y las
+ ordenes recibidas) y colgarlas del mismo padre evita tres entradas
+ sueltas en una barra que ya tiene once. -->
         <div class="ax-nav__group ax-nav__group--vistas" id="mpNavGroup">
           <button type="button" class="ax-nav__item ax-nav__item--parent" id="mpNavToggle"
-            aria-expanded="false" aria-controls="mpNavSubmenu">
+ aria-expanded="false" aria-controls="mpNavSubmenu">
             <svg class="ax-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M5 21V10l7-6 7 6v11"/><path d="M9 21v-6h6v6"/></svg>
             <span class="ax-nav__label">Mercado P&uacute;blico</span>
-            <span class="ax-nav__badge ax-nav__badge--prod" style="background: rgba(167, 139, 250, 0.2); color: var(--ax-accent-purple); border: 1px solid rgba(167, 139, 250, 0.4);">Licit</span>
+            <span class="ax-nav__badge ax-nav__badge--prod" style="background: color-mix(in srgb, var(--ax-accent) 20%, transparent); color: var(--ax-accent); border: 1px solid color-mix(in srgb, var(--ax-accent) 40%, transparent);">Licit</span>
             <svg class="ax-nav__caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
           </button>
           <div class="ax-nav__children" id="mpNavSubmenu">
@@ -438,14 +438,14 @@
         <button class="ax-nav__item" data-view="prospeccion">
           <svg class="ax-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
           <span class="ax-nav__label">Prospecci&oacute;n Mayorista</span>
-          <span class="ax-nav__badge ax-nav__badge--hot" style="background: rgba(255, 196, 107, 0.2); color: var(--ax-accent-gold); border: 1px solid rgba(255, 196, 107, 0.4);">Ruta</span>
+          <span class="ax-nav__badge ax-nav__badge--hot" style="background: color-mix(in srgb, var(--ax-accent-gold) 20%, transparent); color: var(--ax-accent-gold); border: 1px solid color-mix(in srgb, var(--ax-accent-gold) 40%, transparent);">Ruta</span>
         </button>
 
         <p class="ax-sidebar__section">Seguridad & Sesión</p>
         <button type="button" class="ax-nav__item" id="sidebarAuthBtn" onclick="if(typeof AuthManager!=='undefined') AuthManager.openLoginModal()">
           <svg class="ax-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
           <span class="ax-nav__label" id="sidebarAuthLabel">Iniciar Sesión / Canal</span>
-          <span class="ax-nav__badge ax-nav__badge--hot" id="sidebarAuthBadge" style="background: rgba(77, 159, 236,0.2); color:var(--ax-accent); border:1px solid rgba(77, 159, 236,0.4);">Login</span>
+          <span class="ax-nav__badge ax-nav__badge--hot" id="sidebarAuthBadge" style="background: color-mix(in srgb, var(--ax-accent) 20%, transparent); color: var(--ax-accent); border: 1px solid color-mix(in srgb, var(--ax-accent) 40%, transparent);">Login</span>
         </button>
 
         <p class="ax-sidebar__section">Filtros Rápidos</p>
@@ -490,7 +490,7 @@
             <span class="dot"></span> <span>Conectando…</span>
           </div>
           <div class="latency-badge" id="latencyBadge" title="Modo de conexión y latencia de respuesta">
-            ⚡ 0ms (Caché Local)
+            0ms (Caché Local)
           </div>
 
           <button type="button" class="btn-secondary" id="presentationModeBtn" title="Modo Presentación Ejecutiva (Pantalla Completa)">
@@ -514,17 +514,17 @@
           </button>
 
           <button type="button" class="ax-btn-icon" id="themeToggleBtn" title="Cambiar Tema (Claro / Oscuro)" aria-label="Cambiar Tema" onclick="toggleTheme()">
-            <span id="themeToggleIcon">🌙</span>
+            <span id="themeToggleIcon"></span>
           </button>
 
           <!-- HEADER MIX SUGERIDO BUTTON -->
-          <button type="button" class="btn-primary btn-sm" id="headerMixBtn" style="display: flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 20px; font-weight: 700; font-size: 0.8125rem; background: linear-gradient(135deg, #0F7A50, #0D6B46); border: none; color: #fff; cursor: pointer; box-shadow: 0 4px 12px rgba(61, 220, 151,0.35);" onclick="switchView('mixsugerido')">
+          <button type="button" class="btn-primary btn-sm" id="headerMixBtn" style="display: flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: var(--ax-radius-md); font-weight: 700; font-size: 0.8125rem; background: var(--ax-accent-emerald); border: none; color: var(--ax-on-accent); cursor: pointer;" onclick="switchView('mixsugerido')">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v1"/><path d="M18 8l4 4-4 4"/><path d="M22 12H9"/></svg>
             <span>Mix Sugerido</span>
           </button>
 
           <!-- HEADER LOGIN BUTTON & USER PROFILE BADGE -->
-          <button type="button" class="btn-primary btn-sm" id="headerLoginBtn" style="display: flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 20px; font-weight: 700; font-size: 0.8125rem; background: linear-gradient(135deg, #2563B8, #1E62B4); border: none; color: #fff; cursor: pointer; box-shadow: 0 4px 12px rgba(77, 159, 236,0.3);" onclick="if(typeof AuthManager!=='undefined') AuthManager.openLoginModal()">
+          <button type="button" class="btn-primary btn-sm" id="headerLoginBtn" style="display: flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: var(--ax-radius-md); font-weight: 700; font-size: 0.8125rem; background: var(--ax-accent); border: none; color: var(--ax-on-accent); cursor: pointer;" onclick="if(typeof AuthManager!=='undefined') AuthManager.openLoginModal()">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
             <span>Iniciar Sesión</span>
           </button>
@@ -609,109 +609,115 @@
         <!-- VISTA TABLERO -->
         <div class="view active" id="view-tablero">
 
-          <!-- BANNER DESTACADO MIX DE PRODUCTOS SUGERIDO -->
-          <div class="banner-parallax" data-tilt data-parallax-speed="-0.04" style="background: linear-gradient(135deg, rgba(61, 220, 151, 0.15), rgba(6, 182, 212, 0.1)); border: 1px solid rgba(61, 220, 151, 0.35); border-radius: 16px; padding: 1rem 1.5rem; margin-top: 1rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; box-shadow: 0 4px 20px rgba(61, 220, 151, 0.15);">
-            <div style="display: flex; align-items: center; gap: 1rem;">
-              <span style="font-size: 2rem;" data-parallax-layer="badge">🛍️</span>
-              <div>
-                <h4 style="margin: 0; font-size: 1rem; font-weight: 800; color: var(--ax-accent-emerald);" data-parallax-layer="value">Nuevo Módulo: Mix de Productos Sugerido (AI Portfolio Advisor)</h4>
-                <p style="margin: 3px 0 0 0; font-size: 0.8125rem; color: var(--ax-text-secondary);" data-parallax-layer="label">Genera y optimiza el catálogo por mejor venta, rentabilidad y volumen (segmentado por Canal o Global).</p>
-              </div>
+          <!-- El verde y el degradado se fueron: el verde solo significa "sube".
+ Sin emoji, sin flecha y sin la sigla en ingles; el boton dice lo
+ que hace. -->
+          <div class="aviso-modulo">
+            <div class="aviso-modulo__texto">
+              <h4>Mix de productos sugerido</h4>
+              <p>Optimiza el catálogo por venta, rentabilidad y volumen, por canal o global.</p>
             </div>
-            <button type="button" class="btn-primary" onclick="switchView('mixsugerido')" style="background: linear-gradient(135deg, #3DDC97, #3DDC97); border: none; font-weight: 800; border-radius: 20px; padding: 8px 18px; color: #fff; cursor: pointer; box-shadow: 0 4px 14px rgba(61, 220, 151, 0.4);">
-              <span>Abrir Módulo Mix Sugerido →</span>
-            </button>
+            <button type="button" class="btn-primary" onclick="switchView('mixsugerido')">Abrir mix sugerido</button>
           </div>
 
 
-          <!-- SECCIÓN 1: VENTA REAL ACUMULADA -->
-          <div class="dashboard-section-header" data-parallax-speed="0.03" style="margin-top: 1.5rem;">
+          <!-- LAS MEDIDAS
+ Una medida por pregunta, en lugar de dos tarjetas separadas -lo
+ acumulado y la proyeccion- que obligaban a mirar en dos sitios y
+ a sostener la comparacion de cabeza. Las tres cifras solo
+ significan algo juntas: septiembre va -15,4% al corte y proyecta
+ cerrar +15,4% arriba, y ninguna de las dos sola dice eso.
+
+ Los ids son los mismos que ya escribia renderSummaryCards: esa
+ funcion no se toco. Lo unico nuevo es renderMedidas(), que dibuja
+ la regla con cifras que ya estaban calculadas. -->
+          <div class="dashboard-section-header" style="margin-top: 1.5rem;">
             <div class="section-title-wrap">
               <span class="section-badge-dot"></span>
-              <h2 class="dashboard-section-title">Ventas Reales Acumuladas (MTD & YTD)</h2>
+              <h2 class="dashboard-section-title">C&oacute;mo vamos</h2>
             </div>
-            <span class="section-subtitle">Comparativa vs. Mismo Periodo Año Anterior</span>
+            <span class="section-subtitle">S&oacute;lido, facturado. Rayado, proyectado. La l&iacute;nea de puntos es el cierre del a&ntilde;o pasado.</span>
           </div>
 
-          <!-- HERO 3-CARDS GRID -->
-          <div class="hero-cards-grid">
-            <div class="ax-card hero-kpi-card" id="todayCard" data-tilt>
-              <div class="today-header">
-                <span class="today-badge" id="todayBadge">EN VIVO</span>
-                <span class="today-label" id="todayLabel">Ventas de Hoy</span>
+          <div class="medidas">
+            <figure class="medida" id="medidaDia">
+              <figcaption class="medida__titulo">
+                <span class="today-badge" id="todayBadge">En vivo</span>
+                <span class="today-label" id="todayLabel">Ventas de hoy</span>
                 <span class="today-date" id="todayDateLabel">--</span>
-              </div>
-              <div class="today-value" id="todayValue">$0</div>
-              <div class="hero-compare-badge" id="todayCompare">--</div>
-              <div class="today-sub" id="todaySub">Cargando…</div>
-            </div>
+              </figcaption>
 
-            <div class="ax-card hero-kpi-card" id="monthCard" data-tilt>
-              <div class="today-header">
-                <span class="today-badge badge-purple">MES ACUMULADO (MTD)</span>
-                <span class="today-label">Ventas Acumuladas del Mes</span>
+              <div class="medida__cifras">
+                <span class="today-value" id="todayValue">$0</span>
+                <span class="medida__unidad">de <span class="medida__proyval" id="todayProjValue">$0</span> al cierre</span>
+              </div>
+
+              <div class="medida__pista">
+                <div class="medida__real" data-medida="dia-real"></div>
+                <div class="medida__proy" data-medida="dia-proy"></div>
+                <div class="medida__hito" data-medida="dia-hito" hidden><span data-medida="dia-hitotxt"></span></div>
+              </div>
+              <div class="medida__graduacion" data-medida="dia-ticks"></div>
+
+              <div class="medida__lectura">
+                <span class="hero-compare-badge" id="todayCompare">--</span>
+                <span class="hero-compare-badge" id="todayProjCompare">--</span>
+              </div>
+              <p class="medida__sub"><span id="todaySub">Cargando&hellip;</span></p>
+              <p class="medida__nota" id="todayProjSub">Calculando proyecci&oacute;n&hellip;</p>
+            </figure>
+            <figure class="medida" id="medidaMes">
+              <figcaption class="medida__titulo">
+                <span class="today-badge badge-purple">Mes en curso</span>
+                <span class="today-label">Septiembre</span>
                 <span class="today-date" id="monthDateLabel">--</span>
-              </div>
-              <div class="today-value" id="monthValue">$0</div>
-              <div class="hero-compare-badge" id="monthCompare">--</div>
-              <div class="today-sub" id="monthSub">Cargando…</div>
-            </div>
+              </figcaption>
 
-            <div class="ax-card hero-kpi-card" id="yearCard" data-tilt>
-              <div class="today-header">
-                <span class="today-badge badge-gold">AÑO ACUMULADO (YTD)</span>
-                <span class="today-label">Ventas Acumuladas del Año</span>
+              <div class="medida__cifras">
+                <span class="today-value" id="monthValue">$0</span>
+                <span class="medida__unidad">de <span class="medida__proyval" id="monthProjValue">$0</span> al cierre</span>
+              </div>
+
+              <div class="medida__pista">
+                <div class="medida__real" data-medida="mes-real"></div>
+                <div class="medida__proy" data-medida="mes-proy"></div>
+                <div class="medida__hito" data-medida="mes-hito" hidden><span data-medida="mes-hitotxt"></span></div>
+              </div>
+              <div class="medida__graduacion" data-medida="mes-ticks"></div>
+
+              <div class="medida__lectura">
+                <span class="hero-compare-badge" id="monthCompare">--</span>
+                <span class="hero-compare-badge" id="monthProjCompare">--</span>
+              </div>
+              <p class="medida__sub"><span id="monthSub">Cargando&hellip;</span></p>
+              <p class="medida__nota" id="monthProjSub">Calculando proyecci&oacute;n&hellip;</p>
+            </figure>
+            <figure class="medida" id="medidaAnio">
+              <figcaption class="medida__titulo">
+                <span class="today-badge badge-gold">A&ntilde;o en curso</span>
+                <span class="today-label">Acumulado del a&ntilde;o</span>
                 <span class="today-date" id="yearDateLabel">--</span>
-              </div>
-              <div class="today-value" id="yearValue">$0</div>
-              <div class="hero-compare-badge" id="yearCompare">--</div>
-              <div class="today-sub" id="yearSub">Cargando…</div>
-            </div>
-          </div>
+              </figcaption>
 
-          <!-- SECCIÓN 2: PROYECCIONES DE CIERRE -->
-          <div class="dashboard-section-header" data-parallax-speed="0.03" style="margin-top: 1.75rem;">
-            <div class="section-title-wrap">
-              <span class="section-badge-dot proj"></span>
-              <h2 class="dashboard-section-title">Proyección de Cierre (AI Forecast)</h2>
-            </div>
-            <span class="section-subtitle">Extrapolación vs. Cierre Completo Año Anterior</span>
-          </div>
-
-          <!-- HERO 3-CARDS PROYECCIONES GRID -->
-          <div class="hero-cards-grid">
-            <div class="ax-card hero-kpi-card proj-card" id="todayProjCard" data-tilt>
-              <div class="today-header">
-                <span class="today-badge proj-badge" id="todayProjBadge">PROYECCIÓN DÍA</span>
-                <span class="today-label" id="todayProjLabel">Proyección Cierre de Hoy</span>
-                <span class="today-date" id="todayProjDateLabel">--</span>
+              <div class="medida__cifras">
+                <span class="today-value" id="yearValue">$0</span>
+                <span class="medida__unidad">de <span class="medida__proyval" id="yearProjValue">$0</span> al cierre</span>
               </div>
-              <div class="today-value" id="todayProjValue">$0</div>
-              <div class="hero-compare-badge" id="todayProjCompare">--</div>
-              <div class="today-sub" id="todayProjSub">Calculando proyección…</div>
-            </div>
 
-            <div class="ax-card hero-kpi-card proj-card" id="monthProjCard" data-tilt>
-              <div class="today-header">
-                <span class="today-badge proj-badge-purple">PROYECCIÓN MES</span>
-                <span class="today-label">Proyección Cierre del Mes</span>
-                <span class="today-date" id="monthProjDateLabel">--</span>
+              <div class="medida__pista">
+                <div class="medida__real" data-medida="anio-real"></div>
+                <div class="medida__proy" data-medida="anio-proy"></div>
+                <div class="medida__hito" data-medida="anio-hito" hidden><span data-medida="anio-hitotxt"></span></div>
               </div>
-              <div class="today-value" id="monthProjValue">$0</div>
-              <div class="hero-compare-badge" id="monthProjCompare">--</div>
-              <div class="today-sub" id="monthProjSub">Calculando proyección…</div>
-            </div>
+              <div class="medida__graduacion" data-medida="anio-ticks"></div>
 
-            <div class="ax-card hero-kpi-card proj-card" id="yearProjCard" data-tilt>
-              <div class="today-header">
-                <span class="today-badge proj-badge-gold">PROYECCIÓN AÑO</span>
-                <span class="today-label">Proyección Cierre del Año</span>
-                <span class="today-date" id="yearProjDateLabel">--</span>
+              <div class="medida__lectura">
+                <span class="hero-compare-badge" id="yearCompare">--</span>
+                <span class="hero-compare-badge" id="yearProjCompare">--</span>
               </div>
-              <div class="today-value" id="yearProjValue">$0</div>
-              <div class="hero-compare-badge" id="yearProjCompare">--</div>
-              <div class="today-sub" id="yearProjSub">Calculando proyección…</div>
-            </div>
+              <p class="medida__sub"><span id="yearSub">Cargando&hellip;</span></p>
+              <p class="medida__nota" id="yearProjSub">Calculando proyecci&oacute;n&hellip;</p>
+            </figure>
           </div>
 
           <!-- WIDGET 2: 4 MINI KPIS CLAVE -->
@@ -719,37 +725,33 @@
             <div class="ax-card mini-kpi-card gradient-border-card" data-tilt>
               <div class="mini-kpi-top">
                 <span class="mini-kpi-label" data-parallax-layer="label">Ticket Promedio</span>
-                <div class="kpi-icon-badge theme-blue" data-parallax-layer="badge">🏷️</div>
               </div>
               <div class="mini-kpi-value accent-blue" id="miniTicketVal" data-parallax-layer="value">$0</div>
-              <div class="mini-kpi-sub" data-parallax-layer="sub">🧾 Por Factura Emitida</div>
+              <div class="mini-kpi-sub" data-parallax-layer="sub">Por Factura Emitida</div>
             </div>
 
             <div class="ax-card mini-kpi-card gradient-border-card" data-tilt>
               <div class="mini-kpi-top">
                 <span class="mini-kpi-label" data-parallax-layer="label">Margen Utilidad %</span>
-                <div class="kpi-icon-badge theme-green" data-parallax-layer="badge">📊</div>
               </div>
               <div class="mini-kpi-value accent-green" id="miniMarginVal" data-parallax-layer="value">0%</div>
-              <div class="mini-kpi-sub" data-parallax-layer="sub">🎯 Global Filtrado</div>
+              <div class="mini-kpi-sub" data-parallax-layer="sub">Global Filtrado</div>
             </div>
 
             <div class="ax-card mini-kpi-card gradient-border-card" data-tilt>
               <div class="mini-kpi-top">
                 <span class="mini-kpi-label" data-parallax-layer="label">Top Vendedor</span>
-                <div class="kpi-icon-badge theme-purple" data-parallax-layer="badge">👤</div>
               </div>
               <div class="mini-kpi-value accent-purple" id="miniTopSellerVal" data-parallax-layer="value">--</div>
-              <div class="mini-kpi-sub" id="miniTopSellerSub" data-parallax-layer="sub">⭐ $0 Facturado</div>
+              <div class="mini-kpi-sub" id="miniTopSellerSub" data-parallax-layer="sub">$0 Facturado</div>
             </div>
 
             <div class="ax-card mini-kpi-card gradient-border-card" data-tilt>
               <div class="mini-kpi-top">
                 <span class="mini-kpi-label" data-parallax-layer="label">Top Región</span>
-                <div class="kpi-icon-badge theme-amber" data-parallax-layer="badge">📍</div>
               </div>
               <div class="mini-kpi-value accent-amber" id="miniTopRegionVal" data-parallax-layer="value">--</div>
-              <div class="mini-kpi-sub" id="miniTopRegionSub" data-parallax-layer="sub">🗺️ $0 Facturado</div>
+              <div class="mini-kpi-sub" id="miniTopRegionSub" data-parallax-layer="sub">$0 Facturado</div>
             </div>
           </div>
 
@@ -758,37 +760,33 @@
             <div class="ax-card kpi-card gradient-border-card" data-tilt>
               <div class="kpi-card__top">
                 <span class="kpi-card__label" data-parallax-layer="label">Total Venta Neta</span>
-                <div class="kpi-icon-badge theme-blue" data-parallax-layer="badge">💰</div>
               </div>
               <div class="kpi-card__value accent-blue" id="kpiNeto" data-parallax-layer="value">$0</div>
-              <div class="kpi-card__sub" id="kpiNetoSub" data-parallax-layer="sub">🟢 Facturación seleccionada</div>
+              <div class="kpi-card__sub" id="kpiNetoSub" data-parallax-layer="sub">Facturación seleccionada</div>
             </div>
 
             <div class="ax-card kpi-card gradient-border-card" data-tilt>
               <div class="kpi-card__top">
                 <span class="kpi-card__label" data-parallax-layer="label">Total Utilidad Net</span>
-                <div class="kpi-icon-badge theme-green" data-parallax-layer="badge">📈</div>
               </div>
               <div class="kpi-card__value accent-green" id="kpiUtilidad" data-parallax-layer="value">$0</div>
-              <div class="kpi-card__sub" id="kpiUtilidadSub" data-parallax-layer="sub">✨ Ganancia directa neta</div>
+              <div class="kpi-card__sub" id="kpiUtilidadSub" data-parallax-layer="sub">Ganancia directa neta</div>
             </div>
 
             <div class="ax-card kpi-card gradient-border-card" data-tilt>
               <div class="kpi-card__top">
                 <span class="kpi-card__label" data-parallax-layer="label">Unidades Facturadas</span>
-                <div class="kpi-icon-badge theme-purple" data-parallax-layer="badge">📦</div>
               </div>
               <div class="kpi-card__value accent-purple" id="kpiCant" data-parallax-layer="value">0</div>
-              <div class="kpi-card__sub" id="kpiCantSub" data-parallax-layer="sub">📦 Total unidades físicas</div>
+              <div class="kpi-card__sub" id="kpiCantSub" data-parallax-layer="sub">Total unidades físicas</div>
             </div>
 
             <div class="ax-card kpi-card gradient-border-card" data-tilt>
               <div class="kpi-card__top">
                 <span class="kpi-card__label" data-parallax-layer="label">Total Registros</span>
-                <div class="kpi-icon-badge theme-amber" data-parallax-layer="badge">📄</div>
               </div>
               <div class="kpi-card__value accent-amber" id="kpiRows" data-parallax-layer="value">0</div>
-              <div class="kpi-card__sub" id="kpiRowsSub" data-parallax-layer="sub">📑 Documentos emitidos</div>
+              <div class="kpi-card__sub" id="kpiRowsSub" data-parallax-layer="sub">Documentos emitidos</div>
             </div>
           </div>
 
@@ -798,7 +796,6 @@
             <div class="ax-card chart-card wide gradient-border-card">
               <div class="chart-card-header">
                 <div class="chart-title-group">
-                  <div class="chart-header-badge">📈</div>
                   <div>
                     <h3 class="chart-main-title">Evolución de Ventas vs. Año Anterior</h3>
                     <p class="chart-subtitle">Comparativa de facturación actual vs. mismo periodo del año anterior</p>
@@ -816,14 +813,13 @@
             </div>
 
             <!-- 2. FACTURACION POR CANAL: MES EN CURSO
-                 Abre por canal el mismo total que muestran las tarjetas de
-                 Proyeccion de Cierre. Los encabezados de las columnas y el
-                 subtitulo los escribe renderCanalesFacturacion() porque
-                 dependen de la fecha de corte, que sale de los datos. -->
+ Abre por canal el mismo total que muestran las tarjetas de
+ Proyeccion de Cierre. Los encabezados de las columnas y el
+ subtitulo los escribe renderCanalesFacturacion() porque
+ dependen de la fecha de corte, que sale de los datos. -->
             <div class="ax-card chart-card gradient-border-card fact-tabla-card">
               <div class="chart-card-header">
                 <div class="chart-title-group">
-                  <div class="chart-header-badge">&#128197;</div>
                   <div>
                     <h3 class="chart-main-title">Facturaci&oacute;n por Canal &middot; Mes</h3>
                     <p class="chart-subtitle" id="canalMesSub">Calculando&hellip;</p>
@@ -857,7 +853,6 @@
             <div class="ax-card chart-card gradient-border-card fact-tabla-card">
               <div class="chart-card-header">
                 <div class="chart-title-group">
-                  <div class="chart-header-badge">&#128200;</div>
                   <div>
                     <h3 class="chart-main-title">Facturaci&oacute;n por Canal &middot; A&ntilde;o</h3>
                     <p class="chart-subtitle" id="canalAnioSub">Calculando&hellip;</p>
@@ -891,7 +886,6 @@
             <div class="ax-card chart-card gradient-border-card">
               <div class="chart-card-header">
                 <div class="chart-title-group">
-                  <div class="chart-header-badge">🍩</div>
                   <div>
                     <h3 class="chart-main-title">Ventas por Canal</h3>
                     <p class="chart-subtitle">Distribución porcentual de ingresos</p>
@@ -912,7 +906,6 @@
             <div class="ax-card chart-card gradient-border-card">
               <div class="chart-card-header">
                 <div class="chart-title-group">
-                  <div class="chart-header-badge">🏷️</div>
                   <div>
                     <h3 class="chart-main-title">Top Categorías de Productos</h3>
                     <p class="chart-subtitle">Las seis que más facturan, en neto</p>
@@ -928,7 +921,6 @@
             <div class="ax-card chart-card gradient-border-card">
               <div class="chart-card-header">
                 <div class="chart-title-group">
-                  <div class="chart-header-badge">🏪</div>
                   <div>
                     <h3 class="chart-main-title">Ventas por Tienda / Local</h3>
                     <p class="chart-subtitle">Ranking de facturación por sucursal comercial</p>
@@ -944,7 +936,6 @@
             <div class="ax-card chart-card gradient-border-card">
               <div class="chart-card-header">
                 <div class="chart-title-group">
-                  <div class="chart-header-badge">👤</div>
                   <div>
                     <h3 class="chart-main-title">Top Vendedores</h3>
                     <p class="chart-subtitle">Desempeño comercial por ejecutivo</p>
@@ -957,14 +948,13 @@
             </div>
 
             <!-- 8. FACTURACION POR CATEGORIA: MES EN CURSO
-                 Mismas columnas y misma aritmetica que las tablas por canal de mas
-                 arriba, abiertas por Categoria. Como son 108,
-                 renderCategoriasFacturacion() lista las mayores y suma el resto en
-                 una linea "Otras", para que el Total siga cuadrando. -->
+ Mismas columnas y misma aritmetica que las tablas por canal de mas
+ arriba, abiertas por Categoria. Como son 108,
+ renderCategoriasFacturacion() lista las mayores y suma el resto en
+ una linea "Otras", para que el Total siga cuadrando. -->
             <div class="ax-card chart-card gradient-border-card fact-tabla-card">
               <div class="chart-card-header">
                 <div class="chart-title-group">
-                  <div class="chart-header-badge">&#127991;&#65039;</div>
                   <div>
                     <h3 class="chart-main-title">Facturaci&oacute;n por Categor&iacute;a &middot; Mes</h3>
                     <p class="chart-subtitle" id="catMesSub">Calculando&hellip;</p>
@@ -998,7 +988,6 @@
             <div class="ax-card chart-card gradient-border-card fact-tabla-card">
               <div class="chart-card-header">
                 <div class="chart-title-group">
-                  <div class="chart-header-badge">&#128202;</div>
                   <div>
                     <h3 class="chart-main-title">Facturaci&oacute;n por Categor&iacute;a &middot; A&ntilde;o</h3>
                     <p class="chart-subtitle" id="catAnioSub">Calculando&hellip;</p>
@@ -1059,12 +1048,12 @@
                     <th data-sort="CLIENTE">Cliente ⇕</th>
                     <th data-sort="DESCRIPCION">Producto ⇕</th>
                     <th data-sort="CANAL FINAL">Canal ⇕</th>
-                    <th data-sort="CANTFACTURADA" style="text-align:right;">Cant ⇕</th>
-                    <th data-sort="PREUNI" style="text-align:right;">Precio ⇕</th>
-                    <th data-sort="NETO" style="text-align:right;">Neto ⇕</th>
-                    <th data-sort="COSTOS" style="text-align:right;">Costo Unit. ⇕</th>
-                    <th data-sort="($) UTILIDAD" style="text-align:right;">Utilidad ⇕</th>
-                    <th style="text-align:center;">Acciones</th>
+                    <th data-sort="CANTFACTURADA" style="text-align: right;">Cant ⇕</th>
+                    <th data-sort="PREUNI" style="text-align: right;">Precio ⇕</th>
+                    <th data-sort="NETO" style="text-align: right;">Neto ⇕</th>
+                    <th data-sort="COSTOS" style="text-align: right;">Costo Unit. ⇕</th>
+                    <th data-sort="($) UTILIDAD" style="text-align: right;">Utilidad ⇕</th>
+                    <th style="text-align: center;">Acciones</th>
                   </tr>
                 </thead>
                 <tbody id="tableBody">
@@ -1159,11 +1148,11 @@
           </div>
 
           <!-- PARETO 80/20 & CUSTOMER RFM MATRIX -->
-          <div class="charts-grid" style="margin-top:1.5rem;">
+          <div class="charts-grid" style="margin-top: 1.5rem;">
             <div class="ax-card chart-card">
               <div class="chart-card-header">
                 <div>
-                  <span class="chart-tag">PARETO 80/20</span>
+                  <span class="chart-tag">Pareto 80/20</span>
                   <h3 class="chart-main-title">Concentración de Ventas</h3>
                 </div>
               </div>
@@ -1178,7 +1167,7 @@
             <div class="ax-card chart-card">
               <div class="chart-card-header">
                 <div>
-                  <span class="chart-tag">RFM SEGMENTATION</span>
+                  <span class="chart-tag">Segmentación RFM</span>
                   <h3 class="chart-main-title">Segmentación de Cartera</h3>
                 </div>
               </div>
@@ -1211,7 +1200,6 @@
             <div class="ax-card kpi-card">
               <div class="kpi-card__top">
                 <span class="kpi-card__label">Inversión Total en Costos</span>
-                <span class="kpi-card__icon" style="background: rgba(255, 107, 138, 0.15); color: var(--ax-accent-rose);">📦</span>
               </div>
               <div class="kpi-card__value" id="kpiComprasCostos">$0</div>
               <div class="kpi-card__sub" id="kpiComprasCostosSub">Inversión acumulada en costos netos</div>
@@ -1220,7 +1208,6 @@
             <div class="ax-card kpi-card">
               <div class="kpi-card__top">
                 <span class="kpi-card__label">Catálogo de SKUs Activos</span>
-                <span class="kpi-card__icon" style="background: rgba(77, 159, 236, 0.15); color: var(--ax-accent);">🏷️</span>
               </div>
               <div class="kpi-card__value" id="kpiComprasSkus">0</div>
               <div class="kpi-card__sub" id="kpiComprasSkusSub">Productos únicos registrados</div>
@@ -1229,7 +1216,6 @@
             <div class="ax-card kpi-card">
               <div class="kpi-card__top">
                 <span class="kpi-card__label">Costo Unitario Promedio</span>
-                <span class="kpi-card__icon" style="background: rgba(255, 196, 107, 0.15); color: var(--ax-accent-gold);">⚖️</span>
               </div>
               <div class="kpi-card__value" id="kpiComprasCostoPromedio">$0</div>
               <div class="kpi-card__sub" id="kpiComprasCostoPromedioSub">Costo medio ponderado por unidad</div>
@@ -1238,7 +1224,6 @@
             <div class="ax-card kpi-card">
               <div class="kpi-card__top">
                 <span class="kpi-card__label">Margen Comercial Promedio</span>
-                <span class="kpi-card__icon" style="background: rgba(61, 220, 151, 0.15); color: var(--ax-accent-emerald);">📈</span>
               </div>
               <div class="kpi-card__value" id="kpiComprasMargenPromedio">0%</div>
               <div class="kpi-card__sub" id="kpiComprasMargenPromedioSub">Promedio de margen % sobre ventas</div>
@@ -1276,9 +1261,9 @@
                 <div class="advisor-strategy-group">
                   <label for="comprasStrategySelect">Estrategia de Selección Comercial BI</label>
                   <select id="comprasStrategySelect" class="filter-select">
-                    <option value="balanced">⚖️ Equilibrada: Rotación + Margen (Recomendada)</option>
-                    <option value="margin">💎 Máxima Rentabilidad (Mayor Margen %)</option>
-                    <option value="velocity">⚡ Mayor Rotación (Ventas Rápidas)</option>
+                    <option value="balanced">Equilibrada: Rotación + Margen (Recomendada)</option>
+                    <option value="margin">Máxima Rentabilidad (Mayor Margen %)</option>
+                    <option value="velocity">Mayor Rotación (Ventas Rápidas)</option>
                   </select>
                 </div>
               </div>
@@ -1397,7 +1382,6 @@
             <div class="ax-card chart-card">
               <div class="chart-card-header">
                 <div>
-                  <span class="chart-tag">DESGLOSE DE COSTOS</span>
                   <h3 class="chart-main-title">Inversión de Costos por Familia</h3>
                 </div>
               </div>
@@ -1409,7 +1393,6 @@
             <div class="ax-card chart-card">
               <div class="chart-card-header">
                 <div>
-                  <span class="chart-tag">TOP PRODUCTOS</span>
                   <h3 class="chart-main-title">Top 10 Productos por Mayor Inversión de Costo</h3>
                 </div>
               </div>
@@ -1489,7 +1472,7 @@
           <!-- SECCIÓN 1: MEDICIÓN POR TIPO DE SOLICITUD (HERO CARDS GRID) -->
           <div class="dashboard-section-header">
             <div class="section-title-wrap">
-              <span class="section-badge-dot" style="background: #4D9FEC;"></span>
+              <span class="section-badge-dot" style="background: var(--ax-accent);"></span>
               <h2 class="dashboard-section-title">Medición por Tipo de Solicitud (Columna B)</h2>
             </div>
             <span class="section-subtitle" id="cotizTipoCardsSubtitle">Desglose acumulado y contadores por estado (Columna X)</span>
@@ -1504,7 +1487,7 @@
             <div class="ax-card chart-card">
               <div class="chart-card-header">
                 <div>
-                  <span class="chart-tag">TENDENCIA TEMPORAL (AÑO EN CURSO)</span>
+                  <span class="chart-tag">Año en curso</span>
                   <h3 class="chart-main-title" id="chartCotizEvolTitle">Evolución Mensual: Aceptadas, Pendientes y Perdidas ($)</h3>
                 </div>
               </div>
@@ -1516,7 +1499,6 @@
             <div class="ax-card chart-card">
               <div class="chart-card-header">
                 <div>
-                  <span class="chart-tag">DISTRIBUCIÓN DE ESTADO</span>
                   <h3 class="chart-main-title">Distribución por Estado de Cotización</h3>
                 </div>
               </div>
@@ -1530,7 +1512,6 @@
             <div class="ax-card chart-card">
               <div class="chart-card-header">
                 <div>
-                  <span class="chart-tag">PERFORMANCE EQUIPO</span>
                   <h3 class="chart-main-title">Top Vendedores (Cod. Vendedor) por Monto Cotizado</h3>
                 </div>
               </div>
@@ -1542,7 +1523,6 @@
             <div class="ax-card chart-card">
               <div class="chart-card-header">
                 <div>
-                  <span class="chart-tag">PRODUCTOS MÁS COTIZADOS</span>
                   <h3 class="chart-main-title">Top 10 SKUs en Solicitudes de Cotización</h3>
                 </div>
               </div>
@@ -1556,7 +1536,7 @@
           <div class="ax-card chart-card">
             <div class="chart-card-header">
               <div>
-                <span class="chart-tag">REGISTROS DETALLADOS (GOOGLE SHEETS)</span>
+                <span class="chart-tag">Desde Google Sheets</span>
                 <h3 class="chart-main-title">Listado Completo de Cotizaciones (Pestaña Mayoristas)</h3>
               </div>
             </div>
@@ -1564,18 +1544,18 @@
               <table class="data-table">
                 <thead>
                   <tr>
-                    <th>TIPO</th>
-                    <th>Nº COT</th>
-                    <th>FECHA SOLICITUD</th>
-                    <th>CLIENTE</th>
+                    <th>Tipo</th>
+                    <th>Nº Cot</th>
+                    <th>Fecha de solicitud</th>
+                    <th>Cliente</th>
                     <th>RUT</th>
                     <th>SKU</th>
-                    <th>PRODUCTO</th>
-                    <th>CANT</th>
-                    <th>TOTAL ($)</th>
-                    <th>COD. VENDEDOR</th>
+                    <th>Producto</th>
+                    <th>Cant.</th>
+                    <th>Total ($)</th>
+                    <th>Cód. vendedor</th>
                     <th>NV / FA</th>
-                    <th>ESTADO</th>
+                    <th>Estado</th>
                   </tr>
                 </thead>
                 <tbody id="cotizTableBody">
@@ -1599,22 +1579,22 @@
           <!-- HEADER DE MÓDULO -->
           <div class="dashboard-section-header" style="margin-top: 1.5rem;">
             <div class="section-title-wrap">
-              <span class="section-badge-dot" style="background: #A78BFA; box-shadow: 0 0 12px #A78BFA;"></span>
+              <span class="section-badge-dot" style="background: var(--ax-accent);"></span>
               <h2 class="dashboard-section-title">Análisis de Productos & Proyección de Stock por SKU</h2>
             </div>
             <span class="section-subtitle">Consulta de movimientos históricos multianuales y calculadora de meses de agotamiento</span>
           </div>
 
           <!-- TARJETA DE BÚSQUEDA Y SELECCIÓN DE SKU -->
-          <div class="ax-card" style="padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; border-left: 4px solid #A78BFA; background: linear-gradient(135deg, rgba(167, 139, 250, 0.08) 0%, var(--surf-3) 100%);">
+          <div class="ax-card" style="padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; border-left: 4px solid var(--ax-accent); background: var(--ax-accent);">
             <div style="display: grid; grid-template-columns: 1.3fr 1.3fr 0.9fr auto; gap: 1rem; align-items: start;">
               <!-- COL 1: BÚSQUEDA SKU -->
               <div style="display: flex; flex-direction: column;">
-                <label for="prodSkuSearch" style="height: 18px; line-height: 18px; font-size: 0.75rem; font-weight: 700; color: var(--ax-text-secondary); text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px; white-space: nowrap; display: flex; align-items: center;">
-                  🔍 Buscar SKU o Descripción
+                <label for="prodSkuSearch" style="height: 18px; line-height: 18px; font-size: 0.75rem; font-weight: 700; color: var(--ax-text-secondary); margin-bottom: 6px; white-space: nowrap; display: flex; align-items: center;">
+                  Buscar SKU o Descripción
                 </label>
                 <div style="position: relative; height: 46px;">
-                  <input type="text" id="prodSkuSearch" class="filter-input" placeholder="Escribe SKU (ej. ABC-123) o nombre..." style="width: 100%; height: 46px; font-size: 0.875rem; font-weight: 600; padding-left: 12px; background: var(--surf-3); border: 1px solid rgba(167, 139, 250, 0.4); border-radius: 12px; color: #fff; box-sizing: border-box;" autocomplete="off" />
+                  <input type="text" id="prodSkuSearch" class="filter-input" placeholder="Escribe SKU (ej. ABC-123) o nombre..." style="width: 100%; height: 46px; font-size: 0.875rem; font-weight: 600; padding-left: 12px; background: var(--surf-3); border: 1px solid color-mix(in srgb, var(--ax-accent) 40%, transparent); border-radius: var(--ax-radius-md); color: var(--ax-text-primary); box-sizing: border-box;" autocomplete="off" />
                   <div id="prodSkuSuggestions" class="prod-suggestions-dropdown" style="display: none;"></div>
                 </div>
                 <div style="height: 18px; margin-top: 4px;"></div>
@@ -1622,11 +1602,11 @@
 
               <!-- COL 2: LISTA DESPLEGABLE -->
               <div style="display: flex; flex-direction: column;">
-                <label for="prodSkuSelect" style="height: 18px; line-height: 18px; font-size: 0.75rem; font-weight: 700; color: var(--ax-text-secondary); text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px; white-space: nowrap; display: flex; align-items: center;">
-                  📦 Lista de Productos (Ventas)
+                <label for="prodSkuSelect" style="height: 18px; line-height: 18px; font-size: 0.75rem; font-weight: 700; color: var(--ax-text-secondary); margin-bottom: 6px; white-space: nowrap; display: flex; align-items: center;">
+                  Lista de Productos (Ventas)
                 </label>
                 <div style="height: 46px;">
-                  <select id="prodSkuSelect" class="filter-select" style="width: 100%; height: 46px; font-size: 0.875rem; font-weight: 600; background: var(--surf-3); border: 1px solid rgba(167, 139, 250, 0.3); border-radius: 12px; color: #fff; box-sizing: border-box;">
+                  <select id="prodSkuSelect" class="filter-select" style="width: 100%; height: 46px; font-size: 0.875rem; font-weight: 600; background: var(--surf-3); border: 1px solid color-mix(in srgb, var(--ax-accent) 30%, transparent); border-radius: var(--ax-radius-md); color: var(--ax-text-primary); box-sizing: border-box;">
                     <option value="">Cargando productos...</option>
                   </select>
                 </div>
@@ -1635,12 +1615,12 @@
 
               <!-- COL 3: VALOR DÓLAR -->
               <div style="display: flex; flex-direction: column;">
-                <label for="prodDolarRateInput" style="height: 18px; line-height: 18px; font-size: 0.75rem; font-weight: 700; color: var(--ax-text-secondary); text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px; white-space: nowrap; display: flex; align-items: center;">
-                  💵 Valor Dólar ($ CLP / USD)
+                <label for="prodDolarRateInput" style="height: 18px; line-height: 18px; font-size: 0.75rem; font-weight: 700; color: var(--ax-text-secondary); margin-bottom: 6px; white-space: nowrap; display: flex; align-items: center;">
+                  Valor Dólar ($ CLP / USD)
                 </label>
                 <div class="input-with-icon" style="position: relative; height: 46px;">
                   <span class="currency-prefix" style="color: var(--ax-accent-emerald); left: 10px;">$</span>
-                  <input type="number" id="prodDolarRateInput" min="1" step="0.5" value="950" placeholder="950" style="width: 100%; padding-left: 28px; height: 46px; font-size: 1rem; font-weight: 800; background: var(--surf-3); border: 1px solid rgba(61, 220, 151, 0.4); border-radius: 12px; color: #fff; box-sizing: border-box;" />
+                  <input type="number" id="prodDolarRateInput" min="1" step="0.5" value="950" placeholder="950" style="width: 100%; padding-left: 28px; height: 46px; font-size: 1rem; font-weight: 800; background: var(--surf-3); border: 1px solid color-mix(in srgb, var(--ax-accent-emerald) 40%, transparent); border-radius: var(--ax-radius-md); color: var(--ax-text-primary); box-sizing: border-box;" />
                 </div>
                 <div id="prodDolarStatus" style="height: 18px; line-height: 18px; font-size: 0.6875rem; color: var(--ax-accent-emerald); margin-top: 4px; white-space: nowrap; display: flex; align-items: center;">Obteniendo valor...</div>
               </div>
@@ -1649,8 +1629,8 @@
               <div style="display: flex; flex-direction: column;">
                 <div style="height: 18px; margin-bottom: 6px;"></div>
                 <div style="height: 46px; display: flex; gap: 0.5rem; align-items: center;">
-                  <button type="button" class="btn-secondary" id="prodRandomBtn" title="Seleccionar un SKU al azar" style="height: 46px; border-color: rgba(167, 139, 250, 0.4); padding: 0 14px; font-weight: 700; white-space: nowrap;">
-                    🎲 SKU Azar
+                  <button type="button" class="btn-secondary" id="prodRandomBtn" title="Seleccionar un SKU al azar" style="height: 46px; border-color: color-mix(in srgb, var(--ax-accent) 40%, transparent); padding: 0 14px; font-weight: 700; white-space: nowrap;">
+                    SKU Azar
                   </button>
                   <button type="button" class="btn-secondary" id="prodClearBtn" title="Limpiar selección" style="height: 46px; padding: 0 14px; font-weight: 700; white-space: nowrap;">
                     ✕ Limpiar
@@ -1664,16 +1644,16 @@
           <!-- DETALLE DEL PRODUCTO SELECCIONADO (KPI CARDS & INFORMACIÓN) -->
           <div id="prodDetailContainer">
             <!-- HEADER RESUMEN PRODUCTO -->
-            <div class="ax-card" id="prodHeaderCard" style="padding: 1.5rem; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; background: var(--surf-3); border: 1px solid rgba(255, 255, 255, 0.08);">
+            <div class="ax-card" id="prodHeaderCard" style="padding: 1.5rem; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; background: var(--surf-3); border: 1px solid var(--ax-border-subtle);">
               <div>
                 <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.35rem;">
-                  <span id="prodSkuBadge" style="padding: 4px 12px; border-radius: 20px; font-size: 0.875rem; font-weight: 800; background: rgba(167, 139, 250, 0.2); color: var(--ax-accent-purple); border: 1px solid rgba(167, 139, 250, 0.5); font-family: 'JetBrains Mono', monospace;">
-                    SKU: ---
+                  <span id="prodSkuBadge" style="padding: 4px 12px; border-radius: var(--ax-radius-md); font-size: 0.875rem; font-weight: 800; background: color-mix(in srgb, var(--ax-accent) 20%, transparent); color: var(--ax-accent); border: 1px solid color-mix(in srgb, var(--ax-accent) 50%, transparent); font-family: var(--ax-font-mono);">
+ SKU: ---
                   </span>
-                  <span id="prodCategoryBadge" style="padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; background: rgba(77, 159, 236, 0.15); color: var(--ax-accent); border: 1px solid rgba(77, 159, 236, 0.3);">
+                  <span id="prodCategoryBadge" style="padding: 4px 10px; border-radius: var(--ax-radius-md); font-size: 0.75rem; font-weight: 700; background: color-mix(in srgb, var(--ax-accent) 15%, transparent); color: var(--ax-accent); border: 1px solid color-mix(in srgb, var(--ax-accent) 30%, transparent);">
                     ---
                   </span>
-                  <span id="prodFamiliaBadge" style="padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; background: rgba(61, 220, 151, 0.15); color: var(--ax-accent-emerald); border: 1px solid rgba(61, 220, 151, 0.3);">
+                  <span id="prodFamiliaBadge" style="padding: 4px 10px; border-radius: var(--ax-radius-md); font-size: 0.75rem; font-weight: 700; background: transparent; color: var(--ax-text-secondary); border: 1px solid var(--ax-border);">
                     ---
                   </span>
                 </div>
@@ -1682,17 +1662,17 @@
               </div>
               <div id="prodQuickStats" style="display: flex; gap: 1.5rem; text-align: right;">
                 <div>
-                  <div style="font-size: 0.75rem; font-weight: 700; color: var(--ax-text-tertiary); text-transform: uppercase;">Precio Prom. Venta (Col N)</div>
-                  <div id="prodAvgPrice" style="font-size: 1.25rem; font-weight: 800; color: var(--ax-accent-sky);">$0</div>
+                  <div style="font-size: 0.75rem; font-weight: 700; color: var(--ax-text-tertiary);">Precio Prom. Venta (Col N)</div>
+                  <div id="prodAvgPrice" style="font-size: 1.25rem; font-weight: 800; color: var(--ax-accent);">$0</div>
                   <div id="prodAvgPriceUSD" style="font-size: 0.75rem; font-weight: 700; color: var(--ax-text-tertiary);">USD $0</div>
                 </div>
                 <div>
-                  <div style="font-size: 0.75rem; font-weight: 700; color: var(--ax-text-tertiary); text-transform: uppercase;">Costo Unit. Prom. (Col Z)</div>
+                  <div style="font-size: 0.75rem; font-weight: 700; color: var(--ax-text-tertiary);">Costo Unit. Prom. (Col Z)</div>
                   <div id="prodAvgCost" style="font-size: 1.25rem; font-weight: 600; color: var(--ax-accent-rose);">$0</div>
                   <div id="prodAvgCostUSD" style="font-size: 0.75rem; font-weight: 700; color: var(--ax-text-tertiary);">USD $0</div>
                 </div>
                 <div>
-                  <div style="font-size: 0.75rem; font-weight: 700; color: var(--ax-text-tertiary); text-transform: uppercase;">Margen %</div>
+                  <div style="font-size: 0.75rem; font-weight: 700; color: var(--ax-text-tertiary);">Margen %</div>
                   <div id="prodMarginPct" style="font-size: 1.25rem; font-weight: 800; color: var(--ax-accent-emerald);">0%</div>
                 </div>
               </div>
@@ -1707,7 +1687,7 @@
               </div>
               <div class="ax-card mini-kpi-card">
                 <span class="mini-kpi-label">Velocidad Promedio Mensual</span>
-                <span class="mini-kpi-value" id="prodKpiMonthlySpeed" style="color: var(--ax-accent-purple);">0 und/mes</span>
+                <span class="mini-kpi-value" id="prodKpiMonthlySpeed" style="color: var(--ax-accent);">0 und/mes</span>
                 <span class="mini-kpi-sub">Promedio general activo</span>
               </div>
               <div class="ax-card mini-kpi-card">
@@ -1717,36 +1697,36 @@
               </div>
               <div class="ax-card mini-kpi-card">
                 <span class="mini-kpi-label">Mes de Mayor Demanda</span>
-                <span class="mini-kpi-value" id="prodKpiPeakMonth" style="color: var(--ax-accent-sky);">----</span>
+                <span class="mini-kpi-value" id="prodKpiPeakMonth" style="color: var(--ax-accent);">----</span>
                 <span class="mini-kpi-sub" id="prodKpiPeakMonthSub">Pico histórico de ventas</span>
               </div>
             </div>
 
             <!-- SECCIÓN PROYECTOR DE INVENTARIO / MESES DE VENTA -->
-            <div class="ax-card" style="padding: 1.5rem; margin-bottom: 1.5rem; border: 1px solid rgba(167, 139, 250, 0.3); background: var(--surf-3); border-radius: 16px; box-shadow: 0 12px 32px rgba(0,0,0,0.4);">
-              <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 1rem; margin-bottom: 1.25rem;">
+            <div class="ax-card" style="padding: 1.5rem; margin-bottom: 1.5rem; border: 1px solid color-mix(in srgb, var(--ax-accent) 30%, transparent); background: var(--surf-3); border-radius: var(--ax-radius-md);">
+              <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--ax-border-subtle); padding-bottom: 1rem; margin-bottom: 1.25rem;">
                 <div>
                   <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #5B3FC4; box-shadow: 0 0 10px #A78BFA;"></span>
-                    <h3 style="font-size: 1.125rem; font-weight: 800; color: var(--ax-text-primary); margin: 0;">🔮 Proyector de Agotamiento de Stock (¿En cuántos meses se vende?)</h3>
+                    <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--ax-accent);"></span>
+                    <h3 style="font-size: 1.125rem; font-weight: 800; color: var(--ax-text-primary); margin: 0;">Proyector de Agotamiento de Stock (¿En cuántos meses se vende?)</h3>
                   </div>
                   <p style="font-size: 0.8125rem; color: var(--ax-text-tertiary); margin: 0.25rem 0 0 1.25rem;">Ingresa la cantidad que necesitas importar o tener en inventario para calcular su duración en meses basada en la velocidad de ventas.</p>
                 </div>
-                <span class="skus-count-badge" style="background: rgba(167, 139, 250, 0.15); color: var(--ax-accent-purple); border-color: rgba(167, 139, 250, 0.3);">
-                  Motor de Simulación BI
+                <span class="skus-count-badge" style="background: color-mix(in srgb, var(--ax-accent) 15%, transparent); color: var(--ax-accent); border-color: color-mix(in srgb, var(--ax-accent) 30%, transparent);">
+ Motor de Simulación BI
                 </span>
               </div>
 
               <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 1.5rem;">
                 <!-- CONTROLES DE LA PROYECCIÓN -->
-                <div style="display: flex; flex-direction: column; gap: 1.2rem; background: var(--surf-1); padding: 1.25rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.06);">
+                <div style="display: flex; flex-direction: column; gap: 1.2rem; background: var(--surf-1); padding: 1.25rem; border-radius: var(--ax-radius-md); border: 1px solid var(--ax-border-subtle);">
                   <div>
-                    <label for="prodProjQtyInput" style="display: block; font-size: 0.8125rem; font-weight: 700; color: var(--ax-text-secondary); text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.5px;">
-                      📦 Cantidad de Unidades a Proyectar (Stock / Inserción)
+                    <label for="prodProjQtyInput" style="display: block; font-size: 0.8125rem; font-weight: 700; color: var(--ax-text-secondary); margin-bottom: 0.5rem;">
+                      Cantidad de Unidades a Proyectar (Stock / Inserción)
                     </label>
                     <div class="input-with-icon">
-                      <span class="currency-prefix" style="color: var(--ax-accent-purple);">#</span>
-                      <input type="number" id="prodProjQtyInput" min="1" step="1" value="100" placeholder="Ej. 250" style="width: 100%; padding-left: 36px; height: 48px; font-size: 1.25rem; font-weight: 800; background: var(--surf-3); border: 1px solid rgba(167, 139, 250, 0.5); color: #ffffff; border-radius: 12px;" />
+                      <span class="currency-prefix" style="color: var(--ax-accent);">#</span>
+                      <input type="number" id="prodProjQtyInput" min="1" step="1" value="100" placeholder="Ej. 250" style="width: 100%; padding-left: 36px; height: 48px; font-size: 1.25rem; font-weight: 800; background: var(--surf-3); border: 1px solid color-mix(in srgb, var(--ax-accent) 50%, transparent); color: var(--ax-text-primary); border-radius: var(--ax-radius-md);" />
                     </div>
                     <div style="display: flex; gap: 0.4rem; margin-top: 0.6rem; flex-wrap: wrap;">
                       <span style="font-size: 0.75rem; font-weight: 700; color: var(--ax-text-tertiary); align-self: center;">Accesos:</span>
@@ -1758,10 +1738,10 @@
                   </div>
 
                   <div>
-                    <label for="prodProjSpeedMode" style="display: block; font-size: 0.8125rem; font-weight: 700; color: var(--ax-text-secondary); text-transform: uppercase; margin-bottom: 0.4rem;">
-                      ⏱️ Ritmo / Velocidad de Ventas de Referencia
+                    <label for="prodProjSpeedMode" style="display: block; font-size: 0.8125rem; font-weight: 700; color: var(--ax-text-secondary); margin-bottom: 0.4rem;">
+                      Ritmo / Velocidad de Ventas de Referencia
                     </label>
-                    <select id="prodProjSpeedMode" style="width: 100%; height: 46px; padding: 0 1rem; border-radius: 12px; font-size: 0.875rem; font-weight: 600; background: var(--surf-3); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.12);">
+                    <select id="prodProjSpeedMode" style="width: 100%; height: 46px; padding: 0 1rem; border-radius: var(--ax-radius-md); font-size: 0.875rem; font-weight: 600; background: var(--surf-3); color: var(--ax-text-primary); border: 1px solid var(--ax-border);">
                       <option value="all">Promedio Histórico Total (Todos los años)</option>
                       <option value="12m" selected>Últimos 12 Meses (Recomendado)</option>
                       <option value="6m">Últimos 6 Meses (Tendencia reciente)</option>
@@ -1773,18 +1753,18 @@
                 <!-- RESULTADOS DE LA PROYECCIÓN -->
                 <div style="display: flex; flex-direction: column; gap: 1rem;">
                   <!-- METRICA DESTACADA DE DURACIÓN EN MESES -->
-                  <div style="background: linear-gradient(135deg, rgba(167, 139, 250, 0.2) 0%, var(--surf-3) 100%); border: 1px solid rgba(167, 139, 250, 0.5); padding: 1.25rem; border-radius: 12px; display: flex; align-items: center; justify-content: space-between;">
+                  <div style="background: var(--ax-accent); border: 1px solid color-mix(in srgb, var(--ax-accent) 50%, transparent); padding: 1.25rem; border-radius: var(--ax-radius-md); display: flex; align-items: center; justify-content: space-between;">
                     <div>
-                      <div style="font-size: 0.8125rem; font-weight: 700; color: var(--ax-accent-purple); text-transform: uppercase; letter-spacing: 0.5px;">⏳ Duración Proyectada en Inventario</div>
-                      <div id="prodProjResultMonths" style="font-size: 2.25rem; font-weight: 600; color: var(--ax-accent-purple); font-family: 'Inter Tight', 'Inter', sans-serif;">
+                      <div style="font-size: 0.8125rem; font-weight: 700; color: var(--ax-accent);">Duración Proyectada en Inventario</div>
+                      <div id="prodProjResultMonths" style="font-size: 2.25rem; font-weight: 600; color: var(--ax-accent); font-family: var(--ax-font-display);">
                         0.0 Meses
                       </div>
                       <div id="prodProjResultDays" style="font-size: 0.875rem; font-weight: 600; color: var(--ax-text-secondary); margin-top: 0.2rem;">
                         ≈ 0 Días de cobertura comercial
                       </div>
                     </div>
-                    <div style="text-align: right; background: var(--surf-2); padding: 0.85rem 1.1rem; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1);">
-                      <div style="font-size: 0.75rem; font-weight: 700; color: var(--ax-text-tertiary); text-transform: uppercase;">📅 Agotamiento Estimado</div>
+                    <div style="text-align: right; background: var(--surf-2); padding: 0.85rem 1.1rem; border-radius: var(--ax-radius-md); border: 1px solid var(--ax-border);">
+                      <div style="font-size: 0.75rem; font-weight: 700; color: var(--ax-text-tertiary);">Agotamiento Estimado</div>
                       <div id="prodProjDepletionDate" style="font-size: 1.125rem; font-weight: 800; color: var(--ax-accent-emerald); margin-top: 0.2rem;">---</div>
                       <div id="prodProjSpeedLabel" style="font-size: 0.75rem; color: var(--ax-text-tertiary); margin-top: 0.25rem;">Ritmo: 0 u./mes</div>
                     </div>
@@ -1799,7 +1779,7 @@
                     </div>
                     <div class="proj-card">
                       <span class="proj-label">Inversión Costos (Col AA)</span>
-                      <span class="proj-val" id="prodProjEstCost" style="color: #FF6B8A;">$0 CLP</span>
+                      <span class="proj-val" id="prodProjEstCost" style="color: var(--ax-accent-rose);">$0 CLP</span>
                       <div id="prodProjEstCostUSD" style="font-size: 0.8125rem; font-weight: 700; color: var(--ax-accent-rose); margin-top: 0.2rem;">USD $0</div>
                     </div>
                     <div class="proj-card highlight-green">
@@ -1812,9 +1792,9 @@
               </div>
 
               <!-- GRÁFICO DE CURVA DE AGOTAMIENTO -->
-              <div style="margin-top: 1.5rem; background: var(--surf-1); padding: 1.25rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.06);">
+              <div style="margin-top: 1.5rem; background: var(--surf-1); padding: 1.25rem; border-radius: var(--ax-radius-md); border: 1px solid var(--ax-border-subtle);">
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
-                  <span style="font-size: 0.875rem; font-weight: 700; color: var(--ax-text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">📉 Curva de Proyección de Agotamiento de Stock Mes a Mes</span>
+                  <span style="font-size: 0.875rem; font-weight: 700; color: var(--ax-text-secondary);">Curva de Proyección de Agotamiento de Stock Mes a Mes</span>
                   <span style="font-size: 0.75rem; color: var(--ax-text-tertiary);">Reducción proyectada de unidades en inventario</span>
                 </div>
                 <div style="height: 220px; position: relative;">
@@ -1825,11 +1805,11 @@
 
             <!-- SECCIÓN MOVIMIENTOS HISTÓRICOS DEL SKU DURANTE LOS AÑOS -->
             <div class="ax-card" style="padding: 1.5rem; margin-bottom: 1.5rem;">
-              <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 1rem; margin-bottom: 1.25rem;">
+              <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--ax-border-subtle); padding-bottom: 1rem; margin-bottom: 1.25rem;">
                 <div>
                   <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #0E7C79; box-shadow: 0 0 10px #2DD4CE;"></span>
-                    <h3 style="font-size: 1.125rem; font-weight: 800; color: var(--ax-text-primary); margin: 0;">📊 Movimientos del SKU Durante los Años (Comparativo Multianual)</h3>
+                    <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--ax-accent);"></span>
+                    <h3 style="font-size: 1.125rem; font-weight: 800; color: var(--ax-text-primary); margin: 0;">Movimientos del SKU Durante los Años (Comparativo Multianual)</h3>
                   </div>
                   <p style="font-size: 0.8125rem; color: var(--ax-text-tertiary); margin: 0.25rem 0 0 1.25rem;">Compara el volumen de unidades vendidas mes a mes a lo largo de cada año registrado.</p>
                 </div>
@@ -1846,7 +1826,7 @@
 
               <!-- TABLA MATRIZ MULTIANUAL -->
               <div style="margin-top: 1.5rem;">
-                <h4 style="font-size: 0.875rem; font-weight: 700; color: var(--ax-text-secondary); margin-bottom: 0.75rem; text-transform: uppercase;">Resumen Anual de Ventas y Márgenes de este SKU</h4>
+                <h4 style="font-size: 0.875rem; font-weight: 700; color: var(--ax-text-secondary); margin-bottom: 0.75rem;">Resumen Anual de Ventas y Márgenes de este SKU</h4>
                 <div style="overflow-x: auto;">
                   <table class="advisor-table" id="prodYearlyTable">
                     <thead>
@@ -1871,9 +1851,9 @@
 
             <!-- SECCIÓN RESUMEN DE VENTAS POR CLIENTE -->
             <div class="ax-card" style="padding: 1.5rem;">
-              <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 1rem; margin-bottom: 1rem;">
+              <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--ax-border-subtle); padding-bottom: 1rem; margin-bottom: 1rem;">
                 <div>
-                  <h3 style="font-size: 1rem; font-weight: 800; color: var(--ax-text-primary); margin: 0;">👥 Resumen de Ventas por Cliente (Columna I)</h3>
+                  <h3 style="font-size: 1rem; font-weight: 800; color: var(--ax-text-primary); margin: 0;">Resumen de Ventas por Cliente (Columna I)</h3>
                   <p style="font-size: 0.8125rem; color: var(--ax-text-tertiary); margin: 0.2rem 0 0 0;">Acumulado de unidades totales compradas y facturación neta por cliente para este SKU.</p>
                 </div>
                 <span class="skus-count-badge" id="prodTxCountBadge">0 Clientes</span>
@@ -1907,47 +1887,47 @@
           <div class="dashboard-section-header" style="margin-top: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
             <div>
               <div class="section-title-wrap">
-                <span class="section-badge-dot" style="background: #3DDC97; box-shadow: 0 0 12px rgba(61, 220, 151, 0.6);"></span>
-                <h2 class="dashboard-section-title">Mix de Productos Sugerido (AI Portfolio Advisor)</h2>
+                <span class="section-badge-dot" style="background: var(--ax-accent-emerald);"></span>
+                <h2 class="dashboard-section-title">Mix de productos sugerido</h2>
               </div>
               <span class="section-subtitle">Optimización de catálogo por mejor venta, rentabilidad y volumen</span>
             </div>
 
             <!-- SELECTOR DE SEGMENTO: GLOBAL vs CANAL DE VENTA -->
-            <div class="mix-segment-selector-wrapper" style="display: flex; align-items: center; gap: 0.75rem; background: var(--surf-3); padding: 6px 14px; border-radius: 12px; border: 1px solid rgba(61, 220, 151, 0.35);">
-              <label for="mixCanalSegment" style="font-size: 0.8125rem; font-weight: 700; color: var(--ax-text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Segmentación:</label>
-              <select id="mixCanalSegment" class="filter-select" style="min-width: 190px; height: 38px; font-weight: 700; color: var(--ax-accent-emerald); background: var(--surf-2); border: 1px solid rgba(61, 220, 151, 0.4); border-radius: 8px;">
-                <option value="ALL">🌐 Global (Todos los Canales)</option>
+            <div class="mix-segment-selector-wrapper" style="display: flex; align-items: center; gap: 0.75rem; background: var(--surf-3); padding: 6px 14px; border-radius: var(--ax-radius-md); border: 1px solid color-mix(in srgb, var(--ax-accent-emerald) 35%, transparent);">
+              <label for="mixCanalSegment" style="font-size: 0.8125rem; font-weight: 700; color: var(--ax-text-secondary);">Segmentación:</label>
+              <select id="mixCanalSegment" class="filter-select" style="min-width: 190px; height: 38px; font-weight: 700; color: var(--ax-accent-emerald); background: var(--surf-2); border: 1px solid color-mix(in srgb, var(--ax-accent-emerald) 40%, transparent); border-radius: var(--ax-radius-md);">
+                <option value="ALL">Global (Todos los Canales)</option>
               </select>
             </div>
           </div>
 
           <!-- SUMMARY KPI CARDS FOR MIX SUGERIDO -->
           <div class="hero-cards-grid" style="margin-top: 1.25rem;">
-            <div class="ax-card hero-kpi-card" style="border-color: rgba(61, 220, 151, 0.3);">
+            <div class="ax-card hero-kpi-card" style="border-color: color-mix(in srgb, var(--ax-accent-emerald) 30%, transparent);">
               <div class="today-header">
-                <span class="today-badge" style="background: rgba(61, 220, 151, 0.2); color: var(--ax-accent-emerald); border: 1px solid rgba(61, 220, 151, 0.4);">CATÁLOGO MIX</span>
+                <span class="today-badge" style="background: color-mix(in srgb, var(--ax-accent-emerald) 20%, transparent); color: var(--ax-accent-emerald); border: 1px solid color-mix(in srgb, var(--ax-accent-emerald) 40%, transparent);">Catálogo mix</span>
                 <span class="today-label">SKUs en Mix Sugerido</span>
               </div>
               <div class="today-value" id="mixKpiSkus" style="color: var(--ax-accent-emerald);">0 SKUs</div>
               <div class="today-sub" id="mixKpiSkusSub">Productos recomendados por desempeño</div>
             </div>
 
-            <div class="ax-card hero-kpi-card" style="border-color: rgba(77, 159, 236, 0.3);">
+            <div class="ax-card hero-kpi-card" style="border-color: color-mix(in srgb, var(--ax-accent) 30%, transparent);">
               <div class="today-header">
-                <span class="today-badge badge-purple">VENTA CONCENTRADA</span>
+                <span class="today-badge badge-purple">Venta concentrada</span>
                 <span class="today-label">Venta Neta Acumulada Mix</span>
               </div>
               <div class="today-value" id="mixKpiRevenue" style="color: var(--ax-accent);">$0</div>
               <div class="today-sub" id="mixKpiRevenueSub">Concentración de ingresos del periodo</div>
             </div>
 
-            <div class="ax-card hero-kpi-card" style="border-color: rgba(167, 139, 250, 0.3);">
+            <div class="ax-card hero-kpi-card" style="border-color: color-mix(in srgb, var(--ax-accent) 30%, transparent);">
               <div class="today-header">
                 <span class="today-badge badge-gold">MARGEN Y UTILIDAD</span>
                 <span class="today-label">Utilidad Generada Mix</span>
               </div>
-              <div class="today-value" id="mixKpiProfit" style="color: var(--ax-accent-purple);">$0</div>
+              <div class="today-value" id="mixKpiProfit" style="color: var(--ax-accent);">$0</div>
               <div class="today-sub" id="mixKpiMarginSub">Margen promedio: 0%</div>
             </div>
           </div>
@@ -1957,7 +1937,7 @@
             <div class="ax-card bi-compras-advisor-card">
               <div class="advisor-results-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
                 <div>
-                  <h3 class="results-title">📊 Ranking & Matriz de Mix de Productos Recomendados</h3>
+                  <h3 class="results-title">Ranking & Matriz de Mix de Productos Recomendados</h3>
                   <p style="font-size: 0.8125rem; color: var(--ax-text-tertiary); margin: 4px 0 0 0;">Catálogo sugerido por participación de mercado, rentabilidad y volumen de unidades</p>
                 </div>
 
@@ -2007,7 +1987,7 @@
           <div class="dashboard-section-header" style="margin-top: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
             <div>
               <div class="section-title-wrap">
-                <span class="section-badge-dot" style="background: #2DD4CE; box-shadow: 0 0 12px rgba(45, 212, 206, 0.6);"></span>
+                <span class="section-badge-dot" style="background: var(--ax-accent);"></span>
                 <h2 class="dashboard-section-title">Precios de Competencia</h2>
               </div>
               <span class="section-subtitle">Tu precio de venta frente al del competidor, por producto</span>
@@ -2030,8 +2010,8 @@
               <span id="preciosCanalAviso" class="precios-canal__aviso"></span>
               <span id="preciosUpdated" class="precios-updated">&mdash;</span>
               <button type="button" class="btn-secondary" id="preciosExportar" disabled
-                title="Exportar a Excel lo que estás viendo, una fila por competidor">
-                <span aria-hidden="true">📊</span> Excel
+ title="Exportar a Excel lo que estás viendo, una fila por competidor">
+                <span aria-hidden="true"></span> Excel
               </button>
               <button type="button" class="btn-secondary" id="preciosReload">Actualizar</button>
             </div>
@@ -2067,7 +2047,7 @@
               <div class="precios-toolbar">
                 <input type="text" id="preciosFiltro" class="filter-input" placeholder="Filtrar por código, descripción o competidor&hellip;" />
                 <!-- Las opciones las escribe renderPreciosView() a partir de la columna
-                     TIPO de PreciosMapa: si aparece una letra nueva en la hoja, sale sola. -->
+ TIPO de PreciosMapa: si aparece una letra nueva en la hoja, sale sola. -->
                 <label class="precios-canal">
                   <span class="precios-canal__label">Tipo</span>
                   <select id="preciosTipo" class="precios-canal__select">
@@ -2075,8 +2055,8 @@
                   </select>
                 </label>
                 <!-- Igual que el de Tipo: las opciones las escribe
-                     renderPreciosView() con los competidores que hay cargados
-                     en la tienda elegida, con el numero de productos de cada uno. -->
+ renderPreciosView() con los competidores que hay cargados
+ en la tienda elegida, con el numero de productos de cada uno. -->
                 <label class="precios-canal">
                   <span class="precios-canal__label">Competidor</span>
                   <select id="preciosCompetidor" class="precios-canal__select">
@@ -2095,7 +2075,7 @@
                   <thead>
                     <tr>
                       <!-- Sin texto: el encabezado de una columna de fotos solo
-                           robaria ancho a la descripcion, que si lo necesita. -->
+ robaria ancho a la descripcion, que si lo necesita. -->
                       <th class="precios-th-foto"><span class="sr-only">Foto</span></th>
                       <th>Código</th>
                       <th>Descripción</th>
@@ -2109,7 +2089,7 @@
                     </tr>
                   </thead>
                   <tbody id="preciosTableBody">
-                    <tr><td colspan="10" style="text-align:center; color: var(--ax-text-tertiary); padding: 2rem;">Cargando precios&hellip;</td></tr>
+                    <tr><td colspan="10" style="text-align: center; color: var(--ax-text-tertiary); padding: 2rem;">Cargando precios&hellip;</td></tr>
                   </tbody>
                 </table>
               </div>
@@ -2122,7 +2102,7 @@
           <div class="dashboard-section-header" style="margin-top: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
             <div>
               <div class="section-title-wrap">
-                <span class="section-badge-dot" style="background: #A78BFA; box-shadow: 0 0 12px rgba(167, 139, 250, 0.6);"></span>
+                <span class="section-badge-dot" style="background: var(--ax-accent);"></span>
                 <h2 class="dashboard-section-title">Mercado Público &middot; Dashboard</h2>
               </div>
               <span class="section-subtitle">C&oacute;mo va la participaci&oacute;n: de la oportunidad detectada a la orden adjudicada</span>
@@ -2130,24 +2110,24 @@
             <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
               <span id="mpUpdated" class="precios-updated">&mdash;</span>
               <button type="button" class="btn-secondary" id="mpExportar" disabled
-                title="Exportar a Excel lo que estás viendo">
-                <span aria-hidden="true">📊</span> Excel
+ title="Exportar a Excel lo que estás viendo">
+                <span aria-hidden="true"></span> Excel
               </button>
               <button type="button" class="btn-secondary" id="mpReload">Actualizar</button>
             </div>
           </div>
 
           <!-- Aqui se monta la barra de filtros compartida cuando el submenu
-               activo es el Dashboard. Ver mpMontarFiltros() en app.js. -->
+ activo es el Dashboard. Ver mpMontarFiltros() en app.js. -->
           <div class="mp-ancla-filtros" id="mpAnclaFiltrosDash">
             <!-- FILTROS -->
             <div class="ax-card filters-bar" id="mpFiltersBar" style="margin-bottom: 1.25rem;">
               <!-- Los nueve filtros ocupan 697px apilados, o sea toda la primera
-                   pantalla de un telefono. Este boton los pliega, igual que en el
-                   Tablero y en Cotizaciones; en escritorio no se ve. -->
+ pantalla de un telefono. Este boton los pliega, igual que en el
+ Tablero y en Cotizaciones; en escritorio no se ve. -->
               <div class="filters-bar__header">
                 <button type="button" class="btn-secondary btn-sm mobile-filter-toggle-btn" id="toggleMpFiltersBtn"
-                  onclick="toggleMpMobileFilters()" aria-expanded="false" aria-controls="mpFiltersBar">
+ onclick="toggleMpMobileFilters()" aria-expanded="false" aria-controls="mpFiltersBar">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
                   <span>Filtros &#9662;</span>
                 </button>
@@ -2202,17 +2182,21 @@
 
           <!-- KPIs -->
           <div class="mp-kpis">
-            <div class="ax-card mp-kpi">
+            <!-- Las cuatro tarjetas son un embudo: detectada, ofertada,
+                 adjudicada. El filete lleva el paso, no un color decorativo,
+                 y la tasa no lleva ninguno porque no es un paso sino una
+                 razon entre dos de ellos. -->
+            <div class="ax-card mp-kpi mp-kpi--paso1">
               <span class="mp-kpi__label">Oportunidades detectadas</span>
               <span class="mp-kpi__value" id="mpKpiDetectadas">0</span>
               <span class="mp-kpi__sub" id="mpKpiDetectadasSub">&mdash;</span>
             </div>
-            <div class="ax-card mp-kpi mp-kpi--oferta">
+            <div class="ax-card mp-kpi mp-kpi--paso2">
               <span class="mp-kpi__label">Ofertadas</span>
               <span class="mp-kpi__value" id="mpKpiOfertadas">0</span>
               <span class="mp-kpi__sub" id="mpKpiOfertadasSub">&mdash;</span>
             </div>
-            <div class="ax-card mp-kpi mp-kpi--ok">
+            <div class="ax-card mp-kpi mp-kpi--paso3">
               <span class="mp-kpi__label">Adjudicadas</span>
               <span class="mp-kpi__value" id="mpKpiGanadas">0</span>
               <span class="mp-kpi__sub" id="mpKpiGanadasSub">&mdash;</span>
@@ -2224,14 +2208,14 @@
             </div>
           </div>
 
-          <div class="mp-aviso" id="mpAvisoPendientes" style="display:none;"></div>
+          <div class="mp-aviso" id="mpAvisoPendientes" style="display: none;"></div>
 
           <!-- EMBUDO + CIERRES PRÓXIMOS -->
           <div class="mp-fila-doble">
             <div class="ax-card chart-card">
               <div class="chart-card-header">
                 <div>
-                  <span class="chart-tag">EMBUDO DE PARTICIPACIÓN</span>
+                  <span class="chart-tag">Embudo</span>
                   <h3 class="chart-main-title">De la oportunidad detectada a la orden adjudicada</h3>
                 </div>
               </div>
@@ -2241,7 +2225,7 @@
             <div class="ax-card chart-card">
               <div class="chart-card-header">
                 <div>
-                  <span class="chart-tag">TODAVÍA SE PUEDE ACTUAR</span>
+                  <span class="chart-tag">Todavía se puede actuar</span>
                   <h3 class="chart-main-title">Próximos cierres</h3>
                 </div>
                 <span class="mp-cierres-resumen" id="mpCierresResumen">&mdash;</span>
@@ -2255,7 +2239,6 @@
             <div class="ax-card chart-card">
               <div class="chart-card-header">
                 <div>
-                  <span class="chart-tag">EVOLUCIÓN</span>
                   <h3 class="chart-main-title">Detectadas, ofertadas y adjudicadas por periodo</h3>
                 </div>
               </div>
@@ -2267,7 +2250,6 @@
             <div class="ax-card chart-card">
               <div class="chart-card-header">
                 <div>
-                  <span class="chart-tag">ESTADO DE SEGUIMIENTO</span>
                   <h3 class="chart-main-title">En qué estado quedó cada oportunidad</h3>
                 </div>
               </div>
@@ -2281,7 +2263,7 @@
             <div class="ax-card chart-card">
               <div class="chart-card-header">
                 <div>
-                  <span class="chart-tag">PLATA QUE SE DEJÓ PASAR</span>
+                  <span class="chart-tag">Plata que se dejó pasar</span>
                   <h3 class="chart-main-title">Motivo por el que no se ofertó, medido en pesos</h3>
                 </div>
               </div>
@@ -2293,7 +2275,7 @@
             <div class="ax-card chart-card">
               <div class="chart-card-header">
                 <div>
-                  <span class="chart-tag">TIPO DE COMPRA</span>
+                  <span class="chart-tag">Tipo de compra</span>
                   <h3 class="chart-main-title">Dónde se participa y dónde se adjudica</h3>
                 </div>
               </div>
@@ -2304,12 +2286,12 @@
           </div>
 
           <!-- La curva va a lo ancho: son hasta 44 meses en el eje y en media
-               tarjeta las etiquetas se apilarian unas sobre otras. -->
+ tarjeta las etiquetas se apilarian unas sobre otras. -->
           <div class="charts-grid charts-grid--full" style="margin-bottom: 1.25rem;">
             <div class="ax-card chart-card">
               <div class="chart-card-header">
                 <div>
-                  <span class="chart-tag">MES A MES</span>
+                  <span class="chart-tag">Mes a mes</span>
                   <h3 class="chart-main-title">Ofertadas, adjudicadas y perdidas en el tiempo</h3>
                 </div>
                 <span class="mp-cierres-resumen" id="mpCurvaResumen">&mdash;</span>
@@ -2324,7 +2306,7 @@
             <div class="ax-card chart-card">
               <div class="chart-card-header">
                 <div>
-                  <span class="chart-tag">ORGANISMOS COMPRADORES</span>
+                  <span class="chart-tag">Organismos compradores</span>
                   <h3 class="chart-main-title">Top 10 por oportunidades detectadas</h3>
                 </div>
               </div>
@@ -2338,7 +2320,7 @@
           <div class="dashboard-section-header" style="margin-top: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
             <div>
               <div class="section-title-wrap">
-                <span class="section-badge-dot" style="background: #A78BFA; box-shadow: 0 0 12px rgba(167, 139, 250, 0.6);"></span>
+                <span class="section-badge-dot" style="background: var(--ax-accent);"></span>
                 <h2 class="dashboard-section-title">B&uacute;squeda de Oportunidades</h2>
               </div>
               <span class="section-subtitle">El registro completo de licitaciones y compras &aacute;giles, con filtros, orden y exportaci&oacute;n</span>
@@ -2346,32 +2328,31 @@
             <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
               <span id="mpUpdatedBusca" class="precios-updated">&mdash;</span>
               <button type="button" class="btn-secondary" id="mpExportarBusca" disabled
-                title="Exportar a Excel lo que est&aacute;s viendo">
-                <span aria-hidden="true">&#128202;</span> Excel
+ title="Exportar a Excel lo que est&aacute;s viendo">
+                Excel
               </button>
               <button type="button" class="btn-secondary" id="mpReloadBusca">Actualizar</button>
             </div>
           </div>
 
           <!-- La barra de filtros es UNA sola en todo el modulo y se muda de
-               vista al cambiar de submenu (mpMontarFiltros). Se hace asi y no
-               con dos barras porque los mismos nueve controles alimentan los
-               KPI y los graficos del Dashboard y la tabla de aqui: dos copias
-               serian dos estados que se desincronizan al primer descuido. -->
+ vista al cambiar de submenu (mpMontarFiltros). Se hace asi y no
+ con dos barras porque los mismos nueve controles alimentan los
+ KPI y los graficos del Dashboard y la tabla de aqui: dos copias
+ serian dos estados que se desincronizan al primer descuido. -->
           <div class="mp-ancla-filtros" id="mpAnclaFiltrosBusca"></div>
 
           <div class="mp-aviso" id="mpBuscaAvisoApi">
-            <span class="mp-aviso__icono">&#128268;</span>
             <div>La b&uacute;squeda en vivo contra <strong>api.mercadopublico.cl</strong> todav&iacute;a
-            no est&aacute; conectada. Lo que se lista aqu&iacute; son las oportunidades ya detectadas
-            en la pesta&ntilde;a <strong>MercadoPublico</strong> de la planilla.</div>
+ no est&aacute; conectada. Lo que se lista aqu&iacute; son las oportunidades ya detectadas
+ en la pesta&ntilde;a <strong>MercadoPublico</strong> de la planilla.</div>
           </div>
 
           <!-- TABLA -->
           <div class="ax-card chart-card" id="mpTablaCard">
             <div class="chart-card-header">
               <div>
-                <span class="chart-tag">REGISTROS DETALLADOS (PESTAÑA MERCADOPUBLICO)</span>
+                <span class="chart-tag">Desde la pestaña MercadoPublico</span>
                 <h3 class="chart-main-title">Listado de oportunidades</h3>
               </div>
             </div>
@@ -2380,19 +2361,19 @@
                 <thead>
                   <tr>
                     <th data-mp-sort="id">ID</th>
-                    <th data-mp-sort="nombre">NOMBRE / ORGANISMO</th>
-                    <th data-mp-sort="tipo">TIPO</th>
-                    <th data-mp-sort="cierre" class="is-sorted">CIERRE</th>
-                    <th data-mp-sort="neto" class="num">MONTO NETO</th>
-                    <th data-mp-sort="netoOfertado" class="num">OFERTADO NETO</th>
-                    <th>RESULTADO</th>
-                    <th data-mp-sort="etiqueta">ETIQUETA</th>
-                    <th data-mp-sort="asignado">ASIGNADO</th>
-                    <th>LÍNEAS</th>
+                    <th data-mp-sort="nombre">Nombre / organismo</th>
+                    <th data-mp-sort="tipo">Tipo</th>
+                    <th data-mp-sort="cierre" class="is-sorted">Cierre</th>
+                    <th data-mp-sort="neto" class="num">Monto neto</th>
+                    <th data-mp-sort="netoOfertado" class="num">Ofertado neto</th>
+                    <th>Resultado</th>
+                    <th data-mp-sort="etiqueta">Etiqueta</th>
+                    <th data-mp-sort="asignado">Asignado</th>
+                    <th>Líneas</th>
                   </tr>
                 </thead>
                 <tbody id="mpTableBody">
-                  <tr><td colspan="10" style="text-align:center; padding:2.5rem; color: var(--ax-text-tertiary);">Cargando oportunidades&hellip;</td></tr>
+                  <tr><td colspan="10" style="text-align: center; padding: 2.5rem; color: var(--ax-text-tertiary);">Cargando oportunidades&hellip;</td></tr>
                 </tbody>
               </table>
             </div>
@@ -2412,7 +2393,7 @@
           <div class="dashboard-section-header" style="margin-top: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
             <div>
               <div class="section-title-wrap">
-                <span class="section-badge-dot" style="background: #A78BFA; box-shadow: 0 0 12px rgba(167, 139, 250, 0.6);"></span>
+                <span class="section-badge-dot" style="background: var(--ax-accent);"></span>
                 <h2 class="dashboard-section-title">&Oacute;rdenes de Compra Recibidas</h2>
               </div>
               <span class="section-subtitle">Las OC que los organismos emitieron a Glomax, con su estado y su monto</span>
@@ -2420,8 +2401,8 @@
             <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
               <span id="mpOcUpdated" class="precios-updated">&mdash;</span>
               <button type="button" class="btn-secondary" id="mpOcExportar" disabled
-                title="Exportar a Excel las &oacute;rdenes cargadas">
-                <span aria-hidden="true">&#128202;</span> Excel
+ title="Exportar a Excel las &oacute;rdenes cargadas">
+                Excel
               </button>
               <button type="button" class="btn-secondary" id="mpOcReload">Actualizar</button>
             </div>
@@ -2433,12 +2414,12 @@
               <span class="mp-kpi__value" id="mpOcKpiTotal">0</span>
               <span class="mp-kpi__sub" id="mpOcKpiTotalSub">&mdash;</span>
             </div>
-            <div class="ax-card mp-kpi mp-kpi--ok">
+            <div class="ax-card mp-kpi mp-kpi--paso3">
               <span class="mp-kpi__label">Monto neto recibido</span>
               <span class="mp-kpi__value" id="mpOcKpiMonto">$0</span>
               <span class="mp-kpi__sub" id="mpOcKpiMontoSub">&mdash;</span>
             </div>
-            <div class="ax-card mp-kpi mp-kpi--oferta">
+            <div class="ax-card mp-kpi mp-kpi--paso2">
               <span class="mp-kpi__label">Pendientes de aceptaci&oacute;n</span>
               <span class="mp-kpi__value" id="mpOcKpiPendientes">0</span>
               <span class="mp-kpi__sub" id="mpOcKpiPendientesSub">&mdash;</span>
@@ -2455,7 +2436,6 @@
           <div class="ax-card chart-card" id="mpOcTablaCard">
             <div class="chart-card-header">
               <div>
-                <span class="chart-tag">&Oacute;RDENES DE COMPRA</span>
                 <h3 class="chart-main-title">Listado de &oacute;rdenes recibidas</h3>
               </div>
             </div>
@@ -2464,16 +2444,16 @@
                 <thead>
                   <tr>
                     <th>N&deg; OC</th>
-                    <th>NOMBRE / ORGANISMO</th>
-                    <th>TIPO</th>
-                    <th>FECHA DE ENV&Iacute;O</th>
-                    <th>ESTADO</th>
-                    <th class="num">MONTO NETO</th>
-                    <th class="num">L&Iacute;NEAS</th>
+                    <th>Nombre / organismo</th>
+                    <th>Tipo</th>
+                    <th>Fecha de envío</th>
+                    <th>Estado</th>
+                    <th class="num">Monto neto</th>
+                    <th class="num">Líneas</th>
                   </tr>
                 </thead>
                 <tbody id="mpOcTableBody">
-                  <tr><td colspan="7" style="text-align:center; padding:2.5rem; color: var(--ax-text-tertiary);">Sin &oacute;rdenes cargadas.</td></tr>
+                  <tr><td colspan="7" style="text-align: center; padding: 2.5rem; color: var(--ax-text-tertiary);">Sin &oacute;rdenes cargadas.</td></tr>
                 </tbody>
               </table>
             </div>
@@ -2493,16 +2473,16 @@
           <div class="dashboard-section-header" style="margin-top: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
             <div>
               <div class="section-title-wrap">
-                <span class="section-badge-dot" style="background: #FFC46B; box-shadow: 0 0 12px rgba(255, 196, 107, 0.6);"></span>
+                <span class="section-badge-dot" style="background: var(--ax-accent-gold);"></span>
                 <h2 class="dashboard-section-title">Prospección Canal Mayorista</h2>
               </div>
               <span class="section-subtitle" id="prospSubtitulo">Clientes por región, crecimiento interanual, proyecciones y ruta de visitas sugerida</span>
             </div>
 
             <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
-              <div style="display: flex; align-items: center; gap: 0.6rem; background: var(--surf-3); padding: 6px 14px; border-radius: 12px; border: 1px solid rgba(255, 196, 107, 0.35);">
-                <label for="prospRegionSelect" style="font-size: 0.8125rem; font-weight: 700; color: var(--ax-text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Región:</label>
-                <select id="prospRegionSelect" class="filter-select" style="min-width: 210px; height: 38px; font-weight: 700; color: var(--ax-accent-gold); background: var(--surf-2); border: 1px solid rgba(255, 196, 107, 0.4); border-radius: 8px;">
+              <div style="display: flex; align-items: center; gap: 0.6rem; background: var(--surf-3); padding: 6px 14px; border-radius: var(--ax-radius-md); border: 1px solid color-mix(in srgb, var(--ax-accent-gold) 35%, transparent);">
+                <label for="prospRegionSelect" style="font-size: 0.8125rem; font-weight: 700; color: var(--ax-text-secondary);">Región:</label>
+                <select id="prospRegionSelect" class="filter-select" style="min-width: 210px; height: 38px; font-weight: 700; color: var(--ax-accent-gold); background: var(--surf-2); border: 1px solid color-mix(in srgb, var(--ax-accent-gold) 40%, transparent); border-radius: var(--ax-radius-md);">
                   <option value="ALL">Todas las regiones</option>
                 </select>
               </div>
@@ -2511,17 +2491,17 @@
           </div>
 
           <!-- KPIs DEL CANAL.
-               hero-cards-grid es de tres columnas fijas y aqui las tarjetas son
-               cuatro, asi que la ultima quedaba sola en una segunda fila con
-               medio ancho vacio. El auto-fit local pone las cuatro en linea
-               cuando hay espacio y las va plegando solo; no se toca la clase
-               compartida para no mover las otras vistas. El !important es
-               necesario: la hoja de estilos fija las tres columnas con esa
-               misma marca y sin ella la declaracion de aqui no gana. El
-               auto-fit se pliega solo a 2 y a 1 columna al angostarse, asi que
-               tampoco hace falta lo que anulan los media queries. -->
+ hero-cards-grid es de tres columnas fijas y aqui las tarjetas son
+ cuatro, asi que la ultima quedaba sola en una segunda fila con
+ medio ancho vacio. El auto-fit local pone las cuatro en linea
+ cuando hay espacio y las va plegando solo; no se toca la clase
+ compartida para no mover las otras vistas. El !important es
+ necesario: la hoja de estilos fija las tres columnas con esa
+ misma marca y sin ella la declaracion de aqui no gana. El
+ auto-fit se pliega solo a 2 y a 1 columna al angostarse, asi que
+ tampoco hace falta lo que anulan los media queries. -->
           <div class="hero-cards-grid" style="margin-top: 1.25rem; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)) !important;">
-            <div class="ax-card hero-kpi-card" style="border-color: rgba(77, 159, 236, 0.3);">
+            <div class="ax-card hero-kpi-card" style="border-color: color-mix(in srgb, var(--ax-accent) 30%, transparent);">
               <div class="today-header">
                 <span class="today-badge badge-purple">AÑO EN CURSO</span>
                 <span class="today-label" id="prospKpiYtdLabel">Venta mayorista acumulada</span>
@@ -2530,16 +2510,16 @@
               <div class="today-sub" id="prospKpiYtdSub">Comparado con el mismo periodo del año anterior</div>
             </div>
 
-            <div class="ax-card hero-kpi-card" style="border-color: rgba(61, 220, 151, 0.3);">
+            <div class="ax-card hero-kpi-card" style="border-color: color-mix(in srgb, var(--ax-accent-emerald) 30%, transparent);">
               <div class="today-header">
-                <span class="today-badge" style="background: rgba(61, 220, 151, 0.2); color: var(--ax-accent-emerald); border: 1px solid rgba(61, 220, 151, 0.4);">CARTERA</span>
+                <span class="today-badge" style="background: color-mix(in srgb, var(--ax-accent-emerald) 20%, transparent); color: var(--ax-accent-emerald); border: 1px solid color-mix(in srgb, var(--ax-accent-emerald) 40%, transparent);">CARTERA</span>
                 <span class="today-label">Clientes mayoristas activos</span>
               </div>
               <div class="today-value" id="prospKpiClientes" style="color: var(--ax-accent-emerald);">0</div>
               <div class="today-sub" id="prospKpiClientesSub">Con al menos una compra en el año</div>
             </div>
 
-            <div class="ax-card hero-kpi-card" style="border-color: rgba(255, 196, 107, 0.3);">
+            <div class="ax-card hero-kpi-card" style="border-color: color-mix(in srgb, var(--ax-accent-gold) 30%, transparent);">
               <div class="today-header">
                 <span class="today-badge badge-gold">PROYECCIÓN</span>
                 <span class="today-label" id="prospKpiMesLabel">Cierre del mes en curso</span>
@@ -2548,12 +2528,12 @@
               <div class="today-sub" id="prospKpiMesSub">Estimado con la curva histórica del mes</div>
             </div>
 
-            <div class="ax-card hero-kpi-card" style="border-color: rgba(167, 139, 250, 0.3);">
+            <div class="ax-card hero-kpi-card" style="border-color: color-mix(in srgb, var(--ax-accent) 30%, transparent);">
               <div class="today-header">
-                <span class="today-badge badge-gold" style="background: rgba(167, 139, 250, 0.2); color: var(--ax-accent-purple); border: 1px solid rgba(167, 139, 250, 0.4);">PROYECCIÓN</span>
+                <span class="today-badge badge-gold" style="background: color-mix(in srgb, var(--ax-accent) 20%, transparent); color: var(--ax-accent); border: 1px solid color-mix(in srgb, var(--ax-accent) 40%, transparent);">PROYECCIÓN</span>
                 <span class="today-label" id="prospKpiAnioLabel">Cierre del año</span>
               </div>
-              <div class="today-value" id="prospKpiAnio" style="color: var(--ax-accent-purple);">$0</div>
+              <div class="today-value" id="prospKpiAnio" style="color: var(--ax-accent);">$0</div>
               <div class="today-sub" id="prospKpiAnioSub">Estimado sobre el año anterior completo</div>
             </div>
           </div>
@@ -2658,19 +2638,19 @@
               </div>
 
               <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
-                <label style="font-size: 0.75rem; font-weight: 700; color: var(--ax-text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Días
+                <label style="font-size: 0.75rem; font-weight: 700; color: var(--ax-text-secondary);">Días
                   <input type="number" id="prospDias" class="filter-input" min="1" max="10" value="3" style="width: 64px; height: 34px; margin-left: 6px; font-weight: 700;" />
                 </label>
-                <label style="font-size: 0.75rem; font-weight: 700; color: var(--ax-text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Visitas/día
+                <label style="font-size: 0.75rem; font-weight: 700; color: var(--ax-text-secondary);">Visitas/día
                   <input type="number" id="prospVisitasDia" class="filter-input" min="1" max="12" value="4" style="width: 64px; height: 34px; margin-left: 6px; font-weight: 700;" />
                 </label>
               </div>
             </div>
 
             <!-- SEGMENTOS COMO BARRA CLICABLE.
-                 Sustituye al <select> que habia aqui: ademas de filtrar, muestra
-                 cuantos clientes y cuanta plata hay en cada estado, que es el
-                 dato que decide que tipo de ruta conviene hacer. -->
+ Sustituye al <select> que habia aqui: ademas de filtrar, muestra
+ cuantos clientes y cuanta plata hay en cada estado, que es el
+ dato que decide que tipo de ruta conviene hacer. -->
             <div id="prospSegmentos" style="margin-top: 1rem;"></div>
 
             <div id="prospRutaCuerpo" style="margin-top: 1.25rem;">
@@ -2726,7 +2706,7 @@
           <div class="dashboard-section-header" style="margin-top: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
             <div>
               <div class="section-title-wrap">
-                <span class="section-badge-dot" style="background: #2DD4CE; box-shadow: 0 0 12px rgba(45, 212, 206, 0.6);"></span>
+                <span class="section-badge-dot" style="background: var(--ax-accent);"></span>
                 <h2 class="dashboard-section-title">Ficha Técnica de Productos</h2>
               </div>
               <span class="section-subtitle">Especificaciones Físicas, Parámetros Técnicos, BOM y Certificaciones de Calidad</span>
@@ -2734,9 +2714,9 @@
 
             <!-- BOTONES DE ACCIÓN RÁPIDA DE FICHA TÉCNICA -->
             <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-              <button type="button" class="btn-secondary" onclick="openFtPdfUploadModal()" title="Cargar un archivo PDF para extraer información y generar la Ficha Técnica oficial en formato licitación" style="border-color: rgba(45, 212, 206, 0.5); color: var(--ax-accent-sky); background: rgba(45, 212, 206, 0.1);">
+              <button type="button" class="btn-secondary" onclick="openFtPdfUploadModal()" title="Cargar un archivo PDF para extraer información y generar la Ficha Técnica oficial en formato licitación" style="border-color: color-mix(in srgb, var(--ax-accent) 50%, transparent); color: var(--ax-accent); background: color-mix(in srgb, var(--ax-accent) 10%, transparent);">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="12" x2="12" y2="18"/><polyline points="9 15 12 12 15 15"/></svg>
-                <span>📄 Cargar PDF Ficha Técnica</span>
+                <span>Cargar PDF Ficha Técnica</span>
               </button>
               <button type="button" class="btn-secondary" onclick="openFtCompareModal()" title="Comparar 2 SKUs lado a lado">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5"/><path d="M4 20L21 3"/><path d="M21 16v5h-5"/><path d="M15 15l6 6"/><path d="M4 4l5 5"/></svg>
@@ -2746,38 +2726,38 @@
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
                 <span>Editar Spec</span>
               </button>
-              <button type="button" class="btn-secondary" onclick="exportFtPdf()" title="Exportar Ficha Técnica en PDF de alta calidad" style="background: rgba(61, 220, 151, 0.15); color: var(--ax-accent-emerald); border: 1px solid rgba(61, 220, 151, 0.4);">
+              <button type="button" class="btn-secondary" onclick="exportFtPdf()" title="Exportar Ficha Técnica en PDF de alta calidad" style="background: color-mix(in srgb, var(--ax-accent-emerald) 15%, transparent); color: var(--ax-accent-emerald); border: 1px solid color-mix(in srgb, var(--ax-accent-emerald) 40%, transparent);">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                <span>📥 Descargar PDF</span>
+                <span>Descargar PDF</span>
               </button>
               <button type="button" class="btn-secondary" onclick="printFichaTecnica()" title="Imprimir Ficha Técnica">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-                <span>🖨️ Imprimir</span>
+                <span>Imprimir</span>
               </button>
             </div>
           </div>
 
           <!-- CONTROLES DE FILTRO Y SELECCIÓN DE SKU PARA FICHA TÉCNICA -->
-          <div class="ax-card" style="margin-top: 1.25rem; padding: 1.25rem; border-color: rgba(45, 212, 206, 0.3);">
+          <div class="ax-card" style="margin-top: 1.25rem; padding: 1.25rem; border-color: color-mix(in srgb, var(--ax-accent) 30%, transparent);">
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; align-items: center;">
               <div>
-                <label style="font-size: 0.8125rem; font-weight: 700; color: var(--ax-text-tertiary); text-transform: uppercase; margin-bottom: 4px; display: block;">Buscar o Autocompletar SKU:</label>
+                <label style="font-size: 0.8125rem; font-weight: 700; color: var(--ax-text-tertiary); margin-bottom: 4px; display: block;">Buscar o Autocompletar SKU:</label>
                 <div style="position: relative;">
-                  <input type="search" id="ftSkuSearch" class="filter-input" placeholder="🔍 Escribe SKU, nombre o categoría..." style="height: 40px; font-size: 0.875rem;" />
-                  <div id="ftSkuSuggestions" class="prod-suggestions-dropdown" style="display:none;"></div>
+                  <input type="search" id="ftSkuSearch" class="filter-input" placeholder="Escribe SKU, nombre o categoría..." style="height: 40px; font-size: 0.875rem;" />
+                  <div id="ftSkuSuggestions" class="prod-suggestions-dropdown" style="display: none;"></div>
                 </div>
               </div>
 
               <div>
-                <label style="font-size: 0.8125rem; font-weight: 700; color: var(--ax-text-tertiary); text-transform: uppercase; margin-bottom: 4px; display: block;">Seleccionar Producto / SKU:</label>
+                <label style="font-size: 0.8125rem; font-weight: 700; color: var(--ax-text-tertiary); margin-bottom: 4px; display: block;">Seleccionar Producto / SKU:</label>
                 <select id="ftSkuSelect" class="filter-select" style="height: 40px; font-size: 0.875rem; width: 100%;">
                   <option value="">Cargando catálogo...</option>
                 </select>
               </div>
 
               <div style="display: flex; gap: 0.5rem; align-items: flex-end; height: 100%;">
-                <button type="button" class="btn-secondary" id="ftRandomBtn" title="Seleccionar SKU al azar" style="height: 40px; flex: 1;">🎲 Azar</button>
-                <button type="button" class="btn-secondary" id="ftClearBtn" title="Limpiar filtro" style="height: 40px;">❌ Limpiar</button>
+                <button type="button" class="btn-secondary" id="ftRandomBtn" title="Seleccionar SKU al azar" style="height: 40px; flex: 1;">Azar</button>
+                <button type="button" class="btn-secondary" id="ftClearBtn" title="Limpiar filtro" style="height: 40px;">✕ Limpiar</button>
               </div>
             </div>
           </div>
@@ -2884,7 +2864,7 @@
 
         <div class="modal-actions">
           <input type="hidden" id="fRow" />
-          <button type="button" class="btn-danger" id="deleteRowBtn" style="display:none; background:#C4384F; color:#ffffff; border:none; padding:8px 16px; border-radius:8px; font-weight:600; cursor:pointer;">Eliminar</button>
+          <button type="button" class="btn-danger" id="deleteRowBtn" style="display: none; background: var(--ax-accent-rose); color: var(--ax-on-accent); border: none; padding: 8px 16px; border-radius: var(--ax-radius-md); font-weight: 600; cursor: pointer;">Eliminar</button>
           <button type="button" class="btn-secondary" id="cancelModalBtn">Cancelar</button>
           <button type="submit" class="btn-primary" id="saveModalBtn">Guardar Venta</button>
         </div>
@@ -2897,7 +2877,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <div>
-          <h3>⚙️ Metas Mensuales de Ventas</h3>
+          <h3>Metas Mensuales de Ventas</h3>
           <p class="modal-subtitle">Configura las metas comerciales de facturación para cada mes.</p>
         </div>
         <button type="button" class="btn-secondary modal-close-icon" onclick="closeTargetModal()">✕</button>
@@ -2928,11 +2908,8 @@
   <!-- MODAL MULTI-PRODUCTO: EMISIÓN DE COTIZACIÓN COMERCIAL GLOMAX -->
   <div class="modal-backdrop" id="cotizacionModalBackdrop">
     <div class="modal-content cotiz-modal-wide">
-      <div class="modal-header" style="padding-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: 1.25rem;">
+      <div class="modal-header" style="padding-bottom: 1rem; border-bottom: 1px solid var(--ax-border-subtle); margin-bottom: 1.25rem;">
         <div style="display: flex; align-items: center; gap: 0.75rem;">
-          <div class="modal-icon-badge" style="background: rgba(77, 159, 236, 0.15); color: var(--ax-accent); padding: 8px 12px; border-radius: 12px; border: 1px solid rgba(77, 159, 236, 0.3); font-weight: 800; font-size: 1.25rem;">
-            📑
-          </div>
           <div>
             <div style="display: flex; align-items: center; gap: 0.5rem;">
               <h3 id="cotizModalTitle" style="margin: 0; font-size: 1.25rem; font-weight: 800;">Emisión de Cotización Comercial</h3>
@@ -2956,8 +2933,8 @@
             <div class="form-group">
               <label for="cFolio">N° Folio Cotización *</label>
               <div style="display: flex; gap: 4px;">
-                <input type="text" id="cFolio" class="filter-input" style="font-weight: 800; font-family: monospace;" placeholder="COT-2026-XXXX" required />
-                <button type="button" class="btn-secondary btn-sm" onclick="generateNewCotizFolio()" title="Generar nuevo número correlativo" style="padding: 0 8px;">🎲</button>
+                <input type="text" id="cFolio" class="filter-input" style="font-weight: 800; font-family: var(--ax-font-mono);" placeholder="COT-2026-XXXX" required />
+                <button type="button" class="btn-secondary btn-sm" onclick="generateNewCotizFolio()" title="Generar nuevo número correlativo" style="padding: 0 8px;"></button>
               </div>
             </div>
             <div class="form-group">
@@ -3008,7 +2985,7 @@
               <span>Datos del Cliente / Razón Social</span>
               <span id="cotizClientMatchBadge" class="client-match-badge" style="display: none;">✓ Cliente Verificado</span>
             </div>
-            <span style="font-size: 0.75rem; color: var(--ax-text-tertiary);">🔍 Escribe el RUT o Nombre para buscar y autocompletar</span>
+            <span style="font-size: 0.75rem; color: var(--ax-text-tertiary);">Escribe el RUT o Nombre para buscar y autocompletar</span>
           </div>
           <div class="cotiz-form-grid-3">
             <div class="form-group" style="position: relative;">
@@ -3044,11 +3021,11 @@
               <span>Líneas de Productos & Precios Cotizados</span>
             </div>
             <div style="display: flex; gap: 0.5rem;">
-              <button type="button" class="btn-secondary btn-sm" onclick="addCotizProductRow()" style="background: rgba(77, 159, 236, 0.15); color: var(--ax-accent); border: 1px solid rgba(77, 159, 236, 0.4); font-weight: 700;">
+              <button type="button" class="btn-secondary btn-sm" onclick="addCotizProductRow()" style="background: color-mix(in srgb, var(--ax-accent) 15%, transparent); color: var(--ax-accent); border: 1px solid color-mix(in srgb, var(--ax-accent) 40%, transparent); font-weight: 700;">
                 + Agregar Producto
               </button>
               <button type="button" class="btn-secondary btn-sm" onclick="clearCotizProductRows()" title="Limpiar lista de productos">
-                Limpiar Items
+ Limpiar Items
               </button>
             </div>
           </div>
@@ -3078,7 +3055,7 @@
 
           <div style="margin-top: 0.75rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
             <button type="button" class="btn-secondary btn-sm" onclick="addCotizProductRow()" style="font-weight: 700;">
-              ➕ Agregar otra línea de producto
+              Agregar otra línea de producto
             </button>
             <span style="font-size: 0.8125rem; color: var(--ax-text-tertiary);" id="cotizItemsCountLabel">1 producto en cotización</span>
           </div>
@@ -3121,7 +3098,7 @@
 
           <!-- TOTALES Y LIQUIDACIÓN EN TIEMPO REAL -->
           <div class="modal-section-card cotiz-totals-box">
-            <div class="form-section-title" style="color: var(--ax-accent); border-bottom: 1px solid rgba(77, 159, 236,0.2);">
+            <div class="form-section-title" style="color: var(--ax-accent); border-bottom: 1px solid color-mix(in srgb, var(--ax-accent) 20%, transparent);">
               <span>Totales de Cotización</span>
             </div>
             
@@ -3133,7 +3110,7 @@
             <div class="totals-row" style="align-items: center;">
               <div style="display: flex; align-items: center; gap: 0.5rem;">
                 <span>Descuento:</span>
-                <input type="number" id="cotizDiscountPct" value="0" min="0" max="99" step="1" style="width: 55px; height: 26px; font-size: 0.8125rem; text-align: center; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15); border-radius: 4px; color: var(--ax-text-primary);" oninput="recalcCotizTotals()" />
+                <input type="number" id="cotizDiscountPct" value="0" min="0" max="99" step="1" style="width: 55px; height: 26px; font-size: 0.8125rem; text-align: center; background: var(--surf-3); border: 1px solid var(--ax-border); border-radius: 4px; color: var(--ax-text-primary);" oninput="recalcCotizTotals()" />
                 <span>%</span>
               </div>
               <span class="totals-val" style="color: var(--ax-accent-rose);" id="cotizDiscountAmount">-$0</span>
@@ -3141,7 +3118,7 @@
 
             <div class="totals-row">
               <span>Neto Final:</span>
-              <span class="totals-val font-bold" style="color: var(--ax-accent-sky);" id="cotizNetoFinal">$0</span>
+              <span class="totals-val font-bold" style="color: var(--ax-accent);" id="cotizNetoFinal">$0</span>
             </div>
 
             <div class="totals-row">
@@ -3162,16 +3139,16 @@
         </div>
 
         <!-- ACCIONES FINALES -->
-        <div class="modal-actions" style="margin-top: 1.25rem; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+        <div class="modal-actions" style="margin-top: 1.25rem; border-top: 1px solid var(--ax-border-subtle); padding-top: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
           <button type="button" class="btn-secondary" id="cancelCotizModalBtn" onclick="closeCotizacionModal()">
-            Cancelar
+ Cancelar
           </button>
           <div style="display: flex; gap: 0.75rem;">
-            <button type="button" class="btn-secondary" onclick="printCotizacionDocument()" style="background: rgba(45, 212, 206, 0.15); color: var(--ax-accent-sky); border: 1px solid rgba(45, 212, 206, 0.4);" title="Imprimir o Exportar Cotización en PDF">
-              📄 Imprimir / PDF
+            <button type="button" class="btn-secondary" onclick="printCotizacionDocument()" style="background: color-mix(in srgb, var(--ax-accent) 15%, transparent); color: var(--ax-accent); border: 1px solid color-mix(in srgb, var(--ax-accent) 40%, transparent);" title="Imprimir o Exportar Cotización en PDF">
+              Imprimir / PDF
             </button>
             <button type="submit" class="btn-primary" id="saveCotizModalBtn" style="min-width: 170px;">
-              💾 Guardar Cotización
+              Guardar Cotización
             </button>
           </div>
         </div>
@@ -3266,13 +3243,13 @@
         <span class="quick-access-title">Acceso Rápido de Prueba:</span>
         <div class="quick-access-pills">
           <button type="button" class="quick-pill" data-email="ccoxhead@gmail.com" data-pass="123456" data-canal="Público">
-            👤 ccoxhead@gmail.com <span class="pill-tag">Público</span>
+            ccoxhead@gmail.com <span class="pill-tag">Público</span>
           </button>
           <button type="button" class="quick-pill" data-email="admin@glomax.cl" data-pass="admin123" data-canal="Todos">
-            👑 admin@glomax.cl <span class="pill-tag">Admin (Todos)</span>
+            admin@glomax.cl <span class="pill-tag">Admin (Todos)</span>
           </button>
           <button type="button" class="quick-pill" data-email="retail@glomax.cl" data-pass="123456" data-canal="Retail">
-            🛍️ retail@glomax.cl <span class="pill-tag">Retail</span>
+            retail@glomax.cl <span class="pill-tag">Retail</span>
           </button>
         </div>
       </div>
@@ -3281,10 +3258,10 @@
 
   <!-- MODAL EDITAR FICHA TÉCNICA -->
   <div class="modal-backdrop" id="ftEditModal">
-    <div class="modal-content" style="max-width: 720px; border-color: rgba(45, 212, 206, 0.4);">
+    <div class="modal-content" style="max-width: 720px; border-color: color-mix(in srgb, var(--ax-accent) 40%, transparent);">
       <div class="modal-header">
         <div>
-          <h3 id="ftEditModalTitle" style="color: var(--ax-accent-sky);">✏️ Editar Ficha Técnica de Producto</h3>
+          <h3 id="ftEditModalTitle" style="color: var(--ax-accent);">Editar Ficha Técnica de Producto</h3>
           <p class="modal-subtitle" id="ftEditModalSub">Personaliza los datos técnicos, físicos y empaque de este SKU.</p>
         </div>
         <button type="button" class="btn-secondary modal-close-icon" onclick="closeFtEditModal()" title="Cerrar modal">✕</button>
@@ -3293,14 +3270,14 @@
       <form id="ftEditForm" onsubmit="saveFtSpecs(event)">
         <input type="hidden" id="ftEditSku" />
 
-        <div class="form-section-title" style="color: var(--ax-accent-sky); border-bottom-color: rgba(45, 212, 206, 0.3);">1. Fotografías del Producto</div>
+        <div class="form-section-title" style="color: var(--ax-accent); border-bottom-color: color-mix(in srgb, var(--ax-accent) 30%, transparent);">1. Fotografías del Producto</div>
         <div class="form-grid">
           <div class="form-group full">
             <label>Fotografías (se guardan en este navegador)</label>
             <div class="ft-photo-dropzone" id="ftPhotoDropzone">
               <input type="file" id="ftEditPhotoInput" accept="image/*" multiple hidden />
               <button type="button" class="btn-secondary btn-sm" onclick="document.getElementById('ftEditPhotoInput').click()">
-                📁 Subir fotos desde el computador
+                Subir fotos desde el computador
               </button>
               <span class="ft-photo-hint">o arrastra las imágenes aquí · JPG, PNG o WEBP</span>
             </div>
@@ -3309,14 +3286,14 @@
           </div>
           <div class="form-group full">
             <label for="ftEditFotoUrl">…o pegar la URL de una imagen</label>
-            <div style="display:flex; gap:8px;">
-              <input type="text" id="ftEditFotoUrl" placeholder="https://www.glomax.cl/imagenes/producto.jpg" style="flex:1;" />
+            <div style="display: flex; gap: 8px;">
+              <input type="text" id="ftEditFotoUrl" placeholder="https://www.glomax.cl/imagenes/producto.jpg" style="flex: 1;" />
               <button type="button" class="btn-secondary btn-sm" onclick="addFtPhotoFromUrl()">Añadir</button>
             </div>
           </div>
         </div>
 
-        <div class="form-section-title" style="color: var(--ax-accent-sky); border-bottom-color: rgba(45, 212, 206, 0.3);">2. Especificaciones Físicas & Logística</div>
+        <div class="form-section-title" style="color: var(--ax-accent); border-bottom-color: color-mix(in srgb, var(--ax-accent) 30%, transparent);">2. Especificaciones Físicas & Logística</div>
         <div class="form-grid">
           <div class="form-group">
             <label for="ftEditDimensiones">Dimensiones (Alto x Ancho x Prof. mm)</label>
@@ -3344,7 +3321,7 @@
           </div>
         </div>
 
-        <div class="form-section-title" style="color: var(--ax-accent-sky); border-bottom-color: rgba(45, 212, 206, 0.3);">3. Parámetros Técnicos & Materiales</div>
+        <div class="form-section-title" style="color: var(--ax-accent); border-bottom-color: color-mix(in srgb, var(--ax-accent) 30%, transparent);">3. Parámetros Técnicos & Materiales</div>
         <div class="form-grid">
           <div class="form-group">
             <label for="ftEditMaterial">Material Principal</label>
@@ -3372,7 +3349,7 @@
           </div>
         </div>
 
-        <div class="form-section-title" style="color: var(--ax-accent-sky); border-bottom-color: rgba(45, 212, 206, 0.3);">4. Garantía & Control de Calidad</div>
+        <div class="form-section-title" style="color: var(--ax-accent); border-bottom-color: color-mix(in srgb, var(--ax-accent) 30%, transparent);">4. Garantía & Control de Calidad</div>
         <div class="form-grid">
           <div class="form-group">
             <label for="ftEditGarantia">Garantía Comercial (Meses)</label>
@@ -3384,24 +3361,24 @@
           </div>
           <div class="form-group full">
             <label for="ftEditNotas">Notas Técnicas & Recomendaciones de Seguridad</label>
-            <textarea id="ftEditNotas" rows="3" class="filter-input" style="width:100%; height:auto; padding:8px;" placeholder="Detalles adicionales de instalación, almacenamiento o normas técnicas..."></textarea>
+            <textarea id="ftEditNotas" rows="3" class="filter-input" style="width: 100%; height: auto; padding: 8px;" placeholder="Detalles adicionales de instalación, almacenamiento o normas técnicas..."></textarea>
           </div>
         </div>
 
-        <div class="form-section-title" style="color: var(--ax-accent-sky); border-bottom-color: rgba(45, 212, 206, 0.3);">5. Campos Personalizados</div>
+        <div class="form-section-title" style="color: var(--ax-accent); border-bottom-color: color-mix(in srgb, var(--ax-accent) 30%, transparent);">5. Campos Personalizados</div>
         <div class="form-grid">
           <div class="form-group full">
             <label>Agrega los campos que necesites para este SKU</label>
             <div class="ft-custom-fields" id="ftEditCustomFields"></div>
-            <button type="button" class="btn-secondary btn-sm" style="margin-top:8px;" onclick="addFtCustomFieldRow()">
-              ➕ Añadir campo
+            <button type="button" class="btn-secondary btn-sm" style="margin-top: 8px;" onclick="addFtCustomFieldRow()">
+              Añadir campo
             </button>
           </div>
         </div>
 
         <div class="modal-actions">
           <button type="button" class="btn-secondary" onclick="closeFtEditModal()">Cancelar</button>
-          <button type="submit" class="btn-primary" style="background: linear-gradient(135deg, #2DD4CE, #2DD4CE); color:#030712;">💾 Guardar Cambios Spec</button>
+          <button type="submit" class="btn-primary" style="background: var(--ax-accent); color: var(--ax-on-accent);">Guardar Cambios Spec</button>
         </div>
       </form>
     </div>
@@ -3409,10 +3386,10 @@
 
   <!-- MODAL COMPARAR SKUS -->
   <div class="modal-backdrop" id="ftCompareModal">
-    <div class="modal-content" style="max-width: 960px; border-color: rgba(45, 212, 206, 0.4);">
+    <div class="modal-content" style="max-width: 960px; border-color: color-mix(in srgb, var(--ax-accent) 40%, transparent);">
       <div class="modal-header">
         <div>
-          <h3 style="color: var(--ax-accent-sky);">🔄 Comparativa Técnica de SKUs Lado a Lado</h3>
+          <h3 style="color: var(--ax-accent);">Comparativa Técnica de SKUs Lado a Lado</h3>
           <p class="modal-subtitle">Compara especificaciones físicas, precios, márgenes y materiales entre dos productos del catálogo.</p>
         </div>
         <button type="button" class="btn-secondary modal-close-icon" onclick="closeFtCompareModal()" title="Cerrar modal">✕</button>
@@ -3420,11 +3397,11 @@
 
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem;">
         <div>
-          <label style="font-size: 0.8125rem; font-weight: 700; color: var(--ax-accent-sky); text-transform: uppercase; margin-bottom: 4px; display: block;">Producto A (Base):</label>
+          <label style="font-size: 0.8125rem; font-weight: 700; color: var(--ax-accent); margin-bottom: 4px; display: block;">Producto A (Base):</label>
           <select id="ftCompareSkuA" class="filter-select" style="width: 100%; height: 38px;" onchange="renderFtComparison()"></select>
         </div>
         <div>
-          <label style="font-size: 0.8125rem; font-weight: 700; color: var(--ax-accent-purple); text-transform: uppercase; margin-bottom: 4px; display: block;">Producto B (Comparativa):</label>
+          <label style="font-size: 0.8125rem; font-weight: 700; color: var(--ax-accent); margin-bottom: 4px; display: block;">Producto B (Comparativa):</label>
           <select id="ftCompareSkuB" class="filter-select" style="width: 100%; height: 38px;" onchange="renderFtComparison()"></select>
         </div>
       </div>
@@ -3441,14 +3418,14 @@
 
   <!-- MODAL CARGAR PDF FICHA TÉCNICA -->
   <div class="modal-backdrop" id="ftPdfUploadModal">
-    <div class="modal-content" style="max-width: 650px; background: var(--surf-3); border: 1px solid rgba(45, 212, 206, 0.4); border-radius: 16px; box-shadow: 0 16px 40px rgba(0,0,0,0.6);">
-      <div class="modal-header" style="border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px;">
+    <div class="modal-content" style="max-width: 650px; background: var(--surf-3); border: 1px solid color-mix(in srgb, var(--ax-accent) 40%, transparent); border-radius: var(--ax-radius-md);">
+      <div class="modal-header" style="border-bottom: 1px solid var(--ax-border); padding-bottom: 12px;">
         <div>
-          <h3 style="color: var(--ax-accent-sky); font-family: 'Inter Tight', 'Inter', sans-serif; font-weight: 800; display: flex; align-items: center; gap: 8px;">
-            📄 Cargar PDF de Ficha Técnica
+          <h3 style="color: var(--ax-accent); font-family: var(--ax-font-display); font-weight: 800; display: flex; align-items: center; gap: 8px;">
+            Cargar PDF de Ficha Técnica
           </h3>
           <p class="modal-subtitle" style="color: var(--ax-text-tertiary); font-size: 0.8125rem;">
-            Sube un archivo PDF para extraer automáticamente su información técnica y generar la nueva Ficha Técnica oficial apta para licitaciones.
+ Sube un archivo PDF para extraer automáticamente su información técnica y generar la nueva Ficha Técnica oficial apta para licitaciones.
           </p>
         </div>
         <button type="button" class="btn-secondary modal-close-icon" onclick="closeFtPdfUploadModal()">✕</button>
@@ -3456,7 +3433,7 @@
 
       <div style="padding: 1rem 0;">
         <!-- DROPZONE PARA EL ARCHIVO PDF -->
-        <div id="ftPdfDropzone" style="border: 2px dashed rgba(45, 212, 206, 0.4); border-radius: 12px; padding: 2.5rem 1.5rem; text-align: center; background: var(--surf-1); cursor: pointer; transition: all 0.2s ease;" onclick="document.getElementById('ftPdfFileInput').click()">
+        <div id="ftPdfDropzone" style="border: 2px dashed color-mix(in srgb, var(--ax-accent) 40%, transparent); border-radius: var(--ax-radius-md); padding: 2.5rem 1.5rem; text-align: center; background: var(--surf-1); cursor: pointer; transition: all 0.2s ease;" onclick="document.getElementById('ftPdfFileInput').click()">
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#2DD4CE" stroke-width="1.5" style="margin-bottom: 12px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="12" x2="12" y2="18"/><polyline points="9 15 12 12 15 15"/></svg>
           <div style="font-size: 1rem; font-weight: 700; color: var(--ax-text-primary);">Haz clic o arrastra un archivo PDF aquí</div>
           <div style="font-size: 0.8125rem; color: var(--ax-text-tertiary); margin-top: 6px;">Formatos permitidos: .PDF (Fichas Técnicas, Catálogos, Especificaciones)</div>
@@ -3465,15 +3442,15 @@
 
         <!-- INDICADOR DE PROCESAMIENTO / LOADER -->
         <div id="ftPdfLoader" style="display: none; text-align: center; padding: 2rem 1rem;">
-          <div style="display: inline-block; width: 36px; height: 36px; border: 3px solid rgba(45, 212, 206,0.2); border-top-color: var(--ax-accent-sky); border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
-          <div style="font-size: 0.875rem; font-weight: 700; color: var(--ax-accent-sky); margin-top: 12px;">Leyendo y procesando documento PDF con IA Reader...</div>
+          <div style="display: inline-block; width: 36px; height: 36px; border: 3px solid color-mix(in srgb, var(--ax-accent) 20%, transparent); border-top-color: var(--ax-accent); border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+          <div style="font-size: 0.875rem; font-weight: 700; color: var(--ax-accent); margin-top: 12px;">Leyendo y procesando documento PDF con IA Reader...</div>
           <div style="font-size: 0.8125rem; color: var(--ax-text-tertiary); margin-top: 4px;">Extrayendo SKU, dimensiones, especificaciones y materiales</div>
         </div>
 
         <!-- PREVISUALIZACIÓN DE DATOS EXTRAÍDOS -->
-        <div id="ftPdfPreviewArea" style="display: none; background: var(--ax-canvas); border: 1px solid rgba(45, 212, 206, 0.3); border-radius: 12px; padding: 1.25rem; margin-top: 1.25rem;">
+        <div id="ftPdfPreviewArea" style="display: none; background: var(--ax-canvas); border: 1px solid color-mix(in srgb, var(--ax-accent) 30%, transparent); border-radius: var(--ax-radius-md); padding: 1.25rem; margin-top: 1.25rem;">
           <div style="font-size: 0.875rem; font-weight: 700; color: var(--ax-accent-emerald); margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
-            ✅ Información Extraída del PDF:
+            Información Extraída del PDF:
           </div>
           
           <div class="form-grid">
@@ -3509,17 +3486,17 @@
         </div>
       </div>
 
-      <div class="modal-actions" style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 12px; display: flex; justify-content: flex-end; gap: 8px;">
+      <div class="modal-actions" style="border-top: 1px solid var(--ax-border); padding-top: 12px; display: flex; justify-content: flex-end; gap: 8px;">
         <button type="button" class="btn-secondary" onclick="closeFtPdfUploadModal()">Cancelar</button>
-        <button type="button" id="ftApplyPdfBtn" class="btn-primary" style="display: none; background: linear-gradient(135deg, #0D6B46, #0F7A50); color: #ffffff;" onclick="applyFtPdfImport()">
-          <span>💾 Generar Ficha Técnica Oficial (Formato Licitación)</span>
+        <button type="button" id="ftApplyPdfBtn" class="btn-primary" style="display: none; background: var(--ax-accent-emerald); color: var(--ax-on-accent);" onclick="applyFtPdfImport()">
+          <span>Generar Ficha Técnica Oficial (Formato Licitación)</span>
         </button>
       </div>
     </div>
   </div>
 
   <!-- Scripts -->
-  <script src="config.js?v=20260903_PAREJO_V84"></script>
-  <script src="app.js?v=20260903_PAREJO_V84"></script>
+  <script src="config.js?v=20260907_BARRIDO_V110"></script>
+  <script src="app.js?v=20260907_BARRIDO_V110"></script>
 </body>
 </html>
