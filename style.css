@@ -11379,13 +11379,42 @@ button, input, select, textarea, optgroup {
    dependen del orden de carga.
    -------------------------------------------------------------------------- */
 
+:root {
+  /* Alto de la ventana de la tabla. Con seis canales no se alcanza nunca y la
+     tarjeta queda corta; con cien categorias recorta y aparece el scroll. */
+  --fact-alto: 420px;
+  --fact-cebra: rgba(255, 255, 255, 0.028);
+  /* Sombra de la cabecera y del total fijos. Sin ella, la fila que queda a
+     medias por debajo se lee como un fallo de pintado en vez de como una capa
+     que flota sobre la lista. */
+  --fact-sombra: rgba(0, 0, 0, 0.45);
+}
+[data-ax-theme="light"], .is-pdf-export {
+  /* 0,032 dejaba el verde de la variacion en 4,72 sobre la fila teñida: pasa
+     AA pero sin margen. A 0,024 la banda se sigue viendo y el verde sube. */
+  --fact-cebra: rgba(15, 23, 42, 0.024);
+  --fact-sombra: rgba(15, 23, 42, 0.16);
+}
+
 .fact-tabla-card .fact-tabla-wrap {
   overflow-x: auto;
+  overflow-y: auto;
+  max-height: var(--fact-alto);
   margin: 0 -0.35rem;
   padding: 0 0.35rem;
+  /* Sin esto el navegador desplaza la pagina entera cuando la rueda llega al
+     final de la tabla, y se pierde de vista la tarjeta que se estaba leyendo. */
+  overscroll-behavior: contain;
 }
 
 .fact-tabla-card .fact-tabla {
+  /* .advisor-table lleva overflow: hidden !important. Eso convierte la TABLA en
+     el puerto de desplazamiento mas cercano de su propia cabecera, y como la
+     tabla no se desplaza respecto de si misma, el position: sticky del thead se
+     queda sin efecto: la cabecera se iba con las filas. Medido en el navegador
+     -el thead terminaba en y=-222 con el contenedor en y=977- antes de dar con
+     la causa. Aqui el recorte lo hace .fact-tabla-wrap, no la tabla. */
+  overflow: visible !important;
   /* Hay una regla global -.ax-table, .advisor-table, .data-table...- que clava
      min-width: 680px !important en todas las tablas del proyecto. Sirve para
      las de ancho completo; aqui, dentro de media rejilla, obligaba a la tabla
@@ -11397,10 +11426,29 @@ button, input, select, textarea, optgroup {
   font-variant-numeric: tabular-nums;
 }
 
-/* .advisor-table clava sus th con position: sticky y top: 0. Aqui la cabecera
-   tiene DOS filas: pegadas las dos al mismo top se montarian una sobre otra.
-   Esta tabla no scrollea en vertical -son seis canales y el total-, asi que la
-   cabecera no necesita pegarse a nada. */
+/* .advisor-table pega cada th por separado con position: sticky y top: 0. Aqui
+   la cabecera tiene DOS filas y pegadas las dos al mismo top se montarian una
+   sobre otra, asi que las celdas van estaticas y lo que se pega es la seccion
+   entera -thead y tfoot- como un bloque. Chrome lo admite desde la 91 y hace
+   falta border-collapse: separate, que .advisor-table ya trae.
+   El fondo tiene que ser OPACO: si se deja transparente, las filas pasan por
+   debajo y se leen a traves de la cabecera. --surf-2 es el mismo fondo que
+   .chart-card pinta en la tarjeta, en los dos temas. */
+.fact-tabla-card .fact-tabla thead,
+.fact-tabla-card .fact-tabla tfoot {
+  position: sticky;
+  z-index: 3;
+  background: var(--surf-2);
+}
+.fact-tabla-card .fact-tabla thead {
+  top: 0;
+  box-shadow: 0 6px 10px -8px var(--fact-sombra);
+}
+.fact-tabla-card .fact-tabla tfoot {
+  bottom: 0;
+  box-shadow: 0 -6px 10px -8px var(--fact-sombra);
+}
+
 .fact-tabla-card .fact-tabla th {
   position: static !important;
   text-transform: none !important;
@@ -11410,7 +11458,7 @@ button, input, select, textarea, optgroup {
   padding: 0.45rem 0.45rem !important;
   text-align: right !important;
   white-space: normal !important;
-  background: transparent !important;
+  background: var(--surf-2) !important;
   -webkit-backdrop-filter: none !important;
   backdrop-filter: none !important;
 }
@@ -11453,17 +11501,31 @@ button, input, select, textarea, optgroup {
   line-height: 1.15 !important;
 }
 
-/* La linea que resume la cola larga. Va en cursiva y en gris para que se lea
-   como lo que es -un agregado, no una categoria mas- sin sacarla de la tabla,
-   porque forma parte del Total. */
-.fact-tabla-card .fact-tabla__resto td {
-  color: var(--ax-text-tertiary) !important;
-  font-style: italic !important;
+/* Cebra. Con seis filas sobraba; con cien, seguir una linea a lo ancho de siete
+   columnas sin una guia es adivinar. El hover de .advisor-table lleva
+   !important y sigue ganando por encima de esto. */
+.fact-tabla-card .fact-tabla tbody tr:nth-child(even) td {
+  background: var(--fact-cebra);
 }
-.fact-tabla-card .fact-tabla__resto td.fact-tabla__nombre,
-.fact-tabla-card .fact-tabla__resto td.fact-tabla__act {
+
+/* Separador entre los dos bloques de columnas. La linea bajo el titulo del
+   grupo no basta: al recorrer la fila, las seis cifras se leen de corrido y no
+   se ve donde termina 'lo que va del periodo' y empieza 'el cierre'. La celda
+   que abre el segundo bloque es la 5 en el cuerpo y la 4 en la segunda fila de
+   la cabecera, que no tiene la columna del nombre. */
+.fact-tabla-card .fact-tabla tbody td:nth-child(5),
+.fact-tabla-card .fact-tabla tfoot td:nth-child(5),
+.fact-tabla-card .fact-tabla thead tr:last-child th:nth-child(4),
+.fact-tabla-card .fact-tabla__grupos th:last-child {
+  border-left: 1px solid var(--ax-card-border) !important;
+  padding-left: 0.5rem !important;
+}
+
+/* De cada par de columnas, la del anio en curso se titula un punto mas clara:
+   'Al 2 sep 2025' y 'Al 2 sep 2026' solo se distinguen en la ultima cifra. */
+.fact-tabla-card .fact-tabla thead tr:last-child th:nth-child(2),
+.fact-tabla-card .fact-tabla thead tr:last-child th:nth-child(5) {
   color: var(--ax-text-secondary) !important;
-  font-weight: 700 !important;
 }
 
 .fact-tabla-card .fact-tabla__grupos th.fact-tabla__nombre {
@@ -11505,9 +11567,11 @@ button, input, select, textarea, optgroup {
   padding: 1.5rem 0 !important;
 }
 
-/* Con la rejilla en una sola columna sobra ancho: se recupera la tipografia
-   normal de la tabla. */
+/* Con la rejilla en una sola columna sobra ancho y la tabla puede respirar. Se
+   sube poco a proposito: la de categorias del anio lleva importes de diez
+   cifras y con 0,85rem y 0,7rem de relleno se pasaba de largo y cortaba la
+   ultima columna, que es justo la variacion. */
 @media (max-width: 900px) {
-  .fact-tabla-card .fact-tabla th { font-size: 0.72rem !important; }
-  .fact-tabla-card .fact-tabla td { font-size: 0.85rem !important; padding: 0.55rem 0.7rem !important; }
+  .fact-tabla-card .fact-tabla th { font-size: 0.70rem !important; }
+  .fact-tabla-card .fact-tabla td { font-size: 0.81rem !important; padding: 0.5rem 0.5rem !important; }
 }

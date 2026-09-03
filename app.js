@@ -3576,12 +3576,6 @@ const FACT_MESES_LARGOS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio'
                            'julio', 'agosto', 'septiembre', 'octubre', 'noviembre',
                            'diciembre'];
 
-/* Los canales son seis y caben todos. Las categorías son 108, de las que 93
-   facturaron algo este año: listarlas todas convierte la tarjeta en un informe
-   que nadie lee. Quince cubren el 74% de lo facturado en 2026 y el resto se
-   suma en una línea, para que el Total siga cuadrando con la tarjeta de
-   arriba. */
-const FACT_TOP_CATEGORIAS = 15;
 
 function factVariacion(actual, base) {
   /* Sin base del año anterior no hay porcentaje que calcular. Devolver 100%
@@ -3636,9 +3630,7 @@ function factPintarTabla(pref, filas, total, cabeceras, subtitulo) {
   if (sub) sub.textContent = subtitulo;
 
   cuerpo.innerHTML = filas.length
-    ? filas.map(function (f) {
-        return factFilaHtml(f, f.esResto ? 'fact-tabla__resto' : '');
-      }).join('')
+    ? filas.map(function (f) { return factFilaHtml(f, ''); }).join('')
     : '<tr><td colspan="7" class="fact-tabla__vacio">Sin facturación en el periodo.</td></tr>';
   pie.innerHTML = filas.length ? factFilaHtml(total, 'fact-tabla__total') : '';
 }
@@ -3733,26 +3725,6 @@ function factOrdenTamano(a, b) {
   return (factTamano(b) - factTamano(a)) || (b.act - a.act);
 }
 
-/**
- * Deja las n primeras y resume el resto en una línea. El resto se suma de
- * verdad -no se descarta- para que el Total siga siendo el total.
- */
-function factRecortar(filas, n) {
-  if (filas.length <= n + 1) return filas;   // con una sola sobrante, mejor mostrarla
-  const visibles = filas.slice(0, n);
-  const resto = filas.slice(n);
-  const otras = {
-    nombre: 'Otras (' + resto.length + ')',
-    prev: 0, act: 0, prevFull: 0, proy: 0, esResto: true
-  };
-  resto.forEach(function (f) {
-    otras.prev += f.prev; otras.act += f.act;
-    otras.prevFull += f.prevFull; otras.proy += f.proy;
-  });
-  visibles.push(otras);
-  return visibles;
-}
-
 function factEtiquetas(ctx) {
   const m = ctx.refDate.getMonth();
   const mCorto = FACT_MESES_CORTOS[m];
@@ -3816,12 +3788,18 @@ function renderCategoriasFacturacion(ctx, E) {
   g.mes.sort(factOrdenTamano);
   g.anio.sort(factOrdenTamano);
 
-  const nota = ' Se listan las ' + FACT_TOP_CATEGORIAS + ' mayores, midiendo por ' +
-    'el mayor de los dos cierres; el resto se suma en una línea.';
-  factPintarTabla('catMes', factRecortar(g.mes, FACT_TOP_CATEGORIAS), g.totalMes,
-    E.mes, factSubMes(ctx, E, nota));
-  factPintarTabla('catAnio', factRecortar(g.anio, FACT_TOP_CATEGORIAS), g.totalAnio,
-    E.anio, factSubAnio(ctx, E, nota));
+  /* Se listan TODAS: la tarjeta tiene scroll propio, con la cabecera y el
+     total fijos, así que una cola de cien categorías no empuja al resto del
+     tablero hacia abajo. El orden importa igual, porque decide qué se ve sin
+     desplazarse. */
+  const nota = function (n) {
+    return ' ' + n + ' categorías con movimiento, de mayor a menor por el mayor ' +
+      'de los dos cierres; la tabla se desplaza.';
+  };
+  factPintarTabla('catMes', g.mes, g.totalMes, E.mes,
+    factSubMes(ctx, E, nota(g.mes.length)));
+  factPintarTabla('catAnio', g.anio, g.totalAnio, E.anio,
+    factSubAnio(ctx, E, nota(g.anio.length)));
 }
 
 function renderFacturacionDesglosada(ctx) {
