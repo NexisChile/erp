@@ -10027,7 +10027,10 @@ button, input, select, textarea, optgroup {
   padding: var(--sp-4) var(--sp-5) !important;
   border-bottom: 1px solid var(--ax-border) !important;
 }
-.precios-toolbar .filter-input { flex: 1 1 260px !important; min-width: 0 !important; }
+/* Con dos desplegables mas los botones, el ancho del buscador es lo unico
+   elastico que queda. 200px de base en vez de 260 para que en pantallas
+   medianas la barra siga cabiendo en una sola linea. */
+.precios-toolbar .filter-input { flex: 1 1 200px !important; min-width: 0 !important; }
 .precios-tabs { display: flex !important; gap: var(--sp-2) !important; flex-wrap: wrap !important; }
 
 .precios-table td.num, .precios-table th.num { text-align: right !important; }
@@ -10229,10 +10232,22 @@ button, input, select, textarea, optgroup {
   display: none;
 }
 
+/* El de competidor lo escribe el JS con los nombres tal como estan en la hoja,
+   que son de largo libre: sin tope, un 'COMERCIALIZADORA DE PRODUCTOS
+   ORTOPEDICOS LTDA (3)' estira la barra y empuja las pestanas a otra linea. Se
+   corta con puntos suspensivos y el nombre entero queda en el title. */
+#preciosCompetidor {
+  max-width: 15rem;
+  text-overflow: ellipsis;
+}
+
 @media (max-width: 720px) {
   .precios-canal { width: 100%; justify-content: space-between; }
   .precios-canal__select { flex: 1; margin-left: 0.5rem; }
   .precios-canal__aviso { white-space: normal; }
+  /* En columna la barra ya no compite por el ancho y cortar el nombre solo
+     estorbaria. */
+  #preciosCompetidor { max-width: none; }
 }
 
 /* Etiqueta del marketplace donde publica el competidor. Discreta: el dato que

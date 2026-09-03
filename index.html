@@ -34,7 +34,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <!-- Stylesheets & Libraries -->
-  <link rel="stylesheet" href="style.css?v=20260902_TIPO_V79" />
+  <link rel="stylesheet" href="style.css?v=20260903_COMPET_V80" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -2074,6 +2074,15 @@
                     <option value="">Todos</option>
                   </select>
                 </label>
+                <!-- Igual que el de Tipo: las opciones las escribe
+                     renderPreciosView() con los competidores que hay cargados
+                     en la tienda elegida, con el numero de productos de cada uno. -->
+                <label class="precios-canal">
+                  <span class="precios-canal__label">Competidor</span>
+                  <select id="preciosCompetidor" class="precios-canal__select">
+                    <option value="">Todos</option>
+                  </select>
+                </label>
                 <div class="precios-tabs" role="group" aria-label="Filtrar por situación">
                   <button type="button" class="preset-btn active" data-precio-tab="todos">Todos</button>
                   <button type="button" class="preset-btn" data-precio-tab="caro">Más caro</button>
@@ -3510,7 +3519,7 @@
   </div>
 
   <!-- Scripts -->
-  <script src="config.js?v=20260902_TIPO_V79"></script>
-  <script src="app.js?v=20260902_TIPO_V79"></script>
+  <script src="config.js?v=20260903_COMPET_V80"></script>
+  <script src="app.js?v=20260903_COMPET_V80"></script>
 </body>
 </html>

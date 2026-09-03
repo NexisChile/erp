@@ -9771,6 +9771,7 @@ let preciosVisibles = [];
 let preciosFallidosVisibles = [];
 let preciosTab = 'todos';
 let preciosTipoSel = '';           // '' = todos los tipos
+let preciosCompetidorSel = '';     // '' = todos los competidores
 let preciosCargando = false;
 let preciosUltimaCarga = null;        // cuando se trajo, para saber si ya vencio
 /* Codigos desplegados. Vive fuera del render porque la tabla se vuelve a pintar
@@ -10424,9 +10425,25 @@ function renderPreciosView() {
      para no dejarla en blanco era peor remedio que enfermedad: comparar tu
      precio de Meli contra paginas que no son de Meli parece un resultado y no
      lo es. */
-  const usadas = todas.filter(preciosLecturaEsDelCanal);
-  const enCanal = usadas;
-  const fallidosUsados = preciosFallidos.filter(preciosLecturaEsDelCanal);
+  const enCanal = todas.filter(preciosLecturaEsDelCanal);
+  const fallidosDelCanal = preciosFallidos.filter(preciosLecturaEsDelCanal);
+
+  /* El competidor se filtra AQUI, junto a la tienda y por la misma razon: si
+     se filtrara despues de agrupar, la fila resumen seguiria mostrando al mas
+     barato de TODOS -que puede ser otro- y la tabla diria PROMSA en el filtro
+     mientras compara contra otra tienda. Filtrando antes, elegir un competidor
+     es ver el mano a mano contra ese y nada mas: los KPI, las pestanas Mas caro
+     y Mas barato y la brecha promedio se recalculan contra el.
+
+     A diferencia de la tienda, este filtro SI se puede apagar: 'Todos' vuelve a
+     comparar contra el mas barato de cada producto, que es la vista por
+     defecto. */
+  preciosSincronizarCompetidores(enCanal, fallidosDelCanal);
+  const deCompetidor = function (l) {
+    return !preciosCompetidorSel || l.competidor === preciosCompetidorSel;
+  };
+  const usadas = enCanal.filter(deCompetidor);
+  const fallidosUsados = fallidosDelCanal.filter(deCompetidor);
 
   const items = usadas.map(l => {
     const mio = mios.get(l.codigo);
@@ -10527,6 +10544,16 @@ function renderPreciosView() {
     titulos.push('Esos productos muestran el precio de su última venta, no el de ' +
       etiqueta + '. Complétalos en PreciosMapa.');
   }
+  /* Los KPI de arriba cambian de significado al elegir competidor y nada mas
+     en la pantalla lo dice: sin esta linea, una brecha promedio de +12% se lee
+     como 'estoy 12% caro' cuando en realidad es 'estoy 12% caro frente a uno'. */
+  if (preciosCompetidorSel) {
+    avisos.push('Solo ' + preciosCompetidorSel + ': ' + usadas.length + ' de ' +
+      enCanal.length + ' lecturas');
+    titulos.push('Los KPI y las pestañas miden contra ' + preciosCompetidorSel +
+      ' únicamente. Vuelve a Todos en el filtro de competidor para comparar ' +
+      'contra el más barato de cada producto.');
+  }
   if (preciosCanalSinReconocer.length) {
     avisos.push('CANAL sin reconocer: ' + preciosCanalSinReconocer.join(', '));
     titulos.push('Esos valores de la columna CANAL no coinciden con ninguna tienda; ' +
@@ -10608,7 +10635,15 @@ function renderPreciosView() {
           '<code>PreciosMapa</code> la URL del competidor dentro de ' + escapeHtml(etiqueta) +
           ' y escribe <code>' + escapeHtml(etiqueta) + '</code> en la columna CANAL.</span>' +
           '<span>O elige arriba la tienda de esas otras lecturas.</span>'
-        : 'Ningún producto en esta vista.') +
+        : preciosCompetidorSel
+          /* Vacio por el competidor elegido es el caso mas facil de provocar
+             sin darse cuenta -al cambiar de tienda el filtro se queda puesto- y
+             el mas facil de deshacer, asi que se dice cual es la salida. */
+          ? '<strong>Nada de ' + escapeHtml(preciosCompetidorSel) + ' en esta vista</strong>' +
+            '<span>Ese competidor no tiene lecturas que pasen los demás filtros en ' +
+            escapeHtml(etiqueta) + '. Elige <strong>Todos</strong> en el filtro de ' +
+            'competidor, o cambia de pestaña.</span>'
+          : 'Ningún producto en esta vista.') +
       '</td></tr>';
     return;
   }
@@ -10731,6 +10766,68 @@ function preciosSincronizarTipos(lista) {
   if (sel.value !== preciosTipoSel) sel.value = preciosTipoSel;
 }
 
+/**
+ * Rellena el desplegable de competidores con los que hay cargados en la tienda
+ * elegida y cuantos productos tiene cada uno.
+ *
+ * Se cuentan PRODUCTOS distintos y no lecturas, para que el numero sea el mismo
+ * que se ve luego en la tabla, donde cada fila es un producto. Entran tambien
+ * los fallidos: un competidor cuyas URL fallan todas es justo el que hay que
+ * poder elegir para ver que le pasa, y contando solo lo leido no apareceria en
+ * ninguna parte.
+ *
+ * La cuenta se hace sobre la tienda entera y no sobre lo que dejaron la pestana
+ * o el texto, porque este filtro va ANTES que ellos: al elegir un competidor se
+ * reagrupa todo y el numero de la pestana Mas caro ya no seria el mismo. Lo que
+ * promete cada opcion es 'productos con lectura de este competidor en esta
+ * tienda', que es lo que se puede cumplir.
+ *
+ * El elegido se conserva aunque quede en cero -al cambiar de tienda, por
+ * ejemplo-: quitarlo dejaria el desplegable en Todos con el filtro puesto.
+ */
+function preciosSincronizarCompetidores(lecturas, fallidos) {
+  const sel = document.getElementById('preciosCompetidor');
+  if (!sel) return;
+
+  const porNombre = new Map();
+  const sumar = function (l) {
+    const n = String(l.competidor || '').trim();
+    /* El '-' lo pone preciosUltimaLectura cuando la hoja dejo vacia la celda
+       COMPETIDOR. No es un competidor y no merece una opcion propia. */
+    if (!n || n === '-') return;
+    let cods = porNombre.get(n);
+    if (!cods) { cods = new Set(); porNombre.set(n, cods); }
+    cods.add(l.codigo);
+  };
+  lecturas.forEach(sumar);
+  fallidos.forEach(sumar);
+
+  const orden = function (a, b) { return a.localeCompare(b, 'es'); };
+  const nombres = Array.from(porNombre.keys()).sort(orden);
+  if (preciosCompetidorSel && nombres.indexOf(preciosCompetidorSel) === -1) {
+    nombres.push(preciosCompetidorSel);
+    nombres.sort(orden);
+  }
+
+  const opciones = [{ valor: '', texto: 'Todos' }].concat(nombres.map(function (n) {
+    const cods = porNombre.get(n);
+    return { valor: n, texto: n + ' (' + (cods ? cods.size : 0) + ')' };
+  }));
+
+  const firma = opciones.map(o => o.valor + '|' + o.texto).join(';');
+  if (sel._firma !== firma) {
+    sel._firma = firma;
+    sel.innerHTML = opciones.map(o =>
+      '<option value="' + escapeHtml(o.valor) + '">' + escapeHtml(o.texto) + '</option>').join('');
+  }
+  if (sel.value !== preciosCompetidorSel) sel.value = preciosCompetidorSel;
+  /* El control esta topado en ancho, asi que un nombre largo se ve cortado.
+     El title lo devuelve entero al pasar el raton. */
+  sel.title = preciosCompetidorSel
+    ? 'Comparando solo contra ' + preciosCompetidorSel
+    : 'Comparando contra el competidor más barato de cada producto';
+}
+
 function setupPreciosListeners() {
   const filtro = document.getElementById('preciosFiltro');
   if (filtro && !filtro._bound) {
@@ -10746,6 +10843,15 @@ function setupPreciosListeners() {
     selTipo._bound = true;
     selTipo.addEventListener('change', () => {
       preciosTipoSel = selTipo.value;
+      renderPreciosView();
+    });
+  }
+
+  const selComp = document.getElementById('preciosCompetidor');
+  if (selComp && !selComp._bound) {
+    selComp._bound = true;
+    selComp.addEventListener('change', () => {
+      preciosCompetidorSel = selComp.value;
       renderPreciosView();
     });
   }
