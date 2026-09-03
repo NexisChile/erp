@@ -3605,16 +3605,96 @@ function factVariacionHtml(v) {
     (v > 0 ? '+' : '') + v.toFixed(2) + '%">' + texto + '</span>';
 }
 
-function factFilaHtml(d, clase) {
-  return '<tr' + (clase ? ' class="' + clase + '"' : '') + '>' +
-    '<td class="fact-tabla__nombre">' + escapeHtml(d.nombre) + '</td>' +
-    '<td>' + formatCLP(d.prev) + '</td>' +
+/* Qué filas están desplegadas, por tabla. Un Set por prefijo y no uno solo:
+   Mes y Año son dos tarjetas distintas y abrir un canal en una no tiene por
+   qué mover la otra, que puede estar fuera de pantalla. El estado vive fuera
+   del render porque renderAll() rehace estas tablas enteras en cada cambio de
+   filtro, y guardarlo dentro las cerraría todas al tocar cualquier filtro. */
+const factAbiertos = new Map();
+
+function factAbiertosDe(pref) {
+  let s = factAbiertos.get(pref);
+  if (!s) { s = new Set(); factAbiertos.set(pref, s); }
+  return s;
+}
+
+/* Las seis cifras son las mismas en la fila del canal, en la de cada tienda y
+   en el Total: se escriben una vez. */
+function factCeldas(d) {
+  return '<td>' + formatCLP(d.prev) + '</td>' +
     '<td class="fact-tabla__act">' + formatCLP(d.act) + '</td>' +
     '<td class="fact-tabla__var">' + factVariacionHtml(factVariacion(d.act, d.prev)) + '</td>' +
     '<td>' + formatCLP(d.prevFull) + '</td>' +
     '<td class="fact-tabla__act">' + formatCLP(d.proy) + '</td>' +
-    '<td class="fact-tabla__var">' + factVariacionHtml(factVariacion(d.proy, d.prevFull)) + '</td>' +
-    '</tr>';
+    '<td class="fact-tabla__var">' + factVariacionHtml(factVariacion(d.proy, d.prevFull)) + '</td>';
+}
+
+function factFilaHtml(d, clase, pref) {
+  const hijos = d.hijos || [];
+  /* Con una sola tienda el desplegable repetiría la fila de arriba cifra por
+     cifra -ECOMMERCE es solo DRCARE.CL-, así que ahí no hay botón: un triángulo
+     que al abrirse muestra lo mismo se aprende a no tocar. */
+  const abre = hijos.length > 1;
+  const abierto = abre && factAbiertosDe(pref).has(d.nombre);
+
+  const control = abre
+    ? '<button type="button" class="fact-toggle" data-fact-grupo="' +
+      escapeHtml(d.nombre) + '" aria-expanded="' + (abierto ? 'true' : 'false') +
+      '" title="' + factToggleTitulo(abierto, hijos.length) + '">' +
+      '<span class="fact-toggle__icono" aria-hidden="true">&#9656;</span>' +
+      '<span class="fact-toggle__n">' + hijos.length + '</span>' +
+      '</button>'
+    : '';
+
+  const clases = [clase, abre ? 'fact-tabla__padre' : '', abierto ? 'is-abierta' : '']
+    .filter(Boolean).join(' ');
+  const fila = '<tr' + (clases ? ' class="' + clases + '"' : '') + '>' +
+    factNombre(control, d.nombre) + factCeldas(d) + '</tr>';
+
+  if (!abre) return fila;
+
+  /* Las tiendas se pintan siempre, ocultas si el canal está cerrado. Pintarlas
+     al abrir obligaría a rehacer la tabla y con ella el scroll y el foco. */
+  return fila + hijos.map(function (h) {
+    return '<tr class="fact-tabla__hijo" data-fact-hijo="' + escapeHtml(d.nombre) +
+      '"' + (abierto ? '' : ' hidden') + '>' +
+      factNombre('', h.nombre) + factCeldas(h) + '</tr>';
+  }).join('');
+}
+
+/* El boton y el nombre van dentro de una caja flex y no sueltos en la celda:
+   la columna es estrecha y con los dos como texto corriente 'MARKETPLACE' no
+   cabe al lado del triangulo y baja a la linea siguiente, dejando un '7'
+   huerfano encima del nombre. En flex el nombre es un bloque aparte que se
+   parte por dentro y se queda a la derecha del boton. */
+function factNombre(control, nombre) {
+  return '<td class="fact-tabla__nombre"><span class="fact-nombre">' + control +
+    '<span class="fact-nombre__txt">' + escapeHtml(nombre) + '</span></span></td>';
+}
+
+function factToggleTitulo(abierto, n) {
+  return (abierto ? 'Ocultar' : 'Ver') + ' las ' + n + ' tiendas del canal';
+}
+
+/* Se muestran u ocultan las filas ya pintadas en vez de repintar la tabla:
+   repintar por abrir un canal pierde el foco del teclado y hace saltar el
+   scroll, que en la tarjeta de categorías tiene cien filas debajo. */
+function factAlternar(pref, clave, btn, cuerpo) {
+  const abiertos = factAbiertosDe(pref);
+  const abierto = !abiertos.has(clave);
+  if (abierto) abiertos.add(clave); else abiertos.delete(clave);
+
+  let n = 0;
+  cuerpo.querySelectorAll('[data-fact-hijo]').forEach(function (tr) {
+    if (tr.getAttribute('data-fact-hijo') !== clave) return;
+    tr.hidden = !abierto;
+    n++;
+  });
+
+  btn.setAttribute('aria-expanded', abierto ? 'true' : 'false');
+  btn.title = factToggleTitulo(abierto, n);
+  const fila = btn.closest('tr');
+  if (fila) fila.classList.toggle('is-abierta', abierto);
 }
 
 function factPintarTabla(pref, filas, total, cabeceras, subtitulo) {
@@ -3630,9 +3710,22 @@ function factPintarTabla(pref, filas, total, cabeceras, subtitulo) {
   if (sub) sub.textContent = subtitulo;
 
   cuerpo.innerHTML = filas.length
-    ? filas.map(function (f) { return factFilaHtml(f, ''); }).join('')
+    ? filas.map(function (f) { return factFilaHtml(f, '', pref); }).join('')
     : '<tr><td colspan="7" class="fact-tabla__vacio">Sin facturación en el periodo.</td></tr>';
-  pie.innerHTML = filas.length ? factFilaHtml(total, 'fact-tabla__total') : '';
+  pie.innerHTML = filas.length ? factFilaHtml(total, 'fact-tabla__total', pref) : '';
+
+  /* El listener va en el tbody y no en cada botón: estas filas se rehacen en
+     cada cambio de filtro y atarlos uno a uno obligaría a volver a atarlos
+     todos cada vez. El elemento sobrevive al innerHTML, así que la marca
+     _bound también. */
+  if (!cuerpo._bound) {
+    cuerpo._bound = true;
+    cuerpo.addEventListener('click', function (ev) {
+      const btn = ev.target.closest('[data-fact-grupo]');
+      if (!btn) return;
+      factAlternar(pref, btn.getAttribute('data-fact-grupo'), btn, cuerpo);
+    });
+  }
 }
 
 /**
@@ -3640,24 +3733,22 @@ function factPintarTabla(pref, filas, total, cabeceras, subtitulo) {
  * año- ya proyectadas, más sus totales. Los seis recortes son exactamente los
  * que usa renderSummaryCards, pero en una sola pasada por las filas en vez de
  * seis filter().
+ *
+ * Con subclaveDe cada fila trae además sus hijas ya proyectadas, en la misma
+ * pasada. Las hijas SUMAN la fila madre: proyectarCierre es lineal en lo
+ * acumulado y todas comparten la misma curva global, así que repartir un canal
+ * en sus tiendas no mueve ninguna cifra. Lo único que las separa del total es
+ * el redondeo de cada proyección, unos pocos pesos.
  */
-function factAgrupar(ctx, claveDe) {
+function factAgrupar(ctx, claveDe, subclaveDe) {
   const mesPrevISO = ctx.prevYyyy + '-' + ctx.refMm;
   const corteMesPrev = mesPrevISO + '-' + ctx.refDd;
   const corteAnioPrev = ctx.prevYyyy + '-' + ctx.refMm + '-' + ctx.refDd;
 
-  const acc = {};
-  ctx.baseRows.forEach(function (r) {
-    const f = r['FECHA'];
-    if (!f) return;
-    const d = String(f).slice(0, 10);
-    const neto = Number(r['NETO']) || 0;
-    const clave = claveDe(r);
-    let b = acc[clave];
-    if (!b) {
-      b = { mtd: 0, mtdPrev: 0, mesPrevFull: 0, ytd: 0, ytdPrev: 0, anioPrevFull: 0 };
-      acc[clave] = b;
-    }
+  const balde = function () {
+    return { mtd: 0, mtdPrev: 0, mesPrevFull: 0, ytd: 0, ytdPrev: 0, anioPrevFull: 0 };
+  };
+  const sumar = function (b, d, neto) {
     if (d.indexOf(ctx.refMonthISO) === 0) b.mtd += neto;
     if (d.indexOf(mesPrevISO) === 0) {
       b.mesPrevFull += neto;
@@ -3668,7 +3759,45 @@ function factAgrupar(ctx, claveDe) {
       b.anioPrevFull += neto;
       if (d <= corteAnioPrev) b.ytdPrev += neto;
     }
+  };
+
+  const acc = {};
+  ctx.baseRows.forEach(function (r) {
+    const f = r['FECHA'];
+    if (!f) return;
+    const d = String(f).slice(0, 10);
+    const neto = Number(r['NETO']) || 0;
+    const clave = claveDe(r);
+    let b = acc[clave];
+    if (!b) { b = balde(); b.subs = subclaveDe ? {} : null; acc[clave] = b; }
+    sumar(b, d, neto);
+    if (b.subs) {
+      const sc = subclaveDe(r);
+      let s = b.subs[sc];
+      if (!s) { s = balde(); b.subs[sc] = s; }
+      sumar(s, d, neto);
+    }
   });
+
+  const filaMes = function (nombre, b) {
+    return {
+      nombre: nombre, prev: b.mtdPrev, act: b.mtd, prevFull: b.mesPrevFull,
+      proy: proyectarCierre(b.mtd, ctx.progresoMes, ctx.curvaMes)
+    };
+  };
+  const filaAnio = function (nombre, b) {
+    return {
+      nombre: nombre, prev: b.ytdPrev, act: b.ytd, prevFull: b.anioPrevFull,
+      proy: proyectarCierre(b.ytd, ctx.progresoAnio, ctx.curvaAnio)
+    };
+  };
+  /* Una línea sin nada este año ni el pasado no aporta información, solo
+     ruido: se cae de la tabla. Vale igual para un canal y para una tienda. */
+  const tieneAlgo = function (f) { return !!(f.prev || f.act || f.prevFull || f.proy); };
+  const hijosDe = function (subs, hacer) {
+    return Object.keys(subs).map(function (k) { return hacer(k, subs[k]); })
+      .filter(tieneAlgo).sort(factOrdenPeriodo);
+  };
 
   const mes = [], anio = [];
   const totalMes = { nombre: 'Total', prev: 0, act: 0, prevFull: 0, proy: 0 };
@@ -3676,22 +3805,18 @@ function factAgrupar(ctx, claveDe) {
 
   Object.keys(acc).forEach(function (clave) {
     const b = acc[clave];
-    const fm = {
-      nombre: clave, prev: b.mtdPrev, act: b.mtd, prevFull: b.mesPrevFull,
-      proy: proyectarCierre(b.mtd, ctx.progresoMes, ctx.curvaMes)
-    };
-    const fa = {
-      nombre: clave, prev: b.ytdPrev, act: b.ytd, prevFull: b.anioPrevFull,
-      proy: proyectarCierre(b.ytd, ctx.progresoAnio, ctx.curvaAnio)
-    };
-    /* Una línea sin nada este año ni el pasado no aporta información, solo
-       ruido: se cae de la tabla. */
-    if (fm.prev || fm.act || fm.prevFull || fm.proy) {
+    const fm = filaMes(clave, b);
+    const fa = filaAnio(clave, b);
+    if (b.subs) {
+      fm.hijos = hijosDe(b.subs, filaMes);
+      fa.hijos = hijosDe(b.subs, filaAnio);
+    }
+    if (tieneAlgo(fm)) {
       mes.push(fm);
       totalMes.prev += fm.prev; totalMes.act += fm.act;
       totalMes.prevFull += fm.prevFull; totalMes.proy += fm.proy;
     }
-    if (fa.prev || fa.act || fa.prevFull || fa.proy) {
+    if (tieneAlgo(fa)) {
       anio.push(fa);
       totalAnio.prev += fa.prev; totalAnio.act += fa.act;
       totalAnio.prevFull += fa.prevFull; totalAnio.proy += fa.proy;
@@ -3769,11 +3894,24 @@ function factSubAnio(ctx, E, extra) {
 }
 
 function renderCanalesFacturacion(ctx, E) {
-  const g = factAgrupar(ctx, function (r) { return r['CANAL FINAL'] || 'Sin canal'; });
+  /* La tienda es el segundo nivel del canal y es donde está la decisión:
+     MARKETPLACE son nueve tiendas -Falabella, Mercado Libre, Paris, Ripley...- y
+     la fila del canal no dice en cuál de ellas se movió el mes. Se despliega en
+     vez de listarse plano porque las 32 tiendas de golpe tapan la lectura por
+     canal, que es la que se mira primero. */
+  const g = factAgrupar(ctx,
+    function (r) { return r['CANAL FINAL'] || 'Sin canal'; },
+    function (r) {
+      /* normalizeRows escribe GENERAL cuando la celda viene vacía, igual que en
+         categorías: GENERAL no es una tienda, es un hueco de la planilla. */
+      const t = r['TIENDA FINAL'] || 'GENERAL';
+      return t === 'GENERAL' ? 'Sin tienda' : t;
+    });
   g.mes.sort(factOrdenPeriodo);
   g.anio.sort(factOrdenPeriodo);
-  factPintarTabla('canalMes', g.mes, g.totalMes, E.mes, factSubMes(ctx, E));
-  factPintarTabla('canalAnio', g.anio, g.totalAnio, E.anio, factSubAnio(ctx, E));
+  const nota = ' Cada canal se abre en sus tiendas.';
+  factPintarTabla('canalMes', g.mes, g.totalMes, E.mes, factSubMes(ctx, E, nota));
+  factPintarTabla('canalAnio', g.anio, g.totalAnio, E.anio, factSubAnio(ctx, E, nota));
 }
 
 function renderCategoriasFacturacion(ctx, E) {
