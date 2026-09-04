@@ -11762,6 +11762,278 @@ button, input, select, textarea, optgroup {
 }
 
 /* ============================================================================
+   11.9 EL ASESOR DE COMPRAS (venia del <style> de index.html)
+   ----------------------------------------------------------------------------
+   Estas 31 reglas vivian en un bloque <style> dentro de index.html, en la
+   linea 41. El <link> a esta hoja esta en la 37: el bloque iba DESPUES, asi
+   que ganaba todos los empates de especificidad contra la hoja entera. Por eso
+   este modulo se quedaba fuera de cada capa de diseno -las capas no estaban
+   mal escritas, es que llegaban antes-.
+
+   Se movieron tal cual, sin tocar un solo valor, para que el movimiento sea
+   auditable. Lo que las corrige son las capas 12 a 20, cada una por separado.
+   En este sitio siguen ganando a las capas 1-11, que es donde estaba su
+   intencion original.
+   ========================================================================== */
+
+ /* CRITICAL UI OVERRIDE FOR PURCHASING BI ADVISOR & INVESTMENT TABLE */
+    .bi-compras-advisor-card {
+ background: var(--surf-3) !important;
+ border: 1px solid rgba(77, 159, 236, 0.3) !important;
+ border-radius: 16px !important;
+ box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), 0 0 24px rgba(77, 159, 236, 0.15) !important;
+ padding: 1.5rem !important;
+    }
+
+    .bi-advisor-grid {
+ display: grid !important;
+ grid-template-columns: 1fr 1.2fr !important;
+ gap: 1.5rem !important;
+ margin-top: 1.25rem !important;
+    }
+
+    @media (max-width: 900px) {
+      .bi-advisor-grid { grid-template-columns: 1fr !important; }
+    }
+
+    .bi-advisor-controls {
+ display: flex !important;
+ flex-direction: column !important;
+ gap: 1rem !important;
+    }
+
+    .advisor-input-group label {
+ display: block !important;
+ font-size: 0.8125rem !important;
+ font-weight: 700 !important;
+ color: var(--ax-text-secondary) !important;
+ text-transform: uppercase !important;
+ letter-spacing: 0.5px !important;
+ margin-bottom: 0.5rem !important;
+    }
+
+    .input-with-icon {
+ position: relative !important;
+ display: flex !important;
+ align-items: center !important;
+ width: 100% !important;
+    }
+
+    .currency-prefix {
+ position: absolute !important;
+ left: 14px !important;
+ font-size: 1.125rem !important;
+ font-weight: 700 !important;
+ color: var(--ax-accent) !important;
+ z-index: 2 !important;
+    }
+
+    .input-with-icon input#comprasBudgetInput {
+ width: 100% !important;
+ padding-left: 36px !important;
+ height: 48px !important;
+ font-size: 1.125rem !important;
+ font-weight: 700 !important;
+ background: var(--surf-3) !important;
+ border: 1px solid rgba(77, 159, 236, 0.4) !important;
+ color: #ffffff !important;
+ border-radius: 12px !important;
+    }
+
+    .advisor-presets {
+ display: flex !important;
+ align-items: center !important;
+ gap: 0.5rem !important;
+ flex-wrap: wrap !important;
+ margin-top: 0.5rem !important;
+    }
+
+    .preset-label {
+ font-size: 0.75rem !important;
+ font-weight: 700 !important;
+ color: var(--ax-text-tertiary) !important;
+ text-transform: uppercase !important;
+    }
+
+    .budget-pill {
+ padding: 6px 14px !important;
+ border-radius: 20px !important;
+ font-size: 0.8125rem !important;
+ font-weight: 700 !important;
+ background: rgba(255, 255, 255, 0.06) !important;
+ color: var(--ax-text-secondary) !important;
+ border: 1px solid rgba(255, 255, 255, 0.12) !important;
+ cursor: pointer !important;
+    }
+
+    .budget-pill:hover, .budget-pill.active {
+ background: linear-gradient(135deg, #2563B8, #1E62B4) !important;
+ color: #ffffff !important;
+ border-color: var(--ax-accent) !important;
+ box-shadow: 0 4px 14px rgba(77, 159, 236, 0.4) !important;
+    }
+
+    .advisor-strategy-group label {
+ display: block !important;
+ font-size: 0.8125rem !important;
+ font-weight: 700 !important;
+ color: var(--ax-text-secondary) !important;
+ text-transform: uppercase !important;
+ margin-bottom: 0.4rem !important;
+    }
+
+ select#comprasStrategySelect {
+ width: 100% !important;
+ height: 46px !important;
+ padding: 0 1rem !important;
+ border-radius: 12px !important;
+ font-size: 0.875rem !important;
+ font-weight: 600 !important;
+ background: var(--surf-3) !important;
+ color: #ffffff !important;
+ border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    }
+
+    .bi-advisor-projections {
+ display: grid !important;
+ grid-template-columns: repeat(3, 1fr) !important;
+ gap: 0.85rem !important;
+    }
+
+    @media (max-width: 768px) {
+      .bi-advisor-projections { grid-template-columns: repeat(2, 1fr) !important; }
+    }
+
+    .proj-card {
+ display: flex !important;
+ flex-direction: column !important;
+ justify-content: center !important;
+ padding: 1.1rem 1.25rem !important;
+ border-radius: 12px !important;
+ background: var(--surf-2) !important;
+ border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    }
+
+    .proj-card.highlight-green {
+ background: linear-gradient(135deg, rgba(61, 220, 151, 0.16) 0%, var(--surf-3) 100%) !important;
+ border-color: rgba(61, 220, 151, 0.4) !important;
+ box-shadow: 0 8px 24px rgba(61, 220, 151, 0.18) !important;
+    }
+
+    .proj-card.highlight-blue {
+ background: linear-gradient(135deg, rgba(77, 159, 236, 0.16) 0%, var(--surf-3) 100%) !important;
+ border-color: rgba(77, 159, 236, 0.4) !important;
+ box-shadow: 0 8px 24px rgba(77, 159, 236, 0.18) !important;
+    }
+
+    .proj-label {
+ font-size: 0.75rem !important;
+ font-weight: 700 !important;
+ color: var(--ax-text-tertiary) !important;
+ text-transform: uppercase !important;
+ margin-bottom: 0.35rem !important;
+    }
+
+    .proj-val {
+ font-size: 1.25rem !important;
+ font-weight: 800 !important;
+ color: var(--ax-text-primary) !important;
+    }
+
+    .proj-card.highlight-green .proj-val {
+ color: var(--ax-accent-emerald) !important;
+ font-size: 1.5rem !important;
+    }
+
+    .proj-card.highlight-blue .proj-val {
+ color: var(--ax-accent) !important;
+ font-size: 1.5rem !important;
+    }
+
+    .advisor-results-header {
+ display: flex !important;
+ align-items: center !important;
+ justify-content: space-between !important;
+ padding-bottom: 0.75rem !important;
+ border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    }
+
+    .results-title {
+ font-size: 1rem !important;
+ font-weight: 700 !important;
+ color: var(--ax-text-primary) !important;
+    }
+
+    .skus-count-badge {
+ padding: 4px 12px !important;
+ border-radius: 20px !important;
+ font-size: 0.8125rem !important;
+ font-weight: 700 !important;
+ background: rgba(61, 220, 151, 0.15) !important;
+ color: var(--ax-accent-emerald) !important;
+ border: 1px solid rgba(61, 220, 151, 0.3) !important;
+    }
+
+    .advisor-table {
+ width: 100% !important;
+ border-collapse: separate !important;
+ border-spacing: 0 !important;
+ border-radius: 12px !important;
+ overflow: hidden !important;
+ border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    }
+
+    .advisor-table th {
+ position: sticky !important;
+ top: 0 !important;
+ background: var(--surf-3) !important;
+ padding: 0.85rem 1rem !important;
+ font-size: 0.75rem !important;
+ font-weight: 700 !important;
+ text-transform: uppercase !important;
+ color: var(--ax-text-tertiary) !important;
+ border-bottom: 2px solid rgba(77, 159, 236, 0.3) !important;
+ z-index: 5 !important;
+ letter-spacing: 0.5px !important;
+    }
+
+    .advisor-table td {
+ padding: 0.85rem 1rem !important;
+ font-size: 0.875rem !important;
+ border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+ color: var(--ax-text-secondary) !important;
+    }
+
+    .advisor-row:hover td {
+ background: rgba(77, 159, 236, 0.12) !important;
+    }
+
+    .suggested-units-pill {
+ display: inline-block !important;
+ padding: 4px 10px !important;
+ border-radius: 12px !important;
+ background: rgba(77, 159, 236, 0.16) !important;
+ color: var(--ax-accent) !important;
+ border: 1px solid rgba(77, 159, 236, 0.35) !important;
+ font-weight: 800 !important;
+    }
+
+    .investment-cost-cell {
+ font-weight: 800 !important;
+ color: var(--ax-accent-rose) !important;
+    }
+
+    .expected-profit-badge {
+ display: inline-flex !important;
+ padding: 4px 10px !important;
+ border-radius: 12px !important;
+ background: rgba(61, 220, 151, 0.16) !important;
+ color: var(--ax-accent-emerald) !important;
+ border: 1px solid rgba(61, 220, 151, 0.35) !important;
+ font-weight: 800 !important;
+    }
+
+/* ============================================================================
    12. SISTEMA INSTRUMENTO
    ----------------------------------------------------------------------------
    Etapa 1 de la direccion de diseno: solo tokens y decoracion. Ninguna regla
@@ -12507,3 +12779,408 @@ table.mp-table tbody tr:last-child td, table.compras-table tbody tr:last-child t
   color: var(--ax-accent-gold) !important;
   border: 1px solid color-mix(in srgb, var(--ax-accent-gold) 34%, transparent) !important;
 }
+
+/* ============================================================================
+   18. LA PALETA DE PROSPECCION VUELVE AL SISTEMA
+   ----------------------------------------------------------------------------
+   Medido en la vista de Facturacion, tema oscuro, con datos cargados:
+
+     394 celdas de porcentaje (194 en alza, 200 en baja) se pintan con
+     --prosp-var-alza #3DDC97 y --prosp-var-cae #F87171, mientras el resto de
+     la aplicacion pinta lo mismo -sube, baja- con --ax-accent-emerald #57C494
+     y --ax-accent-rose #F0768A.
+
+     Distancia entre los dos verdes:  dE 17,1
+     Distancia entre los dos rojos:   dE 14,3
+
+   La escala de series de la capa 14 se separo a dE 13-15 A PROPOSITO, para que
+   se pudieran distinguir seis cosas distintas. Estos dos verdes estan MAS
+   separados que eso y significan lo mismo. En la misma pantalla.
+
+   La causa: app.js ya trae el mapeo correcto en PROSP_TONOS_RESPALDO -riesgo
+   al ambar, nuevo al acento, crece y var-alza al verde del sistema- pero ese
+   mapa es solo el respaldo para cuando la hoja no ha cargado. Mientras la hoja
+   defina los tonos viejos, gana la hoja y el respaldo no se usa nunca. Aqui la
+   hoja dice lo mismo que el JS.
+
+   NO se tocan fuga, dormido, caida y estable: son una rampa de aviso de cuatro
+   pasos que no tiene equivalente en el sistema -que solo distingue "mal" de
+   "atencion"- y sus tonos estan medidos contra los dos lienzos. Cambiarlos
+   seria rehacer una medicion buena para ganar coherencia en una leyenda que ya
+   se lee con su clave al lado.
+   ========================================================================== */
+
+:root,
+[data-ax-theme="dark"],
+[data-ax-theme="light"],
+.is-pdf-export {
+  /* Los tres que llevaban escrito un acento retirado. */
+  --prosp-riesgo:    var(--ax-accent-gold);
+  --prosp-nuevo:     var(--ax-accent);
+  --prosp-crece:     var(--ax-accent-emerald);
+  --prosp-cruce:     var(--ax-accent);
+
+  /* La variacion. Cuatro pasos siguen siendo cuatro pasos: el tono dice el
+     signo y la mezcla hacia el texto dice el tamano del movimiento. Antes el
+     paso corto era otro color -naranja para "baja", verde palido para
+     "sube"-, que es pedirle al lector que distinga dos hues para leer una
+     magnitud. */
+  --prosp-var-alza:  var(--ax-accent-emerald);
+  --prosp-var-sube:  color-mix(in srgb, var(--ax-accent-emerald) 70%, var(--ax-text-secondary));
+  --prosp-var-plano: var(--ax-text-secondary);
+  --prosp-var-baja:  color-mix(in srgb, var(--ax-accent-rose) 70%, var(--ax-text-secondary));
+  --prosp-var-cae:   var(--ax-accent-rose);
+  --prosp-var-sd:    var(--ax-text-secondary);
+}
+
+/* ============================================================================
+   19. EL BLOQUE VACIO
+   ----------------------------------------------------------------------------
+   Una pantalla vacia es el unico momento en que la interfaz habla sola, y
+   hasta ahora hablaba cuatro veces distinto en el mismo modulo: cuatro
+   textos, tres rellenos, dos marcos y ninguna salida. Ninguno de los cuatro
+   decia que hacer.
+
+   Tres partes fijas y en este orden: que pasa, por que, y el boton que lo
+   resuelve. Sin marco discontinuo: un recuadro de rayas alrededor del vacio
+   lo dibuja como un error, y la mayoria de las veces no lo es -es un filtro
+   estrecho, que es una cosa que el usuario acaba de hacer a proposito-.
+   ========================================================================== */
+
+.cotiz-vacio {
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  max-width: 44rem;
+  margin: 0 auto;
+}
+.cotiz-vacio--ancho { grid-column: 1 / -1; }
+
+.cotiz-vacio__titulo {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--ax-text-primary);
+}
+
+.cotiz-vacio__texto {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--ax-text-secondary);
+}
+
+.cotiz-vacio__accion { margin-top: 1.1rem; }
+
+/* La linea corta. El motivo ya se explico arriba: aqui solo hace falta decir
+   que esta tarjeta esta vacia por lo mismo, sin volver a ocupar media pantalla. */
+.cotiz-vacio--breve {
+  margin: 0;
+  padding: 1.5rem 1rem;
+  font-size: 0.8125rem;
+  color: var(--ax-text-tertiary);
+}
+
+.cotiz-vacio code {
+  padding: 0.05rem 0.35rem;
+  border-radius: 4px;
+  background: var(--surf-3);
+  color: var(--ax-text-primary);
+  font-family: var(--ax-font-mono);
+  font-size: 0.9em;
+}
+
+/* Dentro de la tabla la celda ya trae el relleno y el filete de la capa 13;
+   el bloque no necesita repetirlos. */
+.cotiz-table td > .cotiz-vacio,
+#cotizTableBody td > .cotiz-vacio {
+  padding: 2.5rem 1rem;
+}
+#cotizTableBody td:has(> .cotiz-vacio) {
+  border-bottom: 0 !important;
+  padding: 0 !important;
+}
+
+/* --- 19.1 EL PODIO --------------------------------------------------------
+   Tres colores para un orden que el numero ya dice, y ademas mal repartidos:
+   el 1 en ambar al 20% y el 3 en rgba(217,119,6,.2) con texto ambar eran casi
+   la misma pastilla. Aqui la misma escala que las pastillas A/B/C: el primero
+   pesa, el segundo va en contorno, del tercero en adelante es neutro.
+   -------------------------------------------------------------------------- */
+.rank-badge {
+  font-variant-numeric: tabular-nums;
+  font-family: var(--ax-font-mono) !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+}
+.rank-badge--uno {
+  background: var(--ax-accent) !important;
+  color: var(--ax-on-accent) !important;
+  border: 1px solid transparent !important;
+}
+.rank-badge--dos {
+  background: transparent !important;
+  color: var(--ax-text-primary) !important;
+  border: 1px solid var(--ax-border) !important;
+}
+.rank-badge--resto {
+  background: transparent !important;
+  color: var(--ax-text-secondary) !important;
+  border: 1px solid transparent !important;
+}
+
+/* --- 19.2 LA FILA DEL TOP DE PRODUCTOS ------------------------------------
+   Estaba escrita en horizontal en el JS y pintada en columna por la hoja: la
+   clase prestada -.compras-breakdown-item, de Compras- lleva flex-direction:
+   column, y la direccion no iba en el atributo style, asi que ganaba la hoja.
+   Con align-items:center encima, cada fila quedaba centrada sobre su propio
+   ancho: diez filas empezando en diez x distintas segun lo largo del nombre.
+   -------------------------------------------------------------------------- */
+.cotiz-top-item {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--ax-border-subtle);
+}
+.cotiz-top-item:last-child { border-bottom: 0; }
+.cotiz-top-item:hover { background: var(--ax-surface-hover); }
+
+.cotiz-top-item__izq {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  /* Sin esto el nombre largo no deja encoger a la columna y vuelve el
+     desborde: el minimo automatico de un hijo flexible es su contenido. */
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.cotiz-top-item__der {
+  flex: 0 0 auto;
+  min-width: 8.5rem;
+  text-align: right;
+}
+
+/* ============================================================================
+   20. EL VELO BLANCO Y LAS SOMBRAS QUE QUEDABAN
+   ----------------------------------------------------------------------------
+   El barrido de la etapa 5 convirtio 75 FILETES blancos, no los fondos. Medido
+   despues, recorriendo las diez vistas en tema claro y contando elementos que
+   pintan un blanco translucido sobre una tarjeta blanca:
+
+     .tag-pill                    823
+     .ax-table tr:nth-child(even)  53
+     .compras-breakdown-item       48
+     .compras-breakdown-bar        48
+     .ax-sidebar-close-btn         10
+     .budget-pill                   7
+     .legend-chip                   6
+     .chart-period-selector         1
+
+   Blanco al 4% sobre blanco no existe. Todo eso -pastillas, carriles de barra,
+   la banda de las filas pares- se veia en oscuro y desaparecia en claro. Es el
+   mismo fallo que tenian los filetes de las tablas, en el otro lado de la
+   declaracion.
+
+   Cada uno va al token que le corresponde por lo que HACE, no por su tono:
+   relleno de pastilla a --surf-3, carril de barra a --ax-border, resalte a
+   --ax-surface-hover.
+
+   La banda de las filas pares se retira entera. La capa 13 le dio a cada fila
+   su filete; una tabla no necesita dos sistemas de separacion a la vez, y con
+   los dos puestos el resalte del raton compite con la banda.
+
+   No se tocan las reglas que YA estan bajo [data-ax-theme="light"] -el
+   desplegable de predicciones, el tooltip, la kpi-card-: ahi el blanco es
+   deliberado y correcto.
+   ========================================================================== */
+
+/* --- 20.1 Relleno de pastilla, chip y caja menor -------------------------- */
+.ax-kbd,
+.cmd-palette-footer kbd,
+.tag-pill,
+.rank-badge,
+.budget-pill,
+.preset-pill-btn,
+.preset-btn,
+.quick-pill,
+.chart-period-selector,
+.legend-chip,
+.mini-kpi-sub,
+.cotiz-item-thumb,
+.ax-sidebar-close-btn,
+.chip-remove-btn,
+.strategy-card-btn,
+.breakdown-box,
+.proj-card,
+.compras-breakdown-item {
+  background: var(--surf-3) !important;
+}
+
+/* El elemento de navegacion se pinta solo cuando esta activo o bajo el raton;
+   en reposo no lleva relleno ninguno. */
+.ax-nav__item { background: transparent !important; }
+
+/* --- 20.2 Carriles de barra ----------------------------------------------
+   Un carril es la referencia contra la que se lee el relleno: tiene que verse
+   en los dos temas, y --ax-border es exactamente el tono de "esto es una guia,
+   no un dato". */
+.compras-breakdown-bar,
+.mix-progress-bar-container,
+.neon-progress-bar-wrap {
+  background: var(--ax-border) !important;
+}
+
+/* --- 20.3 Resalte bajo el raton ------------------------------------------ */
+.compras-breakdown-item:hover {
+  background: var(--ax-surface-hover) !important;
+}
+
+/* --- 20.4 La banda de las filas pares se retira --------------------------- */
+.ax-table tbody tr:nth-child(even),
+.ax-table tbody tr:nth-child(even) td {
+  background: transparent !important;
+}
+
+/* --- 20.5 La barra de desplazamiento -------------------------------------- */
+::-webkit-scrollbar-thumb,
+.date-presets::-webkit-scrollbar-thumb {
+  background: var(--ax-border) !important;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ax-text-tertiary) !important;
+}
+
+/* ----------------------------------------------------------------------------
+   20.6 LAS SOMBRAS
+   ----------------------------------------------------------------------------
+   La capa 12 quito las sombras de color y las que venian en atributos style.
+   Quedaban las de la hoja. Medido en las diez vistas: 17 clases con una sombra
+   negra viva, entre ellas todas las variantes de .ax-card, .sku-badge y
+   .compras-breakdown-bar.
+
+   La regla del sistema es que la jerarquia la hace el aire, no la elevacion.
+   Pero eso vale para lo que esta EN la pagina; lo que flota POR ENCIMA de ella
+   -un aviso, la cabecera fija sobre el contenido que se desplaza, la barra
+   lateral cuando se abre sobre el contenido en pantallas estrechas- si esta a
+   otra altura de verdad, y ahi la sombra es informacion. Esas tres se quedan.
+   -------------------------------------------------------------------------- */
+.ax-card,
+.ax-card:hover,
+.kpi-card,
+.mini-kpi-card,
+.table-card,
+.bi-sim-card,
+.filters-bar,
+.table-container,
+.sku-badge,
+.compras-breakdown-bar,
+.sim-res-box,
+.ft-card,
+.user-profile-badge,
+.rank-badge,
+.rank-badge.rank-gold,
+.rank-badge.rank-silver,
+.rank-badge.rank-bronze {
+  box-shadow: none !important;
+}
+
+/* --- 20.7 LO QUE EL ASESOR TRAIA Y NINGUNA CAPA CUBRIA --------------------
+   Al mover su bloque a la hoja (11.9), las capas 12 a 20 le quitaron las
+   mayusculas, las dos sombras, el radio de 16px y el velo blanco. Quedaban
+   tres cosas que no entran en el patron de ninguna de ellas.
+   -------------------------------------------------------------------------- */
+
+/* El filete de la pastilla, blanco al 12%: invisible sobre tarjeta clara. */
+.budget-pill {
+  border: 1px solid var(--ax-border) !important;
+}
+
+/* La pastilla elegida iba con degradado azul marino, texto blanco y un halo
+   azul de la paleta retirada. Un control activo se marca como el boton
+   primario del sistema: relleno de acento y el color de texto que le toca. */
+.budget-pill:hover {
+  background: var(--surf-3) !important;
+  color: var(--ax-text-primary) !important;
+  border-color: var(--ax-text-tertiary) !important;
+  box-shadow: none !important;
+}
+.budget-pill.active,
+.budget-pill.active:hover {
+  background: var(--ax-accent) !important;
+  color: var(--ax-on-accent) !important;
+  border-color: var(--ax-accent) !important;
+  box-shadow: none !important;
+}
+
+/* --- 20.8 LAS SOMBRAS QUE FALTABAN ---------------------------------------
+   El bloque 20.6 se quedo corto por especificidad: varias sombras se declaran
+   bajo [data-ax-theme="light"] o [data-ax-theme="dark"], que es (0,2,0), y una
+   regla de clase suelta con !important no le gana. Se repite la lista con el
+   tema por delante, y se anaden las que solo aparecian en oscuro -medidas
+   recorriendo las diez vistas en los dos temas-.
+
+   Siguen con sombra, a proposito, las tres cosas que de verdad flotan sobre el
+   contenido: la barra lateral cuando se abre encima en pantallas estrechas, la
+   cabecera fija sobre lo que se desplaza, y el aviso.
+   -------------------------------------------------------------------------- */
+:root .ax-card, :root .kpi-card, :root .mini-kpi-card, :root .gradient-border-card,
+:root .filters-bar, :root .bi-sim-card, :root .sim-res-box, :root .table-card,
+:root .chart-card, :root .table-container, :root .hero-kpi-card, :root .target-card,
+:root .cotiz-summary-card, :root .cotiz-tipo-card, :root .cotiz-hero-card,
+:root .cotiz-kpi-item, :root .ft-card, :root .ft-header-card, :root .mix-card,
+:root .mix-advisor-card, :root .bi-compras-advisor-card, :root .proj-card,
+:root .btn-primary, :root .btn-secondary, :root .sku-badge, :root .user-profile-badge,
+:root .compras-breakdown-bar, :root .kpi-icon-badge, :root .active-filter-chip,
+:root thead, :root tfoot,
+[data-ax-theme="light"] .ax-card, [data-ax-theme="light"] .kpi-card,
+[data-ax-theme="light"] .mini-kpi-card, [data-ax-theme="light"] .gradient-border-card,
+[data-ax-theme="light"] .filters-bar, [data-ax-theme="light"] .bi-sim-card,
+[data-ax-theme="light"] .sim-res-box, [data-ax-theme="light"] .table-card,
+[data-ax-theme="light"] .chart-card, [data-ax-theme="light"] .table-container,
+[data-ax-theme="dark"] .ax-card, [data-ax-theme="dark"] .kpi-card,
+[data-ax-theme="dark"] .mini-kpi-card, [data-ax-theme="dark"] .gradient-border-card,
+[data-ax-theme="dark"] .filters-bar, [data-ax-theme="dark"] .bi-sim-card,
+[data-ax-theme="dark"] .sim-res-box, [data-ax-theme="dark"] .table-card,
+[data-ax-theme="dark"] .chart-card, [data-ax-theme="dark"] .table-container {
+  box-shadow: none !important;
+}
+
+/* Y las mismas al pasar el raton: sin esto la sombra vuelve al tocarlas. */
+:root .ax-card:hover, :root .kpi-card:hover, :root .mini-kpi-card:hover,
+:root .chart-card:hover, :root .mix-card:hover, :root .hero-kpi-card:hover,
+:root .cotiz-tipo-card:hover, :root .ft-card:hover, :root .btn-secondary:hover,
+:root .btn-primary:hover, :root .bi-compras-advisor-card:hover {
+  box-shadow: none !important;
+}
+
+/* --- 20.9 EL SUBTITULO DE LA TARJETA --------------------------------------
+   Ultimo blanco translucido que quedaba: .kpi-card__sub y .mini-kpi-sub
+   llevaban su propio par de valores por tema -blanco al 5% en oscuro, negro al
+   4% en claro- escritos a mano. Es exactamente para lo que existe --surf-3: el
+   mismo relleno de pastilla que ahora usan las demas, y sin dos declaraciones
+   que mantener sincronizadas.
+   -------------------------------------------------------------------------- */
+:root .kpi-card__sub, :root .mini-kpi-sub,
+[data-ax-theme="light"] .kpi-card__sub, [data-ax-theme="light"] .mini-kpi-sub,
+[data-ax-theme="dark"] .kpi-card__sub, [data-ax-theme="dark"] .mini-kpi-sub {
+  background: var(--surf-3) !important;
+  border-color: var(--ax-border) !important;
+}
+
+/* --- 20.10 EL DISTINTIVO QUE QUEDA ----------------------------------------
+   De los doce chips del menu se fueron diez -los que repetian el rotulo que
+   tenian al lado-. Quedan dos y los dos llevan un valor que cambia: el numero
+   de filas cargadas y el canal de la sesion. El canal es un nombre ("Todos",
+   "Retail"), y en mayusculas forzadas se leia TODOS, RETAIL, como si fuera un
+   grito y no un dato.
+   -------------------------------------------------------------------------- */
+.ax-nav__badge {
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  font-family: var(--ax-font-mono) !important;
+  font-weight: 500 !important;
+}
+
