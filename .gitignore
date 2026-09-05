@@ -1,0 +1,12 @@
+# Caché de datos generada por server.py: ~29 MB con nombres y RUT de clientes.
+# Se regenera sola al levantar el servidor; no debe versionarse ni publicarse.
+.cache/
+
+# Bytecode de Python
+__pycache__/
+*.pyc
+
+# Skills instaladas del asistente: son herramienta del equipo, no codigo del
+# proyecto, y este repositorio se publica en GitHub Pages. launch.json si se
+# versiona: es la configuracion del servidor de desarrollo.
+.claude/skills/

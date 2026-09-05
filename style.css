@@ -13184,3 +13184,109 @@ table.mp-table tbody tr:last-child td, table.compras-table tbody tr:last-child t
   font-weight: 500 !important;
 }
 
+/* ============================================================================
+   21. EL FILTRO DEL MENU
+   ----------------------------------------------------------------------------
+   El input existia desde siempre en index.html y no lo escuchaba nadie. Al
+   conectarlo aparece un estado que antes no podia darse: que no coincida
+   ningun modulo. Un menu que se queda en blanco sin decir por que es el mismo
+   error que ya se corrigio en Cotizaciones, asi que aqui tambien se dice que
+   pasa y se ofrece la salida.
+   ========================================================================== */
+
+.ax-sidebar__sin-resultado {
+  margin: 0.35rem 0.9rem 0.6rem;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--ax-text-secondary);
+}
+.ax-sidebar__sin-resultado[hidden] { display: none !important; }
+
+.ax-sidebar__limpiar {
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--ax-accent);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.ax-sidebar__limpiar:hover { color: var(--ax-accent-hover); }
+
+/* Ocultar una entrada del menu la saca de la cuenta, no la deja en hueco: el
+   arbol usa flex y un hidden sin esto sigue aportando su gap. */
+.ax-sidebar__nav [hidden] { display: none !important; }
+
+/* ============================================================================
+   22. EL TERCIARIO QUE LA CAPA 12 NO LLEGO A APLICAR
+   ----------------------------------------------------------------------------
+   La capa 12 declara --ax-text-tertiary: #9AA2AD para el tema oscuro, pero el
+   valor que llega a la pagina es #8B95B9: lo pone la capa 8 con el selector
+
+     :root:not([data-ax-theme="light"])
+
+   que suma (0,2,0) -:not() cuenta la especificidad de su argumento- y le gana
+   a los dos selectores de la capa 12, que son (0,1,0) cada uno. Venir despues
+   no basta cuando el otro es mas especifico.
+
+   No es cosmetico. Medido:
+
+                          tarjeta   lienzo   fila resaltada
+     #9AA2AD (capa 12)     5,96      6,63        5,14
+     #8B95B9 (capa 8)      5,20      5,77        4,48   <- por debajo de 4,5
+
+   El que estaba ganando deja el texto terciario por debajo del minimo legible
+   sobre las filas resaltadas, y ademas tira a violeta, que va contra el
+   grafito neutro de la capa 12.
+
+   Se repite la declaracion con la especificidad suficiente. El tema claro no
+   se toca: ahi la capa 12 si estaba ganando (#656D7A, verificado en pagina).
+   ========================================================================== */
+
+:root:not([data-ax-theme="light"]),
+[data-ax-theme="dark"]:not([data-ax-theme="light"]) {
+  --ax-text-tertiary: #9AA2AD;
+}
+
+/* ============================================================================
+   23. DOS QUE SE VEN AL MEDIR
+   ----------------------------------------------------------------------------
+   Los dos salieron de pasar la lista de comprobacion de DESIGN.md sobre las
+   dos temas.
+
+   EL BOTON DE CERRAR LA BARRA. Medido: 1,00:1 en tema claro. Blanco sobre
+   blanco, y visible. Lo rompi yo en la capa 20.1: mande su fondo a --surf-3
+   -que en claro es #FFFFFF- y su color seguia escrito a mano como #FFFFFF.
+   Es el mismo fallo que la capa 20 venia a arreglar, cometido al arreglarlo.
+
+   EL AVATAR. linear-gradient(135deg, #2563B8, #5B3FC4): el azul marino y el
+   morado de la paleta retirada, en el elemento que esta en pantalla en las
+   trece vistas. La capa 12 quito los degradados que encontro; este se escapo
+   porque no lleva ninguno de los seis colores que se barrieron. Plano y del
+   acento, como cualquier otra superficie rellena del sistema.
+   ========================================================================== */
+
+:root .ax-sidebar-close-btn,
+[data-ax-theme="light"] .ax-sidebar-close-btn,
+[data-ax-theme="dark"] .ax-sidebar-close-btn {
+  background: var(--surf-3) !important;
+  color: var(--ax-text-primary) !important;
+  border: 1px solid var(--ax-border) !important;
+}
+:root .ax-sidebar-close-btn:hover,
+[data-ax-theme="light"] .ax-sidebar-close-btn:hover,
+[data-ax-theme="dark"] .ax-sidebar-close-btn:hover {
+  background: var(--ax-surface-hover) !important;
+  color: var(--ax-text-primary) !important;
+  border-color: var(--ax-text-tertiary) !important;
+}
+
+:root .user-avatar,
+[data-ax-theme="light"] .user-avatar,
+[data-ax-theme="dark"] .user-avatar {
+  background: var(--ax-accent) !important;
+  background-image: none !important;
+  color: var(--ax-on-accent) !important;
+}
+

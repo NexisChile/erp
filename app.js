@@ -117,7 +117,17 @@ function animateValue(el, from, to, duration = 650, isCurrency = false) {
 
 function formatCLP(val) {
   const n = Math.round(Number(val) || 0);
-  return '$' + n.toLocaleString('es-CL');
+  /* El signo va DELANTE del simbolo. Con '$' + n.toLocaleString() un negativo
+     salia "$-10.310", que es el menos metido dentro del importe. */
+  return (n < 0 ? '-$' : '$') + Math.abs(n).toLocaleString('es-CL');
+}
+
+/** Un porcentaje con coma decimal, que es la que se usa en Chile. toFixed()
+    devuelve punto, y en la misma tarjeta el punto ya significa "millar". */
+function formatPct(val, dec) {
+  const n = Number(val);
+  if (!isFinite(n)) return '\u2014';
+  return n.toFixed(dec === undefined ? 1 : dec).replace('.', ',') + '%';
 }
 
 function formatNum(val) {
@@ -265,8 +275,13 @@ function normalizeDataRows(rawRows) {
     const tienda = norm['TIENDA FINAL'] || norm['TIENDA'] || norm['SUCURSAL'] || 'GENERAL';
     const familia = norm['FAMILIA'] || norm['FAMILIA PRODUCTO'] || 'GENERAL';
     const categoria = norm['CATEGORIA'] || norm['CAT'] || 'GENERAL';
-    const region = norm['REGION'] || norm['REGION DESPACHO'] || 'Región Metropolitana';
-    const comuna = norm['COMUNA'] || 'Santiago';
+    /* Vacio se queda vacio. Antes se rellenaba con 'Región Metropolitana' y
+       'Santiago', y eso sellaba como RM las 144.525 lineas (77,6%) que la
+       planilla no trae con dirección: $2.059 millones atribuidos a una región
+       que ningún dato respalda, y la RM partida en dos cubos en cada
+       desglose. Un dato que falta tiene que verse que falta. */
+    const region = norm['REGION'] || norm['REGION DESPACHO'] || '';
+    const comuna = norm['COMUNA'] || '';
 
     normalizados.push({
       'FOLIO': String(folio),
@@ -1159,6 +1174,129 @@ function mpSincronizarNav(vista) {
   mpMontarFiltros(vista);
 }
 
+/* ---------------------------------------------------------------------------
+   EL FILTRO DEL MENU
+   Estaba pintado en index.html y no lo escuchaba nadie. Ahora filtra por el
+   rotulo, sin tildes -la gente escribe "prospeccion"- y respetando el unico
+   submenu que hay: si coincide un hijo se ensena su grupo y se abre.
+   ------------------------------------------------------------------------ */
+
+/** Sin tildes y en minusculas, para comparar lo escrito con lo pintado. */
+function menuNormalizar(t) {
+  return String(t || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+function menuFiltrar(consulta) {
+  const nav = document.getElementById('sidebarNav');
+  if (!nav) return;
+  const q = menuNormalizar(consulta).trim();
+  const aviso = document.getElementById('menuFilterVacio');
+  const grupos = Array.from(nav.querySelectorAll('.ax-nav__group'));
+  const sueltos = Array.from(nav.querySelectorAll('.ax-nav__item'))
+    .filter(function (b) { return !b.closest('.ax-nav__group'); });
+
+  /* Sin consulta se devuelve todo a su estado natural: mostrar es quitar el
+     hidden, no ponerle un display, para no pisar lo que diga la hoja. */
+  if (!q) {
+    nav.querySelectorAll('[hidden]').forEach(function (e) {
+      if (e.dataset.menuOculto) { e.hidden = false; delete e.dataset.menuOculto; }
+    });
+    grupos.forEach(function (g) {
+      if (g.dataset.menuAbierto) {
+        menuCerrarGrupo(g);
+        delete g.dataset.menuAbierto;
+      }
+    });
+    if (aviso) aviso.hidden = true;
+    return;
+  }
+
+  const casa = function (btn) {
+    const et = btn.querySelector('.ax-nav__label');
+    return menuNormalizar(et ? et.textContent : btn.textContent).indexOf(q) !== -1;
+  };
+  const ocultar = function (e, oculto) {
+    if (oculto) { e.hidden = true; e.dataset.menuOculto = '1'; }
+    else if (e.dataset.menuOculto) { e.hidden = false; delete e.dataset.menuOculto; }
+    else { e.hidden = false; }
+  };
+
+  let visibles = 0;
+
+  sueltos.forEach(function (b) {
+    const ok = casa(b);
+    ocultar(b, !ok);
+    if (ok) visibles++;
+  });
+
+  grupos.forEach(function (g) {
+    const padre = g.querySelector('.ax-nav__item--parent, #canalToggle');
+    const hijos = Array.from(g.querySelectorAll('.ax-nav__item--sub, .ax-nav__children .ax-nav__item'));
+    const padreCasa = padre ? casa(padre) : false;
+    const hijosQueCasan = hijos.filter(casa);
+    /* Si el padre coincide se ensenan todos sus hijos: quien busca "mercado"
+       quiere el modulo entero, no una de sus tres vistas. */
+    const mostrarHijos = padreCasa ? hijos : hijosQueCasan;
+    hijos.forEach(function (h) { ocultar(h, mostrarHijos.indexOf(h) === -1); });
+    const ok = padreCasa || hijosQueCasan.length > 0;
+    ocultar(g, !ok);
+    if (ok) {
+      visibles += mostrarHijos.length || 1;
+      if (!g.dataset.menuAbierto) g.dataset.menuAbierto = '1';
+      menuAbrirGrupo(g);
+    }
+  });
+
+  /* Un titulillo de seccion sin nada visible debajo es una etiqueta huerfana. */
+  Array.from(nav.querySelectorAll('.ax-sidebar__section')).forEach(function (t) {
+    let n = t.nextElementSibling;
+    let alguno = false;
+    while (n && !n.classList.contains('ax-sidebar__section')) {
+      if (!n.hidden) { alguno = true; break; }
+      n = n.nextElementSibling;
+    }
+    ocultar(t, !alguno);
+  });
+
+  if (aviso) aviso.hidden = visibles > 0;
+}
+
+/* Abrir y cerrar usan el mismo mecanismo que ya tenian el submenu de Mercado
+   Publico y el de canales -la clase 'expanded' mas aria-expanded-, para no
+   inventar un segundo estado que luego se desincronice del boton. */
+function menuAbrirGrupo(g) {
+  g.classList.add('expanded');
+  const p = g.querySelector('[aria-expanded]');
+  if (p) p.setAttribute('aria-expanded', 'true');
+}
+
+function menuCerrarGrupo(g) {
+  g.classList.remove('expanded');
+  const p = g.querySelector('[aria-expanded]');
+  if (p) p.setAttribute('aria-expanded', 'false');
+}
+
+function menuFiltroConectar() {
+  const input = document.getElementById('menuFilter');
+  if (!input || input.dataset.conectado) return;
+  input.dataset.conectado = '1';
+  input.addEventListener('input', function () { menuFiltrar(input.value); });
+  input.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { input.value = ''; menuFiltrar(''); input.blur(); }
+  });
+  const limpiar = document.getElementById('menuFilterLimpiar');
+  if (limpiar) {
+    limpiar.addEventListener('click', function () {
+      input.value = '';
+      menuFiltrar('');
+      input.focus();
+    });
+  }
+}
+
 /** Nombre de la vista visible ('tablero', 'precios', ...). '' si no hay. */
 function vistaActiva() {
   const el = document.querySelector('.view.active');
@@ -1711,7 +1849,7 @@ function selectProductFor360(sku, skipInputUpdate = false) {
   if (elAvgCost) elAvgCost.textContent = typeof formatCLP === 'function' ? formatCLP(avgCost) : `$${Math.round(avgCost).toLocaleString('es-CL')}`;
   if (elAvgCostUSD) elAvgCostUSD.textContent = `USD $${avgCostUSD.toFixed(2)}`;
   if (elMarginPct) {
-    elMarginPct.textContent = marginPct.toFixed(1) + '%';
+    elMarginPct.textContent = formatPct(marginPct, 1);
     elMarginPct.style.color = marginPct >= 30 ? 'var(--ax-accent-emerald)' : (marginPct >= 15 ? 'var(--ax-accent-gold)' : 'var(--ax-accent-rose)');
   }
 
@@ -1845,13 +1983,13 @@ function updateProdExhaustion(skuRowsParam, monthlySpeedParam, avgPriceParam, av
   const elDepletionDate = document.getElementById('prodProjDepletionDate');
   const elSpeedLabel = document.getElementById('prodProjSpeedLabel');
 
-  if (elResultMonths) elResultMonths.textContent = durationMonths.toFixed(1) + ' Meses';
-  if (elResultDays) elResultDays.textContent = `≈ ${durationDays.toLocaleString('es-CL')} Días de cobertura comercial`;
+  if (elResultMonths) elResultMonths.textContent = durationMonths.toFixed(1).replace('.', ',') + ' meses';
+  if (elResultDays) elResultDays.textContent = `≈ ${durationDays.toLocaleString('es-CL')} días de cobertura comercial`;
   
   if (elDepletionDate) {
     const dTarget = new Date();
     dTarget.setDate(dTarget.getDate() + durationDays);
-    elDepletionDate.textContent = dTarget.toLocaleDateString('es-CL', { month: 'short', year: 'numeric' }).toUpperCase();
+    elDepletionDate.textContent = dTarget.toLocaleDateString('es-CL', { month: 'short', year: 'numeric' });
   }
 
   if (elSpeedLabel) elSpeedLabel.textContent = `Ritmo: ${Math.round(speed).toLocaleString('es-CL')} u./mes`;
@@ -2335,8 +2473,8 @@ function updateMixSugeridoView() {
           <td style="text-align: right; font-weight: 700;">${Math.round(p.cant).toLocaleString('es-CL')} un.</td>
           <td style="text-align: right; font-weight: 800; color: var(--ax-accent);">${typeof formatCLP === 'function' ? formatCLP(p.neto) : '$'+Math.round(p.neto).toLocaleString('es-CL')}</td>
           <td style="text-align: right; font-weight: 700; color: var(--ax-accent-emerald);">${typeof formatCLP === 'function' ? formatCLP(p.utilidad) : '$'+Math.round(p.utilidad).toLocaleString('es-CL')}</td>
-          <td style="text-align: right; font-weight: 800; color: ${p.marg >= 30 ? 'var(--ax-accent-emerald)' : 'var(--ax-accent-gold)'};">${p.marg.toFixed(1)}%</td>
-          <td style="text-align: right; font-weight: 800; color: var(--ax-accent);">${p.part.toFixed(1)}%</td>
+          <td style="text-align: right; font-weight: 800; color: ${p.marg >= 30 ? 'var(--ax-accent-emerald)' : 'var(--ax-accent-gold)'};">${formatPct(p.marg, 1)}</td>
+          <td style="text-align: right; font-weight: 800; color: var(--ax-accent);">${formatPct(p.part, 1)}</td>
         </tr>
       `;
     }).join('');
@@ -2864,6 +3002,10 @@ function setupAllButtonListeners() {
   });
 }
 
+/* Valor del filtro para "las que no traen región". Empieza por parentesis
+   a proposito: ningun nombre de region real puede colisionar con el. */
+const SIN_REGION = '(sin región)';
+
 function uniqueValues(field) {
   if (!rows || !rows.length) return [];
   const set = new Set();
@@ -2890,7 +3032,13 @@ function populateFilterOptions() {
     if (!select) return;
     const current = select.value;
     const opts = uniqueValues(field);
-    select.innerHTML = `<option value="">Todas</option>` + opts.map(o => `<option value="${o}">${o}</option>`).join('');
+    /* La región es el unico filtro que ofrece "sin dato" como opcion, y solo
+       cuando la hay: es la forma de aislar lo que no se puede rutear. */
+    const faltantes = field === 'REGION' &&
+      rows.some(r => !String(r['REGION'] || '').trim());
+    select.innerHTML = `<option value="">Todas</option>` +
+      opts.map(o => `<option value="${o}">${o}</option>`).join('') +
+      (faltantes ? `<option value="${SIN_REGION}">${SIN_REGION}</option>` : '');
     if (opts.includes(current)) select.value = current;
   });
 
@@ -3111,7 +3259,10 @@ function applyFilters() {
     if (f.vendedor && r['CODVENDENDOR'] !== f.vendedor) return false;
     if (f.familia && r['FAMILIA'] !== f.familia) return false;
     if (f.categoria && r['CATEGORIA'] !== f.categoria) return false;
-    if (f.region && r['REGION'] !== f.region) return false;
+    if (f.region) {
+      const reg = String(r['REGION'] || '').trim();
+      if (f.region === SIN_REGION ? reg !== '' : reg !== f.region) return false;
+    }
     if (f.search) {
       const hay = [r['FOLIO'], r['CLIENTE'], r['CODIGO'], r['DESCRIPCION']]
         .map(v => String(v || '').toLowerCase()).join(' ');
@@ -3211,7 +3362,7 @@ function renderCompareBadge(el, prevVal, growthPct, labelText) {
   const arrow = isPos ? '' : (isNeg ? '' : '');
   const sign = isPos ? '+' : '';
   const valFormatted = formatCLP(prevVal);
-  const pctFormatted = `${sign}${growthPct.toFixed(1)}%`;
+  const pctFormatted = `${sign}${formatPct(growthPct, 1)}`;
   const statusClass = isPos ? 'trend-positive' : (isNeg ? 'trend-negative' : 'trend-neutral');
 
   el.className = `hero-compare-badge ${statusClass}`;
@@ -3326,7 +3477,10 @@ function renderSummaryCards() {
     if (f.vendedor && r['CODVENDENDOR'] !== f.vendedor) return false;
     if (f.familia && r['FAMILIA'] !== f.familia) return false;
     if (f.categoria && r['CATEGORIA'] !== f.categoria) return false;
-    if (f.region && r['REGION'] !== f.region) return false;
+    if (f.region) {
+      const reg = String(r['REGION'] || '').trim();
+      if (f.region === SIN_REGION ? reg !== '' : reg !== f.region) return false;
+    }
     return true;
   });
 
@@ -3664,7 +3818,7 @@ function renderMedidas(medidas, hayAnioPrevio) {
       hito.hidden = !mostrar;
       if (mostrar) {
         const p = pct(marca);
-        hito.style.left = p.toFixed(3) + '%';
+        hito.style.left = p.toFixed(3) + '%';   // CSS: aqui el separador ES el punto
         /* Pasado el 60% de la regla la etiqueta se saldria por la derecha; a
            partir de ahi cuelga hacia el otro lado. */
         hito.classList.toggle('medida__hito--izq', p > 60);
@@ -3730,9 +3884,9 @@ function factVariacionHtml(v) {
      sobran. Por debajo sí distingue: +2,4% y +2,9% no son lo mismo. */
   const texto = v >= 1000
     ? '&times;' + Math.round(1 + v / 100).toLocaleString('es-CL')
-    : (v > 0 ? '+' : '') + (Math.abs(v) >= 100 ? v.toFixed(0) : v.toFixed(1)) + '%';
+    : (v > 0 ? '+' : '') + formatPct(v, Math.abs(v) >= 100 ? 0 : 1);
   return '<span class="fact-tabla__pct ' + clase + '" title="' +
-    (v > 0 ? '+' : '') + v.toFixed(2) + '%">' + texto + '</span>';
+    (v > 0 ? '+' : '') + formatPct(v, 2) + '">' + texto + '</span>';
 }
 
 /* Qué filas están desplegadas, por tabla. Un Set por prefijo y no uno solo:
@@ -4150,7 +4304,7 @@ function renderKPIs() {
   }
 
   const elMargin = document.getElementById('miniMarginVal');
-  if (elMargin) elMargin.textContent = margenPct.toFixed(1) + '%';
+  if (elMargin) elMargin.textContent = formatPct(margenPct, 1);
 
   // Calcular Top Vendedor y Top Región
   const vendMap = {};
@@ -4158,7 +4312,7 @@ function renderKPIs() {
 
   filtered.forEach(r => {
     const v = r['CODVENDENDOR'] || 'Sin Vendedor';
-    const reg = r['REGION'] || 'Sin Región';
+    const reg = String(r['REGION'] || '').trim();
     const neto = Number(r['NETO']) || 0;
     vendMap[v] = (vendMap[v] || 0) + neto;
     regMap[reg] = (regMap[reg] || 0) + neto;
@@ -4172,10 +4326,22 @@ function renderKPIs() {
   if (elTopSeller) elTopSeller.textContent = sortedVend.length > 0 ? sortedVend[0][0] : '--';
   if (elTopSellerSub) elTopSellerSub.textContent = sortedVend.length > 0 ? `${formatCLP(sortedVend[0][1])} Facturado` : '$0 Facturado';
 
+  /* Solo entran al ranking las filas que traen región: "sin región" no es una
+     región y encabezar con ella el KPI de "Top región" seria absurdo. Pero
+     tampoco se esconde: el pie dice qué parte de la venta tiene dirección, que
+     es justo el dato que hace falta para saber cuanto vale el ranking. */
+  const conRegion = sortedReg.filter(e => e[0] !== '');
+  const netoConRegion = conRegion.reduce((a, e) => a + e[1], 0);
+  const netoRegTotal = sortedReg.reduce((a, e) => a + e[1], 0);
+  const cobertura = netoRegTotal > 0 ? (netoConRegion / netoRegTotal) * 100 : 0;
   const elTopRegion = document.getElementById('miniTopRegionVal');
   const elTopRegionSub = document.getElementById('miniTopRegionSub');
-  if (elTopRegion) elTopRegion.textContent = sortedReg.length > 0 ? sortedReg[0][0] : '--';
-  if (elTopRegionSub) elTopRegionSub.textContent = sortedReg.length > 0 ? `${formatCLP(sortedReg[0][1])} Facturado` : '$0 Facturado';
+  if (elTopRegion) elTopRegion.textContent = conRegion.length > 0 ? conRegion[0][0] : 's/d';
+  if (elTopRegionSub) {
+    elTopRegionSub.textContent = conRegion.length > 0
+      ? `${formatCLP(conRegion[0][1])} \u00b7 ${formatPct(cobertura, 0)} de la venta trae región`
+      : 'Ninguna línea del filtro trae región';
+  }
 
   // Fallback si existe kpiGrid
   const grid = document.getElementById('kpiGrid');
@@ -4552,7 +4718,7 @@ function renderCharts() {
                     const delta = ((currentVal - prevVal) / prevVal) * 100;
                     const arrow = delta >= 0 ? '' : '';
                     const sign = delta >= 0 ? '+' : '';
-                    return `Crecimiento YoY: ${arrow} ${sign}${delta.toFixed(1)}%`;
+                    return `Crecimiento YoY: ${arrow} ${sign}${formatPct(delta, 1)}`;
                   }
                 }
                 return '';
@@ -4634,12 +4800,12 @@ function renderCharts() {
     if (legendWrap) {
       legendWrap.innerHTML = sortedCanal.map((c, i) => {
         const color = serieColor(i);
-        const pct = totalCanal > 0 ? ((c[1] / totalCanal) * 100).toFixed(1) : '0';
+        const pct = totalCanal > 0 ? formatPct((c[1] / totalCanal) * 100, 1) : formatPct(0, 1);
         return `
           <div class="legend-chip" data-canal="${escapeHtml(c[0])}" title="Filtrar por ${escapeHtml(c[0])}">
             <span class="legend-dot" style="background: ${color};"></span>
             <span>${escapeHtml(c[0])}</span>
-            <span style="color: var(--ax-text-tertiary); font-weight: 600;">${pct}%</span>
+            <span style="color: var(--ax-text-tertiary); font-weight: 600;">${pct}</span>
           </div>
         `;
       }).join('');
@@ -5180,7 +5346,7 @@ function renderExecutiveInsights() {
     </div>`,
     `<div class="bi-briefing-item">
       <span></span>
-      <div><strong>Margen bruto global:</strong> Operando con un margen promedio del <strong>${avgMargin.toFixed(1)}%</strong> (${formatCLP(totalProfit)} utilidad total).</div>
+      <div><strong>Margen bruto global:</strong> Operando con un margen promedio del <strong>${formatPct(avgMargin, 1)}</strong> (${formatCLP(totalProfit)} utilidad total).</div>
     </div>`,
     `<div class="bi-briefing-item">
       <span></span>
@@ -5333,7 +5499,7 @@ function updateWhatIfSimulation() {
   document.getElementById('simProjRevenue').textContent = formatCLP(projRev);
   document.getElementById('simProjProfit').textContent = formatCLP(projProfit);
   document.getElementById('simDeltaProfit').textContent = `${deltaProfit >= 0 ? '+' : ''}${formatCLP(deltaProfit)}`;
-  document.getElementById('simProjMargin').textContent = `${projMargin.toFixed(1)}%`;
+  document.getElementById('simProjMargin').textContent = `${formatPct(projMargin, 1)}`;
 }
 
 // Estado de paginacion de la Seccion de Compras. Faltaba declararlo: renderComprasView
@@ -5447,7 +5613,7 @@ function getComprasProducts() {
     if (kpiCostosEl) kpiCostosEl.textContent = fmtCLP(totalCostos);
     if (kpiSkusEl) kpiSkusEl.textContent = fmtN(filteredProducts.length);
     if (kpiCostoPromEl) kpiCostoPromEl.textContent = fmtCLP(promedioCostoUnit);
-    if (kpiMargenPromEl) kpiMargenPromEl.textContent = `${margenPromedio.toFixed(1)}%`;
+    if (kpiMargenPromEl) kpiMargenPromEl.textContent = `${formatPct(margenPromedio, 1)}`;
 
     const totalPages = Math.max(1, Math.ceil(filteredProducts.length / COMPRAS_PAGE_SIZE));
     if (comprasCurrentPage > totalPages) comprasCurrentPage = totalPages;
@@ -5483,7 +5649,7 @@ function getComprasProducts() {
               <td style="text-align: left;"><span class="tag-pill">${p.familia}</span></td>
               <td style="text-align: right;" class="num-cell">${fmtCLP(p.costoUnit)}</td>
               <td style="text-align: right;" class="num-cell">${fmtCLP(p.preuni)}</td>
-              <td style="text-align: center;"><span class="badge ${badgeClass}">${p.margenPct.toFixed(1)}%</span></td>
+              <td style="text-align: center;"><span class="badge ${badgeClass}">${formatPct(p.margenPct, 1)}</span></td>
               <td style="text-align: right;" class="num-cell">${fmtN(p.cantTotal)}</td>
               <td style="text-align: right; font-weight: 700; color: var(--ax-accent-rose);" class="num-cell">${fmtCLP(p.costoTotalNet)}</td>
               <td style="text-align: right; font-weight: 600;" class="num-cell">${fmtCLP(p.netoTotal)}</td>
@@ -5519,7 +5685,7 @@ function getComprasProducts() {
             <div class="compras-breakdown-item">
               <div class="compras-breakdown-header">
                 <span><strong>${famName}</strong></span>
-                <span>${fmtCLP(famCost)} (${pct.toFixed(1)}%)</span>
+                <span>${fmtCLP(famCost)} (${formatPct(pct, 1)})</span>
               </div>
               <div class="compras-breakdown-bar">
                 <div class="compras-breakdown-fill" style="width: ${pct}%;"></div>
@@ -5659,12 +5825,12 @@ function renderComprasBIAdvisor() {
   const expMargEl = document.getElementById('projExpectedMargin');
   const skuBadgeEl = document.getElementById('advisorSkuCountBadge');
 
-  const fmtCLP = (v) => '$' + Math.round(Number(v)||0).toLocaleString('es-CL');
+  const fmtCLP = (v) => formatCLP(v);   // no duplicar: el signo se arregla en un sitio
 
   if (allocCostEl) allocCostEl.textContent = fmtCLP(totalAllocatedCost);
   if (expRevEl) expRevEl.textContent = fmtCLP(totalExpectedRevenue);
   if (expProfEl) expProfEl.textContent = fmtCLP(totalExpectedProfit);
-  if (expMargEl) expMargEl.textContent = `${expectedMarginPct.toFixed(1)}% ROI`;
+  if (expMargEl) expMargEl.textContent = `${formatPct(expectedMarginPct, 1)} ROI`;
   if (skuBadgeEl) skuBadgeEl.textContent = `${basket.length} SKUs recomendados`;
 
   // Payback: el HTML mostraba "0 Meses" fijo porque nadie calculaba este dato.
@@ -5720,7 +5886,7 @@ function renderComprasBIAdvisor() {
             <td style="text-align: left;"><span class="tag-pill">${b.familia}</span></td>
             <td style="text-align: right;" class="num-cell">${fmtCLP(b.costoUnit)}</td>
             <td style="text-align: right;" class="num-cell">${fmtCLP(b.preuni)}</td>
-            <td style="text-align: center;"><span class="badge ${b.margenPct >= 30 ? 'badge-green' : 'badge-amber'}">${b.margenPct.toFixed(1)}%</span></td>
+            <td style="text-align: center;"><span class="badge ${b.margenPct >= 30 ? 'badge-green' : 'badge-amber'}">${formatPct(b.margenPct, 1)}</span></td>
             <td style="text-align: center; font-weight: 800; color: var(--ax-accent);" class="num-cell">+${b.suggestedUnits} un.</td>
             <td style="text-align: right; font-weight: 700; color: var(--ax-accent-rose);" class="num-cell">${fmtCLP(b.allocatedCost)}</td>
             <td style="text-align: right; font-weight: 700; color: var(--ax-accent-emerald);" class="num-cell">${fmtCLP(b.expectedProfit)}</td>
@@ -6518,7 +6684,7 @@ function renderCotizacionesHeroCards(data) {
     const mezcla = sumaEstados > 0 ? estados.filter(e => e.monto > 0).map(e => {
       const pct = (e.monto / sumaEstados) * 100;
       return `<span class="cotiz-mezcla__seg is-${e.clave}" style="width: ${pct.toFixed(2)}%"
-        title="${e.etiqueta}: ${formatCLP(e.monto)} (${pct.toFixed(1)}% del monto)"></span>`;
+        title="${e.etiqueta}: ${formatCLP(e.monto)} (${formatPct(pct, 1)} del monto)"></span>`;
     }).join('') : '';
 
     const filas = estados.map(e => `
@@ -7541,7 +7707,7 @@ function recalcCotizTotals() {
 
     if (subEl) subEl.textContent = typeof formatCLP === 'function' ? formatCLP(lineNeto) : `$${Math.round(lineNeto).toLocaleString('es-CL')}`;
     if (margEl) {
-      margEl.textContent = lineMargen.toFixed(1) + '%';
+      margEl.textContent = formatPct(lineMargen, 1);
       margEl.style.color = lineMargen >= 30 ? 'var(--ax-accent-emerald)' : (lineMargen >= 15 ? 'var(--ax-accent-gold)' : 'var(--ax-accent-rose)');
       margEl.style.background = lineMargen >= 30 ? 'color-mix(in srgb, var(--ax-accent-emerald) 20%, transparent)' : (lineMargen >= 15 ? 'color-mix(in srgb, var(--ax-accent-gold) 20%, transparent)' : 'color-mix(in srgb, var(--ax-accent-rose) 20%, transparent)');
     }
@@ -7572,7 +7738,7 @@ function recalcCotizTotals() {
   if (elTotalBruto) elTotalBruto.textContent = fmt(totalBruto);
   if (elTotalUtil) elTotalUtil.textContent = fmt(totalUtilidad);
   if (elMarginPill) {
-    elMarginPill.textContent = `Margen: ${margenGlobal.toFixed(1)}%`;
+    elMarginPill.textContent = `Margen: ${formatPct(margenGlobal, 1)}`;
     elMarginPill.style.color = margenGlobal >= 30 ? 'var(--ax-accent-emerald)' : (margenGlobal >= 15 ? 'var(--ax-accent-gold)' : 'var(--ax-accent-rose)');
   }
 }
@@ -7996,7 +8162,7 @@ function renderMonthlyTargetProgress() {
 
   actualEl.textContent = formatCLP(mtdSales);
   goalEl.textContent = formatCLP(monthlyGoal);
-  pctEl.textContent = `${pct.toFixed(1)}%`;
+  pctEl.textContent = `${formatPct(pct, 1)}`;
   fillEl.style.width = `${pct}%`;
 
   if (subEl) {
@@ -8007,9 +8173,9 @@ function renderMonthlyTargetProgress() {
     const expectedPct = (dayToday / daysInMonth) * 100;
 
     if (pct >= expectedPct) {
-      subEl.innerHTML = `<strong>Avance en ${monthName} ${targetYear}:</strong> Superando el ritmo esperado del mes (${expectedPct.toFixed(1)}%).`;
+      subEl.innerHTML = `<strong>Avance en ${monthName} ${targetYear}:</strong> Superando el ritmo esperado del mes (${formatPct(expectedPct, 1)}).`;
     } else {
-      subEl.innerHTML = `<strong>Ritmo Requerido (${monthName} ${targetYear}):</strong> ${expectedPct.toFixed(1)}% esperado al día ${dayToday}.`;
+      subEl.innerHTML = `<strong>Ritmo requerido (${monthName} ${targetYear}):</strong> ${formatPct(expectedPct, 1)} esperado al día ${dayToday}.`;
     }
   }
 }
@@ -8634,7 +8800,7 @@ function selectFtProductSku(sku) {
 
         <div style="background: var(--surf-2); padding: 12px 16px; border-radius: var(--ax-radius-md); border: 1px solid color-mix(in srgb, var(--ax-accent-emerald) 25%, transparent);">
           <div style="font-size: 0.75rem; color: var(--ax-text-tertiary); font-weight: 700;">Margen prom. (%)</div>
-          <div style="font-size: 1.25rem; font-weight: 500; color: var(--ax-text-primary); font-family: var(--ax-font-mono);">${prod.margenPct.toFixed(1)}%</div>
+          <div style="font-size: 1.25rem; font-weight: 500; color: var(--ax-text-primary); font-family: var(--ax-font-mono);">${formatPct(prod.margenPct, 1)}</div>
         </div>
 
         <div style="background: var(--surf-2); padding: 12px 16px; border-radius: var(--ax-radius-md); border: 1px solid var(--ax-border);">
@@ -9083,7 +9249,7 @@ function renderFtComparison() {
     { label: 'Marca', a: prodA.marca || '-', b: prodB.marca || '-' },
     { label: 'Precio Lista', a: formatCLP(prodA.precioPromedio), b: formatCLP(prodB.precioPromedio) },
     { label: 'Costo Neto Unitario', a: formatCLP(prodA.costoUnitario), b: formatCLP(prodB.costoUnitario) },
-    { label: 'Margen Promedio (%)', a: `${prodA.margenPct.toFixed(1)}%`, b: `${prodB.margenPct.toFixed(1)}%` },
+    { label: 'Margen promedio (%)', a: `${formatPct(prodA.margenPct, 1)}`, b: `${formatPct(prodB.margenPct, 1)}` },
     { label: 'Dimensiones', a: specA.dimensiones, b: specB.dimensiones },
     { label: 'Peso Neto / Bruto', a: `${specA.pesoNeto} / ${specA.pesoBruto}`, b: `${specB.pesoNeto} / ${specB.pesoBruto}` },
     { label: 'Volumen Embalaje', a: specA.volumen, b: specB.volumen },
@@ -10120,6 +10286,12 @@ async function fetchGVizData() {
 // ==========================================================================
 function initApp() {
   try {
+    menuFiltroConectar();
+  } catch (e) {
+    console.warn('[Init] Filtro de menu:', e);
+  }
+
+  try {
     if (typeof setupAllButtonListeners === 'function') {
       setupAllButtonListeners();
     }
@@ -10785,7 +10957,7 @@ function preciosSituacion(i) {
 }
 
 function preciosDifTexto(dif) {
-  return dif === null ? '—' : (dif > 0 ? '+' : '') + dif.toFixed(1) + '%';
+  return dif === null ? '—' : (dif > 0 ? '+' : '') + formatPct(dif, 1);
 }
 
 function preciosEnlace(competidor, url, canalClave) {
@@ -10907,13 +11079,13 @@ function renderPreciosView() {
   const holgura = baratos.length
     ? baratos.reduce((a, g) => a + Math.abs(g.dif), 0) / baratos.length : 0;
   document.getElementById('preciosKpiHolgura').textContent =
-    baratos.length ? holgura.toFixed(1) + '% de holgura media' : '—';
+    baratos.length ? formatPct(holgura, 1) + ' de holgura media' : '—';
 
   const brecha = comparables.length
     ? comparables.reduce((a, g) => a + g.dif, 0) / comparables.length : null;
   const elBrecha = document.getElementById('preciosKpiBrecha');
   elBrecha.textContent = brecha === null ? '—'
-    : (brecha > 0 ? '+' : '') + brecha.toFixed(1) + '%';
+    : (brecha > 0 ? '+' : '') + formatPct(brecha, 1);
   elBrecha.className = 'precios-kpi__value ' +
     (brecha === null ? '' : brecha > 0 ? 'is-caro' : 'is-barato');
 
@@ -14035,16 +14207,17 @@ function prospTitulo(v) {
 function prospRegionDe(raw) {
   const bruto = String(raw || '').trim();
 
-  /* normalizeDataRows rellena las filas sin region con el literal
-     'Region Metropolitana' (sin parentesis), mientras que la planilla siempre
-     escribe 'Region Metropolitana (de Santiago)'. Distinguirlos evita que
-     ~880 lineas sin direccion se cuenten como venta de la RM e inflen la
-     region mas grande justo en el modulo que decide donde viajar.
-     Si algun dia la planilla escribiera el nombre corto, estas filas volverian
-     a caer en la RM, que es exactamente lo que pasa hoy: el peor caso es el
-     comportamiento actual. */
+  /* Aqui habia un parche: normalizeDataRows rellenaba las filas sin region
+     con el literal 'Region Metropolitana', asi que este modulo tenia que
+     distinguirlo del 'Region Metropolitana (de Santiago)' que escribe la
+     planilla para no contar como venta de la RM lo que no tiene direccion.
+     Era fragil -si la planilla escribiera el nombre corto, esas filas se
+     colaban- y ademas dejaba a este modulo siendo el unico de la aplicacion
+     que no se creia el invento.
+     Ya no hace falta: normalizeDataRows dejo de inventar y vacio es vacio.
+     El nombre corto vuelve a ser una RM legitima, como debe ser. */
   const limpio = prospSinTildes(bruto);
-  if (!bruto || limpio === 'region metropolitana') {
+  if (!bruto) {
     return { clave: 'SR', nombre: 'Sin región asignada', orden: 99, sinDato: true };
   }
 
@@ -14159,10 +14332,11 @@ function prospCalcular() {
   const hayBanda = usaCurva && !mesCerrado && cuotasAnio.length >= 2 && cuotaMin >= 0.10;
 
   /* --- Domicilio comercial de cada cliente --------------------------------
-     Desde julio de 2026 el ERP dejo de escribir la columna Region en una parte
-     grande de las lineas mayoristas. Sin corregirlo, un cuarto de la venta del
-     anio cae en un limbo y las regiones aparecen desplomandose contra 2025
-     cuando en realidad solo se perdio el dato de direccion.
+     La planilla nunca ha traido la region en mas de un tercio de las lineas.
+     Medido sobre las 186.279 filas del origen: 41.754 la traen, un 22,4%. Por
+     mes se mueve entre el 32% y el 45%, con julio de 2026 desplomado al 4% -eso
+     si fue una averia puntual, y no el estado normal-. Sin corregirlo, tres
+     cuartas partes de la venta caen en un limbo.
 
      Un cliente no se muda: se toma la region (y la comuna) desde la que mas ha
      facturado historicamente EN LAS LINEAS QUE SI TRAEN EL DATO, y con eso se
@@ -14688,7 +14862,7 @@ function prospPct(v, invertir) {
   const color = Math.abs(v) < 0.05 ? 'var(--ax-text-secondary)'
               : (bueno ? 'var(--ax-accent-emerald)' : prospTono('--prosp-var-cae'));
   const signo = v > 0 ? '+' : '';
-  return '<span style="color: ' + color + '; font-weight: 800;">' + signo + v.toFixed(1) + '%</span>';
+  return '<span style="color: ' + color + '; font-weight: 800;">' + signo + formatPct(v, 1) + '</span>';
 }
 
 /**
@@ -15093,7 +15267,7 @@ function prospPintarCartera(M) {
       '<td style="text-align: right;">' + prospPlata(C.ytdPrev) + '</td>' +
       '<td style="text-align: right;">' + prospPct(C.delta) + '</td>' +
       '<td style="text-align: right; font-weight: 700; color: ' + (C.margen >= 25 ? 'var(--ax-accent-emerald)' : 'var(--ax-accent-gold)') + ';">' +
-        C.margen.toFixed(1) + '%</td>' +
+        formatPct(C.margen, 1) + '</td>' +
       '<td style="text-align: left; max-width: 300px;">' + prospRecosHtml(C.recomendaciones) + '</td>' +
       '</tr>';
   }).join('') || prospCarteraVaciaHtml(M, R);
@@ -15260,7 +15434,7 @@ function prospPintarCinta(M) {
     const anchoPrev = Math.max(R.ytdPrev > 0 ? 1.5 : 0, (R.ytdPrev / tope) * 100);
     const color = prospColorVar(R.deltaYtd);
     const texto = R.deltaYtd === null ? 's/d'
-      : (R.deltaYtd > 0 ? '+' : '') + R.deltaYtd.toFixed(0) + '%';
+      : (R.deltaYtd > 0 ? '+' : '') + formatPct(R.deltaYtd, 0);
 
     return '<div class="prosp-cinta__fila' + (activa ? ' is-activa' : '') +
       '" data-region="' + escapeHtml(R.clave) + '" role="button" tabindex="0" ' +
@@ -15365,7 +15539,7 @@ function prospPintarEvolucion(M) {
               const prev = D.mesPrev[m];
               if (!(prev > 0)) return '';
               const v = ((act / prev) - 1) * 100;
-              return (v >= 0 ? '+' : '') + v.toFixed(1) + '% contra ' + M.anioPrev;
+              return (v >= 0 ? '+' : '') + formatPct(v, 1) + ' contra ' + M.anioPrev;
             }
           }
         }
