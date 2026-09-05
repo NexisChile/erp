@@ -13523,12 +13523,27 @@ let mpOcUltimaCarga = null;
    estan aqui por la documentacion, no por haberlos visto. */
 const MP_OC_ESTADOS_PENDIENTES = [3, 4, 5];
 
+/* Cancelada. Visto en la hoja: de 419 ordenes, el 9 aparece 5 veces y es el
+   unico codigo de cancelacion presente. Por codigo y no por texto, igual que
+   los pendientes. */
+const MP_OC_ESTADOS_CANCELADOS = [9];
+
+/* La pastilla de estado se lleva 171px de tabla por culpa de "Recepcion
+   Conforme", que es 18 caracteres para decir lo que "Conforme" ya dice en
+   esa columna. El texto entero se conserva en el title, asi que no se pierde
+   nada y la columna del nombre gana 67px. Por codigo y no por texto, como
+   todo lo demas en este modulo. */
+const MP_OC_ESTADO_CORTO = { 4: 'Enviada', 6: 'Aceptada', 12: 'Conforme', 9: 'Cancelada' };
+
 /* Los tres tipos que aparecen en las ordenes de Glomax. AG es Compra Agil, SE
    es Seleccion/trato directo y CM es Convenio Marco. Se muestran expandidos
    porque las siglas no se leen solas. */
 const MP_OC_TIPOS = {
   AG: 'Compra Ágil',
   SE: 'Trato directo',
+  /* La hoja escribe los dos: SE en la mayoria y TD en dos filas. Sin esta
+     linea, esas dos aparecian como un tipo aparte llamado "TD". */
+  TD: 'Trato directo',
   CM: 'Convenio Marco',
   LE: 'Licitación',
   LP: 'Licitación',
@@ -13816,10 +13831,12 @@ function mpOcRenderKpis() {
   };
 
   if (!mpOcRows.length) {
-    set('mpOcKpiTotal', '0', 'Sin datos cargados');
-    set('mpOcKpiMonto', '$0', 'Sin datos cargados');
-    set('mpOcKpiPendientes', '0', 'Sin datos cargados');
-    set('mpOcKpiUltima', '—', 'Sin datos cargados');
+    ['Total', 'Monto', 'Pendientes', 'Ultima', 'Ticket', 'Dias', 'Concentra',
+     'Canceladas'].forEach(function (k) {
+      set('mpOcKpi' + k, k === 'Monto' || k === 'Ticket' ? '$0'
+        : (k === 'Ultima' || k === 'Dias' || k === 'Concentra' ? '—' : '0'),
+        'Sin datos cargados');
+    });
     return;
   }
 
@@ -13847,6 +13864,65 @@ function mpOcRenderKpis() {
                : 'Ninguna esperando aceptación');
   set('mpOcKpiUltima', ultima ? mpOcFechaTexto(ultima) : '—',
     ultima ? 'Fecha de envío más reciente' : 'Sin fecha de envío anotada');
+
+  /* --- Cuanto vale una orden ------------------------------------------ */
+  set('mpOcKpiTicket', formatCLP(Math.round(neto / mpOcRows.length)),
+    'Neto medio de las ' + formatNum(mpOcRows.length) + ' órdenes');
+
+  /* --- Cuanto tarda el organismo en aceptar ---------------------------
+     Mediana y no media: una orden que tardo 129 dias -las hay- arrastraria
+     la media y dejaria de describir el caso normal. El p90 va en el pie
+     porque es el que dice si la cola larga es un caso raro o una costumbre.
+     Se descartan los negativos: una aceptacion anterior al envio es un error
+     de la hoja, no un plazo. */
+  const plazos = [];
+  mpOcRows.forEach(function (o) {
+    if (!o.fecha || !o.fechaAceptacion || isNaN(o.fechaAceptacion)) return;
+    const d = Math.round((o.fechaAceptacion - o.fecha) / 86400000);
+    if (d >= 0) plazos.push(d);
+  });
+  plazos.sort(function (a, b) { return a - b; });
+  if (plazos.length) {
+    const mediana = plazos[Math.floor(plazos.length / 2)];
+    const p90 = plazos[Math.min(plazos.length - 1, Math.floor(plazos.length * 0.9))];
+    set('mpOcKpiDias', formatNum(mediana) + (mediana === 1 ? ' día' : ' días'),
+      'Mediana · 9 de cada 10 en ' + formatNum(p90) +
+      (p90 === 1 ? ' día o menos' : ' días o menos'));
+  } else {
+    set('mpOcKpiDias', 's/d', 'Ninguna orden trae fecha de aceptación');
+  }
+
+  /* --- Cuanto pesa el cliente mas grande ------------------------------
+     Es una medida de riesgo, no un ranking: si un solo organismo concentra
+     una parte grande, perderlo duele. Por eso el valor es el porcentaje y
+     el nombre va debajo. */
+  const porOrg = {};
+  mpOcRows.forEach(function (o) {
+    if (!o.organismo) return;
+    porOrg[o.organismo] = (porOrg[o.organismo] || 0) + o.neto;
+  });
+  const mayor = Object.keys(porOrg).sort(function (a, b) {
+    return porOrg[b] - porOrg[a];
+  })[0];
+  if (mayor && neto > 0) {
+    set('mpOcKpiConcentra', formatPct((porOrg[mayor] / neto) * 100, 1),
+      mayor + ' · ' + formatCLP(porOrg[mayor]));
+  } else {
+    set('mpOcKpiConcentra', '—', 'Sin organismo identificado');
+  }
+
+  /* --- Lo que se cayo -------------------------------------------------
+     Por CodigoEstado y no por el texto, que la hoja escribe con tildes y
+     mayusculas cambiantes. */
+  let canceladas = 0, netoCancelado = 0;
+  mpOcRows.forEach(function (o) {
+    if (MP_OC_ESTADOS_CANCELADOS.indexOf(o.codEstado) === -1) return;
+    canceladas++;
+    netoCancelado += o.neto;
+  });
+  set('mpOcKpiCanceladas', formatNum(canceladas),
+    canceladas ? formatCLP(netoCancelado) + ' que no se facturaron'
+               : 'Ninguna orden cancelada');
 }
 
 function mpOcFechaTexto(f) {
@@ -13896,9 +13972,9 @@ function mpOcRenderTabla() {
   if (next) next.disabled = mpOcPagina >= paginas;
 
   cuerpo.innerHTML = pagina.map(function (o) {
-    const chip = o.pendiente
-      ? '<span class="mp-tag mp-tag--pendiente">' + escapeHtml(o.estado) + '</span>'
-      : '<span class="mp-tag">' + escapeHtml(o.estado) + '</span>';
+    const corto = MP_OC_ESTADO_CORTO[o.codEstado] || o.estado;
+    const chip = '<span class="mp-tag' + (o.pendiente ? ' mp-tag--pendiente' : '') +
+      '" title="' + escapeHtml(o.estado) + '">' + escapeHtml(corto) + '</span>';
 
     return '<tr>' +
       '<td class="mp-td-id"><span title="' + escapeHtml(o.id) + '">' + escapeHtml(o.id) + '</span></td>' +

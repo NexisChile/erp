@@ -13290,3 +13290,91 @@ table.mp-table tbody tr:last-child td, table.compras-table tbody tr:last-child t
   color: var(--ax-on-accent) !important;
 }
 
+/* ============================================================================
+   24. LA TABLA DE ORDENES DE COMPRA
+   ----------------------------------------------------------------------------
+   Medido en pantalla: 988px de tabla dentro de un contenedor de 870. 118px que
+   se iban por el scroll horizontal. La culpable es la columna del nombre, que
+   pedia 380px porque .mp-td-nombre lleva min-width: 260px y las otras seis van
+   en nowrap: con table-layout: auto el contenido manda, y el text-overflow que
+   ya estaba escrito no llegaba a actuar nunca.
+
+   Con table-layout: fixed cada columna recibe lo suyo y el nombre se queda con
+   el resto. Los anchos no son a ojo: se midio el texto mas largo de cada
+   columna con su fuente y su tamano reales.
+
+     N° OC     889473-1533-AG26     159px  -> 11,5rem
+     Tipo      Convenio Marco       125    ->  9rem
+     Enviada   04-09-2026           107    ->  7,75rem
+     Estado    Conforme             104    ->  7,5rem
+     Monto     $78.458.840          109    ->  8rem
+     Lineas                            53    ->  4rem
+
+   Y una segunda pasada, porque el dato cabia pero el TITULO no: "Fecha de
+   envio" pedia 120px contra los 84 que tenia, "Monto neto" 96 contra 91 y
+   "Lineas" 54 contra 49. En los tres el dato es mas estrecho que su titulo,
+   asi que se acorta el titulo donde se puede decir lo mismo -la columna es
+   la fecha de envio de la orden, y "Enviada" lo dice en la mitad de sitio-
+   y se ensanchan los otros dos, que son cinco pixeles cada uno.
+
+   Suman 47,75rem; el nombre se lleva lo que quede. Los numeros son el ancho
+   real que pide cada columna medido sobre las 50 filas de una pagina, no el
+   de un ejemplo: la primera pasada se hizo con un ejemplo por columna y se
+   quedo corta tres veces seguidas. Recortarlo no pierde nada:
+   el <span> ya lleva el texto entero en su title, y hace falta, porque el
+   nombre mas largo de la hoja tiene 209 caracteres.
+
+   Solo esta tabla. La de oportunidades comparte .mp-table pero tiene otras
+   columnas, y darle estos anchos seria adivinar.
+   ========================================================================== */
+
+table.mp-oc-tabla {
+  table-layout: fixed;
+  width: 100%;
+}
+
+table.mp-oc-tabla th:nth-child(1), table.mp-oc-tabla td:nth-child(1) { width: 11.5rem; }
+table.mp-oc-tabla th:nth-child(3), table.mp-oc-tabla td:nth-child(3) { width: 9rem; }
+/* 6,75 y no 6: la cabecera "Enviada" cabe en 6rem, pero la fecha va en
+   monoespaciada y "04-09-2026" pide 91px. Medido en la tabla ya pintada. */
+table.mp-oc-tabla th:nth-child(4), table.mp-oc-tabla td:nth-child(4) { width: 7.75rem; }
+table.mp-oc-tabla th:nth-child(5), table.mp-oc-tabla td:nth-child(5) { width: 7.5rem; }
+table.mp-oc-tabla th:nth-child(6), table.mp-oc-tabla td:nth-child(6) { width: 8rem; }
+table.mp-oc-tabla th:nth-child(7), table.mp-oc-tabla td:nth-child(7) { width: 4rem; }
+
+/* La columna del nombre pierde el min-width, que era justo lo que impedia que
+   la tabla cupiera. Se queda con el ancho sobrante. */
+table.mp-oc-tabla td.mp-td-nombre {
+  width: auto;
+  min-width: 0;
+  max-width: none;
+}
+
+/* Las dos lineas de la celda del nombre se recortan por separado: el nombre
+   de la orden y, debajo, el organismo con su comuna. */
+table.mp-oc-tabla .mp-nombre,
+table.mp-oc-tabla .mp-organismo {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+/* El resto de celdas tampoco puede empujar: con fixed el contenido que no cabe
+   se sale de la celda si no se le dice que se recorte. */
+table.mp-oc-tabla td { overflow: hidden; }
+table.mp-oc-tabla th { overflow: hidden; text-overflow: ellipsis; }
+
+/* La pastilla de estado se ajusta a su columna en vez de estirarla. */
+table.mp-oc-tabla td:nth-child(5) .mp-tag {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Ocho tarjetas en vez de cuatro: en pantalla ancha siguen entrando de cuatro
+   en cuatro y forman dos filas parejas. El minmax(0,1fr) ya estaba y es lo que
+   evita que una etiqueta larga estire su columna. */
+

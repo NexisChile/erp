@@ -34,7 +34,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <!-- Stylesheets & Libraries -->
-  <link rel="stylesheet" href="style.css?v=20260908_REGION_V132" />
+  <link rel="stylesheet" href="style.css?v=20260908_ORDENES_V136" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -2165,6 +2165,26 @@
               <span class="mp-kpi__value" id="mpOcKpiUltima">&mdash;</span>
               <span class="mp-kpi__sub" id="mpOcKpiUltimaSub">&mdash;</span>
             </div>
+            <div class="ax-card mp-kpi">
+              <span class="mp-kpi__label">Ticket promedio</span>
+              <span class="mp-kpi__value" id="mpOcKpiTicket">$0</span>
+              <span class="mp-kpi__sub" id="mpOcKpiTicketSub">&mdash;</span>
+            </div>
+            <div class="ax-card mp-kpi">
+              <span class="mp-kpi__label">D&iacute;as hasta la aceptaci&oacute;n</span>
+              <span class="mp-kpi__value" id="mpOcKpiDias">&mdash;</span>
+              <span class="mp-kpi__sub" id="mpOcKpiDiasSub">&mdash;</span>
+            </div>
+            <div class="ax-card mp-kpi">
+              <span class="mp-kpi__label">Mayor comprador</span>
+              <span class="mp-kpi__value" id="mpOcKpiConcentra">&mdash;</span>
+              <span class="mp-kpi__sub" id="mpOcKpiConcentraSub">&mdash;</span>
+            </div>
+            <div class="ax-card mp-kpi">
+              <span class="mp-kpi__label">Canceladas</span>
+              <span class="mp-kpi__value" id="mpOcKpiCanceladas">0</span>
+              <span class="mp-kpi__sub" id="mpOcKpiCanceladasSub">&mdash;</span>
+            </div>
           </div>
 
           <div id="mpOcEstado"></div>
@@ -2176,13 +2196,13 @@
               </div>
             </div>
             <div class="table-container">
-              <table class="data-table mp-table">
+              <table class="data-table mp-table mp-oc-tabla">
                 <thead>
                   <tr>
                     <th>N&deg; OC</th>
                     <th>Nombre / organismo</th>
                     <th>Tipo</th>
-                    <th>Fecha de envío</th>
+                    <th>Enviada</th>
                     <th>Estado</th>
                     <th class="num">Monto neto</th>
                     <th class="num">Líneas</th>
@@ -3232,7 +3252,7 @@
   </div>
 
   <!-- Scripts -->
-  <script src="config.js?v=20260908_REGION_V132"></script>
-  <script src="app.js?v=20260908_REGION_V132"></script>
+  <script src="config.js?v=20260908_ORDENES_V136"></script>
+  <script src="app.js?v=20260908_ORDENES_V136"></script>
 </body>
 </html>
