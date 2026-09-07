@@ -819,12 +819,31 @@ const FT_STORAGE_KEY = 'glomax_ft_specs_v1';
 // ==========================================================================
 // MÓDULO DE AUTENTICACIÓN Y CONTROL DE ACCESO (AuthManager)
 // ==========================================================================
+/* Horas que dura una sesion. loginTime se guardaba desde siempre y no lo leia
+   nadie: la sesion no caducaba nunca. Doce horas es una jornada. */
+const AUTH_HORAS_SESION = 12;
+
+/* La contrasena ya no viaja en claro dentro de este archivo, que GitHub Pages
+   sirve publico. Se guarda SHA-256 de 'correo:contrasena'.
+
+   CONVIENE SER EXACTO SOBRE QUE COMPRA ESTO: nada de seguridad. Un SHA-256 de
+   '123456' se revierte en un segundo con cualquier diccionario, y los datos se
+   bajan igual desde la URL que publica config.js sin pasar por esta pantalla.
+   Lo unico que compra es que las claves dejen de leerse en 'ver codigo fuente'.
+   La cerradura de verdad exige que Apps Script valide y que el endpoint pida
+   token; mientras no exista, esta pantalla no promete lo que no cumple. */
+async function authHash(email, pass) {
+  const bytes = new TextEncoder().encode(String(email).toLowerCase() + ':' + String(pass));
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 const AuthManager = {
   accounts: [
-    { email: 'ccoxhead@gmail.com', pass: '123456', canal: 'Público', name: 'C. Coxhead' },
-    { email: 'admin@glomax.cl', pass: 'admin123', canal: 'Todos', name: 'Administrador BI' },
-    { email: 'retail@glomax.cl', pass: '123456', canal: 'Retail', name: 'Ventas Retail' },
-    { email: 'mayorista@glomax.cl', pass: '123456', canal: 'Mayorista', name: 'Ventas Mayorista' }
+    { email: 'ccoxhead@gmail.com', hash: '074b2c7534a8146ef2ecba14cf4164e98966843774d683228f4af8b0335a5109', canal: 'Público', name: 'C. Coxhead' },
+    { email: 'admin@glomax.cl', hash: 'a47781332f2cfb6708b8d5912849489f261b92c5a0abc93c4b810017ccee9128', canal: 'Todos', name: 'Administrador BI' },
+    { email: 'retail@glomax.cl', hash: '02a057d961a6c369c5bccf2f99390b04df1291aa81e69fa27f1ae87ec355dd20', canal: 'Retail', name: 'Ventas Retail' },
+    { email: 'mayorista@glomax.cl', hash: '9e9f86fdb4df80e3c65817f2cb137c4100ec21580b41bb4e622beffad7540746', canal: 'Mayorista', name: 'Ventas Mayorista' }
   ],
   
   currentUser: null,
@@ -842,6 +861,21 @@ const AuthManager = {
     }
     const errBox = document.getElementById('loginErrorMsg');
     if (errBox) errBox.style.display = 'none';
+
+    /* Detras del velo quedaban 43 elementos enfocables alcanzables con Tab:
+       se tabulaba por todo el tablero sin haber entrado. inert los saca del
+       orden de tabulacion y del arbol de accesibilidad de una vez, que es mas
+       fiable que una trampa de foco escrita a mano. */
+    /* No hay un envoltorio unico de la aplicacion: el primer hijo de <body> es
+       el fondo de parallax. Se marcan todos los hermanos del modal. */
+    Array.from(document.body.children).forEach(el => {
+      if (el !== modal) el.inert = true;
+    });
+
+    /* El foco se quedaba en BODY: quien entra con teclado tenia que tabular a
+       ciegas hasta el primer campo. */
+    const email = document.getElementById('loginEmail');
+    if (email) setTimeout(() => { try { email.focus(); } catch (e) { /* oculto */ } }, 60);
   },
 
   closeLoginModal() {
@@ -850,6 +884,7 @@ const AuthManager = {
       modal.classList.add('hidden');
       modal.style.display = 'none';
     }
+    Array.from(document.body.children).forEach(el => { el.inert = false; });
   },
 
   checkSession() {
@@ -863,6 +898,22 @@ const AuthManager = {
 
     try {
       const session = JSON.parse(sessionStr);
+      /* Antes bastaba con que el JSON trajera un campo email. Ahora ademas
+         tiene que ser una cuenta conocida y no haber caducado; si no, se borra
+         y se vuelve a pedir. Sigue sin ser una cerradura -esto se escribe a
+         mano desde la consola- pero deja de aceptar cualquier cosa. */
+      const conocida = session && session.email &&
+        this.accounts.some(a => a.email.toLowerCase() === String(session.email).toLowerCase());
+      const horas = session && session.loginTime
+        ? (Date.now() - new Date(session.loginTime).getTime()) / 3600000
+        : Infinity;
+      if (!conocida || !(horas < AUTH_HORAS_SESION)) {
+        localStorage.removeItem('glomax_auth_session');
+        this.currentUser = null;
+        this.renderProfileBadge();
+        this.openLoginModal();
+        return false;
+      }
       if (session && session.email) {
         this.currentUser = session;
         this.closeLoginModal();
@@ -880,10 +931,11 @@ const AuthManager = {
     return false;
   },
 
-  login(email, pass, canal) {
+  /* Es async porque comparar la contrasena pasa por crypto.subtle. Ningun
+     sitio usaba el valor de retorno, asi que la firma no rompe a nadie. */
+  async login(email, pass) {
     let cleanEmail = (email || '').trim().toLowerCase();
     let cleanPass = (pass || '').trim();
-    let selectedCanal = (canal || '').trim();
 
     if (!cleanEmail) {
       const emailInput = document.getElementById('loginEmail');
@@ -893,23 +945,31 @@ const AuthManager = {
       const passInput = document.getElementById('loginPassword');
       cleanPass = (passInput && passInput.value ? passInput.value : '').trim();
     }
-    if (!selectedCanal) {
-      const canalInput = document.getElementById('loginCanal');
-      selectedCanal = (canalInput && canalInput.value ? canalInput.value : '').trim();
-    }
 
     const acct = this.accounts.find(a => a.email.toLowerCase() === cleanEmail);
-    if (!acct || acct.pass !== cleanPass) {
+    let entra = false;
+    if (acct) {
+      try {
+        entra = (await authHash(acct.email, cleanPass)) === acct.hash;
+      } catch (e) {
+        /* crypto.subtle solo existe en contexto seguro (https o localhost). */
+        this.showError('El navegador no puede comprobar la contraseña en esta dirección. Abre el tablero por https.');
+        return false;
+      }
+    }
+    if (!entra) {
       this.showError('Correo o contraseña incorrectos.');
+      const p = document.getElementById('loginPassword');
+      if (p) { p.value = ''; p.focus(); }
       return false;
     }
 
-    // Una cuenta atada a un canal no puede elegir otro; solo 'Todos' permite escoger.
-    if (acct.canal !== 'Todos' || !selectedCanal) selectedCanal = acct.canal;
-
+    /* El canal sale de la cuenta y de ningun otro sitio. Habia un desplegable
+       'Canal asignado' en la pantalla que para tres de las cuatro cuentas era
+       decorativo: se descartaba lo elegido. Se quito del formulario. */
     const session = {
       email: acct.email,
-      canal: selectedCanal,
+      canal: acct.canal,
       name: acct.name,
       loginTime: new Date().toISOString()
     };
@@ -919,13 +979,17 @@ const AuthManager = {
 
     this.closeLoginModal();
     this.renderProfileBadge();
-    this.applyUserChannelPermissions();
 
+    /* Este orden importa y estaba al reves: applyUserChannelPermissions ponia
+       el canal y populateFilterOptions lo borraba con su innerHTML= una linea
+       despues. Ahora el candado se aplica DENTRO de populateFilterOptions, asi
+       que tambien sobrevive a las recargas de datos. */
     if (typeof populateFilterOptions === 'function') populateFilterOptions();
+    else this.applyUserChannelPermissions();
     if (typeof applyFilters === 'function') applyFilters();
 
     if (typeof showToast === 'function') {
-      showToast(`Sesión iniciada: ${cleanEmail} (${selectedCanal})`);
+      showToast(`Sesión iniciada: ${acct.email} (${acct.canal})`);
     }
 
     return true;
@@ -962,7 +1026,7 @@ const AuthManager = {
     if (!this.currentUser) {
       if (badge) badge.style.display = 'none';
       if (headerBtn) headerBtn.style.display = 'flex';
-      if (sidebarLabel) sidebarLabel.textContent = 'Iniciar Sesión / Canal';
+      if (sidebarLabel) sidebarLabel.textContent = 'Iniciar sesión / canal';
       if (sidebarBadge) sidebarBadge.textContent = 'Entrar';
       return;
     }
@@ -976,33 +1040,55 @@ const AuthManager = {
     if (sidebarBadge) sidebarBadge.textContent = `${this.currentUser.canal}`;
   },
 
+  /* El canal de la cuenta se escribe a mano ('Mayorista') y la planilla lo
+     escribe a su manera ('MAYORISTAS'). Se comparan sin tildes, sin mayusculas
+     y sin la S final, que es lo que separaba a Publico de PUBLICO y a Mayorista
+     de MAYORISTAS. La funcion normalizeChannelStr que invocaba la version
+     anterior no existe en ningun sitio del archivo: la rama estaba muerta. */
+  normalizarCanal(v) { return canalNormalizar(v); },
+
   applyUserChannelPermissions() {
-    if (!this.currentUser) return;
-
+    /* Los modulos de los otros canales se esconden aqui: si la cuenta no
+       puede ver Marketplace, su entrada en la barra no deberia estar. */
+    if (typeof navPermisoDeCanal === 'function') navPermisoDeCanal();
     const select = document.getElementById('fltCanal');
-    const isRestricted = this.currentUser.canal && this.currentUser.canal.toLowerCase() !== 'todos';
+    if (!select) return;
 
-    if (select) {
-      if (isRestricted) {
-        let matchOpt = Array.from(select.options).find(opt => typeof normalizeChannelStr === 'function' ? normalizeChannelStr(opt.value) === normalizeChannelStr(this.currentUser.canal) : opt.value.toLowerCase() === this.currentUser.canal.toLowerCase());
-        if (matchOpt) {
-          select.value = matchOpt.value;
-        } else {
-          const newOpt = document.createElement('option');
-          newOpt.value = this.currentUser.canal;
-          newOpt.textContent = this.currentUser.canal;
-          select.appendChild(newOpt);
-          select.value = this.currentUser.canal;
-        }
-        select.disabled = true;
-        select.classList.add('locked-channel');
-        select.title = `Acceso restringido únicamente al canal ${this.currentUser.canal}`;
-      } else {
-        select.disabled = false;
-        select.classList.remove('locked-channel');
-        select.title = '';
-      }
+    const soltar = (motivo) => {
+      select.disabled = false;
+      select.classList.remove('locked-channel');
+      select.title = motivo || '';
+    };
+
+    if (!this.currentUser) return soltar();
+
+    const canal = this.currentUser.canal || '';
+    if (!canal || canal.toLowerCase() === 'todos') return soltar();
+
+    const buscado = this.normalizarCanal(canal);
+    const opt = Array.from(select.options)
+      .find(o => o.value && this.normalizarCanal(o.value) === buscado);
+
+    if (!opt) {
+      /* Antes se inventaba una opcion con el nombre de la cuenta -que no casa
+         con ninguna fila- y populateFilterOptions la borraba acto seguido: el
+         filtro acababa deshabilitado, pintado de bloqueado y en 'Todas'. Es
+         decir, ensenaba la facturacion entera diciendo que la restringia.
+         Un candado que no cierra no se pinta cerrado. */
+      console.warn('[Auth] El canal "' + canal + '" de ' + this.currentUser.email +
+        ' no existe en la planilla. Canales reales: ' +
+        Array.from(select.options).filter(o => o.value).map(o => o.value).join(', '));
+      soltar('El canal "' + canal + '" de esta cuenta no existe en la planilla, ' +
+        'así que no se puede restringir la vista. Avisa a quien administra el tablero.');
+      select.classList.add('canal-sin-resolver');
+      return;
     }
+
+    select.classList.remove('canal-sin-resolver');
+    select.value = opt.value;
+    select.disabled = true;
+    select.classList.add('locked-channel');
+    select.title = 'Esta cuenta solo ve el canal ' + opt.value;
   },
 
   bindEvents() {
@@ -1010,22 +1096,38 @@ const AuthManager = {
     if (form) {
       form.addEventListener('submit', (e) => {
         e.preventDefault();
-        const email = document.getElementById('loginEmail')?.value;
-        const pass = document.getElementById('loginPassword')?.value;
-        const canal = document.getElementById('loginCanal')?.value;
-        this.login(email, pass, canal);
+        this.login(document.getElementById('loginEmail')?.value,
+                   document.getElementById('loginPassword')?.value);
       });
     }
 
+    /* El ojo cambiaba el tipo del campo y no decia nada: para un lector de
+       pantalla era un boton sin nombre y sin estado. */
     const togglePw = document.getElementById('loginTogglePw');
     if (togglePw) {
       togglePw.addEventListener('click', () => {
         const passInput = document.getElementById('loginPassword');
-        if (passInput) {
-          const isPw = passInput.type === 'password';
-          passInput.type = isPw ? 'text' : 'password';
-        }
+        if (!passInput) return;
+        const oculta = passInput.type === 'password';
+        passInput.type = oculta ? 'text' : 'password';
+        togglePw.setAttribute('aria-pressed', oculta ? 'true' : 'false');
+        togglePw.setAttribute('aria-label', oculta ? 'Ocultar la contraseña' : 'Mostrar la contraseña');
+        passInput.focus();
       });
+    }
+
+    /* Bloq May encendido es la causa mas comun de 'contraseña incorrecta' y el
+       campo la esconde, asi que no hay forma de verlo. */
+    const passInput = document.getElementById('loginPassword');
+    const avisoMay = document.getElementById('loginCapsLock');
+    if (passInput && avisoMay) {
+      const mirar = (e) => {
+        if (typeof e.getModifierState !== 'function') return;
+        avisoMay.hidden = !e.getModifierState('CapsLock');
+      };
+      passInput.addEventListener('keyup', mirar);
+      passInput.addEventListener('keydown', mirar);
+      passInput.addEventListener('blur', () => { avisoMay.hidden = true; });
     }
 
     const logoutBtn = document.getElementById('btnLogoutBtn');
@@ -1035,23 +1137,20 @@ const AuthManager = {
       });
     }
 
-    document.querySelectorAll('.quick-pill').forEach(pill => {
-      pill.addEventListener('click', () => {
-        const email = pill.dataset.email;
-        const pass = pill.dataset.pass;
-        const canal = pill.dataset.canal;
-        
-        const emailIn = document.getElementById('loginEmail');
-        const passIn = document.getElementById('loginPassword');
-        const canalIn = document.getElementById('loginCanal');
-        
-        if (emailIn) emailIn.value = email;
-        if (passIn) passIn.value = pass;
-        if (canalIn && canal) canalIn.value = canal;
-
-        this.login(email, pass, canal);
-      });
+    /* Escape cierra el acceso solo si ya hay sesion, es decir si lo abriste tu
+       desde el menu. Sin sesion no hay nada detras que mirar y cerrarlo dejaria
+       el tablero sin forma de volver a pedir la entrada. */
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      const modal = document.getElementById('loginModal');
+      if (!modal || modal.classList.contains('hidden')) return;
+      if (!this.currentUser) return;
+      this.closeLoginModal();
     });
+
+    /* Aqui se enganchaban las pastillas de acceso rapido, que imprimian en
+       pantalla el correo y llevaban la contrasena en un data-pass del HTML.
+       Se quitaron de index.html junto con el desplegable de canal. */
   },
 
   showError(msg) {
@@ -1059,6 +1158,7 @@ const AuthManager = {
     if (errBox) {
       errBox.textContent = msg;
       errBox.style.display = 'block';
+      /* role="alert" esta en el HTML; reponer el texto basta para que se anuncie. */
     }
   }
 };
@@ -1115,8 +1215,6 @@ const VISTAS_RENDER = {
   tabla:        ['renderTable'],
   compras:      ['renderComprasView', 'renderComprasBIAdvisor'],
   productos:    ['renderProductosView'],
-  bistudio:     ['renderExecutiveInsights', 'renderPareto8020', 'renderRFMGrid',
-                 'updateWhatIfSimulation', 'renderMonthlyTargetProgress'],
   mixsugerido:  ['renderMixSugeridoModule'],
   fichatecnica: ['renderFichaTecnicaView'],
   /* setupProspeccionListeners va aqui y no en switchView porque la vista tambien
@@ -1161,17 +1259,189 @@ function mpMontarFiltros(vista) {
   ancla.appendChild(barra);
 }
 
-/** Abre el submenu de Mercado Publico y muda la barra si la vista es suya. */
-function mpSincronizarNav(vista) {
-  const dentro = MP_VISTAS.indexOf(vista) !== -1;
-  const padre = document.getElementById('mpNavToggle');
-  if (padre) padre.classList.toggle('is-abierto', dentro);
-  if (!dentro) return;
+/* Aqui vivia el sincronizador del unico submenu que habia.
+   navSincronizarGrupos hace lo mismo para los seis y llama a mpMontarFiltros
+   directamente. */
 
-  const grupo = document.getElementById('mpNavGroup');
-  if (grupo) grupo.classList.add('expanded');
-  if (padre) padre.setAttribute('aria-expanded', 'true');
+/* ---------------------------------------------------------------------------
+   LA BARRA: ACORDEONES Y MODULOS DE CANAL
+
+   Los canales de las cuentas se escriben a mano ("Mayorista") y la planilla los
+   escribe a su manera ("MAYORISTAS"). Se comparan sin tildes, sin mayusculas y
+   sin la S final. Esta funcion es la unica que sabe hacerlo: AuthManager y la
+   barra la comparten para que no se separen nunca.
+   ------------------------------------------------------------------------ */
+function canalNormalizar(v) {
+  return String(v || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim()
+    .replace(/S$/, '');
+}
+
+function canalIgual(a, b) {
+  return !!a && !!b && canalNormalizar(a) === canalNormalizar(b);
+}
+
+/* Los canales que tienen modulo propio. El valor es LITERAL de la planilla; si
+   alli cambia el nombre, hay que cambiarlo en index.html y aqui. La
+   normalizacion tolera variantes, no nombres nuevos. */
+const NAV_CANALES = ['MARKETPLACE', 'MAYORISTAS', 'ECOMMERCE', 'TIENDA FISICA'];
+
+function navCanalActual() {
+  const sel = document.getElementById('fltCanal');
+  return sel ? sel.value : '';
+}
+
+/** Un boton del menu esta activo cuando su vista Y su canal coinciden. */
+function navBotonActivo(btn, vista) {
+  if (btn.dataset.view !== vista) return false;
+  const puesto = navCanalActual();
+  if (btn.dataset.canal) return canalIgual(btn.dataset.canal, puesto);
+  /* "Tablero principal" comparte vista con los cuatro Dashboard de canal. Si
+     hay puesto un canal que tiene modulo propio, el activo es aquel y no este;
+     los demas botones -Tabla, Cotizaciones- no miran el canal. */
+  if (vista === 'tablero') {
+    return !NAV_CANALES.some(c => canalIgual(c, puesto));
+  }
+  return true;
+}
+
+/** Repinta la marca de activo. Se llama al cambiar de vista Y de canal. */
+function navMarcarActivo(vista) {
+  const v = vista || vistaActiva();
+  document.querySelectorAll('.ax-nav__item[data-view]').forEach(function (b) {
+    b.classList.toggle('active', navBotonActivo(b, v));
+  });
+}
+
+/** Pone el canal en el filtro global. No lo pone si la sesion lo tiene atado. */
+function navAplicarCanal(canal) {
+  const sel = document.getElementById('fltCanal');
+  if (!sel || !canal) return;
+  /* El filtro va deshabilitado cuando la cuenta esta atada a un canal. Poner
+     .value a mano funcionaria igual y se saltaria la restriccion. */
+  if (sel.disabled) return;
+  const opt = Array.from(sel.options).find(o => o.value && canalIgual(o.value, canal));
+  if (!opt) {
+    /* Sin opcion no se limpia el filtro: dejarlo en "Todas" seria ensenar la
+       venta entera bajo el rotulo de un canal. */
+    console.warn('[Nav] El canal "' + canal + '" no existe en la planilla.');
+    if (typeof showToast === 'function') {
+      showToast('El canal ' + canal + ' no aparece en los datos cargados');
+    }
+    return;
+  }
+  if (sel.value === opt.value) return;
+  sel.value = opt.value;
+  if (typeof applyFilters === 'function') applyFilters();
+}
+
+/** Limpia el canal al volver a un modulo que abarca todos.
+
+    Solo si el canal puesto tiene modulo propio: eso significa que vienes de
+    uno de ellos. Un canal elegido a mano en la barra de filtros -PRIVADOS,
+    PUBLICO- no se toca, porque no venias de ningun modulo y borrarlo seria
+    una sorpresa. */
+function navLimpiarCanal() {
+  const sel = document.getElementById('fltCanal');
+  if (!sel || sel.disabled || !sel.value) return;
+  if (!NAV_CANALES.some(c => canalIgual(c, sel.value))) return;
+  sel.value = '';
+  if (typeof applyFilters === 'function') applyFilters();
+}
+
+/** Abre el grupo del boton activo. Los demas se quedan como los dejaste: seis
+    acordeones que se cierran solos al navegar dan mas trabajo del que ahorran. */
+function navSincronizarGrupos(vista) {
+  const v = vista || vistaActiva();
+  document.querySelectorAll('.ax-nav__group--vistas').forEach(function (g) {
+    const dentro = Array.from(g.querySelectorAll('.ax-nav__item[data-view]'))
+      .some(b => navBotonActivo(b, v));
+    const padre = g.querySelector('.ax-nav__item--parent');
+    if (dentro) {
+      g.classList.add('expanded');
+      if (padre) padre.setAttribute('aria-expanded', 'true');
+    }
+    if (padre) padre.classList.toggle('is-abierto', dentro);
+  });
+  /* Mercado Publico ademas muda su barra de filtros a la vista visible. */
   mpMontarFiltros(vista);
+}
+
+/* Un solo enganche para los seis acordeones. Antes estaba cableado a mano para
+   el unico que habia. Abrir tambien lleva al primer hijo: quien hace un solo
+   clic sobre el nombre del modulo espera llegar a alguna parte, no ver una
+   lista. */
+function navGruposConectar() {
+  document.querySelectorAll('.ax-nav__group--vistas').forEach(function (g) {
+    const padre = g.querySelector('.ax-nav__item--parent');
+    if (!padre || padre.dataset.navConectado) return;
+    padre.dataset.navConectado = '1';
+    padre.addEventListener('click', function () {
+      const abrir = !g.classList.contains('expanded');
+      g.classList.toggle('expanded', abrir);
+      padre.setAttribute('aria-expanded', abrir ? 'true' : 'false');
+      if (!abrir) return;
+      const primero = g.querySelector('.ax-nav__item[data-view]');
+      if (primero) primero.click();
+    });
+  });
+}
+
+/* Una cuenta atada a un canal no ve los modulos de los otros tres. Se oculta
+   con una clase y no con [hidden] a proposito: el filtro del menu maneja
+   [hidden] para esconder lo que no casa, y al limpiarse los volveria a
+   ensenar. Mercado Publico no entra: lee su propia pestana, no el canal
+   PUBLICO de la planilla de ventas. */
+function navPermisoDeCanal() {
+  const grupos = document.querySelectorAll('.ax-nav__group--canal');
+  if (!grupos.length) return;
+  const u = (typeof AuthManager !== 'undefined') ? AuthManager.currentUser : null;
+  const suyo = u && u.canal && u.canal.toLowerCase() !== 'todos' ? u.canal : '';
+  /* Si el canal de la cuenta no corresponde a ningun modulo -pasa hoy con
+     "Retail"- no se esconde nada: dejar la barra en blanco seria peor que
+     ensenar de mas, y el filtro ya avisa de que esa cuenta no restringe. */
+  const reconocido = suyo && NAV_CANALES.some(c => canalIgual(c, suyo));
+  grupos.forEach(function (g) {
+    const esSuyo = !reconocido || canalIgual(g.dataset.canalModulo, suyo);
+    g.classList.toggle('nav-canal-ajeno', !esSuyo);
+  });
+}
+
+/* Un unico listener para toda la barra. Delegado a proposito: se registra al
+   cargar el script, sin depender de que corra ninguna funcion de arranque, y
+   alcanza tambien a lo que se pinte despues.
+
+   Antes habia dos enganches por boton, uno en DOMContentLoaded y otro en
+   setupAllButtonListeners. Los dos disparaban, y solo el segundo miraba
+   data-canal: en la ventana en que aun no estaba puesto, un clic en
+   "Marketplace > Dashboard" navegaba sin aplicar el canal y ensenaba la venta
+   entera bajo el rotulo de un canal. */
+function navBarraConectar() {
+  const nav = document.getElementById('sidebarNav');
+  if (!nav || nav.dataset.navConectado) return;
+  nav.dataset.navConectado = '1';
+
+  nav.addEventListener('click', function (e) {
+    const item = e.target.closest('.ax-nav__item[data-view]');
+    if (!item || !nav.contains(item)) return;
+    e.preventDefault();
+    /* El canal va PRIMERO: applyFilters repinta, y switchView despues solo
+       tiene que ensenar lo que ya esta calculado. */
+    const canal = item.getAttribute('data-canal');
+    if (canal) navAplicarCanal(canal);
+    else if (item.hasAttribute('data-canal-limpiar')) navLimpiarCanal();
+    const vista = item.getAttribute('data-view');
+    if (vista && typeof switchView === 'function') switchView(vista);
+  });
+
+  navGruposConectar();
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', navBarraConectar);
+} else {
+  navBarraConectar();
 }
 
 /* ---------------------------------------------------------------------------
@@ -1307,10 +1577,10 @@ function switchView(viewName) {
   if (!viewName) return;
 
   // 1. Activación visual instantánea (60 FPS sin bloqueo de hilo)
-  const navBtns = document.querySelectorAll('.ax-nav__item[data-view]');
-  navBtns.forEach(b => {
-    b.classList.toggle('active', b.dataset.view === viewName);
-  });
+  /* La marca ya no puede ser `b.dataset.view === viewName`: los cuatro
+     Dashboard de canal comparten la vista 'tablero' con el modulo principal
+     y se encenderian los cinco. navBotonActivo mira tambien el canal. */
+  navMarcarActivo(viewName);
 
   const views = document.querySelectorAll('.view');
   views.forEach(v => {
@@ -1320,14 +1590,14 @@ function switchView(viewName) {
   // Control inmediato de la barra de filtros global
   const globalFiltersBar = document.getElementById('filtersBar');
   if (globalFiltersBar) {
-    globalFiltersBar.style.display = (viewName === 'tablero' || viewName === 'tabla' || viewName === 'bistudio') ? '' : 'none';
+    globalFiltersBar.style.display = (viewName === 'tablero' || viewName === 'tabla') ? '' : 'none';
   }
 
-  /* El submenu de Mercado Publico se abre solo al entrar a cualquiera de sus
-     tres vistas, y la barra de filtros compartida se muda a la que quedo
-     visible. Va en el tramo sincrono para que el traslado ocurra antes del
-     primer pintado y no se vea saltar la barra. */
-  mpSincronizarNav(viewName);
+  /* El grupo del modulo al que entras se abre solo, y la barra de filtros de
+     Mercado Publico se muda a la vista que quedo visible. Va en el tramo
+     sincrono para que el traslado ocurra antes del primer pintado y no se vea
+     saltar la barra. */
+  navSincronizarGrupos(viewName);
 
   // Cerrar navegación móvil inmediatamente
   closeMobileSidebar();
@@ -1567,12 +1837,9 @@ function toggleTheme() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('.ax-nav__item[data-view]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const viewName = btn.dataset.view;
-      if (viewName) switchView(viewName);
-    });
-  });
+  /* Los clics de la barra ya no se enganchan aqui: van por delegacion sobre
+     #sidebarNav, junto a navGruposConectar. Este bucle no miraba data-canal y
+     ademas duplicaba el onclick de setupAllButtonListeners. */
 
   // El tema ya se aplico en el <head> para evitar el parpadeo; aqui solo se
   // sincroniza el icono, que necesita que el boton exista en el DOM.
@@ -1650,30 +1917,6 @@ function togglePresentationMode() {
     showToast(isPresentationMode ? 'Modo Presentación activado' : 'Modo Presentación desactivado');
   }
 }
-
-function resetBIAdvisorSim() {
-  const pSlider = document.getElementById('simPriceRange') || document.getElementById('simPriceSlider');
-  const vSlider = document.getElementById('simVolRange') || document.getElementById('simVolSlider');
-  const cSlider = document.getElementById('simCostRange') || document.getElementById('simCostSlider');
-  
-  if (pSlider) pSlider.value = 0;
-  if (vSlider) vSlider.value = 0;
-  if (cSlider) cSlider.value = 0;
-  
-  const pVal = document.getElementById('simPriceVal');
-  const vVal = document.getElementById('simVolVal');
-  const cVal = document.getElementById('simCostVal');
-  if (pVal) pVal.textContent = '0%';
-  if (vVal) vVal.textContent = '0%';
-  if (cVal) cVal.textContent = '0%';
-
-  if (typeof updateWhatIfSimulation === 'function') {
-    updateWhatIfSimulation();
-  }
-  if (typeof showToast === 'function') showToast('Simulador BI restablecido');
-}
-
-
 
 // ==========================================================================
 // MÓDULO DE PRODUCTOS 360 & PROYECCIÓN DE STOCK
@@ -2786,18 +3029,6 @@ function setupAllButtonListeners() {
   const presBtn = document.getElementById('presentationModeBtn');
   if (presBtn) presBtn.onclick = () => togglePresentationMode();
 
-  const simResetBtn = document.getElementById('resetSimBtn');
-  if (simResetBtn) simResetBtn.onclick = () => resetBIAdvisorSim();
-
-  ['simPriceRange', 'simCostRange', 'simVolRange'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.oninput = () => {
-        if (typeof updateWhatIfSimulation === 'function') updateWhatIfSimulation();
-      };
-    }
-  });
-
   const mixHeaderBtn = document.getElementById('headerMixBtn');
   if (mixHeaderBtn) mixHeaderBtn.onclick = () => switchView('mixsugerido');
 
@@ -2894,14 +3125,7 @@ function setupAllButtonListeners() {
     };
   });
 
-  // 7. Navegación Sidebar (.ax-nav__item con data-view)
-  document.querySelectorAll('.ax-nav__item[data-view]').forEach(item => {
-    item.onclick = (e) => {
-      e.preventDefault();
-      const view = item.getAttribute('data-view');
-      if (view && typeof switchView === 'function') switchView(view);
-    };
-  });
+  // 7. La navegacion de la barra va por delegacion; ver navBarraConectar().
 
   // 8. Barra de Búsqueda Rápida en Cabecera (Header Search Pill)
   const headerSearch = document.getElementById('headerSearchBtn');
@@ -2967,39 +3191,12 @@ function setupAllButtonListeners() {
   const sideAuth = document.getElementById('sidebarAuthBtn');
   if (sideAuth) sideAuth.onclick = () => { if (typeof AuthManager !== 'undefined') AuthManager.openLoginModal(); };
 
-  const loginSub = document.getElementById('btnLoginSubmit');
-  if (loginSub) {
-    loginSub.onclick = (e) => {
-      e.preventDefault();
-      if (typeof AuthManager !== 'undefined') {
-        const email = document.getElementById('loginEmail')?.value;
-        const pass = document.getElementById('loginPassword')?.value;
-        const canal = document.getElementById('loginCanal')?.value;
-        AuthManager.login(email, pass, canal);
-      }
-    };
-  }
-
-  document.querySelectorAll('.quick-pill').forEach(pill => {
-    pill.onclick = (e) => {
-      e.preventDefault();
-      const email = pill.dataset.email || 'admin@glomax.cl';
-      const pass = pill.dataset.pass || 'admin123';
-      const canal = pill.dataset.canal || 'Todos';
-      
-      const emailIn = document.getElementById('loginEmail');
-      const passIn = document.getElementById('loginPassword');
-      const canalIn = document.getElementById('loginCanal');
-      
-      if (emailIn) emailIn.value = email;
-      if (passIn) passIn.value = pass;
-      if (canalIn) canalIn.value = canal;
-
-      if (typeof AuthManager !== 'undefined') {
-        AuthManager.login(email, pass, canal);
-      }
-    };
-  });
+  /* Aqui habia un segundo enganche del acceso: un onclick en el boton de
+     entrar y otro en cada pastilla de acceso rapido, encima de los que ya pone
+     AuthManager.bindEvents(). onclick no reemplaza a un addEventListener, asi
+     que un clic en una pastilla llamaba a login() DOS veces -medido- y sacaba
+     dos avisos. El boton es type="submit" dentro del formulario, que
+     bindEvents() ya escucha; no necesita enganche propio. */
 }
 
 /* Valor del filtro para "las que no traen región". Empieza por parentesis
@@ -3042,6 +3239,13 @@ function populateFilterOptions() {
     if (opts.includes(current)) select.value = current;
   });
 
+  /* El candado de canal va DESPUES de repintar las opciones, no antes: este
+     innerHTML= era justo lo que lo borraba cuando login() lo aplicaba primero.
+     Puesto aqui, tambien sobrevive a las recargas de datos de cada 120 s. */
+  if (typeof AuthManager !== 'undefined' && AuthManager.currentUser) {
+    AuthManager.applyUserChannelPermissions();
+  }
+
   renderCanalSubmenu();
   setupDatePresetListeners();
 }
@@ -3082,20 +3286,8 @@ if (canalToggle) {
   });
 }
 
-/* Mercado Publico: el padre pliega y despliega sus tres vistas. Si estaba
-   cerrado tambien lleva al Dashboard, porque el que hace un solo clic sobre el
-   nombre del modulo espera llegar a alguna parte, no solo ver una lista. */
-const mpNavToggle = document.getElementById('mpNavToggle');
-if (mpNavToggle) {
-  mpNavToggle.addEventListener('click', () => {
-    const grupo = document.getElementById('mpNavGroup');
-    if (!grupo) return;
-    const abrir = !grupo.classList.contains('expanded');
-    grupo.classList.toggle('expanded', abrir);
-    mpNavToggle.setAttribute('aria-expanded', abrir ? 'true' : 'false');
-    if (abrir && typeof switchView === 'function') switchView('mercadopublico');
-  });
-}
+/* El acordeon de Mercado Publico estaba cableado a mano cuando era el unico.
+   Ahora hay seis grupos y los conecta navGruposConectar() por clase. */
 
 // ---------- Date Presets Handlers (Hoy, 7 Días, Este Mes, Este Año, Todo) ----------
 function setupDatePresetListeners() {
@@ -3273,6 +3465,12 @@ function applyFilters() {
 
   currentPage = 1;
   invalidateViewCache();
+  /* Cambiar el canal cambia que modulo esta activo: el Dashboard de
+     Marketplace y el Tablero principal son la misma vista con distinto
+     filtro. Sin esto, elegir un canal desde la barra de filtros dejaba la
+     marca del menu donde estaba. */
+  if (typeof navMarcarActivo === 'function') navMarcarActivo();
+  if (typeof navSincronizarGrupos === 'function') navSincronizarGrupos();
   renderAll();
 }
 
@@ -5295,212 +5493,6 @@ function refrescarModuloActivo() {
 
 
 
-
-function renderExecutiveInsights() {
-  const container = document.getElementById('biBriefingList');
-  if (!container || !filtered.length) return;
-
-  const totalRevenue = filtered.reduce((a, r) => a + (Number(r['NETO']) || 0), 0);
-  const totalProfit = filtered.reduce((a, r) => a + (Number(r['($) UTILIDAD']) || 0), 0);
-  const avgMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
-
-  // 1. Canal Dominante
-  const canalMap = {};
-  filtered.forEach(r => {
-    const c = r['CANAL FINAL'] || 'Sin Canal';
-    canalMap[c] = (canalMap[c] || 0) + (Number(r['NETO']) || 0);
-  });
-  const topCanalEntry = Object.entries(canalMap).sort((a, b) => b[1] - a[1])[0];
-  const canalPct = topCanalEntry && totalRevenue > 0 ? ((topCanalEntry[1] / totalRevenue) * 100).toFixed(1) : 0;
-
-  // 2. Cliente Top
-  const clientMap = {};
-  filtered.forEach(r => {
-    const cl = r['CLIENTE'] || 'Cliente N/A';
-    clientMap[cl] = (clientMap[cl] || 0) + (Number(r['NETO']) || 0);
-  });
-  const topClientEntry = Object.entries(clientMap).sort((a, b) => b[1] - a[1])[0];
-
-  /* 3. Categoria de mayor utilidad. Antes agrupaba por Familia, que es el
-     grano ancho -38 valores como MOVILIDAD o DORMITORIO-; Categoria son 108
-     y es el nivel al que se decide que reponer, el mismo que ya usa la
-     tarjeta Top Categorias del tablero. */
-  const catProfitMap = {};
-  filtered.forEach(r => {
-    /* normalizeRows escribe GENERAL cuando la celda viene vacia, y GENERAL no
-       existe como categoria de verdad en la planilla. */
-    const c = r['CATEGORIA'] || 'GENERAL';
-    const clave = (c === 'GENERAL') ? 'Sin categoría' : c;
-    catProfitMap[clave] = (catProfitMap[clave] || 0) + (Number(r['($) UTILIDAD']) || 0);
-  });
-  const topCatProfitEntry = Object.entries(catProfitMap).sort((a, b) => b[1] - a[1])[0];
-
-  const itemsHTML = [
-    `<div class="bi-briefing-item">
-      <span></span>
-      <div><strong>Canal líder:</strong> El canal <strong>${topCanalEntry ? topCanalEntry[0] : 'N/A'}</strong> concentra el <strong>${canalPct}%</strong> de las ventas totales (${formatCLP(topCanalEntry ? topCanalEntry[1] : 0)}).</div>
-    </div>`,
-    `<div class="bi-briefing-item">
-      <span></span>
-      <div><strong>Cliente principal:</strong> <strong>${topClientEntry ? topClientEntry[0] : 'N/A'}</strong> genera ${formatCLP(topClientEntry ? topClientEntry[1] : 0)} en facturación neta.</div>
-    </div>`,
-    `<div class="bi-briefing-item">
-      <span></span>
-      <div><strong>Margen bruto global:</strong> Operando con un margen promedio del <strong>${formatPct(avgMargin, 1)}</strong> (${formatCLP(totalProfit)} utilidad total).</div>
-    </div>`,
-    `<div class="bi-briefing-item">
-      <span></span>
-      <div><strong>Categoría de mayor aporte:</strong> La categoría <strong>${topCatProfitEntry ? topCatProfitEntry[0] : 'N/A'}</strong> genera la mayor utilidad bruta acumulada (${formatCLP(topCatProfitEntry ? topCatProfitEntry[1] : 0)}).</div>
-    </div>`
-  ];
-
-  container.innerHTML = itemsHTML.join('');
-}
-
-function renderPareto8020() {
-  const summaryBox = document.getElementById('paretoSummaryBox');
-  const listEl = document.getElementById('paretoTopClientsList');
-  if (!summaryBox || !listEl || !filtered.length) return;
-
-  const clientTotals = {};
-  filtered.forEach(r => {
-    const cl = r['CLIENTE'] || 'Desconocido';
-    clientTotals[cl] = (clientTotals[cl] || 0) + (Number(r['NETO']) || 0);
-  });
-
-  const sortedClients = Object.entries(clientTotals).sort((a, b) => b[1] - a[1]);
-  const totalRev = sortedClients.reduce((sum, c) => sum + c[1], 0);
-
-  if (totalRev === 0) return;
-
-  let cumulative = 0;
-  let clients80Count = 0;
-  let revenue80 = 0;
-  const paretoClients = [];
-
-  sortedClients.forEach(([client, rev]) => {
-    const prevCumulative = cumulative;
-    cumulative += rev;
-    if (clients80Count === 0 || prevCumulative / totalRev < 0.8) {
-      clients80Count++;
-      revenue80 = cumulative;
-      paretoClients.push({ client, rev, pct: ((rev / totalRev) * 100).toFixed(1) });
-    }
-  });
-
-  const totalClientsCount = sortedClients.length;
-  const pctClients80 = ((clients80Count / (totalClientsCount || 1)) * 100).toFixed(1);
-  // Porcentaje e importe reales del corte: el bucle se detiene al superar el 80%,
-  // así que el grupo suele concentrar algo más que ese 80% nominal.
-  const pctRevenueReal = ((revenue80 / totalRev) * 100).toFixed(1);
-
-  summaryBox.innerHTML = `
-    El <strong>${pctClients80}% de los clientes</strong> (${clients80Count} de ${totalClientsCount}) genera el <strong>${pctRevenueReal}% de los ingresos totales</strong> (${formatCLP(revenue80)}).
-  `;
-
-  listEl.innerHTML = paretoClients.slice(0, 10).map(c => `
-    <div class="pareto-item">
-      <span><strong>${escapeHtml(c.client)}</strong></span>
-      <span class="sim-val">${formatCLP(c.rev)} (${c.pct}%)</span>
-    </div>
-  `).join('');
-}
-
-function renderRFMGrid() {
-  const container = document.getElementById('rfmGrid');
-  if (!container || !filtered.length) return;
-
-  // Se mide la recencia contra la fecha más nueva del dataset, no contra el reloj real:
-  // si la planilla está desactualizada, todos los clientes caerían en "En Riesgo".
-  const now = getDatasetReferenceDate();
-  const clientMap = {};
-
-  filtered.forEach(r => {
-    const cl = r['CLIENTE'] || 'N/A';
-    const d = parseRowDate(r['FECHA']);
-    const neto = Number(r['NETO']) || 0;
-
-    if (!clientMap[cl]) {
-      clientMap[cl] = { lastDate: d, count: 0, totalSpend: 0 };
-    }
-    clientMap[cl].count += 1;
-    clientMap[cl].totalSpend += neto;
-    if (d && (!clientMap[cl].lastDate || d > clientMap[cl].lastDate)) {
-      clientMap[cl].lastDate = d;
-    }
-  });
-
-  let vipCount = 0;
-  let loyalCount = 0;
-  let atRiskCount = 0;
-  let newCount = 0;
-
-  Object.values(clientMap).forEach(c => {
-    const daysAgo = c.lastDate ? Math.round((now - c.lastDate) / (1000 * 60 * 60 * 24)) : 999;
-    if (c.totalSpend > 5000000 && c.count >= 3) vipCount++;
-    else if (c.count >= 3) loyalCount++;
-    else if (daysAgo > 60 && c.totalSpend > 1000000) atRiskCount++;
-    else newCount++;
-  });
-
-  container.innerHTML = `
-    <div class="rfm-card" style="border-color: rgba(109, 92, 240, 0.4);">
-      <span class="rfm-card-title">VIP champions</span>
-      <span class="rfm-card-count" style="color: var(--ax-accent);">${vipCount}</span>
-      <span class="rfm-card-sub">Alto valor y frecuencia</span>
-    </div>
-    <div class="rfm-card" style="border-color: rgba(43, 196, 176, 0.4);">
-      <span class="rfm-card-title">Leales</span>
-      <span class="rfm-card-count" style="color: var(--ax-accent);">${loyalCount}</span>
-      <span class="rfm-card-sub">Compras recurrentes</span>
-    </div>
-    <div class="rfm-card" style="border-color: color-mix(in srgb, var(--ax-accent-rose) 40%, transparent);">
-      <span class="rfm-card-title">En riesgo</span>
-      <span class="rfm-card-count" style="color: var(--ax-accent-rose);">${atRiskCount}</span>
-      <span class="rfm-card-sub">Inactivos > 60 días</span>
-    </div>
-    <div class="rfm-card" style="border-color: color-mix(in srgb, var(--ax-accent-gold) 40%, transparent);">
-      <span class="rfm-card-title">Oportunidad / nuevos</span>
-      <span class="rfm-card-count" style="color: var(--ax-accent-gold);">${newCount}</span>
-      <span class="rfm-card-sub">Primeras ventas</span>
-    </div>
-  `;
-}
-
-function updateWhatIfSimulation() {
-  const pRange = document.getElementById('simPriceRange');
-  const cRange = document.getElementById('simCostRange');
-  const vRange = document.getElementById('simVolRange');
-
-  if (!pRange || !cRange || !vRange) return;
-
-  const pPct = Number(pRange.value) || 0;
-  const cPct = Number(cRange.value) || 0;
-  const vPct = Number(vRange.value) || 0;
-
-  document.getElementById('simPriceVal').textContent = `${pPct >= 0 ? '+' : ''}${pPct}%`;
-  document.getElementById('simCostVal').textContent = `${cPct >= 0 ? '+' : ''}${cPct}%`;
-  document.getElementById('simVolVal').textContent = `${vPct >= 0 ? '+' : ''}${vPct}%`;
-
-  const curRev = filtered.reduce((sum, r) => sum + (Number(r['NETO']) || 0), 0);
-  const curCost = filtered.reduce((sum, r) => sum + (Number(r['COSTO TOTAL NET']) || 0), 0);
-  const curProfit = curRev - curCost;
-
-  const priceFactor = 1 + (pPct / 100);
-  const costFactor = 1 + (cPct / 100);
-  const volFactor = 1 + (vPct / 100);
-
-  const projRev = curRev * priceFactor * volFactor;
-  const projCost = curCost * costFactor * volFactor;
-  const projProfit = projRev - projCost;
-  const deltaProfit = projProfit - curProfit;
-  const projMargin = projRev > 0 ? (projProfit / projRev) * 100 : 0;
-
-  document.getElementById('simProjRevenue').textContent = formatCLP(projRev);
-  document.getElementById('simProjProfit').textContent = formatCLP(projProfit);
-  document.getElementById('simDeltaProfit').textContent = `${deltaProfit >= 0 ? '+' : ''}${formatCLP(deltaProfit)}`;
-  document.getElementById('simProjMargin').textContent = `${formatPct(projMargin, 1)}`;
-}
 
 // Estado de paginacion de la Seccion de Compras. Faltaba declararlo: renderComprasView
 // lo lee al paginar, asi que la vista reventaba con ReferenceError justo despues de

@@ -141,9 +141,12 @@ exactamente su decisión y nada más.
 | **20** | El velo blanco y las sombras. |
 | **21** | El filtro del menú. |
 | **22** | El terciario que la capa 12 no llegaba a aplicar (ver §4). |
+| **23** | Dos que se vieron al medir: el botón de cerrar la barra y el avatar. |
+| **24** | La tabla de órdenes de compra (anchos fijos medidos sobre las 50 filas). |
+| **25** | La pantalla de acceso. |
 
 **Para añadir algo nuevo: una capa nueva al final, numerada, con un comentario
-que diga qué mediste.** No edites las capas 12 a 21 salvo para corregir un
+que diga qué mediste.** No edites las capas 12 a 25 salvo para corregir un
 error de esa misma capa.
 
 ---
@@ -219,6 +222,22 @@ construye al entrar en una vista no lo alcanza nadie: por eso la leyenda de
 Cotizaciones marcaba 1,48:1 en tema claro. De ahí la regla: el color sale del
 tema *al construir*, no se corrige después.
 
+### `1rem` son 14 píxeles, no 16
+
+El documento declara `html { font-size: 14px }`. Todo `rem` de la hoja se mide
+contra eso.
+
+Importa cuando el número tiene que ser absoluto y no relativo. Caso real: Safari
+en iOS hace zoom al enfocar cualquier campo por debajo de **16px**, así que los
+campos del acceso tenían que cruzar ese umbral. Escrito como `font-size: 1rem`
+la regla se aplicaba —ganaba la cascada, aparecía en `getComputedStyle`— y
+devolvía **14px**. El zoom seguía ahí. Va en píxeles.
+
+La regla: si un valor existe para cruzar un umbral del navegador o del sistema
+operativo, escríbelo en píxeles. Si existe para acompañar al texto, en `rem`.
+
+---
+
 ### El punto decimal es de CSS, la coma es del usuario
 
 `formatCLP()` y `formatPct()` escriben para el lector: `-$10.310`, `12,3%`.
@@ -293,8 +312,27 @@ vistas **en los dos temas**.
 > después de cada `switchView`. Y cuando el barrido señale algo, **vuelve a
 > medir ese elemento solo, ya asentado**, antes de tocar nada.
 >
-> La sonda tampoco sabe componer un `background-image`: si el elemento va sobre
-> un degradado, salta el elemento en vez de dar un número inventado.
+> **El panel oculto congela las mediciones.** Cuando el panel del navegador no
+> se está dibujando, `getComputedStyle` puede seguir devolviendo el valor
+> anterior a un cambio de tema **aunque apagues las transiciones**. La firma es
+> inconfundible: veinticuatro elementos distintos con exactamente el mismo
+> contraste. Pasó midiendo la barra nueva, dos veces y en sentidos opuestos
+> —2,58 en claro una vez, 3,06 en oscuro la otra—, y las dos veces la captura
+> mostró el texto perfectamente legible. Con el panel oculto, lo único fiable
+> es **recargar la página ya en el tema que quieres medir** y medir una vez.
+>
+> **El degradado es el que más veces ha mentido.** Un elemento pintado con
+> `linear-gradient` tiene `backgroundColor: rgba(0,0,0,0)`, así que un caminante
+> de fondos ingenuo lo atraviesa y mide contra lo que haya debajo. Volvió a
+> pasar midiendo el acceso: la tarjeta iba en degradado, la sonda cayó hasta el
+> velo oscuro y dio el título de la pantalla a **1,08:1** en tema claro. La
+> captura lo desmintió en dos segundos: se leía perfectamente. Si el elemento va
+> sobre un degradado, **resuelve su primera parada o salta el elemento** — nunca
+> devuelvas el fondo del ancestro como si fuera el suyo.
+>
+> Y `color-mix()` se computa como `color(srgb 0.12 0.30 0.47 / 0.2)`: un lector
+> de `rgb()` toma esos flotantes de 0 a 1 como si fueran de 0 a 255 y devuelve
+> negro. Conviértelo antes.
 
 Con eso, lo que se comprueba:
 

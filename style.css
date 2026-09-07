@@ -9179,7 +9179,8 @@ body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; 
    claro (el modal de acceso, sin ir mas lejos). Se les da un degradado claro
    equivalente, conservando la sensacion de relieve del diseno original.
    -------------------------------------------------------------------------- */
-[data-ax-theme="light"] .login-modal-card,
+/* .login-modal-card salio de este grupo: la capa 25 le da --surf-1 y el borde
+   del sistema en los dos temas, asi que ya no necesita una excepcion. */
 [data-ax-theme="light"] .bi-compras-advisor-card,
 [data-ax-theme="light"] .cotiz-hero-card,
 [data-ax-theme="light"] .cotiz-tipo-card,
@@ -13378,3 +13379,218 @@ table.mp-oc-tabla td:nth-child(5) .mp-tag {
    en cuatro y forman dos filas parejas. El minmax(0,1fr) ya estaba y es lo que
    evita que una etiqueta larga estire su columna. */
 
+/* ==========================================================================
+   25. LA PANTALLA DE ACCESO
+   Medido antes de tocarla, a 375x667 -un iPhone SE, comun aca-: la tarjeta
+   mide 725px y se cortaba 29px arriba y 29px abajo, sin forma de llegar a lo
+   cortado porque el velo era overflow:visible con align-items:center. Los
+   campos iban a 12,25px, y Safari en iOS hace zoom en cualquier campo bajo
+   16px, asi que la pantalla saltaba en cada toque.
+   ========================================================================== */
+
+/* --- 25.1 El velo se desplaza cuando la tarjeta no cabe ------------------
+   flex-start + margin:auto centra mientras sobre sitio y deja de centrar
+   -en vez de cortar por arriba- cuando falta. Es el unico reparto que no
+   pierde pixeles: con align-items:center el desbordamiento se va mitad
+   arriba y mitad abajo, y la mitad de arriba no se alcanza nunca. */
+.login-modal-backdrop {
+  align-items: flex-start;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 1.5rem 1.25rem;
+}
+
+.login-modal-card {
+  margin: auto;
+}
+
+/* --- 25.2 La tarjeta y el boton, con los tokens del sistema --------------
+   La tarjeta llevaba un degradado fijo rgba(20,30,50)->rgba(10,16,30) y el
+   boton otro, #2563B8->#1E62B4. Ninguno de los cuatro colores existe en la
+   paleta: en tema claro habia que taparlos con !important desde otra capa.
+   Con los tokens, el tema los sigue sin excepciones. */
+.login-modal-card {
+  background: var(--surf-1);
+  border: 1px solid var(--ax-border);
+  box-shadow: var(--el-3), 0 24px 60px rgba(0, 0, 0, 0.28);
+}
+
+.login-btn-submit {
+  background: var(--ax-accent);
+  color: var(--ax-on-accent);
+  box-shadow: none;
+  font-weight: 600;
+}
+
+.login-btn-submit:hover {
+  background: color-mix(in srgb, var(--ax-accent) 88%, var(--ax-text-primary));
+  transform: none;
+  box-shadow: none;
+}
+
+.login-btn-submit:focus-visible {
+  outline: 2px solid var(--ax-accent);
+  outline-offset: 3px;
+}
+
+/* --- 25.3 Los campos, a 16px --------------------------------------------
+   16px es el umbral exacto de Safari en iOS: por debajo, enfocar un campo
+   hace zoom y deja el formulario descentrado. No es una preferencia
+   tipografica, es la unica forma de que el telefono no se mueva solo.
+
+   Va en PIXELES y no en rem a proposito: este documento declara
+   html{font-size:14px}, asi que 1rem son 14px y la regla se aplicaba
+   entera sin cruzar el umbral. Medido: 14px despues de escribirla. */
+.login-input-wrapper input,
+.login-input-wrapper select {
+  font-size: 16px;
+  font-weight: 500;
+  background: var(--surf-3);
+  border: 1px solid var(--ax-border);
+  color: var(--ax-text-primary);
+  height: 48px;
+}
+
+.login-input-wrapper input::placeholder {
+  color: var(--ax-text-tertiary);
+  font-weight: 400;
+}
+
+.login-field-group label {
+  color: var(--ax-text-secondary);
+  font-weight: 600;
+}
+
+/* --- 25.4 El ojo, alcanzable con el dedo ---------------------------------
+   Medido en 28px de alto. El minimo comodo es 44. Se agranda el area sin
+   agrandar el icono: el relleno hace de objetivo. */
+.login-toggle-pw {
+  width: 44px;
+  height: 44px;
+  right: 4px;
+  border-radius: 10px;
+  color: var(--ax-text-tertiary);
+}
+
+.login-toggle-pw:hover,
+.login-toggle-pw:focus-visible {
+  color: var(--ax-accent);
+  background: color-mix(in srgb, var(--ax-accent) 12%, transparent);
+}
+
+/* Con el ojo ocupando 44px, el texto necesita sitio para no pasar por debajo. */
+.login-input-wrapper input[type="password"],
+.login-input-wrapper input#loginPassword {
+  padding-right: 52px;
+}
+
+/* --- 25.5 Los dos avisos nuevos ------------------------------------------ */
+.login-caps {
+  margin: 0.35rem 0 0 0;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--ax-accent-gold);
+}
+
+.login-nota {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--ax-text-secondary);
+}
+
+.login-quick-access,
+.login-nota {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--ax-border-subtle);
+}
+
+.login-error-msg {
+  text-align: left;
+  font-weight: 500;
+}
+
+/* --- 25.6 El candado de canal que no resuelve ----------------------------
+   Cuando el canal de la cuenta no existe en la planilla, el filtro se queda
+   abierto y avisa por que. Se marca en ambar, no en rojo: no es un error del
+   usuario, es una cuenta mal configurada, y quien mira no puede arreglarla. */
+.filter-select.canal-sin-resolver {
+  border-color: color-mix(in srgb, var(--ax-accent-gold) 55%, transparent) !important;
+}
+
+/* --- 25.7 Movil ---------------------------------------------------------- */
+@media (max-width: 480px) {
+  .login-modal-card {
+    padding: 1.75rem 1.25rem;
+    border-radius: 16px;
+  }
+  .login-modal-header {
+    margin-bottom: 1.5rem;
+  }
+  .login-title {
+    font-size: 1.5rem;
+  }
+  .login-form {
+    gap: 1rem;
+  }
+}
+
+/* ==========================================================================
+   26. LA BARRA CON MODULOS PADRE
+   Pasa de once entradas sueltas a dos secciones -Modulos principales y
+   Canales- con seis acordeones. Lo que hacia falta anadir es poco: el
+   mecanismo (.ax-nav__group.expanded .ax-nav__children) ya estaba escrito
+   para el unico grupo que existia.
+   ========================================================================== */
+
+/* --- 26.1 El modulo de un canal que la cuenta no puede ver ---------------
+   Se esconde con clase y no con [hidden] a proposito: el filtro del menu
+   usa [hidden] para tapar lo que no casa con lo escrito, y al limpiarse
+   volveria a ensenar lo que el permiso habia escondido. */
+.ax-nav__group--canal.nav-canal-ajeno {
+  display: none !important;
+}
+
+/* --- 26.2 Aire entre secciones -------------------------------------------
+   Con seis acordeones seguidos el arbol se lee como una lista plana. El
+   titulillo de seccion es lo que separa "que miro" de "de que canal". */
+.ax-sidebar__nav .ax-sidebar__section {
+  margin-top: 1.25rem;
+}
+
+.ax-sidebar__nav .ax-sidebar__section:first-child {
+  margin-top: 0;
+}
+
+/* --- 26.3 El distintivo del canal de la sesion ---------------------------
+   Decia el canal de quien entro y llevaba la clase --hot, que en esta hoja
+   es el rosa de "baja" y esta escrita con !important en cuatro sitios. Dos
+   problemas: lo leia como una alerta cuando solo es una etiqueta, y su
+   contraste medido -4,39:1 en oscuro, con 4,5 exigido a 9,6px- no se podia
+   corregir sin entrar en una pelea de !important. Con clase propia no hace
+   falta ninguna de las dos cosas. */
+.ax-nav__badge--sesion {
+  background: color-mix(in srgb, var(--ax-accent) 18%, transparent);
+  color: var(--ax-text-primary);
+  border: 1px solid color-mix(in srgb, var(--ax-accent) 45%, transparent);
+}
+
+/* --- 26.4 El padre abierto ------------------------------------------------
+   Un grupo desplegado tiene que leerse como un bloque, no como cuatro
+   botones sueltos que casualmente estan juntos. El filete de los hijos ya
+   lo dibuja la capa 11; aqui solo se le da respiro al conjunto. */
+.ax-nav__group--vistas.expanded {
+  margin-bottom: 0.35rem;
+}
+
+/* --- 26.5 En telefono, el dedo -------------------------------------------
+   Medido a 375x667 con los seis grupos abiertos: 24 entradas de entre 32 y
+   37px de alto, contra los 44 comodos. Antes eran catorce y sueltas; con el
+   arbol nuevo hay submodulos pegados unos a otros y errar el toque cuesta
+   una navegacion equivocada, no solo un segundo. */
+@media (max-width: 900px) {
+  #sidebarNav .ax-nav__item {
+    min-height: 44px;
+  }
+}

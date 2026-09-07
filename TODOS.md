@@ -268,3 +268,154 @@ hasta entonces la ruta apunta al lugar equivocado y recordarla no sirve de nada.
 **Effort:** L
 **Priority:** P2
 **Depends on:** T1 (rehacer el puntaje de prioridad).
+
+## Acceso
+
+Medido el 2026-09-07 sobre la aplicacion desplegada. Lo que se arreglo en el commit
+del acceso esta marcado RESUELTO; lo que queda abierto necesita una decision tuya o
+tocar Apps Script.
+
+### El acceso no protege los datos
+
+**What:** Que Apps Script valide usuario y contrasena, devuelva un token firmado con
+caducidad, y que el endpoint de datos deje de responder sin ese token.
+
+**Why:** Medido: **89.223 filas ya estan en memoria antes de escribir nada** en la
+pantalla de acceso. Y `config.js` publica `API_URL` y `SPREADSHEET_ID` en claro, asi que
+la planilla entera se baja con un `curl` desde la URL de GitHub Pages sin ver nunca esa
+pantalla. El acceso decide que canal ves; no impide que nadie vea nada.
+
+**Context:** Es la unica de las cinco cosas que se midieron y no se puede arreglar solo
+desde el navegador: el cliente no puede guardar un secreto. Exige `Code.gs`, las Script
+Properties y un redespliegue de la aplicacion web. Mientras no exista, la pantalla ya no
+promete lo que no cumple: dice "identificate para ver el tablero de tu canal".
+
+**Effort:** L
+**Priority:** P1
+**Depends on:** None
+
+### Las contrasenas actuales son publicas y hay que cambiarlas
+
+**What:** Elegir contrasenas nuevas para las cuatro cuentas. Los hashes se regeneran en
+un minuto (`SHA-256` de `correo:contrasena`, ver `authHash` en `app.js`).
+
+**Why:** `123456`, `admin123` y `123456` estuvieron en `app.js` y en `data-pass` del
+HTML, servidos publicamente por GitHub Pages, desde el primer despliegue. Ya no estan,
+pero **quien las haya leido las tiene**, y el historial de git tambien. Quitarlas del
+codigo no las revoca: solo cambiarlas lo hace.
+
+**Context:** Conviene hacerlo aunque se vaya a por la cerradura de verdad, porque hasta
+entonces son lo unico que separa a un curioso del tablero.
+
+**Effort:** S
+**Priority:** P1
+**Depends on:** None
+
+### El canal de retail@glomax.cl no existe en la planilla
+
+**What:** Decidir a que canal real corresponde `retail@glomax.cl` y escribirlo en
+`AuthManager.accounts`, o retirar la cuenta.
+
+**Why:** La cuenta dice `Retail` y la planilla escribe `ECOMMERCE, MARKETPLACE,
+MAYORISTAS, PRIVADOS, PUBLICO, TIENDA FISICA`. No hay ninguno equivalente. Hasta que se
+decida, esa cuenta ve todos los canales y el filtro lo dice en su titulo en vez de
+fingir que restringe.
+
+**Context:** `Publico` y `Mayorista` si resuelven (a `PUBLICO` y `MAYORISTAS`) porque la
+comparacion ignora tildes, mayusculas y la S final. `Retail` no es una variante de
+nada: es otro nombre. No se eligio uno por ti a proposito; adivinarlo seria repetir el
+error de la region inventada.
+
+**Effort:** S
+**Priority:** P1
+**Depends on:** Que digas cual es.
+
+### ~~El candado de canal mostraba todo diciendo que restringia~~ RESUELTO 2026-09-07
+
+**What:** `applyUserChannelPermissions` buscaba el canal de la cuenta entre las opciones
+reales, no lo encontraba, inventaba una opcion, y `populateFilterOptions()` -la linea
+siguiente de `login()`- la borraba con su `innerHTML=`.
+
+**Why:** El filtro quedaba deshabilitado, pintado de bloqueado y con el titulo "Acceso
+restringido unicamente al canal Retail", **mostrando los seis canales**. Un vendedor veia
+la facturacion completa creyendo que veia la suya.
+
+**Context:** Arreglado en tres partes: la comparacion normaliza tildes, mayusculas y
+plural; el candado se aplica DENTRO de `populateFilterOptions` para que sobreviva a la
+recarga de datos de cada 120 s; y cuando el canal no resuelve, el filtro se queda abierto
+y lo dice. Verificado: `mayorista@glomax.cl` ve 14.912 de 89.375 filas.
+
+**Effort:** M
+**Priority:** ~~P1~~
+**Depends on:** None
+
+### ~~La pantalla de acceso se cortaba en telefono~~ RESUELTO 2026-09-07
+
+**What:** A 375x667 la tarjeta media 725px y se cortaba 29px arriba y 29px abajo, sin
+forma de desplazarse. Los campos iban a 12,25px, bajo el umbral de 16px que hace que
+Safari en iOS haga zoom al enfocar.
+
+**Why:** Un iPhone SE es comun en Chile y el logo y la ultima fila quedaban fuera.
+
+**Context:** Capa 25 de `style.css`. El velo pasa a `overflow-y:auto` con
+`align-items:flex-start` y `margin:auto` en la tarjeta, que centra mientras cabe y
+desplaza cuando no. Los 16px van en pixeles y no en `rem` porque este documento declara
+`html{font-size:14px}`: escrito como `1rem` la regla se aplicaba y no cruzaba el umbral.
+Medido despues: tarjeta de 481px, nada cortado, campos a 16px.
+
+**Effort:** M
+**Priority:** ~~P2~~
+**Depends on:** None
+
+## Navegación
+
+### Marketplace, Ecommerce y Tienda física solo tienen Dashboard
+
+**What:** Decidir qué otras vistas cuelgan de cada módulo de canal. Hoy cada uno
+tiene un único hijo, que es el tablero principal con su canal aplicado.
+
+**Why:** Un acordeón con un solo hijo es un botón con un paso de más. Se aceptó
+así a propósito -es andamiaje, y el patrón ya está montado para colgarle más- pero
+si en un mes siguen con un hijo cada uno, conviene aplanarlos a botones directos.
+
+**Context:** Mayoristas ya tiene dos (Dashboard y Prospección) y Mercado Público
+tres, así que el acordeón se gana su sitio en esos dos. Los otros tres no todavía.
+
+**Effort:** S
+**Priority:** P3
+**Depends on:** Que definas qué vistas por canal hacen falta.
+
+### PRIVADOS y PUBLICO no tienen módulo
+
+**What:** Decidir si los otros dos canales de la planilla merecen módulo propio.
+
+**Why:** `CANAL FINAL` trae seis valores. Cuatro tienen módulo; `PRIVADOS` (4.413
+filas) y `PUBLICO` (5.927) no. Se llega a ellos por el filtro rápido "Canal final",
+que sigue en la barra, pero no por la sección Canales, lo que la hace parecer
+completa sin serlo.
+
+**Context:** `PUBLICO` es delicado: el módulo Mercado Público NO lee ese canal, lee
+su propia pestaña. Llamar "Público" a un quinto módulo de canal al lado de "Mercado
+Público" sería confundir dos cosas distintas.
+
+**Effort:** S
+**Priority:** P3
+**Depends on:** None
+
+### ~~BI Analytics Studio~~ ELIMINADO 2026-09-07
+
+**What:** Se retiró el módulo entero: el marcado, las cuatro funciones que lo
+pintaban y el enganche de sus deslizadores.
+
+**Why:** Pedido. Se fueron con él cuatro cosas que no viven en ningún otro sitio:
+el resumen ejecutivo, el simulador "What-If", el Pareto 80/20 y la matriz RFM de
+segmentación de cartera.
+
+**Context:** Si alguna hace falta, está en el historial de git (commit anterior a
+este) y se puede recolocar en otro módulo sin rehacerla.
+`renderMonthlyTargetProgress` se quedó: estaba en la lista de render de esa vista
+pero también pinta el avance de la meta en el tablero.
+
+**Effort:** ~~M~~
+**Priority:** ~~—~~
+**Depends on:** None

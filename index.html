@@ -34,7 +34,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <!-- Stylesheets & Libraries -->
-  <link rel="stylesheet" href="style.css?v=20260908_ORDENES_V136" />
+  <link rel="stylesheet" href="style.css?v=20260910_NAV_V138" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -96,7 +96,7 @@
       <nav class="ax-sidebar__nav" id="sidebarNav">
         <p class="ax-sidebar__section">Módulos principales</p>
 
-        <button class="ax-nav__item active" data-view="tablero">
+        <button class="ax-nav__item active" data-view="tablero" data-canal-limpiar="1">
           <svg class="ax-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11.5L12 4l9 7.5"/><path d="M5 10v9a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1v-9"/></svg>
           <span class="ax-nav__label">Tablero principal</span>
         </button>
@@ -105,21 +105,6 @@
           <svg class="ax-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18v18H3zM3 9h18M9 21V9"/></svg>
           <span class="ax-nav__label">Tabla de registros</span>
           <span class="ax-nav__badge ax-nav__badge--count" id="navCountBadge">0</span>
-        </button>
-
-        <button class="ax-nav__item" data-view="bistudio">
-          <svg class="ax-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20v-6M6 20V10M18 20V4"/></svg>
-          <span class="ax-nav__label">BI Analytics Studio</span>
-        </button>
-
-        <button class="ax-nav__item" data-view="compras">
-          <svg class="ax-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-          <span class="ax-nav__label">Sección de compras</span>
-        </button>
-
-                <button class="ax-nav__item" data-view="productos">
-          <svg class="ax-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-          <span class="ax-nav__label">Productos & SKUs</span>
         </button>
 
         <button class="ax-nav__item" data-view="fichatecnica">
@@ -132,20 +117,108 @@
           <span class="ax-nav__label">Cotizaciones</span>
         </button>
 
-        <button class="ax-nav__item" data-view="mixsugerido">
-          <svg class="ax-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v1"/><path d="M18 8l4 4-4 4"/><path d="M22 12H9"/></svg>
-          <span class="ax-nav__label">Mix sugerido</span>
-        </button>
-
         <button class="ax-nav__item" data-view="precios">
           <svg class="ax-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
           <span class="ax-nav__label">Precios competencia</span>
         </button>
 
-        <!-- Mercado Publico es el unico modulo con submenu: son tres vistas
- distintas sobre la misma fuente (el tablero, el buscador y las
- ordenes recibidas) y colgarlas del mismo padre evita tres entradas
- sueltas en una barra que ya tiene once. -->
+        <!-- Las tres miran hacia adelante: que comprar, con que SKU y en que mezcla. -->
+        <div class="ax-nav__group ax-nav__group--vistas" id="forecastNavGroup">
+          <button type="button" class="ax-nav__item ax-nav__item--parent" id="forecastNavToggle"
+            aria-expanded="false" aria-controls="forecastNavSubmenu">
+            <svg class="ax-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+            <span class="ax-nav__label">Forecast</span>
+            <svg class="ax-nav__caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+          </button>
+          <div class="ax-nav__children" id="forecastNavSubmenu">
+            <button class="ax-nav__item ax-nav__item--sub" data-view="compras">
+              <svg class="ax-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+              <span class="ax-nav__label">Sección de compras</span>
+            </button>
+            <button class="ax-nav__item ax-nav__item--sub" data-view="productos">
+              <svg class="ax-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+              <span class="ax-nav__label">Productos y SKU</span>
+            </button>
+            <button class="ax-nav__item ax-nav__item--sub" data-view="mixsugerido">
+              <svg class="ax-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v1"/><path d="M18 8l4 4-4 4"/><path d="M22 12H9"/></svg>
+              <span class="ax-nav__label">Mix sugerido</span>
+            </button>
+          </div>
+        </div>
+
+        <p class="ax-sidebar__section">Canales</p>
+
+        <!-- Un modulo por canal. Los cuatro Dashboard NO son vistas nuevas:
+             son el tablero principal con data-canal puesto. Duplicar el
+             marcado del tablero cuatro veces habria dado cuatro juegos de
+             ids y cuatro estados que se desincronizan. -->
+        <div class="ax-nav__group ax-nav__group--vistas ax-nav__group--canal" id="canalNavMarketplace" data-canal-modulo="MARKETPLACE">
+          <button type="button" class="ax-nav__item ax-nav__item--parent" id="canalTogMarketplace"
+            aria-expanded="false" aria-controls="canalSubMarketplace">
+            <svg class="ax-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l1.5-5h15L21 9"/><path d="M3 9h18v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M8 9v3a4 4 0 0 0 8 0V9"/></svg>
+            <span class="ax-nav__label">Marketplace</span>
+            <svg class="ax-nav__caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+          </button>
+          <div class="ax-nav__children" id="canalSubMarketplace">
+            <button class="ax-nav__item ax-nav__item--sub" data-view="tablero" data-canal="MARKETPLACE">
+              <svg class="ax-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+              <span class="ax-nav__label">Dashboard</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="ax-nav__group ax-nav__group--vistas ax-nav__group--canal" id="canalNavMayoristas" data-canal-modulo="MAYORISTAS">
+          <button type="button" class="ax-nav__item ax-nav__item--parent" id="canalTogMayoristas"
+            aria-expanded="false" aria-controls="canalSubMayoristas">
+            <svg class="ax-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21V8l6-4 6 4v13"/><path d="M15 21V11h6v10"/><path d="M3 21h18"/><path d="M7 11h2M7 15h2"/></svg>
+            <span class="ax-nav__label">Mayoristas</span>
+            <svg class="ax-nav__caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+          </button>
+          <div class="ax-nav__children" id="canalSubMayoristas">
+            <button class="ax-nav__item ax-nav__item--sub" data-view="tablero" data-canal="MAYORISTAS">
+              <svg class="ax-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+              <span class="ax-nav__label">Dashboard</span>
+            </button>
+            <button class="ax-nav__item ax-nav__item--sub" data-view="prospeccion">
+              <svg class="ax-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              <span class="ax-nav__label">Prospección mayorista</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="ax-nav__group ax-nav__group--vistas ax-nav__group--canal" id="canalNavEcommerce" data-canal-modulo="ECOMMERCE">
+          <button type="button" class="ax-nav__item ax-nav__item--parent" id="canalTogEcommerce"
+            aria-expanded="false" aria-controls="canalSubEcommerce">
+            <svg class="ax-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.5 12h11L21 7H6"/></svg>
+            <span class="ax-nav__label">Ecommerce</span>
+            <svg class="ax-nav__caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+          </button>
+          <div class="ax-nav__children" id="canalSubEcommerce">
+            <button class="ax-nav__item ax-nav__item--sub" data-view="tablero" data-canal="ECOMMERCE">
+              <svg class="ax-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+              <span class="ax-nav__label">Dashboard</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="ax-nav__group ax-nav__group--vistas ax-nav__group--canal" id="canalNavTienda" data-canal-modulo="TIENDA FISICA">
+          <button type="button" class="ax-nav__item ax-nav__item--parent" id="canalTogTienda"
+            aria-expanded="false" aria-controls="canalSubTienda">
+            <svg class="ax-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21V10h18v11"/><path d="M2 10l2-6h16l2 6z"/><path d="M10 21v-6h4v6"/></svg>
+            <span class="ax-nav__label">Tienda física</span>
+            <svg class="ax-nav__caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+          </button>
+          <div class="ax-nav__children" id="canalSubTienda">
+            <button class="ax-nav__item ax-nav__item--sub" data-view="tablero" data-canal="TIENDA FISICA">
+              <svg class="ax-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+              <span class="ax-nav__label">Dashboard</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Mercado Público lee otra fuente -su propia pestaña-, no el canal
+             PUBLICO de la planilla de ventas. Por eso sus tres hijos son vistas
+             propias y no el tablero filtrado. -->
         <div class="ax-nav__group ax-nav__group--vistas" id="mpNavGroup">
           <button type="button" class="ax-nav__item ax-nav__item--parent" id="mpNavToggle"
  aria-expanded="false" aria-controls="mpNavSubmenu">
@@ -169,16 +242,12 @@
           </div>
         </div>
 
-        <button class="ax-nav__item" data-view="prospeccion">
-          <svg class="ax-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-          <span class="ax-nav__label">Prospecci&oacute;n mayorista</span>
-        </button>
 
         <p class="ax-sidebar__section">Seguridad & sesión</p>
         <button type="button" class="ax-nav__item" id="sidebarAuthBtn" onclick="if(typeof AuthManager!=='undefined') AuthManager.openLoginModal()">
           <svg class="ax-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
           <span class="ax-nav__label" id="sidebarAuthLabel">Iniciar sesión / canal</span>
-          <span class="ax-nav__badge ax-nav__badge--hot" id="sidebarAuthBadge" style="background: color-mix(in srgb, var(--ax-accent) 20%, transparent); color: var(--ax-accent); border: 1px solid color-mix(in srgb, var(--ax-accent) 40%, transparent);">Entrar</span>
+          <span class="ax-nav__badge ax-nav__badge--sesion" id="sidebarAuthBadge">Entrar</span>
         </button>
 
         <p class="ax-sidebar__section">Filtros rápidos</p>
@@ -268,7 +337,7 @@
               <span class="user-email" id="userEmailBadge">usuario@glomax.cl</span>
               <span class="user-channel-tag" id="userChannelBadge">Canal: público</span>
             </div>
-            <button type="button" class="btn-logout" id="btnLogoutBtn" title="Cerrar Sesión">
+            <button type="button" class="btn-logout" id="btnLogoutBtn" title="Cerrar sesión">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
               <span>Salir</span>
             </button>
@@ -800,112 +869,6 @@
               <div class="pagination-controls">
                 <button type="button" class="btn-secondary btn-sm" id="btnPrevPage">Anterior</button>
                 <button type="button" class="btn-secondary btn-sm" id="btnNextPage">Siguiente</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- VISTA BI ANALYTICS STUDIO -->
-        <div class="view" id="view-bistudio">
-          <!-- EXECUTIVE INSIGHTS BRIEFING -->
-          <div class="ax-card bi-insights-briefing" id="biInsightsBriefing">
-            <div class="bi-briefing-header">
-              <span class="ai-badge">EXECUTIVE BI BRIEFING</span>
-              <h2 class="bi-briefing-title">Resumen inteligente de negocios</h2>
-            </div>
-            <div class="bi-briefing-content" id="biBriefingList">
-              <p>Analizando tendencias comerciales en tiempo real…</p>
-            </div>
-          </div>
-
-          <!-- WHAT-IF SIMULATION LAB -->
-          <div class="ax-card bi-sim-card">
-            <div class="bi-sim-header">
-              <div>
-                <span class="ai-badge badge-amber">LABORATORIO DE SIMULACIÓN</span>
-                <h2 class="chart-main-title">Simulador de escenarios "What-If"</h2>
-                <p class="chart-subtitle">Modifica las variables estratégicas para proyectar impacto en utilidad y margen neto</p>
-              </div>
-              <button type="button" class="btn-secondary btn-sm" id="resetSimBtn">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
-                <span>Restablecer simulación</span>
-              </button>
-            </div>
-            
-            <div class="bi-sim-grid">
-              <div class="bi-sim-controls">
-                <div class="sim-control-group">
-                  <div class="sim-label-row">
-                    <label for="simPriceRange">Variación en precios de venta</label>
-                    <span class="sim-val" id="simPriceVal">0%</span>
-                  </div>
-                  <input type="range" id="simPriceRange" min="-30" max="30" value="0" step="1" />
-                </div>
-                
-                <div class="sim-control-group">
-                  <div class="sim-label-row">
-                    <label for="simCostRange">Optimización de costos directos</label>
-                    <span class="sim-val" id="simCostVal">0%</span>
-                  </div>
-                  <input type="range" id="simCostRange" min="-30" max="30" value="0" step="1" />
-                </div>
-
-                <div class="sim-control-group">
-                  <div class="sim-label-row">
-                    <label for="simVolRange">Variación en volumen facturado</label>
-                    <span class="sim-val" id="simVolVal">0%</span>
-                  </div>
-                  <input type="range" id="simVolRange" min="-30" max="50" value="0" step="1" />
-                </div>
-              </div>
-
-              <div class="bi-sim-results">
-                <div class="sim-res-box">
-                  <span class="sim-res-label">Venta neta proyectada</span>
-                  <span class="sim-res-val" id="simProjRevenue">$0</span>
-                </div>
-                <div class="sim-res-box highlight">
-                  <span class="sim-res-label">Utilidad neta proyectada</span>
-                  <span class="sim-res-val" id="simProjProfit">$0</span>
-                </div>
-                <div class="sim-res-box">
-                  <span class="sim-res-label">Impacto neto (delta)</span>
-                  <span class="sim-res-val" id="simDeltaProfit">$0</span>
-                </div>
-                <div class="sim-res-box">
-                  <span class="sim-res-label">Nuevo margen %</span>
-                  <span class="sim-res-val" id="simProjMargin">0%</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- PARETO 80/20 & CUSTOMER RFM MATRIX -->
-          <div class="charts-grid" style="margin-top: 1.5rem;">
-            <div class="ax-card chart-card">
-              <div class="chart-card-header">
-                <div>
-                  <span class="chart-tag">Pareto 80/20</span>
-                  <h3 class="chart-main-title">Concentración de ventas</h3>
-                </div>
-              </div>
-              <div class="pareto-summary-box" id="paretoSummaryBox">
-                <!-- Dinámico -->
-              </div>
-              <div class="pareto-list" id="paretoTopClientsList">
-                <!-- Lista dinámicamente generada -->
-              </div>
-            </div>
-
-            <div class="ax-card chart-card">
-              <div class="chart-card-header">
-                <div>
-                  <span class="chart-tag">Segmentación RFM</span>
-                  <h3 class="chart-main-title">Segmentación de cartera</h3>
-                </div>
-              </div>
-              <div class="rfm-grid" id="rfmGrid">
-                <!-- Dinámico -->
               </div>
             </div>
           </div>
@@ -2932,7 +2895,7 @@
   </div>
 
   <!-- LOGIN MODAL SYSTEM -->
-  <div class="login-modal-backdrop" id="loginModal">
+  <div class="login-modal-backdrop" id="loginModal" role="dialog" aria-modal="true" aria-labelledby="loginTitulo" aria-describedby="loginSubtitulo">
     <div class="login-modal-card">
       <div class="login-modal-header">
         <div class="login-brand-logo">
@@ -2948,8 +2911,12 @@
             <circle cx="20.5" cy="11.5" r="2.6" fill="#0B0F19" fill-opacity="0.95"/>
           </svg>
         </div>
-        <h2 class="login-title">Glomax S.A.</h2>
-        <p class="login-subtitle">Sistema de control de acceso & BI Enterprise</p>
+        <h2 class="login-title" id="loginTitulo">Glomax S.A.</h2>
+        <!-- La pantalla dice lo que hace. Antes decia "Sistema de control de
+             acceso", y no lo es: los datos se cargan igual sin entrar y se
+             pueden bajar desde la URL que publica config.js. Es la pantalla
+             que decide quién eres y qué canal ves. -->
+        <p class="login-subtitle" id="loginSubtitulo">Identifícate para ver el tablero de tu canal</p>
       </div>
 
       <form id="loginForm" class="login-form">
@@ -2957,7 +2924,7 @@
           <label for="loginEmail">Correo electrónico</label>
           <div class="login-input-wrapper">
             <svg class="login-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-            <input type="email" id="loginEmail" placeholder="ej. ccoxhead@gmail.com" required autocomplete="username" />
+            <input type="email" id="loginEmail" name="email" placeholder="tu.correo@glomax.cl" required autocomplete="username" inputmode="email" autocapitalize="none" autocorrect="off" spellcheck="false" />
           </div>
         </div>
 
@@ -2965,50 +2932,33 @@
           <label for="loginPassword">Contraseña</label>
           <div class="login-input-wrapper">
             <svg class="login-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            <input type="password" id="loginPassword" placeholder="••••••••" required autocomplete="current-password" />
-            <button type="button" class="login-toggle-pw" id="loginTogglePw" title="Mostrar/Ocultar contraseña">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <input type="password" id="loginPassword" name="password" placeholder="••••••••" required autocomplete="current-password" />
+            <button type="button" class="login-toggle-pw" id="loginTogglePw" aria-label="Mostrar la contraseña" aria-pressed="false">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
             </button>
           </div>
+          <!-- El campo esconde lo que escribes, así que Bloq May encendido es
+               invisible y es la causa más común de "contraseña incorrecta". -->
+          <p class="login-caps" id="loginCapsLock" hidden>Bloq May está encendido</p>
         </div>
 
-        <div class="login-field-group">
-          <label for="loginCanal">Canal asignado</label>
-          <div class="login-input-wrapper">
-            <svg class="login-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
-            <select id="loginCanal">
-              <option value="Público">Público</option>
-              <option value="Retail">Retail</option>
-              <option value="Mayorista">Mayorista</option>
-              <option value="Empresas">Empresas</option>
-              <option value="E-Commerce">E-Commerce</option>
-              <option value="Todos">Todos los canales (administrador)</option>
-            </select>
-          </div>
-        </div>
+        <!-- Aquí había un desplegable "Canal asignado" con seis opciones. Para
+             tres de las cuatro cuentas era decorativo: login() descartaba lo
+             elegido y usaba el canal de la cuenta. Medido: elegí "Todos" con la
+             cuenta de Retail y quedó "Retail". El canal sale de quién eres. -->
 
-        <div id="loginErrorMsg" class="login-error-msg" style="display: none;"></div>
+        <div id="loginErrorMsg" class="login-error-msg" role="alert" aria-live="assertive" style="display: none;"></div>
 
         <button type="submit" id="btnLoginSubmit" class="login-btn-submit">
-          <span>Ingresar al Dashboard</span>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          <span>Entrar al tablero</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
         </button>
       </form>
 
-      <div class="login-quick-access">
-        <span class="quick-access-title">Acceso rápido de prueba:</span>
-        <div class="quick-access-pills">
-          <button type="button" class="quick-pill" data-email="ccoxhead@gmail.com" data-pass="123456" data-canal="Público">
-            ccoxhead@gmail.com <span class="pill-tag">Público</span>
-          </button>
-          <button type="button" class="quick-pill" data-email="admin@glomax.cl" data-pass="admin123" data-canal="Todos">
-            admin@glomax.cl <span class="pill-tag">Admin (todos)</span>
-          </button>
-          <button type="button" class="quick-pill" data-email="retail@glomax.cl" data-pass="123456" data-canal="Retail">
-            retail@glomax.cl <span class="pill-tag">Retail</span>
-          </button>
-        </div>
-      </div>
+      <!-- Aquí había tres pastillas de "acceso rápido de prueba" que impriman
+           los correos en pantalla y llevaban la contraseña en un data-pass del
+           HTML. Cualquiera que abriera la página se llevaba las credenciales. -->
+      <p class="login-nota">Si no recuerdas tu clave, pídesela a quien administra el tablero.</p>
     </div>
   </div>
 
@@ -3252,7 +3202,7 @@
   </div>
 
   <!-- Scripts -->
-  <script src="config.js?v=20260908_ORDENES_V136"></script>
-  <script src="app.js?v=20260908_ORDENES_V136"></script>
+  <script src="config.js?v=20260910_NAV_V138"></script>
+  <script src="app.js?v=20260910_NAV_V138"></script>
 </body>
 </html>
