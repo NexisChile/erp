@@ -12054,14 +12054,36 @@ function mpEtiqueta(v) {
   return (!e || e.toLowerCase() === 'notag') ? '' : e.toUpperCase();
 }
 
-/* El desenlace sale de la columna L. "Aceptada" y "Postulada" no son victorias:
-   son ofertas vivas todavia sin resolver, y contarlas como ganadas inflaria la
-   tasa de adjudicacion con plata que aun no esta. */
-function mpResultado(seguimiento) {
+/* El desenlace sale de la columna L, y si esa no dice nada, de la K.
+
+   "Aceptada" y "Postulada" no son victorias: son ofertas vivas todavia sin
+   resolver, y contarlas como ganadas inflaria la tasa de adjudicacion con plata
+   que aun no esta.
+
+   La segunda lectura existe porque la columna L se quedo detenida. Dice "En
+   seguimiento" en 13.031 de las 17.659 filas y 12.988 de esas ya pasaron su
+   fecha de cierre: dejo de ser un estado el dia que el equipo se mudo a trabajar
+   dentro de LicitaLAB y nadie volvio a tocar la planilla. La columna K si se
+   siguio llenando.
+
+   Solo se mira K cuando L no trae ninguna decision, nunca al reves: si alguien
+   se sento a escribir el estado, esa es la palabra que manda.
+
+   Las etiquetas de descarte (NO CUMPLE, SIN STOCK, NO VENDEMOS...) NO se
+   traducen aqui a propósito: significan que no se oferto, no que se perdiera.
+   Meterlas en 'perdida' inflaria las derrotas con llamados que nunca se
+   disputaron. Se cuentan por su lado, en r.descartadas y en porEtiqueta. */
+function mpResultado(seguimiento, etiqueta) {
   const s = mpTexto(seguimiento).toLowerCase();
   if (s === 'ganada') return 'ganada';
   if (s === 'perdida' || s === 'rechazada') return 'perdida';
   if (s === 'aceptada' || s === 'postulada') return 'enJuego';
+
+  const e = mpTexto(etiqueta).toUpperCase();
+  if (e === 'ADJUDICADA') return 'ganada';
+  if (e === 'PERDIDA') return 'perdida';
+  if (e === 'PARTICIPADA') return 'enJuego';
+
   return 'abierta';
 }
 
@@ -12108,6 +12130,7 @@ function normalizeMercadoPublicoRows(rawRows) {
 
     const cierre = mpFecha(celda(MP_COL.cierre));
     const seguimiento = mpTexto(celda(MP_COL.seguimiento));
+    const etiqueta = mpEtiqueta(celda(MP_COL.etiqueta));
 
     salida.push({
       id: id,
@@ -12125,7 +12148,7 @@ function normalizeMercadoPublicoRows(rawRows) {
       mes: cierre ? cierre.getMonth() + 1 : null,
       estadoOportunidad: mpTexto(celda(MP_COL.estadoOportunidad)) || 'Sin estado',
       asignado: mpTexto(celda(MP_COL.asignado)) || 'Sin asignar',
-      etiqueta: mpEtiqueta(celda(MP_COL.etiqueta)),
+      etiqueta: etiqueta,
       seguimiento: seguimiento || 'Sin seguimiento',
       comentario: mpTexto(celda(MP_COL.comentario)),
       lineas: mpLineas(celda(MP_COL.lineas)),
@@ -12138,7 +12161,7 @@ function normalizeMercadoPublicoRows(rawRows) {
       tienda: mpTexto(celda(MP_COL.tienda)) || 'Sin tienda',
       neto: neto,
       netoOfertado: netoOfertado,
-      resultado: mpResultado(seguimiento),
+      resultado: mpResultado(seguimiento, etiqueta),
       /* Se oferto = hay un monto ofertado registrado. Es el unico dato duro de
          participacion que tiene la hoja; la etiqueta PARTICIPADA es manual y
          no siempre acompana. */
@@ -13227,6 +13250,13 @@ function mpChipResultado(d) {
   if (d.resultado === 'perdida') return '<span class="mp-chip is-malo">Perdida</span>';
   if (d.resultado === 'enJuego') return '<span class="mp-chip is-juego">En juego</span>';
   if (d.oferto) return '<span class="mp-chip is-pendiente">Ofertada sin cerrar</span>';
+
+  /* 5.767 filas llevan un motivo de descarte en la columna K y un "En
+     seguimiento" detenido en la L. Mostrar la L era decirle a quien mira que
+     el caso sigue vivo cuando la propia planilla dice por que se dejo pasar. */
+  const motivo = MP_MOTIVOS_DESCARTE[d.etiqueta];
+  if (motivo) return '<span class="mp-chip is-neutro">' + escapeHtml(motivo.texto) + '</span>';
+
   return '<span class="mp-chip is-neutro">' + escapeHtml(d.seguimiento) + '</span>';
 }
 
