@@ -6332,11 +6332,15 @@ select#comprasStrategySelect {
     max-width: 100% !important;
   }
 
-  .view:not(#view-fichatecnica) {
+  /* Antes esto decia #view-fichatecnica, la unica vista que se podia
+     imprimir. Al irse ese modulo la regla habria ocultado TODAS las vistas
+     y cualquier impresion habria salido en blanco. Ahora imprime la vista
+     que el usuario tiene delante, que ademas es lo que uno espera. */
+  .view:not(.active) {
     display: none !important;
   }
 
-  #view-fichatecnica {
+  .view.active {
     display: block !important;
   }
 
