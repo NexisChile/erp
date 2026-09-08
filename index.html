@@ -34,7 +34,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <!-- Stylesheets & Libraries -->
-  <link rel="stylesheet" href="style.css?v=20260910_MPESTADO_V139" />
+  <link rel="stylesheet" href="style.css?v=20260910_EJECUTIVAS_V140" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -2012,6 +2012,45 @@
               <div class="mp-organismos" id="mpTopOrganismos"></div>
             </div>
           </div>
+          <!-- La columna J (Asignado) esta al 99% y no se miraba en ninguna
+               parte. Es tabla y no barras porque son siete cifras por persona:
+               una barra por ejecutiva diria quien tiene mas asignadas, que es
+               justo lo que menos importa. -->
+          <div class="charts-grid" style="margin-bottom: 1.25rem;">
+            <div class="ax-card chart-card mp-card-ancha">
+              <div class="chart-card-header">
+                <div>
+                  <span class="chart-tag">Columna Asignado de la pesta&ntilde;a</span>
+                  <h3 class="chart-main-title">Por ejecutiva</h3>
+                </div>
+              </div>
+              <div class="table-container">
+                <table class="data-table mp-table">
+                  <thead>
+                    <tr>
+                      <th>Ejecutiva</th>
+                      <th class="num">Asignadas</th>
+                      <th class="num">Ofert&oacute;</th>
+                      <th class="num">Adjudic&oacute;</th>
+                      <th class="num">Tasa</th>
+                      <th class="num">Monto adjudicado</th>
+                      <th class="num">Falla propia</th>
+                      <th class="num">Sin desenlace</th>
+                    </tr>
+                  </thead>
+                  <tbody id="mpEjecutivasBody">
+                    <tr><td colspan="8" class="mp-vacio">Cargando&hellip;</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <p class="mp-nota">
+                <strong>Falla propia</strong> son los descartes por sin stock, falta de tiempo o
+                postulaci&oacute;n incompleta: negocio que se dej&oacute; pasar por algo corregible, no por
+                decisi&oacute;n comercial. El monto adjudicado <strong>no compara</strong> a una ejecutiva con otra:
+                trabajan tipos distintos y unas pocas licitaciones grandes mueven el total.
+              </p>
+            </div>
+          </div>
         </div>
 
         <!-- VISTA MERCADO PUBLICO 2/3: BUSQUEDA DE OPORTUNIDADES -->
@@ -3202,7 +3241,7 @@
   </div>
 
   <!-- Scripts -->
-  <script src="config.js?v=20260910_MPESTADO_V139"></script>
-  <script src="app.js?v=20260910_MPESTADO_V139"></script>
+  <script src="config.js?v=20260910_EJECUTIVAS_V140"></script>
+  <script src="app.js?v=20260910_EJECUTIVAS_V140"></script>
 </body>
 </html>

@@ -13594,3 +13594,58 @@ table.mp-oc-tabla td:nth-child(5) .mp-tag {
     min-height: 44px;
   }
 }
+
+/* ==========================================================================
+   27. EL PANEL POR EJECUTIVA
+   Tres piezas chicas. La tabla reusa .data-table .mp-table tal cual; aqui solo
+   esta lo que esa clase no trae: el dato secundario dentro de la celda, la
+   cifra que pide accion y la nota al pie.
+   ========================================================================== */
+
+/* --- 27.1 El dato secundario dentro de la celda --------------------------
+   "1.798" y "29,5%" son la misma medida contada de dos formas y van juntos en
+   una celda. El segundo baja de tamano y de contraste para que la columna se
+   lea de un vistazo por el numero grande, no por el parentesis. */
+.mp-sub {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--ax-text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- 27.2 La unica cifra que pide accion ---------------------------------
+   Ambar, no rojo: 599 descartes por falta de stock o de tiempo no son un error
+   de la ejecutiva que mira el panel, son negocio corregible. El rojo de este
+   sistema esta reservado para lo que ya se perdio. */
+.mp-alerta {
+  color: var(--ax-accent-gold);
+  font-weight: 600;
+}
+
+/* --- 27.3 La nota al pie -------------------------------------------------
+   Dice por que el monto no compara a una persona con otra. Va pegada a la
+   tabla y no en un tooltip: una advertencia que hay que descubrir pasando el
+   mouse no advierte a nadie. */
+.mp-nota {
+  margin: 0.875rem 0 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--ax-text-secondary);
+  border-top: 1px solid var(--ax-border-subtle);
+  padding-top: 0.875rem;
+}
+
+.mp-nota strong {
+  color: var(--ax-text-primary);
+  font-weight: 600;
+}
+
+/* --- 27.4 La tarjeta ocupa las dos columnas ------------------------------
+   .charts-grid reparte en dos columnas de 554px. Ahi cabe una lista de barras
+   -por eso la de organismos se ve bien-, pero la tabla por ejecutiva necesita
+   683px: quedaba scrolleando de lado para siempre, y una tabla que hay que
+   arrastrar para comparar no deja comparar. */
+.mp-card-ancha {
+  grid-column: 1 / -1;
+}
