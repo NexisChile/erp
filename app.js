@@ -12060,11 +12060,16 @@ function mpEtiqueta(v) {
    resolver, y contarlas como ganadas inflaria la tasa de adjudicacion con plata
    que aun no esta.
 
-   La segunda lectura existe porque la columna L se quedo detenida. Dice "En
+   La segunda lectura existe porque la columna L se llena a medias. Dice "En
    seguimiento" en 13.031 de las 17.659 filas y 12.988 de esas ya pasaron su
-   fecha de cierre: dejo de ser un estado el dia que el equipo se mudo a trabajar
-   dentro de LicitaLAB y nadie volvio a tocar la planilla. La columna K si se
-   siguio llenando.
+   fecha de cierre. No es que se detuviera en algun momento: la proporcion es la
+   misma todos los anos -29% resueltas en 2023, 25% en 2024, 26% en 2025, 24% en
+   2026-, o sea que tres de cada cuatro oportunidades nunca reciben su desenlace.
+   La columna K llega mas lejos, a 14.612 filas.
+
+   Cuando la L si trae desenlace, es de fiar: sobre las 50 oportunidades mas
+   recientes que LicitaLAB confirma como ofertadas, el resultado que calcula esta
+   funcion coincide con la fuente en las 50, incluidas las 8 adjudicadas.
 
    Solo se mira K cuando L no trae ninguna decision, nunca al reves: si alguien
    se sento a escribir el estado, esa es la palabra que manda.
@@ -12494,6 +12499,7 @@ function renderMercadoPublicoView() {
   mpRenderCierres(datos);
   mpRenderCharts(datos);
   mpRenderOrganismos(datos);
+  mpRenderEjecutivas(datos);
   mpRenderTabla(datos);
   mpSincronizarExportar();
 
@@ -12732,6 +12738,82 @@ function mpRenderOrganismos(datos) {
       '</div>' +
     '</div>';
   }).join('');
+}
+
+/* Un nombre con menos de 10 oportunidades no es una ejecutiva: son las erratas
+   de la columna J, escrita a mano. Hoy hay cuatro (matias 4, CANCELADA 2,
+   Adjudicada 1, En seguimiento 1). Se agrupan en vez de esconderse: que la
+   columna tenga basura es informacion, y quien mira el panel es quien puede
+   mandar a limpiarla. */
+const MP_EJECUTIVA_MINIMO = 10;
+
+function mpRenderEjecutivas(datos) {
+  const cuerpo = document.getElementById('mpEjecutivasBody');
+  if (!cuerpo) return;
+
+  const mapa = new Map();
+  datos.forEach(d => {
+    const quien = d.asignado || 'Sin asignar';
+    if (!mapa.has(quien)) {
+      mapa.set(quien, { n: 0, oferto: 0, gan: 0, per: 0, propio: 0, sin: 0, montoGan: 0 });
+    }
+    const e = mapa.get(quien);
+    e.n++;
+    if (d.oferto) e.oferto++;
+    /* Solo el monto ofertado, sin caer al monto del llamado cuando falta, por la
+       misma razon que mpResumen: son dos cifras distintas y el valor publicado es
+       varias veces mayor. Con el respaldo puesto, las 9 adjudicadas sin oferta
+       anotada de 'Sin asignar' inflaban su monto de $2,5 a $108 millones. */
+    if (d.resultado === 'ganada') { e.gan++; e.montoGan += d.netoOfertado; }
+    else if (d.resultado === 'perdida') e.per++;
+
+    /* Ofertada y sin cerrar: plata comprometida que nadie fue a buscar. */
+    if (d.oferto && d.resultado === 'abierta') e.sin++;
+
+    /* Solo cuenta como falla si NO se oferto. Con oferta de por medio la
+       etiqueta describe la postulacion, no el motivo de haberla dejado pasar. */
+    const motivo = MP_MOTIVOS_DESCARTE[d.etiqueta];
+    if (!d.oferto && motivo && motivo.tipo === 'propio') e.propio++;
+  });
+
+  if (!mapa.size) {
+    cuerpo.innerHTML = '<tr><td colspan="8" class="mp-vacio">Sin datos para el filtro actual.</td></tr>';
+    return;
+  }
+
+  const filas = Array.from(mapa.entries()).sort((a, b) => b[1].n - a[1].n);
+  const propias = filas.filter(f => f[1].n >= MP_EJECUTIVA_MINIMO);
+  const cola = filas.filter(f => f[1].n < MP_EJECUTIVA_MINIMO);
+
+  const pinta = (nombre, e, titulo) => {
+    const decididas = e.gan + e.per;
+    const tasa = decididas > 0 ? mpPct((e.gan / decididas) * 100) : '&mdash;';
+    const pctOferta = e.n > 0 ? mpPct((e.oferto / e.n) * 100) : '&mdash;';
+    return '<tr' + (titulo ? ' title="' + escapeHtml(titulo) + '"' : '') + '>' +
+      '<td>' + escapeHtml(nombre) + '</td>' +
+      '<td class="num">' + formatNum(e.n) + '</td>' +
+      '<td class="num">' + formatNum(e.oferto) + ' <span class="mp-sub">' + pctOferta + '</span></td>' +
+      '<td class="num">' + formatNum(e.gan) + '</td>' +
+      '<td class="num">' + tasa + ' <span class="mp-sub">' + formatNum(decididas) + ' resueltas</span></td>' +
+      '<td class="num">' + formatCLP(e.montoGan) + '</td>' +
+      '<td class="num">' + (e.propio ? '<span class="mp-alerta">' + formatNum(e.propio) + '</span>' : '0') + '</td>' +
+      '<td class="num">' + formatNum(e.sin) + '</td>' +
+    '</tr>';
+  };
+
+  let html = propias.map(([nombre, e]) => pinta(nombre, e, '')).join('');
+
+  if (cola.length) {
+    const suma = cola.reduce((a, [, e]) => {
+      a.n += e.n; a.oferto += e.oferto; a.gan += e.gan; a.per += e.per;
+      a.propio += e.propio; a.sin += e.sin; a.montoGan += e.montoGan;
+      return a;
+    }, { n: 0, oferto: 0, gan: 0, per: 0, propio: 0, sin: 0, montoGan: 0 });
+    const nombres = cola.map(([nombre, e]) => nombre + ' (' + e.n + ')').join(', ');
+    html += pinta('Otros ' + cola.length + ' nombres', suma, nombres);
+  }
+
+  cuerpo.innerHTML = html;
 }
 
 function mpRenderCharts(datos) {

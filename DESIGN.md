@@ -144,9 +144,11 @@ exactamente su decisión y nada más.
 | **23** | Dos que se vieron al medir: el botón de cerrar la barra y el avatar. |
 | **24** | La tabla de órdenes de compra (anchos fijos medidos sobre las 50 filas). |
 | **25** | La pantalla de acceso. |
+| **26** | La barra con módulos padre (canales, acordeón, insignia de sesión). |
+| **27** | El panel por ejecutiva de Mercado Público. |
 
 **Para añadir algo nuevo: una capa nueva al final, numerada, con un comentario
-que diga qué mediste.** No edites las capas 12 a 25 salvo para corregir un
+que diga qué mediste.** No edites las capas 12 a 27 salvo para corregir un
 error de esa misma capa.
 
 ---
